@@ -41,11 +41,12 @@ export type Review = {
 export type SortKey = "best" | "newest" | "price_asc" | "price_desc";
 
 export type ProductFilters = {
-  minPrice?: number;
-  maxPrice?: number;
-  minRating?: number;
-  city?: string;
+  minPrice?: number | undefined;
+  maxPrice?: number | undefined;
+  minRating?: number | undefined;
+  city?: string | undefined;
 };
+
 
 const PRODUCT_COLUMNS =
   "id,category_id,vendor_id,name,description,price,old_price,rating,reviews_count,sales_count,city,images,sizes,colors,badge,is_local,created_at";
