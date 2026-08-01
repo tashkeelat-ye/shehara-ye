@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import {
   CookingPot,
   Landmark,
@@ -8,7 +9,8 @@ import {
   Sparkles,
   Watch,
 } from "lucide-react";
-import { categories } from "@/data/mock";
+import { useQuery } from "@tanstack/react-query";
+import { fetchCategories } from "@/lib/db";
 import { SectionHeading } from "./section-heading";
 
 const iconMap = {
@@ -23,16 +25,22 @@ const iconMap = {
 };
 
 export function CategoryStrip() {
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
+
   return (
     <section className="pt-7">
-      <SectionHeading title="تصفح حسب الفئة" />
+      <SectionHeading title="تصفح حسب الفئة" to="/products" />
       <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-4 pb-1 md:grid md:grid-cols-8 md:overflow-visible">
         {categories.map((cat) => {
-          const Icon = iconMap[cat.icon as keyof typeof iconMap];
+          const Icon = iconMap[cat.icon as keyof typeof iconMap] ?? Shirt;
           return (
-            <button
+            <Link
               key={cat.id}
-              type="button"
+              to="/category/$slug"
+              params={{ slug: cat.slug }}
               className="flex w-16 shrink-0 flex-col items-center gap-2 md:w-auto"
             >
               <span className="grid h-16 w-16 place-items-center rounded-full bg-brand-soft text-primary transition-colors active:bg-accent">
@@ -41,7 +49,7 @@ export function CategoryStrip() {
               <span className="text-center text-[11px] leading-tight text-foreground">
                 {cat.name}
               </span>
-            </button>
+            </Link>
           );
         })}
       </div>
