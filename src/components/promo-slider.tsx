@@ -13,7 +13,7 @@ export function PromoSlider() {
     return () => clearInterval(timer);
   }, []);
 
-  const slide = slides[index];
+  const slide = slides[index] ?? slides[0]!;
 
   return (
     <section className="px-4 pt-4">
