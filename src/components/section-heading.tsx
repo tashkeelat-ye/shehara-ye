@@ -1,9 +1,13 @@
+import { Link } from "@tanstack/react-router";
+
 export function SectionHeading({
   title,
   action = "عرض الكل",
+  to,
 }: {
   title: string;
   action?: string;
+  to?: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 px-4">
@@ -11,9 +15,11 @@ export function SectionHeading({
         <span className="h-5 w-1.5 shrink-0 rounded-full bg-accent-solid" />
         <span className="truncate">{title}</span>
       </h2>
-      <button type="button" className="shrink-0 text-xs text-primary">
-        {action}
-      </button>
+      {to ? (
+        <Link to={to} className="shrink-0 text-xs text-primary">
+          {action}
+        </Link>
+      ) : null}
     </div>
   );
 }

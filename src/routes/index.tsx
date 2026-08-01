@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site-header";
 import { PromoSlider } from "@/components/promo-slider";
 import { CategoryStrip } from "@/components/category-strip";
 import { SectionHeading } from "@/components/section-heading";
-import { ProductCard } from "@/components/product-card";
+import { ProductCard, ProductCardSkeleton } from "@/components/product-card";
 import { LocalProducts } from "@/components/local-products";
 import { SiteFooter } from "@/components/site-footer";
 import { BottomNav } from "@/components/bottom-nav";
-import { bestSellers } from "@/data/mock";
+import { fetchProducts } from "@/lib/db";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,19 +31,26 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { data: bestSellers, isLoading } = useQuery({
+    queryKey: ["products", "best", 8],
+    queryFn: () => fetchProducts({ sort: "best", limit: 8 }),
+  });
+
   return (
-    <div dir="rtl" lang="ar" className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
       <main className="mx-auto max-w-6xl pb-4">
         <PromoSlider />
         <CategoryStrip />
 
         <section className="mt-8">
-          <SectionHeading title="الأكثر مبيعًا" />
+          <SectionHeading title="الأكثر مبيعًا" to="/products" />
           <div className="mt-3 grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 lg:grid-cols-4">
-            {bestSellers.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {isLoading
+              ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
+              : (bestSellers ?? []).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
           </div>
         </section>
 
