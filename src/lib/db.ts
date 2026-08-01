@@ -93,13 +93,14 @@ function applySort<T>(query: T, sort: SortKey): T {
 }
 
 export async function fetchProducts(opts: {
-  categorySlug?: string;
-  categoryId?: string;
-  local?: boolean;
-  sort?: SortKey;
-  filters?: ProductFilters;
-  limit?: number;
+  categorySlug?: string | undefined;
+  categoryId?: string | undefined;
+  local?: boolean | undefined;
+  sort?: SortKey | undefined;
+  filters?: ProductFilters | undefined;
+  limit?: number | undefined;
 }): Promise<Product[]> {
+
   let query = supabase.from("products").select(sel(PRODUCT_COLUMNS));
 
   if (opts.categoryId) query = query.eq("category_id", opts.categoryId);
