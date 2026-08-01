@@ -74,7 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         options: {
           data: { full_name: fullName, phone: normalizeYemeniPhone(phone) },
-          emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+          ...(typeof window !== "undefined"
+            ? { emailRedirectTo: window.location.origin }
+            : {}),
         },
       });
       if (error) {
