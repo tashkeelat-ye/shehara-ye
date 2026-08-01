@@ -18,8 +18,9 @@ type Search = { q?: string | undefined; sort?: SortKey | undefined };
 
 export const Route = createFileRoute("/products")({
   validateSearch: (search: Record<string, unknown>): Search => ({
-    q: typeof search.q === "string" && search.q ? search.q : undefined,
-    sort: typeof search.sort === "string" ? (search.sort as SortKey) : undefined,
+    q: typeof search["q"] === "string" && search["q"] ? (search["q"] as string) : undefined,
+    sort: typeof search["sort"] === "string" ? (search["sort"] as SortKey) : undefined,
+
   }),
   head: () => ({
     meta: [
