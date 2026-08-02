@@ -1,0 +1,11 @@
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.pay_order_from_wallet(uuid) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.review_payment_request(uuid, boolean, text) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.create_invoice_on_confirm() FROM anon, authenticated, public;
+REVOKE EXECUTE ON FUNCTION public.touch_updated_at() FROM anon, authenticated, public;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM anon, authenticated, public;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.pay_order_from_wallet(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.review_payment_request(uuid, boolean, text) TO authenticated;
