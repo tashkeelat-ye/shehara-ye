@@ -54,7 +54,10 @@ function AdminOrders() {
   }, [load]);
 
   async function setStatus(id: string, status: string) {
-    const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: status as never })
+      .eq("id", id);
     if (error) toast.error("تعذّر التحديث: " + error.message);
     else toast.success("تم تحديث حالة الطلب");
     await load();
