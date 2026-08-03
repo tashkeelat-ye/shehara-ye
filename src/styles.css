@@ -71,8 +71,8 @@
   --color-accent-solid: var(--accent-solid);
   --color-accent-solid-foreground: var(--accent-solid-foreground);
   --color-brand-soft: var(--brand-soft);
-  --font-display: "Hacen Tunisia", "Tahoma", sans-serif;
-  --font-sans: "Hacen Tunisia", "Tahoma", sans-serif;
+  --font-display: "Hacen Tunisia", "Tajawal", "Tahoma", sans-serif;
+  --font-sans: "Tajawal", "Hacen Tunisia", "Tahoma", sans-serif;
   --shadow-brand: 0 8px 24px -12px color-mix(in oklab, var(--primary) 55%, transparent);
   --shadow-card: 0 2px 10px -6px oklch(0 0 0 / 18%);
 }
