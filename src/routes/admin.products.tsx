@@ -5,6 +5,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCard, Field, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
 import { formatPrice, type Category } from "@/lib/db";
+import { uploadManyMedia } from "@/lib/media";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProducts,
