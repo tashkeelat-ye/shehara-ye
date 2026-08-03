@@ -275,36 +275,80 @@ function AdminProducts() {
               </Field>
             </div>
             <div className="sm:col-span-2">
-              <Field label="الصور">
-                <div className="flex flex-wrap items-center gap-2">
-                  {editing.images.map((img) => (
-                    <span key={img} className="relative">
-                      <img src={img} alt="" className="h-14 w-14 rounded-lg object-cover" />
-                      <button
-                        type="button"
-                        aria-label="حذف الصورة"
-                        onClick={() =>
-                          setEditing({ ...editing, images: editing.images.filter((i) => i !== img) })
-                        }
-                        className="absolute -top-1 -left-1 grid h-5 w-5 place-items-center rounded-full bg-destructive text-[10px] text-destructive-foreground"
-                      >
-                        ×
-                      </button>
-                    </span>
+              <Field label="الصور (الصورة الأولى هي الرئيسية)">
+                <div className="flex flex-wrap items-end gap-3">
+                  {editing.images.map((img, idx) => (
+                    <div key={img} className="w-20">
+                      <span className="relative block">
+                        <img
+                          src={img}
+                          alt=""
+                          className={`h-20 w-20 rounded-lg object-cover ${
+                            idx === 0 ? "ring-2 ring-primary" : ""
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          aria-label="حذف الصورة"
+                          onClick={() =>
+                            setEditing({
+                              ...editing,
+                              images: editing.images.filter((i) => i !== img),
+                            })
+                          }
+                          className="absolute -top-1 -left-1 grid h-5 w-5 place-items-center rounded-full bg-destructive text-[10px] text-destructive-foreground"
+                        >
+                          ×
+                        </button>
+                        {idx === 0 ? (
+                          <span className="absolute bottom-0 start-0 rounded-se-lg bg-primary px-1 text-[9px] text-primary-foreground">
+                            رئيسية
+                          </span>
+                        ) : null}
+                      </span>
+                      <div className="mt-1 flex items-center justify-between gap-1">
+                        <button
+                          type="button"
+                          aria-label="تحريك يمينًا"
+                          onClick={() => moveImage(idx, -1)}
+                          className="rounded border border-border px-1 text-[11px]"
+                        >
+                          ›
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => makePrimary(idx)}
+                          className="rounded border border-border px-1 text-[10px] text-primary"
+                        >
+                          رئيسية
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="تحريك يسارًا"
+                          onClick={() => moveImage(idx, 1)}
+                          className="rounded border border-border px-1 text-[11px]"
+                        >
+                          ‹
+                        </button>
+                      </div>
+                    </div>
                   ))}
                   <input
                     type="file"
                     accept="image/*"
-                    aria-label="رفع صورة منتج"
+                    multiple
+                    aria-label="رفع صور المنتج"
                     onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void uploadImage(f);
+                      const files = Array.from(e.target.files ?? []);
+                      if (files.length > 0) void uploadImages(files);
+                      e.target.value = "";
                     }}
                     className="text-xs"
                   />
                 </div>
               </Field>
             </div>
+
             <label className="flex items-center gap-2 text-xs text-foreground">
               <input
                 type="checkbox"
