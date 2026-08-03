@@ -53,6 +53,45 @@ export type Database = {
         }
         Relationships: []
       }
+      banners: {
+        Row: {
+          created_at: string
+          cta_label: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string
+          sort_order: number
+          subtitle: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string
+          sort_order?: number
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string
+          sort_order?: number
+          subtitle?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           color: string | null
@@ -587,12 +626,17 @@ export type Database = {
           delivery_fee: number
           email: string
           facebook: string
+          footer_copyright: string
+          footer_note: string
           id: boolean
           instagram: string
           logo_url: string
           phone: string
           store_name: string
           tagline: string
+          telegram: string
+          tiktok: string
+          twitter: string
           updated_at: string
           whatsapp: string
         }
@@ -602,12 +646,17 @@ export type Database = {
           delivery_fee?: number
           email?: string
           facebook?: string
+          footer_copyright?: string
+          footer_note?: string
           id?: boolean
           instagram?: string
           logo_url?: string
           phone?: string
           store_name?: string
           tagline?: string
+          telegram?: string
+          tiktok?: string
+          twitter?: string
           updated_at?: string
           whatsapp?: string
         }
@@ -617,12 +666,17 @@ export type Database = {
           delivery_fee?: number
           email?: string
           facebook?: string
+          footer_copyright?: string
+          footer_note?: string
           id?: boolean
           instagram?: string
           logo_url?: string
           phone?: string
           store_name?: string
           tagline?: string
+          telegram?: string
+          tiktok?: string
+          twitter?: string
           updated_at?: string
           whatsapp?: string
         }
