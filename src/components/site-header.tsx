@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
+import { BrandLogo } from "@/components/brand-logo";
+import { STORE_TAGLINE } from "@/lib/logo";
 
 export function SiteHeader() {
   const { count, setDrawerOpen } = useCart();
@@ -13,16 +15,13 @@ export function SiteHeader() {
       <div className="mx-auto w-full max-w-6xl px-4 py-3">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <Link to="/" className="flex min-w-0 items-center gap-2">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-lg text-primary-foreground shadow-brand">
-              ت
-            </div>
+            <BrandLogo size={40} />
             <div className="min-w-0">
               <p className="truncate text-lg leading-tight text-foreground">تشكيلات</p>
-              <p className="truncate text-[11px] text-muted-foreground">
-                كل ما تحتاجه... بتشكيلة واحدة
-              </p>
+              <p className="truncate text-[11px] text-muted-foreground">{STORE_TAGLINE}</p>
             </div>
           </Link>
+
           <div className="flex shrink-0 items-center gap-1">
             <Link
               to="/account"

@@ -5,6 +5,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCard, Field, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
 import { formatPrice, type Category } from "@/lib/db";
+import { uploadManyMedia } from "@/lib/media";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProducts,
@@ -102,20 +103,34 @@ function AdminProducts() {
     await load();
   }
 
-  async function uploadImage(file: File) {
-    if (!editing) return;
-    const path = `admin/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-    const { error } = await supabase.storage.from("products").upload(path, file, {
-      contentType: file.type,
-      upsert: true,
-    });
-    if (error) {
-      toast.error("تعذّر رفع الصورة: " + error.message);
-      return;
+  async function uploadImages(files: File[]) {
+    if (!editing || files.length === 0) return;
+    setBusy(true);
+    const { urls, errors } = await uploadManyMedia("products", files);
+    setBusy(false);
+    if (urls.length > 0) {
+      setEditing((prev) => (prev ? { ...prev, images: [...prev.images, ...urls] } : prev));
+      toast.success(`تم رفع ${urls.length.toLocaleString("ar-EG")} صورة`);
     }
-    const { data } = supabase.storage.from("products").getPublicUrl(path);
-    setEditing({ ...editing, images: [...editing.images, data.publicUrl] });
+    if (errors.length > 0) toast.error("تعذّر رفع بعض الصور: " + errors.join(" | "));
   }
+
+  function moveImage(index: number, dir: -1 | 1) {
+    if (!editing) return;
+    const next = [...editing.images];
+    const target = index + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target]!, next[index]!];
+    setEditing({ ...editing, images: next });
+  }
+
+  function makePrimary(index: number) {
+    if (!editing || index === 0) return;
+    const next = [...editing.images];
+    const [img] = next.splice(index, 1);
+    setEditing({ ...editing, images: [img!, ...next] });
+  }
+
 
   return (
     <div className="space-y-4">
@@ -261,36 +276,80 @@ function AdminProducts() {
               </Field>
             </div>
             <div className="sm:col-span-2">
-              <Field label="الصور">
-                <div className="flex flex-wrap items-center gap-2">
-                  {editing.images.map((img) => (
-                    <span key={img} className="relative">
-                      <img src={img} alt="" className="h-14 w-14 rounded-lg object-cover" />
-                      <button
-                        type="button"
-                        aria-label="حذف الصورة"
-                        onClick={() =>
-                          setEditing({ ...editing, images: editing.images.filter((i) => i !== img) })
-                        }
-                        className="absolute -top-1 -left-1 grid h-5 w-5 place-items-center rounded-full bg-destructive text-[10px] text-destructive-foreground"
-                      >
-                        ×
-                      </button>
-                    </span>
+              <Field label="الصور (الصورة الأولى هي الرئيسية)">
+                <div className="flex flex-wrap items-end gap-3">
+                  {editing.images.map((img, idx) => (
+                    <div key={img} className="w-20">
+                      <span className="relative block">
+                        <img
+                          src={img}
+                          alt=""
+                          className={`h-20 w-20 rounded-lg object-cover ${
+                            idx === 0 ? "ring-2 ring-primary" : ""
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          aria-label="حذف الصورة"
+                          onClick={() =>
+                            setEditing({
+                              ...editing,
+                              images: editing.images.filter((i) => i !== img),
+                            })
+                          }
+                          className="absolute -top-1 -left-1 grid h-5 w-5 place-items-center rounded-full bg-destructive text-[10px] text-destructive-foreground"
+                        >
+                          ×
+                        </button>
+                        {idx === 0 ? (
+                          <span className="absolute bottom-0 start-0 rounded-se-lg bg-primary px-1 text-[9px] text-primary-foreground">
+                            رئيسية
+                          </span>
+                        ) : null}
+                      </span>
+                      <div className="mt-1 flex items-center justify-between gap-1">
+                        <button
+                          type="button"
+                          aria-label="تحريك يمينًا"
+                          onClick={() => moveImage(idx, -1)}
+                          className="rounded border border-border px-1 text-[11px]"
+                        >
+                          ›
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => makePrimary(idx)}
+                          className="rounded border border-border px-1 text-[10px] text-primary"
+                        >
+                          رئيسية
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="تحريك يسارًا"
+                          onClick={() => moveImage(idx, 1)}
+                          className="rounded border border-border px-1 text-[11px]"
+                        >
+                          ‹
+                        </button>
+                      </div>
+                    </div>
                   ))}
                   <input
                     type="file"
                     accept="image/*"
-                    aria-label="رفع صورة منتج"
+                    multiple
+                    aria-label="رفع صور المنتج"
                     onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void uploadImage(f);
+                      const files = Array.from(e.target.files ?? []);
+                      if (files.length > 0) void uploadImages(files);
+                      e.target.value = "";
                     }}
                     className="text-xs"
                   />
                 </div>
               </Field>
             </div>
+
             <label className="flex items-center gap-2 text-xs text-foreground">
               <input
                 type="checkbox"

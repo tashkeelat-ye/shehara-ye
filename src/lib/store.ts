@@ -11,7 +11,23 @@ export type SiteSettings = {
   address: string;
   facebook: string;
   instagram: string;
+  telegram: string;
+  tiktok: string;
+  twitter: string;
+  footer_note: string;
+  footer_copyright: string;
   delivery_fee: number;
+};
+
+export type Banner = {
+  id: string;
+  title: string;
+  subtitle: string;
+  cta_label: string;
+  link_url: string;
+  image_url: string;
+  sort_order: number;
+  is_active: boolean;
 };
 
 export type PageRow = {
@@ -69,7 +85,8 @@ export type PaymentRequest = {
 };
 
 const SETTINGS_COLUMNS =
-  "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,delivery_fee";
+  "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee";
+const BANNER_COLUMNS = "id,title,subtitle,cta_label,link_url,image_url,sort_order,is_active";
 const PM_COLUMNS =
   "id,code,kind,display_name,account_number,account_name,instructions,requires_receipt,is_active,sort_order";
 
@@ -79,6 +96,13 @@ export async function fetchSettings(): Promise<SiteSettings | null> {
     .select(SETTINGS_COLUMNS)
     .maybeSingle<SiteSettings>();
   return data ?? null;
+}
+
+export async function fetchBanners(onlyActive = true): Promise<Banner[]> {
+  let q = supabase.from("banners").select(BANNER_COLUMNS);
+  if (onlyActive) q = q.eq("is_active", true);
+  const { data } = await q.order("sort_order").returns<Banner[]>();
+  return data ?? [];
 }
 
 export async function fetchPage(slug: string): Promise<PageRow | null> {

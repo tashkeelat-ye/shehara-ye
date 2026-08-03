@@ -31,6 +31,11 @@ function AdminSettings() {
         address: s.address,
         facebook: s.facebook,
         instagram: s.instagram,
+        telegram: s.telegram,
+        tiktok: s.tiktok,
+        twitter: s.twitter,
+        footer_note: s.footer_note,
+        footer_copyright: s.footer_copyright,
         delivery_fee: s.delivery_fee,
       })
       .eq("id", true);
@@ -49,6 +54,11 @@ function AdminSettings() {
     { key: "address", label: "العنوان" },
     { key: "facebook", label: "رابط فيسبوك", ltr: true },
     { key: "instagram", label: "رابط إنستغرام", ltr: true },
+    { key: "telegram", label: "رابط تيليجرام", ltr: true },
+    { key: "tiktok", label: "رابط تيك توك", ltr: true },
+    { key: "twitter", label: "رابط إكس (تويتر)", ltr: true },
+    { key: "footer_note", label: "نص تعريفي في الفوتر" },
+    { key: "footer_copyright", label: "نص حقوق النشر" },
   ];
 
   return (
