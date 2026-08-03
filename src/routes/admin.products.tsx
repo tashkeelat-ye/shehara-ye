@@ -102,20 +102,34 @@ function AdminProducts() {
     await load();
   }
 
-  async function uploadImage(file: File) {
-    if (!editing) return;
-    const path = `admin/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-    const { error } = await supabase.storage.from("products").upload(path, file, {
-      contentType: file.type,
-      upsert: true,
-    });
-    if (error) {
-      toast.error("تعذّر رفع الصورة: " + error.message);
-      return;
+  async function uploadImages(files: File[]) {
+    if (!editing || files.length === 0) return;
+    setBusy(true);
+    const { urls, errors } = await uploadManyMedia("products", files);
+    setBusy(false);
+    if (urls.length > 0) {
+      setEditing((prev) => (prev ? { ...prev, images: [...prev.images, ...urls] } : prev));
+      toast.success(`تم رفع ${urls.length.toLocaleString("ar-EG")} صورة`);
     }
-    const { data } = supabase.storage.from("products").getPublicUrl(path);
-    setEditing({ ...editing, images: [...editing.images, data.publicUrl] });
+    if (errors.length > 0) toast.error("تعذّر رفع بعض الصور: " + errors.join(" | "));
   }
+
+  function moveImage(index: number, dir: -1 | 1) {
+    if (!editing) return;
+    const next = [...editing.images];
+    const target = index + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target]!, next[index]!];
+    setEditing({ ...editing, images: next });
+  }
+
+  function makePrimary(index: number) {
+    if (!editing || index === 0) return;
+    const next = [...editing.images];
+    const [img] = next.splice(index, 1);
+    setEditing({ ...editing, images: [img!, ...next] });
+  }
+
 
   return (
     <div className="space-y-4">
