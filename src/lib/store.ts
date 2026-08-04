@@ -17,6 +17,7 @@ export type SiteSettings = {
   footer_note: string;
   footer_copyright: string;
   delivery_fee: number;
+  sar_rate: number;
 };
 
 export type Banner = {
@@ -85,7 +86,7 @@ export type PaymentRequest = {
 };
 
 const SETTINGS_COLUMNS =
-  "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee";
+  "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee,sar_rate";
 const BANNER_COLUMNS = "id,title,subtitle,cta_label,link_url,image_url,sort_order,is_active";
 const PM_COLUMNS =
   "id,code,kind,display_name,account_number,account_name,instructions,requires_receipt,is_active,sort_order";

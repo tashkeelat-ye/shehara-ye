@@ -4,10 +4,13 @@ import { BrandLogo } from "@/components/brand-logo";
 import { fetchSettings } from "@/lib/store";
 
 const links = [
-  { href: "/about", label: "من نحن" },
-  { href: "/contact", label: "تواصل معنا" },
-  { href: "/returns", label: "سياسة الاستبدال والإرجاع" },
+  { href: "/page/about", label: "من نحن" },
+  { href: "/page/contact", label: "تواصل معنا" },
+  { href: "/page/returns", label: "سياسة الاستبدال والإرجاع" },
   { href: "/faq", label: "الأسئلة الشائعة" },
+  { href: "/page/privacy", label: "سياسة الخصوصية" },
+  { href: "/page/delivery", label: "سياسة التوصيل" },
+  { href: "/page/terms", label: "شروط الاستخدام" },
 ];
 
 export function SiteFooter() {

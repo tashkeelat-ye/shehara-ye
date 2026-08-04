@@ -14,7 +14,9 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
 import { CartDrawer } from "@/components/cart-drawer";
+import { CurrencyProvider } from "@/lib/currency-context";
 import { Toaster } from "@/components/ui/sonner";
+
 
 
 function NotFoundComponent() {
@@ -137,17 +139,28 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const timer = window.setTimeout(() => {
+      void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <CartProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-          <CartDrawer />
-          <Toaster position="top-center" />
-        </CartProvider>
+        <CurrencyProvider>
+          <CartProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <CartDrawer />
+            <Toaster position="top-center" />
+          </CartProvider>
+        </CurrencyProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
+
 

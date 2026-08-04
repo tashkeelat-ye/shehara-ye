@@ -23,6 +23,9 @@ export type Database = {
           id: string
           is_default: boolean
           label: string
+          landmark: string
+          latitude: number | null
+          longitude: number | null
           phone: string
           recipient_name: string
           user_id: string
@@ -35,6 +38,9 @@ export type Database = {
           id?: string
           is_default?: boolean
           label?: string
+          landmark?: string
+          latitude?: number | null
+          longitude?: number | null
           phone: string
           recipient_name: string
           user_id: string
@@ -47,6 +53,9 @@ export type Database = {
           id?: string
           is_default?: boolean
           label?: string
+          landmark?: string
+          latitude?: number | null
+          longitude?: number | null
           phone?: string
           recipient_name?: string
           user_id?: string
@@ -219,6 +228,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_read: boolean
+          kind: string
+          link_url: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          kind?: string
+          link_url?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          kind?: string
+          link_url?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           color: string | null
@@ -284,6 +326,7 @@ export type Database = {
           shipping_city: string
           shipping_details: string
           shipping_district: string
+          shipping_landmark: string
           shipping_name: string
           shipping_phone: string
           status: Database["public"]["Enums"]["order_status"]
@@ -305,6 +348,7 @@ export type Database = {
           shipping_city?: string
           shipping_details?: string
           shipping_district?: string
+          shipping_landmark?: string
           shipping_name?: string
           shipping_phone?: string
           status?: Database["public"]["Enums"]["order_status"]
@@ -326,6 +370,7 @@ export type Database = {
           shipping_city?: string
           shipping_details?: string
           shipping_district?: string
+          shipping_landmark?: string
           shipping_name?: string
           shipping_phone?: string
           status?: Database["public"]["Enums"]["order_status"]
@@ -553,29 +598,38 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accepted_order_policy: boolean
+          accepted_terms: boolean
           created_at: string
           full_name: string
           id: string
           is_disabled: boolean
           phone: string | null
+          preferred_currency: string
           updated_at: string
           wallet_balance: number
         }
         Insert: {
+          accepted_order_policy?: boolean
+          accepted_terms?: boolean
           created_at?: string
           full_name?: string
           id: string
           is_disabled?: boolean
           phone?: string | null
+          preferred_currency?: string
           updated_at?: string
           wallet_balance?: number
         }
         Update: {
+          accepted_order_policy?: boolean
+          accepted_terms?: boolean
           created_at?: string
           full_name?: string
           id?: string
           is_disabled?: boolean
           phone?: string | null
+          preferred_currency?: string
           updated_at?: string
           wallet_balance?: number
         }
@@ -632,6 +686,7 @@ export type Database = {
           instagram: string
           logo_url: string
           phone: string
+          sar_rate: number
           store_name: string
           tagline: string
           telegram: string
@@ -652,6 +707,7 @@ export type Database = {
           instagram?: string
           logo_url?: string
           phone?: string
+          sar_rate?: number
           store_name?: string
           tagline?: string
           telegram?: string
@@ -672,6 +728,7 @@ export type Database = {
           instagram?: string
           logo_url?: string
           phone?: string
+          sar_rate?: number
           store_name?: string
           tagline?: string
           telegram?: string
@@ -764,6 +821,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      broadcast_notification: {
+        Args: { _body: string; _link?: string; _title: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
