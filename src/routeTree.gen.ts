@@ -18,6 +18,7 @@ import { Route as ProductsRouteImport } from './routes/products'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
+import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
@@ -74,6 +75,11 @@ const AuthenticatedCheckoutRoute = AuthenticatedCheckoutRouteImport.update({
 const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/orders': typeof AuthenticatedOrdersRoute
+  '/wallet': typeof AuthenticatedWalletRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/content': typeof AdminContentRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/orders': typeof AuthenticatedOrdersRoute
+  '/wallet': typeof AuthenticatedWalletRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/content': typeof AdminContentRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
+  '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/content': typeof AdminContentRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/checkout'
     | '/orders'
+    | '/wallet'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/content'
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/checkout'
     | '/orders'
+    | '/wallet'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/content'
@@ -269,6 +280,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/checkout'
     | '/_authenticated/orders'
+    | '/_authenticated/wallet'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/content'
@@ -359,6 +371,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof AuthenticatedOrdersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/wallet': {
+      id: '/_authenticated/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof AuthenticatedWalletRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/admin/': {
@@ -459,12 +478,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
+  AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
+  AuthenticatedWalletRoute: AuthenticatedWalletRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
