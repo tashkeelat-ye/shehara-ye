@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>لا يوجد اتصال | تشكيلات</title>
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap"
+    />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #faf7fb;
+        color: #2b1b33;
+        font-family: "Tajawal", system-ui, sans-serif;
+        padding: 24px;
+      }
+      .card {
+        max-width: 26rem;
+        text-align: center;
+        background: #fff;
+        border: 1px solid #ece3f1;
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: 0 12px 32px rgba(91, 42, 134, 0.08);
+      }
+      img { width: 84px; height: 84px; object-fit: contain; }
+      h1 { font-size: 20px; margin: 14px 0 6px; }
+      p { font-size: 14px; color: #6b5a74; margin: 0 0 18px; line-height: 1.7; }
+      button {
+        border: 0;
+        background: #5b2a86;
+        color: #fff;
+        border-radius: 16px;
+        padding: 12px 22px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img src="/logo.png" alt="شعار تشكيلات" />
+      <h1>لا يوجد اتصال بالإنترنت</h1>
+      <p>تعذّر تحميل الصفحة. تحقق من اتصالك بالشبكة ثم أعد المحاولة — تشكيلات في انتظارك.</p>
+      <button onclick="location.reload()">إعادة المحاولة</button>
+    </div>
+  </body>
+</html>
