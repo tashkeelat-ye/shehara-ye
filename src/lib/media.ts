@@ -45,3 +45,14 @@ export async function uploadManyMedia(
   }
   return { urls, errors };
 }
+
+/** يرفع إيصال تحويل إلى حاوية خاصة ويُعيد مسار الملف (وليس رابطًا عامًا). */
+export async function uploadReceipt(userId: string, file: File): Promise<string> {
+  const path = `${userId}/${Date.now()}-${safeFileName(file.name)}`;
+  const { error } = await supabase.storage.from("receipts").upload(path, file, {
+    contentType: file.type,
+    upsert: true,
+  });
+  if (error) throw new Error(error.message);
+  return path;
+}

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { formatMoney } from "@/lib/money";
 
 export type Category = {
   id: string;
@@ -53,8 +54,7 @@ const PRODUCT_COLUMNS =
 
 const sel = (s: string): string => s;
 
-export const formatPrice = (value: number) =>
-  `${Math.round(value).toLocaleString("ar-EG")} ر.ي`;
+export const formatPrice = (value: number) => formatMoney(value);
 
 export async function fetchCategories(): Promise<Category[]> {
   const { data, error } = await supabase
