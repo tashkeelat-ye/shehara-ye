@@ -52,7 +52,7 @@ export function SiteHeader() {
           </div>
         </div>
 
-        </div>
+
 
         <form
           className="relative mt-3"
