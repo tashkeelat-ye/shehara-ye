@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
@@ -48,6 +49,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/faq': typeof FaqRoute
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/faq': typeof FaqRoute
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/faq': typeof FaqRoute
   '/products': typeof ProductsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/faq'
     | '/products'
     | '/account'
     | '/checkout'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/faq'
     | '/products'
     | '/account'
     | '/checkout'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/admin'
     | '/auth'
+    | '/faq'
     | '/products'
     | '/_authenticated/account'
     | '/_authenticated/checkout'
@@ -277,6 +289,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  FaqRoute: typeof FaqRoute
   ProductsRoute: typeof ProductsRoute
   CategorySlugRoute: typeof CategorySlugRoute
   PageSlugRoute: typeof PageSlugRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -483,6 +503,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  FaqRoute: FaqRoute,
   ProductsRoute: ProductsRoute,
   CategorySlugRoute: CategorySlugRoute,
   PageSlugRoute: PageSlugRoute,
