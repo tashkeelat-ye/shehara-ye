@@ -4,6 +4,9 @@ import { Search, ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { BrandLogo } from "@/components/brand-logo";
 import { STORE_TAGLINE } from "@/lib/logo";
+import { SideMenu } from "@/components/side-menu";
+import { NotificationBell } from "@/components/notification-bell";
+import { CurrencySwitcher } from "@/lib/currency-context";
 
 export function SiteHeader() {
   const { count, setDrawerOpen } = useCart();
@@ -23,10 +26,12 @@ export function SiteHeader() {
           </Link>
 
           <div className="flex shrink-0 items-center gap-1">
+            <CurrencySwitcher className="hidden sm:inline-flex" />
+            <NotificationBell />
             <Link
               to="/account"
               aria-label="حسابي"
-              className="grid h-10 w-10 place-items-center rounded-xl text-foreground transition-colors hover:bg-accent"
+              className="hidden h-10 w-10 place-items-center rounded-xl text-foreground transition-colors hover:bg-accent sm:grid"
             >
               <User className="h-5 w-5" />
             </Link>
@@ -43,7 +48,10 @@ export function SiteHeader() {
                 </span>
               ) : null}
             </button>
+            <SideMenu />
           </div>
+        </div>
+
         </div>
 
         <form
