@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCard, Field, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
-import { YEMEN_CITIES } from "@/lib/yemen";
+import { YEMEN_GOVERNORATES } from "@/lib/yemen";
 import type { Courier } from "@/lib/store";
 
 export const Route = createFileRoute("/admin/couriers")({
@@ -92,7 +92,7 @@ function AdminCouriers() {
               onChange={(e) => setForm({ ...form, city: e.target.value })}
             >
               <option value="">اختر المحافظة</option>
-              {YEMEN_CITIES.map((c) => (
+              {YEMEN_GOVERNORATES.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
