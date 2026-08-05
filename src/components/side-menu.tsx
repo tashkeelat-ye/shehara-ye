@@ -31,14 +31,14 @@ const MAIN = [
 ] as const;
 
 const PAGES = [
-  { to: "/page/about", label: "من نحن", Icon: Info },
-  { to: "/page/contact", label: "تواصل معنا", Icon: Phone },
-  { to: "/page/returns", label: "سياسة الاستبدال والإرجاع", Icon: RotateCcw },
-  { to: "/page/privacy", label: "سياسة الخصوصية", Icon: ShieldCheck },
-  { to: "/page/delivery", label: "التوصيل", Icon: Truck },
-  { to: "/faq", label: "الأسئلة الشائعة", Icon: BadgeHelp },
-  { to: "/page/terms", label: "شروط الاستخدام", Icon: FileText },
+  { slug: "about", label: "من نحن", Icon: Info },
+  { slug: "contact", label: "تواصل معنا", Icon: Phone },
+  { slug: "returns", label: "سياسة الاستبدال والإرجاع", Icon: RotateCcw },
+  { slug: "privacy", label: "سياسة الخصوصية", Icon: ShieldCheck },
+  { slug: "delivery", label: "التوصيل", Icon: Truck },
+  { slug: "terms", label: "شروط الاستخدام", Icon: FileText },
 ] as const;
+
 
 export function SideMenu() {
   const [open, setOpen] = useState(false);
