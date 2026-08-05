@@ -108,10 +108,11 @@ export function SideMenu() {
 
             <p className="mt-4 px-3 text-[11px] text-muted-foreground">صفحات المتجر</p>
             <nav className="mt-1 space-y-1">
-              {PAGES.map(({ to, label, Icon }) => (
+              {PAGES.map(({ slug, label, Icon }) => (
                 <Link
-                  key={to}
-                  to={to}
+                  key={slug}
+                  to="/page/$slug"
+                  params={{ slug }}
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-foreground hover:bg-accent"
                 >
@@ -119,6 +120,14 @@ export function SideMenu() {
                   {label}
                 </Link>
               ))}
+              <Link
+                to="/faq"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-foreground hover:bg-accent"
+              >
+                <BadgeHelp className="h-4 w-4 text-primary" />
+                الأسئلة الشائعة
+              </Link>
             </nav>
 
             <div className="mt-auto pt-5">
