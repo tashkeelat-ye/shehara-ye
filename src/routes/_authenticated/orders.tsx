@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
 import { formatPrice } from "@/lib/db";
+import { openInvoice } from "@/lib/invoice";
+import { PAYMENT_STATUS_LABELS } from "@/lib/store";
 
 type OrderItem = {
   id: string;
@@ -15,9 +17,20 @@ type Order = {
   id: string;
   order_number: string;
   status: string;
+  payment_status: string;
+  payment_method_code: string;
+  subtotal: number;
+  delivery_fee: number;
   total: number;
+  shipping_name: string;
+  shipping_phone: string;
+  shipping_city: string;
+  shipping_district: string;
+  shipping_details: string;
   created_at: string;
   order_items: OrderItem[];
+  couriers: { name: string; phone: string } | null;
+  invoices: { invoice_number: string }[];
 };
 
 const statusLabels: Record<string, string> = {
@@ -50,7 +63,7 @@ function OrdersPage() {
       const { data } = await supabase
         .from("orders")
         .select(
-          "id,order_number,status,total,created_at,order_items(id,product_name,quantity,unit_price)",
+          "id,order_number,status,payment_status,payment_method_code,subtotal,delivery_fee,total,shipping_name,shipping_phone,shipping_city,shipping_district,shipping_details,created_at,order_items(id,product_name,quantity,unit_price),couriers(name,phone),invoices(invoice_number)",
         )
         .order("created_at", { ascending: false })
         .returns<Order[]>();
@@ -97,6 +110,37 @@ function OrdersPage() {
                   ))}
                 </ul>
                 <p className="mt-2 text-sm text-primary">الإجمالي: {formatPrice(o.total)}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  الدفع: {PAYMENT_STATUS_LABELS[o.payment_status] ?? o.payment_status}
+                  {o.couriers ? ` · المندوب: ${o.couriers.name} (${o.couriers.phone})` : ""}
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    openInvoice({
+                      invoiceNumber: o.invoices[0]?.invoice_number ?? o.order_number,
+                      orderNumber: o.order_number,
+                      date: new Date(o.created_at).toLocaleDateString("ar-EG"),
+                      customerName: o.shipping_name,
+                      customerPhone: o.shipping_phone,
+                      address: `${o.shipping_city} ${o.shipping_district} — ${o.shipping_details}`,
+                      paymentMethod: o.payment_method_code,
+                      items: o.order_items.map((it) => ({
+                        name: it.product_name,
+                        quantity: it.quantity,
+                        unitPrice: it.unit_price,
+                      })),
+                      subtotal: o.subtotal,
+                      deliveryFee: o.delivery_fee,
+                      total: o.total,
+                      storeName: "تشكيلات",
+                      formatMoney: formatPrice,
+                    })
+                  }
+                  className="mt-2 inline-flex h-9 items-center rounded-xl border border-border px-3 text-[11px] text-foreground"
+                >
+                  عرض الفاتورة الإلكترونية
+                </button>
               </li>
             ))}
           </ul>
