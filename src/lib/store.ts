@@ -18,7 +18,21 @@ export type SiteSettings = {
   footer_copyright: string;
   delivery_fee: number;
   sar_rate: number;
+  is_open: boolean;
+  closed_message: string;
+  announcement_text: string;
+  announcement_link: string;
+  announcement_active: boolean;
 };
+
+export type Courier = {
+  id: string;
+  name: string;
+  phone: string;
+  city: string;
+  is_active: boolean;
+};
+
 
 export type Banner = {
   id: string;
