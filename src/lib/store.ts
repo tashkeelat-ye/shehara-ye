@@ -18,7 +18,21 @@ export type SiteSettings = {
   footer_copyright: string;
   delivery_fee: number;
   sar_rate: number;
+  is_open: boolean;
+  closed_message: string;
+  announcement_text: string;
+  announcement_link: string;
+  announcement_active: boolean;
 };
+
+export type Courier = {
+  id: string;
+  name: string;
+  phone: string;
+  city: string;
+  is_active: boolean;
+};
+
 
 export type Banner = {
   id: string;
@@ -86,7 +100,7 @@ export type PaymentRequest = {
 };
 
 const SETTINGS_COLUMNS =
-  "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee,sar_rate";
+  "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee,sar_rate,is_open,closed_message,announcement_text,announcement_link,announcement_active";
 const BANNER_COLUMNS = "id,title,subtitle,cta_label,link_url,image_url,sort_order,is_active";
 const PM_COLUMNS =
   "id,code,kind,display_name,account_number,account_name,instructions,requires_receipt,is_active,sort_order";
@@ -103,6 +117,13 @@ export async function fetchBanners(onlyActive = true): Promise<Banner[]> {
   let q = supabase.from("banners").select(BANNER_COLUMNS);
   if (onlyActive) q = q.eq("is_active", true);
   const { data } = await q.order("sort_order").returns<Banner[]>();
+  return data ?? [];
+}
+
+export async function fetchCouriers(onlyActive = true): Promise<Courier[]> {
+  let q = supabase.from("couriers").select("id,name,phone,city,is_active");
+  if (onlyActive) q = q.eq("is_active", true);
+  const { data } = await q.order("name").returns<Courier[]>();
   return data ?? [];
 }
 

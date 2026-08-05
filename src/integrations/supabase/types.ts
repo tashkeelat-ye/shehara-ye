@@ -166,6 +166,36 @@ export type Database = {
         }
         Relationships: []
       }
+      couriers: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           answer: string
@@ -314,6 +344,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          courier_id: string | null
           created_at: string
           delivery_fee: number
           id: string
@@ -336,6 +367,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          courier_id?: string | null
           created_at?: string
           delivery_fee?: number
           id?: string
@@ -358,6 +390,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          courier_id?: string | null
           created_at?: string
           delivery_fee?: number
           id?: string
@@ -379,7 +412,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_courier_id_fkey"
+            columns: ["courier_id"]
+            isOneToOne: false
+            referencedRelation: "couriers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pages: {
         Row: {
@@ -676,6 +717,10 @@ export type Database = {
       site_settings: {
         Row: {
           address: string
+          announcement_active: boolean
+          announcement_link: string
+          announcement_text: string
+          closed_message: string
           created_at: string
           delivery_fee: number
           email: string
@@ -684,6 +729,7 @@ export type Database = {
           footer_note: string
           id: boolean
           instagram: string
+          is_open: boolean
           logo_url: string
           phone: string
           sar_rate: number
@@ -697,6 +743,10 @@ export type Database = {
         }
         Insert: {
           address?: string
+          announcement_active?: boolean
+          announcement_link?: string
+          announcement_text?: string
+          closed_message?: string
           created_at?: string
           delivery_fee?: number
           email?: string
@@ -705,6 +755,7 @@ export type Database = {
           footer_note?: string
           id?: boolean
           instagram?: string
+          is_open?: boolean
           logo_url?: string
           phone?: string
           sar_rate?: number
@@ -718,6 +769,10 @@ export type Database = {
         }
         Update: {
           address?: string
+          announcement_active?: boolean
+          announcement_link?: string
+          announcement_text?: string
+          closed_message?: string
           created_at?: string
           delivery_fee?: number
           email?: string
@@ -726,6 +781,7 @@ export type Database = {
           footer_note?: string
           id?: boolean
           instagram?: string
+          is_open?: boolean
           logo_url?: string
           phone?: string
           sar_rate?: number

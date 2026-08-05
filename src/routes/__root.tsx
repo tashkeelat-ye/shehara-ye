@@ -141,6 +141,21 @@ function RootComponent() {
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
+    const host = window.location.hostname;
+    const blocked =
+      !import.meta.env.PROD ||
+      window.self !== window.top ||
+      host.startsWith("id-preview--") ||
+      host.startsWith("preview--") ||
+      host.endsWith("lovableproject.com") ||
+      host.endsWith("beta.lovable.dev");
+    if (blocked) {
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((r) => void r.unregister()))
+        .catch(() => undefined);
+      return;
+    }
     const timer = window.setTimeout(() => {
       void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }, 1200);

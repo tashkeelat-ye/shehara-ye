@@ -7,6 +7,7 @@ import { STORE_TAGLINE } from "@/lib/logo";
 import { SideMenu } from "@/components/side-menu";
 import { NotificationBell } from "@/components/notification-bell";
 import { CurrencySwitcher } from "@/lib/currency-context";
+import { AnnouncementBar } from "@/components/announcement-bar";
 
 export function SiteHeader() {
   const { count, setDrawerOpen } = useCart();
@@ -15,6 +16,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-card/95 backdrop-blur">
+      <AnnouncementBar />
       <div className="mx-auto w-full max-w-6xl px-4 py-3">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <Link to="/" className="flex min-w-0 items-center gap-2">

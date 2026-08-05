@@ -564,15 +564,15 @@ function CheckoutPage() {
               />
               <span>
                 أوافق على{" "}
-                <Link to="/page/terms" className="text-primary underline">
+                <Link to="/page/$slug" params={{ slug: "terms" }} className="text-primary underline">
                   شروط الاستخدام
                 </Link>
                 ،{" "}
-                <Link to="/page/privacy" className="text-primary underline">
+                <Link to="/page/$slug" params={{ slug: "privacy" }} className="text-primary underline">
                   سياسة الخصوصية
                 </Link>{" "}
                 و
-                <Link to="/page/returns" className="text-primary underline">
+                <Link to="/page/$slug" params={{ slug: "returns" }} className="text-primary underline">
                   سياسة الاستبدال والإرجاع
                 </Link>
                 .

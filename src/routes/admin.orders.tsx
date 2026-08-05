@@ -6,6 +6,7 @@ import { AdminCard, btnGhostCls, inputCls } from "@/components/admin-ui";
 import { formatPrice } from "@/lib/db";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, formatDate } from "@/lib/store";
 import { LocationPicker } from "@/components/location-picker";
+import { fetchCouriers, type Courier } from "@/lib/store";
 
 export const Route = createFileRoute("/admin/orders")({
   component: AdminOrders,
@@ -29,6 +30,7 @@ type Order = {
   latitude: number | null;
   longitude: number | null;
   created_at: string;
+  courier_id: string | null;
   order_items: Item[];
 };
 
@@ -37,12 +39,13 @@ const STATUSES = Object.keys(ORDER_STATUS_LABELS);
 function AdminOrders() {
   const [rows, setRows] = useState<Order[]>([]);
   const [open, setOpen] = useState<string | null>(null);
+  const [couriers, setCouriers] = useState<Courier[]>([]);
 
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("orders")
       .select(
-        "id,order_number,status,payment_status,payment_method_code,total,subtotal,delivery_fee,shipping_name,shipping_phone,shipping_city,shipping_district,shipping_details,latitude,longitude,created_at,order_items(id,product_name,quantity,unit_price)",
+        "id,order_number,status,payment_status,payment_method_code,total,subtotal,delivery_fee,shipping_name,shipping_phone,shipping_city,shipping_district,shipping_details,latitude,longitude,created_at,courier_id,order_items(id,product_name,quantity,unit_price)",
       )
       .order("created_at", { ascending: false })
       .returns<Order[]>();
@@ -51,7 +54,34 @@ function AdminOrders() {
 
   useEffect(() => {
     void load();
+    void (async () => setCouriers(await fetchCouriers(false)))();
   }, [load]);
+
+  async function setCourier(id: string, courierId: string) {
+    const { error } = await supabase
+      .from("orders")
+      .update({ courier_id: courierId || null })
+      .eq("id", id);
+    if (error) toast.error("تعذّر التعيين: " + error.message);
+    else toast.success("تم تعيين الطلب لعامل التوصيل");
+    await load();
+  }
+
+  function shareWhatsApp(o: Order) {
+    const lines = [
+      `طلب: ${o.order_number}`,
+      `العميل: ${o.shipping_name} - ${o.shipping_phone}`,
+      `العنوان: ${o.shipping_city} ${o.shipping_district} - ${o.shipping_details}`,
+      `الحالة: ${ORDER_STATUS_LABELS[o.status] ?? o.status}`,
+      `الدفع: ${PAYMENT_STATUS_LABELS[o.payment_status] ?? o.payment_status} (${o.payment_method_code})`,
+      `الإجمالي: ${formatPrice(o.total)}`,
+      ...o.order_items.map((i) => `- ${i.product_name} × ${i.quantity}`),
+      o.latitude && o.longitude
+        ? `الموقع: https://www.google.com/maps?q=${o.latitude},${o.longitude}`
+        : "",
+    ].filter(Boolean);
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+  }
 
   async function setStatus(id: string, status: string) {
     const { error } = await supabase
@@ -106,6 +136,34 @@ function AdminOrders() {
                     {o.shipping_city} {o.shipping_district} — {o.shipping_details}
                   </p>
                   <p>طريقة الدفع: {o.payment_method_code}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    aria-label="عامل التوصيل"
+                    value={o.courier_id ?? ""}
+                    onChange={(e) => setCourier(o.id, e.target.value)}
+                    className={`${inputCls} w-auto`}
+                  >
+                    <option value="">بدون عامل توصيل</option>
+                    {couriers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.is_active ? "" : "(غير متاح)"}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" className={btnGhostCls} onClick={() => shareWhatsApp(o)}>
+                    مشاركة عبر واتساب
+                  </button>
+                  {o.latitude && o.longitude ? (
+                    <a
+                      className={btnGhostCls}
+                      target="_blank"
+                      rel="noreferrer"
+                      href={`https://www.google.com/maps?q=${o.latitude},${o.longitude}`}
+                    >
+                      فتح الموقع في الخرائط
+                    </a>
+                  ) : null}
                 </div>
                 <ul className="space-y-1">
                   {o.order_items.map((i) => (
