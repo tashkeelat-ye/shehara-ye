@@ -37,6 +37,12 @@ function AdminSettings() {
         footer_note: s.footer_note,
         footer_copyright: s.footer_copyright,
         delivery_fee: s.delivery_fee,
+        sar_rate: s.sar_rate,
+        is_open: s.is_open,
+        closed_message: s.closed_message,
+        announcement_text: s.announcement_text,
+        announcement_link: s.announcement_link,
+        announcement_active: s.announcement_active,
       })
       .eq("id", true);
     if (error) toast.error("تعذّر الحفظ: " + error.message);
@@ -90,6 +96,56 @@ function AdminSettings() {
             onChange={(e) => setS({ ...s, logo_url: e.target.value })}
           />
         </Field>
+        <Field label="سعر تحويل الريال السعودي (كم ريال يمني لكل ١ ر.س)">
+          <input
+            type="number"
+            step="0.01"
+            className={inputCls}
+            value={s.sar_rate}
+            onChange={(e) => setS({ ...s, sar_rate: Number(e.target.value) })}
+          />
+        </Field>
+        <Field label="نص شريط الإعلانات">
+          <input
+            className={inputCls}
+            value={s.announcement_text}
+            maxLength={200}
+            onChange={(e) => setS({ ...s, announcement_text: e.target.value })}
+          />
+        </Field>
+        <Field label="رابط شريط الإعلانات (اختياري)">
+          <input
+            dir="ltr"
+            className={inputCls}
+            value={s.announcement_link}
+            maxLength={300}
+            onChange={(e) => setS({ ...s, announcement_link: e.target.value })}
+          />
+        </Field>
+        <Field label="رسالة إغلاق المتجر">
+          <input
+            className={inputCls}
+            value={s.closed_message}
+            maxLength={200}
+            onChange={(e) => setS({ ...s, closed_message: e.target.value })}
+          />
+        </Field>
+        <label className="flex items-center gap-2 text-xs text-foreground">
+          <input
+            type="checkbox"
+            checked={s.announcement_active}
+            onChange={(e) => setS({ ...s, announcement_active: e.target.checked })}
+          />
+          إظهار شريط الإعلانات
+        </label>
+        <label className="flex items-center gap-2 text-xs text-foreground">
+          <input
+            type="checkbox"
+            checked={s.is_open}
+            onChange={(e) => setS({ ...s, is_open: e.target.checked })}
+          />
+          المتجر مفتوح لاستقبال الطلبات
+        </label>
         <Field label="تكلفة التوصيل (ر.ي)">
           <input
             type="number"
