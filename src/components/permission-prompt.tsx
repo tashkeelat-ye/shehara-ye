@@ -47,7 +47,7 @@ export function PermissionPrompt() {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[70] p-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] md:pb-4">
+    <div className="fixed inset-x-0 bottom-0 z-[45] p-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] md:pb-4">
       <div className="mx-auto max-w-md rounded-3xl border border-border bg-card p-4 shadow-card">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
           <p className="text-sm text-foreground">لتجربة أفضل داخل تشكيلات</p>
