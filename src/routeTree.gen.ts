@@ -30,7 +30,9 @@ import { Route as AdminPaymentRequestsRouteImport } from './routes/admin.payment
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as PageSlugRouteImport } from './routes/page.$slug'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -139,10 +141,20 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AdminRoute,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
@@ -180,7 +192,9 @@ export interface FileRoutesByFullPath {
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -205,7 +219,9 @@ export interface FileRoutesByTo {
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -233,7 +249,9 @@ export interface FileRoutesById {
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -261,7 +279,9 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/admin/products'
     | '/admin/settings'
+    | '/admin/support'
     | '/admin/users'
+    | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
@@ -286,7 +306,9 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/admin/products'
     | '/admin/settings'
+    | '/admin/support'
     | '/admin/users'
+    | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
@@ -313,7 +335,9 @@ export interface FileRouteTypes {
     | '/admin/payments'
     | '/admin/products'
     | '/admin/settings'
+    | '/admin/support'
     | '/admin/users'
+    | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
@@ -327,6 +351,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FaqRoute: typeof FaqRoute
   ProductsRoute: typeof ProductsRoute
+  ApiChatRoute: typeof ApiChatRoute
   CategorySlugRoute: typeof CategorySlugRoute
   PageSlugRoute: typeof PageSlugRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -481,12 +506,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/category/$slug': {
       id: '/category/$slug'
@@ -540,6 +579,7 @@ interface AdminRouteChildren {
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSupportRoute: typeof AdminSupportRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -555,6 +595,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminSupportRoute: AdminSupportRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -568,6 +609,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   FaqRoute: FaqRoute,
   ProductsRoute: ProductsRoute,
+  ApiChatRoute: ApiChatRoute,
   CategorySlugRoute: CategorySlugRoute,
   PageSlugRoute: PageSlugRoute,
   ProductIdRoute: ProductIdRoute,

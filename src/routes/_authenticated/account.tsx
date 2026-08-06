@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
 import { useAuth } from "@/lib/auth-context";
+import { WalletPanel } from "@/components/wallet-panel";
+import { NotificationPrefsPanel } from "@/components/notification-prefs";
 
 type Address = {
   id: string;
@@ -228,6 +230,10 @@ function AccountPage() {
             </button>
           </form>
         </section>
+
+        <WalletPanel />
+
+        <NotificationPrefsPanel />
       </main>
       <BottomNav />
     </div>
