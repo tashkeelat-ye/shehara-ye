@@ -18,7 +18,6 @@ const WELCOME =
   "مرحبًا بك في تشكيلات 👋 أنا مساعدك الذكي، اسألني عن أي منتج أو طريقة دفع أو التوصيل.";
 
 export function SupportChat() {
-  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"ai" | "human">("ai");
 
