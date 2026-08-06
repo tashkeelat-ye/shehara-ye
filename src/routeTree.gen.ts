@@ -31,6 +31,7 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as PageSlugRouteImport } from './routes/page.$slug'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -144,6 +145,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
   '/product/$id': typeof ProductIdRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/settings'
     | '/admin/users'
+    | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/settings'
     | '/admin/users'
+    | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/settings'
     | '/admin/users'
+    | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FaqRoute: typeof FaqRoute
   ProductsRoute: typeof ProductsRoute
+  ApiChatRoute: typeof ApiChatRoute
   CategorySlugRoute: typeof CategorySlugRoute
   PageSlugRoute: typeof PageSlugRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -488,6 +501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/category/$slug': {
       id: '/category/$slug'
       path: '/category/$slug'
@@ -568,6 +588,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   FaqRoute: FaqRoute,
   ProductsRoute: ProductsRoute,
+  ApiChatRoute: ApiChatRoute,
   CategorySlugRoute: CategorySlugRoute,
   PageSlugRoute: PageSlugRoute,
   ProductIdRoute: ProductIdRoute,
@@ -575,13 +596,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
