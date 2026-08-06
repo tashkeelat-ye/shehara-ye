@@ -16,6 +16,8 @@ import { CartProvider } from "@/lib/cart-context";
 import { CartDrawer } from "@/components/cart-drawer";
 import { CurrencyProvider } from "@/lib/currency-context";
 import { Toaster } from "@/components/ui/sonner";
+import { SupportChat } from "@/components/support-chat";
+import { PermissionPrompt } from "@/components/permission-prompt";
 
 
 
@@ -170,6 +172,8 @@ function RootComponent() {
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
             <CartDrawer />
+            <SupportChat />
+            <PermissionPrompt />
             <Toaster position="top-center" />
           </CartProvider>
         </CurrencyProvider>

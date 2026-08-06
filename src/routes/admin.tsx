@@ -14,6 +14,7 @@ import {
   Users,
   Bell,
   Bike,
+  MessagesSquare,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandLogo } from "@/components/brand-logo";
@@ -43,6 +44,7 @@ const NAV = [
   { to: "/admin/payments", label: "طرق الدفع", icon: CreditCard },
   { to: "/admin/users", label: "المستخدمون والتجار", icon: Users },
   { to: "/admin/couriers", label: "عمال التوصيل", icon: Bike },
+  { to: "/admin/support", label: "محادثات العملاء", icon: MessagesSquare },
   { to: "/admin/notifications", label: "الإشعارات", icon: Bell },
   { to: "/admin/content", label: "إدارة المحتوى", icon: FileText },
   { to: "/admin/settings", label: "إعدادات المتجر", icon: Settings },
