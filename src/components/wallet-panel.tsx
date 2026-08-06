@@ -56,9 +56,18 @@ export function WalletPanel() {
     e.preventDefault();
     const value = Number(amount);
     const code = methodCode || transferMethods[0]?.code || "";
-    if (!Number.isFinite(value) || value <= 0) return toast.error("أدخل مبلغًا صحيحًا");
-    if (!code) return toast.error("لا توجد طريقة تحويل متاحة حاليًا");
-    if (!receipt) return toast.error("أرفق صورة إيصال التحويل");
+    if (!Number.isFinite(value) || value <= 0) {
+      toast.error("أدخل مبلغًا صحيحًا");
+      return;
+    }
+    if (!code) {
+      toast.error("لا توجد طريقة تحويل متاحة حاليًا");
+      return;
+    }
+    if (!receipt) {
+      toast.error("أرفق صورة إيصال التحويل");
+      return;
+    }
     setBusy(true);
     try {
       const path = await uploadReceipt(userId, receipt);
@@ -87,8 +96,14 @@ export function WalletPanel() {
   async function submitRefund(e: React.FormEvent) {
     e.preventDefault();
     const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0) return toast.error("أدخل مبلغًا صحيحًا");
-    if (value > balance) return toast.error("المبلغ أكبر من رصيدك الحالي");
+    if (!Number.isFinite(value) || value <= 0) {
+      toast.error("أدخل مبلغًا صحيحًا");
+      return;
+    }
+    if (value > balance) {
+      toast.error("المبلغ أكبر من رصيدك الحالي");
+      return;
+    }
     setBusy(true);
     try {
       const { error } = await supabase.from("payment_requests").insert({
