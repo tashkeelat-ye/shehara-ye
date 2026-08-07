@@ -5,10 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @font-face {
-  font-family: "Hacen Tunisia";
-  src: url("/__l5e/assets-v1/c645b3ab-4fba-4bca-912f-e0e74fa88f07/HacenTunisiaBold.ttf")
-    format("truetype");
-  font-weight: 400 700;
+  font-family: "CustomFont";
+  src: url("/custom-font.ttf") format("truetype");
+  font-weight: 100 900;
   font-display: swap;
 }
 
@@ -71,8 +70,8 @@
   --color-accent-solid: var(--accent-solid);
   --color-accent-solid-foreground: var(--accent-solid-foreground);
   --color-brand-soft: var(--brand-soft);
-  --font-display: "Hacen Tunisia", "Tajawal", "Tahoma", sans-serif;
-  --font-sans: "Tajawal", "Hacen Tunisia", "Tahoma", sans-serif;
+  --font-display: "CustomFont", "Tajawal", "Tahoma", sans-serif;
+  --font-sans: "CustomFont", "Tajawal", "Tahoma", sans-serif;
   --shadow-brand: 0 8px 24px -12px color-mix(in oklab, var(--primary) 55%, transparent);
   --shadow-card: 0 2px 10px -6px oklch(0 0 0 / 18%);
 }
@@ -160,6 +159,7 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    font-family: var(--font-sans) !important;
   }
 
   body {
@@ -179,5 +179,5 @@
   &::-webkit-scrollbar {
     display: none;
   }
-  }
+                   }
   
