@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useIsFetching } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -141,6 +141,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const [showSplash, setShowSplash] = useState(true);
+  const isFetching = useIsFetching();
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -186,6 +187,15 @@ function RootComponent() {
                 />
               </div>
             )}
+            {!showSplash && isFetching > 0 && (
+              <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/20 backdrop-blur-[1px] pointer-events-none">
+                <img
+                  src="/splash.gif"
+                  alt="جاري التحميل..."
+                  className="w-20 h-20 object-contain bg-transparent"
+                />
+              </div>
+            )}
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
             <CartDrawer />
@@ -197,4 +207,4 @@ function RootComponent() {
       </AuthProvider>
     </QueryClientProvider>
   );
-}
+      }
