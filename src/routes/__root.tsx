@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -140,6 +140,14 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -169,6 +177,15 @@ function RootComponent() {
       <AuthProvider>
         <CurrencyProvider>
           <CartProvider>
+            {showSplash && (
+              <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#4a1525]">
+                <img
+                  src="/splash.gif"
+                  alt="تشكيلات"
+                  className="max-w-[200px] max-h-[200px] object-contain"
+                />
+              </div>
+            )}
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
             <CartDrawer />
@@ -181,5 +198,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-
-
