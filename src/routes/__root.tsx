@@ -19,8 +19,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { SupportChat } from "@/components/support-chat";
 import { PermissionPrompt } from "@/components/permission-prompt";
 
-
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -126,7 +124,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
-
       <head>
         <HeadContent />
       </head>
@@ -138,10 +135,26 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+// مكون فرعي آمن لمعاينة حالات البحث والتحميل داخل نطاق QueryClientProvider
+function GlobalFetchingLoader({ showSplash }: { showSplash: boolean }) {
+  const isFetching = useIsFetching();
+
+  if (showSplash || isFetching === 0) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/20 backdrop-blur-[1px] pointer-events-none">
+      <img
+        src="/splash.gif"
+        alt="جاري التحميل..."
+        className="w-20 h-20 object-contain bg-transparent"
+      />
+    </div>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const [showSplash, setShowSplash] = useState(true);
-  const isFetching = useIsFetching();
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -187,15 +200,7 @@ function RootComponent() {
                 />
               </div>
             )}
-            {!showSplash && isFetching > 0 && (
-              <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/20 backdrop-blur-[1px] pointer-events-none">
-                <img
-                  src="/splash.gif"
-                  alt="جاري التحميل..."
-                  className="w-20 h-20 object-contain bg-transparent"
-                />
-              </div>
-            )}
+            <GlobalFetchingLoader showSplash={showSplash} />
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
             <CartDrawer />
@@ -207,4 +212,4 @@ function RootComponent() {
       </AuthProvider>
     </QueryClientProvider>
   );
-      }
+}
