@@ -12,19 +12,9 @@
   font-display: swap;
 }
 
-
 /*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * Tashkilat Brand Design System
+ * Updated Theme based on burgundy & gold identity
  */
 
 @theme inline {
@@ -73,41 +63,123 @@
   --color-brand-soft: var(--brand-soft);
   --font-display: "Hacen Tunisia", "Tajawal", "Tahoma", sans-serif;
   --font-sans: "Tajawal", "Hacen Tunisia", "Tahoma", sans-serif;
-  --shadow-brand: 0 8px 24px -12px color-mix(in oklab, var(--primary) 55%, transparent);
-  --shadow-card: 0 2px 10px -6px oklch(0 0 0 / 18%);
+  --shadow-brand: 0 8px 24px -12px color-mix(in oklab, var(--primary) 40%, transparent);
+  --shadow-card: 0 2px 10px -6px oklch(0 0 0 / 12%);
 }
 
 :root {
   --radius: 1rem;
-  --background: oklch(0.985 0.007 320);
-  --foreground: oklch(0.22 0.045 305);
+  /* خلفيات ناعمة وعاجية تتناسب مع الهوية */
+  --background: oklch(0.985 0.005 60);
+  --foreground: oklch(0.20 0.08 15);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.045 305);
+  --card-foreground: oklch(0.20 0.08 15);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.045 305);
-  --primary: oklch(0.44 0.16 300);
-  --primary-foreground: oklch(0.99 0.005 320);
-  --secondary: oklch(0.958 0.014 315);
-  --secondary-foreground: oklch(0.32 0.09 300);
-  --muted: oklch(0.958 0.014 315);
-  --muted-foreground: oklch(0.53 0.035 300);
-  --accent: oklch(0.945 0.03 320);
-  --accent-foreground: oklch(0.32 0.09 300);
-  --accent-solid: oklch(0.78 0.14 78);
-  --accent-solid-foreground: oklch(0.26 0.06 60);
-  --brand-soft: oklch(0.955 0.03 305);
+  --popover-foreground: oklch(0.20 0.08 15);
+  
+  /* اللون العنابي الرئيسي */
+  --primary: oklch(0.25 0.11 15);
+  --primary-foreground: oklch(0.98 0.01 60);
+  
+  --secondary: oklch(0.95 0.015 60);
+  --secondary-foreground: oklch(0.25 0.11 15);
+  --muted: oklch(0.96 0.01 60);
+  --muted-foreground: oklch(0.48 0.03 20);
+  
+  /* اللون الذهبي الفاخر للتمييز والتفاصيل */
+  --accent: oklch(0.94 0.02 75);
+  --accent-foreground: oklch(0.25 0.11 15);
+  --accent-solid: oklch(0.72 0.11 75);
+  --accent-solid-foreground: oklch(0.18 0.06 15);
+  --brand-soft: oklch(0.94 0.02 15);
+  
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.915 0.016 315);
-  --input: oklch(0.915 0.016 315);
-  --ring: oklch(0.44 0.16 300);
-  --chart-1: oklch(0.44 0.16 300);
-  --chart-2: oklch(0.78 0.14 78);
-  --chart-3: oklch(0.6 0.118 184.704);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0.007 320);
-  --sidebar-foreground: oklch(0.22 0.045 305);
+  --border: oklch(0.91 0.015 60);
+  --input: oklch(0.91 0.015 60);
+  --ring: oklch(0.25 0.11 15);
+  
+  --chart-1: oklch(0.25 0.11 15);
+  --chart-2: oklch(0.72 0.11 75);
+  --chart-3: oklch(0.40 0.09 15);
+  --chart-4: oklch(0.80 0.08 75);
+  --chart-5: oklch(0.30 0.08 15);
+  
+  --sidebar: oklch(0.985 0.005 60);
+  --sidebar-foreground: oklch(0.20 0.08 15);
+  --sidebar-primary: oklch(0.25 0.11 15);
+  --sidebar-primary-foreground: oklch(0.98 0.01 60);
+  --sidebar-accent: oklch(0.94 0.02 75);
+  --sidebar-accent-foreground: oklch(0.25 0.11 15);
+  --sidebar-border: oklch(0.91 0.015 60);
+  --sidebar-ring: oklch(0.25 0.11 15);
+  
+  /* التدرج اللوني العنابي الفاخر */
+  --gradient-brand: linear-gradient(
+    135deg,
+    oklch(0.22 0.10 15),
+    oklch(0.32 0.12 20)
+  );
+}
+
+.dark {
+  --background: oklch(0.14 0.03 15);
+  --foreground: oklch(0.96 0.01 60);
+  --card: oklch(0.18 0.04 15);
+  --card-foreground: oklch(0.96 0.01 60);
+  --popover: oklch(0.18 0.04 15);
+  --popover-foreground: oklch(0.96 0.01 60);
+  --primary: oklch(0.72 0.11 75);
+  --primary-foreground: oklch(0.14 0.03 15);
+  --secondary: oklch(0.22 0.04 15);
+  --secondary-foreground: oklch(0.96 0.01 60);
+  --muted: oklch(0.22 0.04 15);
+  --muted-foreground: oklch(0.68 0.03 60);
+  --accent: oklch(0.25 0.05 15);
+  --accent-foreground: oklch(0.96 0.01 60);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.72 0.11 75);
+  --chart-1: oklch(0.72 0.11 75);
+  --chart-2: oklch(0.40 0.09 15);
+  --chart-3: oklch(0.80 0.08 75);
+  --chart-4: oklch(0.30 0.08 15);
+  --chart-5: oklch(0.60 0.08 75);
+  --sidebar: oklch(0.18 0.04 15);
+  --sidebar-foreground: oklch(0.96 0.01 60);
+  --sidebar-primary: oklch(0.72 0.11 75);
+  --sidebar-primary-foreground: oklch(0.14 0.03 15);
+  --sidebar-accent: oklch(0.25 0.05 15);
+  --sidebar-accent-foreground: oklch(0.96 0.01 60);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.72 0.11 75);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@utility bg-brand-gradient {
+  background-image: var(--gradient-brand);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
   --sidebar-primary: oklch(0.44 0.16 300);
   --sidebar-primary-foreground: oklch(0.99 0.005 320);
   --sidebar-accent: oklch(0.945 0.03 320);
@@ -180,4 +252,3 @@
     display: none;
   }
 }
-
