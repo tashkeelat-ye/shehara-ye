@@ -67,18 +67,18 @@ export function SideMenu() {
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-[9999] flex justify-start overflow-hidden">
-          {/* الخلفية المظلمة */}
+        <div className="fixed inset-0 z-[9999] flex justify-end">
+          {/* الخلفية المظلمة الشاملة */}
           <button
             type="button"
             aria-label="إغلاق القائمة"
             onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-foreground/40 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
           />
 
-          {/* لوحة القائمة الجانبية */}
-          <aside className="relative flex h-[100dvh] w-[85vw] max-w-[320px] flex-col overflow-y-auto bg-card p-4 shadow-2xl transition-transform no-scrollbar">
-            {/* الهيدر الخاص بالقائمة */}
+          {/* لوحة القائمة الجانبية الممتدة كاملاً */}
+          <aside className="relative z-10 flex h-[100dvh] w-[82vw] max-w-[320px] flex-col overflow-y-auto bg-card p-4 shadow-2xl no-scrollbar">
+            {/* الهيدر */}
             <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/60 pb-3">
               <div className="flex min-w-0 items-center gap-2">
                 <BrandLogo size={36} />
@@ -142,7 +142,7 @@ export function SideMenu() {
               </Link>
             </nav>
 
-            {/* زر تسجيل الدخول / الخروج أسفل القائمة */}
+            {/* زر الدخول / الخروج */}
             <div className="mt-auto pt-6 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shrink-0">
               {user ? (
                 <button
@@ -173,4 +173,4 @@ export function SideMenu() {
       ) : null}
     </>
   );
-}
+                    }
