@@ -118,27 +118,35 @@ function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8">
+    <div className="min-h-screen bg-background pb-24 md:pb-8 dir-rtl">
       <SiteHeader />
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
+        {/* شريط العنوان وأزرار التنقل السريع */}
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-lg text-foreground">حسابي</h1>
+          <h1 className="text-xl font-bold text-foreground">حسابي</h1>
           <div className="flex gap-2">
-            <Link to="/orders" className="rounded-xl border border-border px-3 py-2 text-xs">
+            <Link
+              to="/orders"
+              className="rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+            >
               طلباتي
             </Link>
             <button
               type="button"
               onClick={() => void signOut()}
-              className="rounded-xl border border-destructive px-3 py-2 text-xs text-destructive"
+              className="rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/20"
             >
-              خروج
+              تسجيل الخروج
             </button>
           </div>
         </div>
 
-        <form onSubmit={saveProfile} className="space-y-3 rounded-2xl border border-border/70 bg-card p-4">
-          <h2 className="text-sm text-foreground">البيانات الشخصية</h2>
+        {/* 1. بطاقة المحفظة (في أعلى الصفحة) */}
+        <WalletPanel />
+
+        {/* 2. البيانات الشخصية */}
+        <form onSubmit={saveProfile} className="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-xs">
+          <h2 className="text-sm font-bold text-foreground">البيانات الشخصية</h2>
           <input
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -159,33 +167,37 @@ function AccountPage() {
           <button
             type="submit"
             disabled={busy}
-            className="h-11 rounded-xl bg-primary px-5 text-sm text-primary-foreground disabled:opacity-60"
+            className="h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:opacity-60 hover:opacity-90 active:scale-[0.98]"
           >
             حفظ التعديلات
           </button>
         </form>
 
-        <section className="rounded-2xl border border-border/70 bg-card p-4">
-          <h2 className="text-sm text-foreground">عناوين التوصيل</h2>
+        {/* 3. تفضيلات الإشعارات */}
+        <NotificationPrefsPanel />
+
+        {/* 4. عناوين التوصيل */}
+        <section className="rounded-2xl border border-border/70 bg-card p-4 shadow-xs">
+          <h2 className="text-sm font-bold text-foreground">عناوين التوصيل</h2>
           <ul className="mt-3 space-y-2">
             {addresses.map((a) => (
               <li key={a.id} className="rounded-xl border border-border/70 p-3 text-xs">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm text-foreground">
+                  <p className="text-sm font-semibold text-foreground">
                     {a.label} — {a.recipient_name}
                     {a.is_default ? (
-                      <span className="ms-2 rounded-full bg-brand-soft px-2 py-0.5 text-[10px] text-primary">
+                      <span className="ms-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
                         افتراضي
                       </span>
                     ) : null}
                   </p>
                   <div className="flex gap-2">
                     {!a.is_default ? (
-                      <button type="button" onClick={() => void makeDefault(a.id)} className="text-primary">
+                      <button type="button" onClick={() => void makeDefault(a.id)} className="font-semibold text-primary hover:underline">
                         تعيين افتراضي
                       </button>
                     ) : null}
-                    <button type="button" onClick={() => void removeAddress(a.id)} className="text-destructive">
+                    <button type="button" onClick={() => void removeAddress(a.id)} className="font-semibold text-destructive hover:underline">
                       حذف
                     </button>
                   </div>
@@ -224,18 +236,14 @@ function AccountPage() {
             <button
               type="submit"
               disabled={busy}
-              className="h-11 rounded-xl bg-accent-solid px-5 text-sm text-accent-solid-foreground disabled:opacity-60 sm:col-span-2"
+              className="h-11 rounded-xl bg-accent-solid px-5 text-sm font-bold text-accent-solid-foreground transition-opacity disabled:opacity-60 hover:opacity-90 active:scale-[0.98] sm:col-span-2"
             >
               إضافة عنوان
             </button>
           </form>
         </section>
-
-        <WalletPanel />
-
-        <NotificationPrefsPanel />
       </main>
       <BottomNav />
     </div>
   );
-}
+          }
