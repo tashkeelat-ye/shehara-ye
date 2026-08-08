@@ -39,14 +39,17 @@ const PAGES = [
   { slug: "terms", label: "شروط الاستخدام", Icon: FileText },
 ] as const;
 
-
 export function SideMenu() {
   const [open, setOpen] = useState(false);
   const { user, signOut } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
     return () => {
       document.body.style.overflow = "";
     };
@@ -58,55 +61,64 @@ export function SideMenu() {
         type="button"
         aria-label="القائمة"
         onClick={() => setOpen(true)}
-        className="grid h-10 w-10 place-items-center rounded-xl text-foreground transition-colors hover:bg-accent"
+        className="grid h-10 w-10 place-items-center rounded-xl text-foreground transition-colors hover:bg-accent active:scale-95"
       >
         <Menu className="h-5 w-5" />
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-[60]">
+        <div className="fixed inset-0 z-[9999] flex justify-start overflow-hidden">
+          {/* الخلفية المظلمة */}
           <button
             type="button"
             aria-label="إغلاق القائمة"
             onClick={() => setOpen(false)}
-            className="absolute inset-0 cursor-default bg-foreground/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-foreground/40 backdrop-blur-xs transition-opacity"
           />
-          <aside className="absolute inset-y-0 end-0 flex w-[min(19rem,88vw)] flex-col overflow-y-auto bg-card p-4 shadow-card">
-            <div className="flex items-center justify-between gap-2">
+
+          {/* لوحة القائمة الجانبية */}
+          <aside className="relative flex h-[100dvh] w-[85vw] max-w-[320px] flex-col overflow-y-auto bg-card p-4 shadow-2xl transition-transform no-scrollbar">
+            {/* الهيدر الخاص بالقائمة */}
+            <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/60 pb-3">
               <div className="flex min-w-0 items-center gap-2">
-                <BrandLogo size={40} />
-                <p className="truncate text-sm text-foreground">تشكيلات</p>
+                <BrandLogo size={36} />
+                <p className="truncate text-base font-bold text-foreground">تشكيلات</p>
               </div>
               <button
                 type="button"
                 aria-label="إغلاق"
                 onClick={() => setOpen(false)}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border text-foreground"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border text-foreground hover:bg-accent transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="mt-4 flex items-center justify-between gap-2 rounded-2xl border border-border/70 p-3">
-              <span className="text-[11px] text-muted-foreground">العملة</span>
+            {/* تبديل العملة */}
+            <div className="mt-4 flex items-center justify-between gap-2 rounded-2xl border border-border/70 bg-accent/30 p-3 shrink-0">
+              <span className="text-xs font-medium text-muted-foreground">العملة</span>
               <CurrencySwitcher />
             </div>
 
+            {/* الروابط الرئيسية */}
             <nav className="mt-4 space-y-1">
               {MAIN.map(({ to, label, Icon }) => (
                 <Link
                   key={to}
                   to={to}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-foreground hover:bg-accent"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent active:bg-accent/80"
                 >
-                  <Icon className="h-4 w-4 text-primary" />
-                  {label}
+                  <Icon className="h-4.5 w-4.5 text-primary shrink-0" />
+                  <span>{label}</span>
                 </Link>
               ))}
             </nav>
 
-            <p className="mt-4 px-3 text-[11px] text-muted-foreground">صفحات المتجر</p>
+            <div className="my-3 border-t border-border/60" />
+
+            {/* صفحات المتجر */}
+            <p className="px-3 text-[11px] font-semibold text-muted-foreground">صفحات المتجر</p>
             <nav className="mt-1 space-y-1">
               {PAGES.map(({ slug, label, Icon }) => (
                 <Link
@@ -114,23 +126,24 @@ export function SideMenu() {
                   to="/page/$slug"
                   params={{ slug }}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-foreground hover:bg-accent"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent active:bg-accent/80"
                 >
-                  <Icon className="h-4 w-4 text-primary" />
-                  {label}
+                  <Icon className="h-4.5 w-4.5 text-primary shrink-0" />
+                  <span>{label}</span>
                 </Link>
               ))}
               <Link
                 to="/faq"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-foreground hover:bg-accent"
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent active:bg-accent/80"
               >
-                <BadgeHelp className="h-4 w-4 text-primary" />
-                الأسئلة الشائعة
+                <BadgeHelp className="h-4.5 w-4.5 text-primary shrink-0" />
+                <span>الأسئلة الشائعة</span>
               </Link>
             </nav>
 
-            <div className="mt-auto pt-5">
+            {/* زر تسجيل الدخول / الخروج أسفل القائمة */}
+            <div className="mt-auto pt-6 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shrink-0">
               {user ? (
                 <button
                   type="button"
@@ -139,19 +152,19 @@ export function SideMenu() {
                     setOpen(false);
                     await router.navigate({ to: "/" });
                   }}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-3 py-3 text-sm text-primary-foreground"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-3 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 active:scale-[0.98]"
                 >
                   <LogOut className="h-4 w-4" />
-                  تسجيل الخروج
+                  <span>تسجيل الخروج</span>
                 </button>
               ) : (
                 <Link
                   to="/auth"
                   onClick={() => setOpen(false)}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-3 py-3 text-sm text-primary-foreground"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-3 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 active:scale-[0.98]"
                 >
                   <LogIn className="h-4 w-4" />
-                  تسجيل الدخول
+                  <span>تسجيل الدخول</span>
                 </Link>
               )}
             </div>
