@@ -1,10 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
-import Autoplay from "embla-carousel-autoplay";
 import { useState, useEffect } from "react";
 
 function OfferTimer({ endDate }: { endDate: string }) {
@@ -45,7 +43,7 @@ export function OffersSection() {
         .or("discount_price.not.is.null,offer_end_date.not.is.null")
         .limit(10);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
@@ -55,7 +53,7 @@ export function OffersSection() {
 
   return (
     <section className="py-6">
-      <div className="container px-4 mx-auto">
+      <div className="px-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-foreground">العروض والتخفيضات</h2>
@@ -70,19 +68,13 @@ export function OffersSection() {
           </Button>
         </div>
 
-        <Carousel
-          opts={{ align: "start", loop: true }}
-          plugins={[Autoplay({ delay: 3500 })}]
-          className="w-full"
-        >
-          <CarouselContent className="-ml-2 md:-ml-4">
-            {offerProducts.map((product) => (
-              <CarouselItem key={product.id} className="pl-2 md:pl-4 basis-1/2 sm:basis-1/3 md:basis-1/4">
-                <ProductCard product={product} />
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
+          {offerProducts.map((product) => (
+            <div key={product.id} className="w-40 shrink-0 sm:w-48">
+              <ProductCard product={product} />
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
