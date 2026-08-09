@@ -1,61 +1,46 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
-import Autoplay from "embla-carousel-autoplay";
-
-type Brand = {
-  id: string;
-  name: string;
-  logo_url: string | null;
-};
+import { SectionHeading } from "./section-heading";
 
 export function BrandsSection() {
   const { data: brands = [], isLoading } = useQuery({
-    queryKey: ["brands-section"],
+    queryKey: ["brands"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("brands").select("*").order("name");
+      const { data, error } = await supabase
+        .from("brands")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
       if (error) throw error;
-      return data as Brand[];
+      return data ?? [];
     },
   });
 
   if (isLoading || brands.length === 0) return null;
 
   return (
-    <section className="py-6 bg-accent/10">
-      <div className="container px-4 mx-auto">
-        <h2 className="text-xl font-bold mb-4 text-foreground">تسوق حسب الماركات</h2>
-        <Carousel
-          opts={{ align: "start", loop: true }}
-          plugins={[Autoplay({ delay: 3000 })]}
-          className="w-full"
-        >
-          <CarouselContent className="-ml-2 md:-ml-4">
-            {brands.map((brand) => (
-              <CarouselItem key={brand.id} className="pl-2 md:pl-4 basis-1/3 sm:basis-1/4 md:basis-1/6">
-                <Link
-                  to="/products"
-                  search={{ brand: brand.id }}
-                  className="flex flex-col items-center justify-center p-4 bg-background border rounded-xl hover:shadow-md transition-shadow text-center h-28 group"
-                >
-                  {brand.logo_url ? (
-                    <img
-                      src={brand.logo_url}
-                      alt={brand.name}
-                      className="h-12 w-auto object-contain mb-2 group-hover:scale-105 transition-transform"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center mb-2">
-                      {brand.name.charAt(0)}
-                    </div>
-                  )}
-                  <span className="text-xs font-medium text-foreground line-clamp-1">{brand.name}</span>
-                </Link>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+    <section className="py-6">
+      <SectionHeading title="تصفح حسب الماركات" to="/products" />
+      <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-4 pb-2">
+        {brands.map((brand) => (
+          <Link
+            key={brand.id}
+            to="/products"
+            search={{ brand: brand.slug }}
+            className="flex h-20 w-32 shrink-0 items-center justify-center rounded-lg border border-border bg-card p-3 shadow-sm transition-transform hover:scale-105 active:scale-95"
+          >
+            {brand.logo_url ? (
+              <img
+                src={brand.logo_url}
+                alt={brand.name}
+                className="max-h-full max-w-full object-contain"
+              />
+            ) : (
+              <span className="text-sm font-semibold text-foreground">{brand.name}</span>
+            )}
+          </Link>
+        ))}
       </div>
     </section>
   );
