@@ -135,17 +135,20 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-// مكون فرعي آمن لمعاينة حالات البحث والتحميل داخل نطاق QueryClientProvider
 function GlobalFetchingLoader({ showSplash }: { showSplash: boolean }) {
   const isFetching = useIsFetching();
 
-  if (showSplash || isFetching === 0) return null;
+  // إخفاء التحميل التلقائي إذا لم يكن هناك إنترنت
+  if (showSplash || isFetching === 0 || typeof navigator !== "undefined" && !navigator.onLine) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/20 backdrop-blur-[1px] pointer-events-none">
       <img
         src="/splash.gif"
         alt="جاري التحميل..."
+        onError={(e) => (e.currentTarget.style.display = "none")}
         className="w-20 h-20 object-contain bg-transparent"
       />
     </div>
@@ -163,7 +166,6 @@ function RootComponent() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  // تسجيل Service Worker للعمل بدون إنترنت
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
@@ -185,12 +187,12 @@ function RootComponent() {
                 <img
                   src="/splash.gif"
                   alt="تشكيلات"
+                  onError={(e) => (e.currentTarget.style.display = "none")}
                   className="max-w-[200px] max-h-[200px] object-contain"
                 />
               </div>
             )}
             <GlobalFetchingLoader showSplash={showSplash} />
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
             <CartDrawer />
             <SupportChat />
