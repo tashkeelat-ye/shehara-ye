@@ -17,6 +17,8 @@ type Row = {
   description: string;
   price: number;
   old_price: number | null;
+  discount_price: number | null;
+  offer_end_date: string | null;
   category_id: string;
   city: string;
   images: string[];
@@ -32,6 +34,8 @@ const empty: Omit<Row, "id"> = {
   description: "",
   price: 0,
   old_price: null,
+  discount_price: null,
+  offer_end_date: null,
   category_id: "",
   city: "صنعاء",
   images: [],
@@ -43,7 +47,7 @@ const empty: Omit<Row, "id"> = {
 };
 
 const COLUMNS =
-  "id,name,description,price,old_price,category_id,city,images,sizes,colors,badge,is_local,is_active";
+  "id,name,description,price,old_price,discount_price,offer_end_date,category_id,city,images,sizes,colors,badge,is_local,is_active";
 
 function AdminProducts() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -131,7 +135,6 @@ function AdminProducts() {
     setEditing({ ...editing, images: [img!, ...next] });
   }
 
-
   return (
     <div className="space-y-4">
       <AdminCard
@@ -155,7 +158,7 @@ function AdminProducts() {
                 className="h-12 w-12 shrink-0 rounded-lg bg-muted object-cover"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-foreground">{r.name}</p>
+                <p className="truncate text-foreground font-medium">{r.name}</p>
                 <p className="text-primary">{formatPrice(r.price)}</p>
               </div>
               <button type="button" onClick={() => toggleActive(r)} className={btnGhostCls}>
@@ -207,7 +210,7 @@ function AdminProducts() {
                 ))}
               </select>
             </Field>
-            <Field label="السعر (ر.ي)">
+            <Field label="السعر الأصلي (ر.ي)">
               <input
                 type="number"
                 className={inputCls}
@@ -215,13 +218,36 @@ function AdminProducts() {
                 onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })}
               />
             </Field>
-            <Field label="السعر قبل الخصم">
+            <Field label="السعر قبل الخصم (اختياري)">
               <input
                 type="number"
                 className={inputCls}
                 value={editing.old_price ?? ""}
                 onChange={(e) =>
                   setEditing({ ...editing, old_price: e.target.value ? Number(e.target.value) : null })
+                }
+              />
+            </Field>
+            <Field label="سعر التخفيض/العرض (اختياري)">
+              <input
+                type="number"
+                className={inputCls}
+                value={editing.discount_price ?? ""}
+                onChange={(e) =>
+                  setEditing({ ...editing, discount_price: e.target.value ? Number(e.target.value) : null })
+                }
+              />
+            </Field>
+            <Field label="تاريخ ووقت انتهاء العرض (اختياري)">
+              <input
+                type="datetime-local"
+                className={inputCls}
+                value={editing.offer_end_date ? new Date(editing.offer_end_date).toISOString().slice(0, 16) : ""}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    offer_end_date: e.target.value ? new Date(e.target.value).toISOString() : null,
+                  })
                 }
               />
             </Field>
@@ -379,4 +405,5 @@ function AdminProducts() {
       ) : null}
     </div>
   );
-}
+                                                                                 }
+      
