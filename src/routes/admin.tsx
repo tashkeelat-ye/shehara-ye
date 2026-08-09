@@ -15,6 +15,7 @@ import {
   Bell,
   Bike,
   MessagesSquare,
+  Tag,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandLogo } from "@/components/brand-logo";
@@ -38,6 +39,7 @@ const NAV = [
   { to: "/admin", label: "نظرة عامة", icon: LayoutGrid, exact: true },
   { to: "/admin/products", label: "المنتجات", icon: Package },
   { to: "/admin/categories", label: "الفئات", icon: LayoutGrid },
+  { to: "/admin/brands", label: "الماركات التجارية", icon: Tag },
   { to: "/admin/banners", label: "الإعلانات والعروض", icon: Image },
   { to: "/admin/orders", label: "الطلبات", icon: ListOrdered },
   { to: "/admin/payment-requests", label: "طلبات الدفع المعلّقة", icon: ReceiptText },
@@ -242,4 +244,5 @@ function AdminLogin({ denied, onSuccess }: { denied: boolean; onSuccess: () => v
       </div>
     </div>
   );
-}
+          }
+          
