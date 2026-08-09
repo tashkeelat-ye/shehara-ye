@@ -19,6 +19,18 @@ import { Toaster } from "@/components/ui/sonner";
 import { SupportChat } from "@/components/support-chat";
 import { PermissionPrompt } from "@/components/permission-prompt";
 
+// تهيئة وإعداد QueryClient مخصص يدعم القراءة من الكاش أولاً عند انقطاع الشبكة
+export const defaultQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 60 * 24, // اعتبار البيانات طازجة لمدة 24 ساعة
+      gcTime: 1000 * 60 * 60 * 24 * 7, // الاحتفاظ بالبيانات في التخزين المؤقت لمدة أسبوع
+      refetchOnWindowFocus: false, // منع إعادة الجلب الإجباري عند تنقل النافذة
+      networkMode: "offlineFirst", // الاعتماد على الكاش محلياً في حالة انقطاع النت
+    },
+  },
+});
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -138,8 +150,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function GlobalFetchingLoader({ showSplash }: { showSplash: boolean }) {
   const isFetching = useIsFetching();
 
-  // إخفاء التحميل التلقائي إذا لم يكن هناك إنترنت
-  if (showSplash || isFetching === 0 || typeof navigator !== "undefined" && !navigator.onLine) {
+  // عدم عرض مؤشر التحميل أثناء انقطاع الإنترنت لمنع إزعاج المستخدم
+  if (showSplash || isFetching === 0 || (typeof navigator !== "undefined" && !navigator.onLine)) {
     return null;
   }
 
@@ -156,7 +168,9 @@ function GlobalFetchingLoader({ showSplash }: { showSplash: boolean }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+  const context = Route.useRouteContext();
+  // استخدام queryClient القادم من السياق أو الاعتماد على القيمة الافتراضية المجهزة أوفلاين
+  const queryClient = context?.queryClient ?? defaultQueryClient;
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
@@ -166,6 +180,7 @@ function RootComponent() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // تسجيل Service Worker للعمل في وضع الأوفلاين
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
@@ -203,4 +218,4 @@ function RootComponent() {
       </AuthProvider>
     </QueryClientProvider>
   );
-}
+                              }
