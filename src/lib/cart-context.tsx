@@ -64,7 +64,11 @@ function readLocal(): CartLine[] {
 
 function writeLocal(lines: CartLine[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+  } catch (e) {
+    console.error("Local storage error:", e);
+  }
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -81,36 +85,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setProducts({});
       return;
     }
-    const rows = await fetchProductsByIds(ids);
-    setProducts(Object.fromEntries(rows.map((p) => [p.id, p])));
+    try {
+      const rows = await fetchProductsByIds(ids);
+      setProducts((prev) => ({
+        ...prev,
+        ...Object.fromEntries(rows.map((p) => [p.id, p])),
+      }));
+    } catch (err) {
+      console.warn("Could not fetch products for cart (offline mode):", err);
+    }
   }, []);
 
   const loadDbCart = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("cart_items")
-      .select("id,product_id,quantity,size,color")
-      .eq("user_id", userId)
-      .order("created_at")
-      .returns<CartLine[]>();
-    return data ?? [];
+    try {
+      if (!navigator.onLine) return readLocal();
+      const { data } = await supabase
+        .from("cart_items")
+        .select("id,product_id,quantity,size,color")
+        .eq("user_id", userId)
+        .order("created_at")
+        .returns<CartLine[]>();
+      return data ?? readLocal();
+    } catch {
+      return readLocal();
+    }
   }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const next = user ? await loadDbCart(user.id) : readLocal();
+      const next = (user && navigator.onLine) ? await loadDbCart(user.id) : readLocal();
       setLines(next);
+      writeLocal(next);
       await hydrateProducts(next);
     } finally {
       setLoading(false);
     }
   }, [user, loadDbCart, hydrateProducts]);
 
-  // دمج سلة الزائر مع سلة الحساب عند تسجيل الدخول
+  // دمج سلة الزائر مع سلة الحساب عند تسجيل الدخول بشرط وجود إنترنت
   useEffect(() => {
     let cancelled = false;
     async function run() {
-      if (!user) {
+      if (!user || !navigator.onLine) {
         mergedFor.current = null;
         await refresh();
         return;
@@ -119,29 +136,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
         mergedFor.current = user.id;
         const local = readLocal();
         if (local.length > 0) {
-          const existing = await loadDbCart(user.id);
-          const map = new Map(
-            existing.map((l) => [lineKey(l.product_id, l.size, l.color), l]),
-          );
-          for (const l of local) {
-            const key = lineKey(l.product_id, l.size, l.color);
-            const found = map.get(key);
-            if (found) {
-              await supabase
-                .from("cart_items")
-                .update({ quantity: found.quantity + l.quantity })
-                .eq("id", found.id);
-            } else {
-              await supabase.from("cart_items").insert({
-                user_id: user.id,
-                product_id: l.product_id,
-                quantity: l.quantity,
-                size: l.size,
-                color: l.color,
-              });
+          try {
+            const existing = await loadDbCart(user.id);
+            const map = new Map(
+              existing.map((l) => [lineKey(l.product_id, l.size, l.color), l]),
+            );
+            for (const l of local) {
+              const key = lineKey(l.product_id, l.size, l.color);
+              const found = map.get(key);
+              if (found) {
+                await supabase
+                  .from("cart_items")
+                  .update({ quantity: found.quantity + l.quantity })
+                  .eq("id", found.id);
+              } else {
+                await supabase.from("cart_items").insert({
+                  user_id: user.id,
+                  product_id: l.product_id,
+                  quantity: l.quantity,
+                  size: l.size,
+                  color: l.color,
+                });
+              }
             }
+          } catch (e) {
+            console.warn("Failed to merge cart to cloud:", e);
           }
-          writeLocal([]);
         }
       }
       if (!cancelled) await refresh();
@@ -154,33 +174,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback<CartContextValue["addItem"]>(
     async ({ productId, quantity = 1, size = null, color = null }) => {
-      if (user) {
-        const current = await loadDbCart(user.id);
-        const found = current.find(
-          (l) => lineKey(l.product_id, l.size, l.color) === lineKey(productId, size, color),
-        );
-        if (found) {
-          await supabase
-            .from("cart_items")
-            .update({ quantity: found.quantity + quantity })
-            .eq("id", found.id);
-        } else {
-          await supabase.from("cart_items").insert({
-            user_id: user.id,
-            product_id: productId,
-            quantity,
-            size,
-            color,
-          });
-        }
+      const current = readLocal();
+      const key = lineKey(productId, size, color);
+      const found = current.find((l) => lineKey(l.product_id, l.size, l.color) === key);
+      
+      if (found) {
+        found.quantity += quantity;
       } else {
-        const current = readLocal();
-        const key = lineKey(productId, size, color);
-        const found = current.find((l) => lineKey(l.product_id, l.size, l.color) === key);
-        if (found) found.quantity += quantity;
-        else
-          current.push({ id: key, product_id: productId, quantity, size, color });
-        writeLocal(current);
+        current.push({ id: key, product_id: productId, quantity, size, color });
+      }
+      writeLocal(current);
+
+      if (user && navigator.onLine) {
+        try {
+          const dbCart = await loadDbCart(user.id);
+          const dbFound = dbCart.find(
+            (l) => lineKey(l.product_id, l.size, l.color) === lineKey(productId, size, color),
+          );
+          if (dbFound) {
+            await supabase
+              .from("cart_items")
+              .update({ quantity: dbFound.quantity + quantity })
+              .eq("id", dbFound.id);
+          } else {
+            await supabase.from("cart_items").insert({
+              user_id: user.id,
+              product_id: productId,
+              quantity,
+              size,
+              color,
+            });
+          }
+        } catch (e) {
+          console.warn("Saved to local cart only (offline):", e);
+        }
       }
       await refresh();
     },
@@ -190,11 +217,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateQuantity = useCallback<CartContextValue["updateQuantity"]>(
     async (lineId, quantity) => {
       if (quantity < 1) return;
-      if (user) {
-        await supabase.from("cart_items").update({ quantity }).eq("id", lineId);
-      } else {
-        const current = readLocal().map((l) => (l.id === lineId ? { ...l, quantity } : l));
-        writeLocal(current);
+      const current = readLocal().map((l) => (l.id === lineId ? { ...l, quantity } : l));
+      writeLocal(current);
+
+      if (user && navigator.onLine) {
+        try {
+          await supabase.from("cart_items").update({ quantity }).eq("id", lineId);
+        } catch (e) {
+          console.warn("Updated local cart only:", e);
+        }
       }
       await refresh();
     },
@@ -203,10 +234,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = useCallback<CartContextValue["removeItem"]>(
     async (lineId) => {
-      if (user) {
-        await supabase.from("cart_items").delete().eq("id", lineId);
-      } else {
-        writeLocal(readLocal().filter((l) => l.id !== lineId));
+      const current = readLocal().filter((l) => l.id !== lineId);
+      writeLocal(current);
+
+      if (user && navigator.onLine) {
+        try {
+          await supabase.from("cart_items").delete().eq("id", lineId);
+        } catch (e) {
+          console.warn("Deleted from local cart only:", e);
+        }
       }
       await refresh();
     },
@@ -214,10 +250,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const clearCart = useCallback(async () => {
-    if (user) {
-      await supabase.from("cart_items").delete().eq("user_id", user.id);
-    } else {
-      writeLocal([]);
+    writeLocal([]);
+    if (user && navigator.onLine) {
+      try {
+        await supabase.from("cart_items").delete().eq("user_id", user.id);
+      } catch (e) {
+        console.warn("Cleared local cart only:", e);
+      }
     }
     await refresh();
   }, [user, refresh]);
@@ -237,7 +276,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => ({
       items,
       count: lines.reduce((sum, l) => sum + l.quantity, 0),
-      total: items.reduce((sum, i) => sum + i.product.price * i.quantity, 0),
+      total: items.reduce((sum, i) => sum + (i.product?.price || 0) * i.quantity, 0),
       loading,
       drawerOpen,
       setDrawerOpen,
@@ -257,4 +296,5 @@ export function useCart(): CartContextValue {
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error("useCart must be used inside CartProvider");
   return ctx;
-}
+                      }
+        
