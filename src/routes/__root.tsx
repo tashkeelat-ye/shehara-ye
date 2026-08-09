@@ -163,27 +163,16 @@ function RootComponent() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // تسجيل Service Worker للعمل بدون إنترنت
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-    const host = window.location.hostname;
-    const blocked =
-      !import.meta.env.PROD ||
-      window.self !== window.top ||
-      host.startsWith("id-preview--") ||
-      host.startsWith("preview--") ||
-      host.endsWith("lovableproject.com") ||
-      host.endsWith("beta.lovable.dev");
-    if (blocked) {
-      void navigator.serviceWorker
-        .getRegistrations()
-        .then((regs) => regs.forEach((r) => void r.unregister()))
-        .catch(() => undefined);
-      return;
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => console.log("SW active:", reg.scope))
+          .catch((err) => console.error("SW failed:", err));
+      });
     }
-    const timer = window.setTimeout(() => {
-      void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-    }, 1200);
-    return () => window.clearTimeout(timer);
   }, []);
 
   return (
