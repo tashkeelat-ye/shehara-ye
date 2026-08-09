@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site-header";
 import { PromoSlider } from "@/components/promo-slider";
 import { CategoryStrip } from "@/components/category-strip";
+import { OffersSection } from "@/components/offers-section";
+import { BrandsSection } from "@/components/brands-section";
 import { SectionHeading } from "@/components/section-heading";
 import { ProductCard, ProductCardSkeleton } from "@/components/product-card";
 import { LocalProducts } from "@/components/local-products";
@@ -39,10 +41,14 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl pb-4">
+      <main className="mx-auto max-w-6xl pb-4 space-y-6">
         <PromoSlider />
         <CategoryStrip />
+        
+        {/* قسم العروض والتخفيضات */}
+        <OffersSection />
 
+        {/* قسم الأكثر مبيعاً */}
         <section className="mt-8">
           <SectionHeading title="الأكثر مبيعًا" to="/products" />
           <div className="mt-3 grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -54,6 +60,10 @@ function Index() {
           </div>
         </section>
 
+        {/* قسم تسوق حسب الماركات */}
+        <BrandsSection />
+
+        {/* قسم المنتجات المحلية */}
         <LocalProducts />
       </main>
       <SiteFooter />
