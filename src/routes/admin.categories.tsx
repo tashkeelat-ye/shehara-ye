@@ -10,16 +10,16 @@ export const Route = createFileRoute("/admin/categories")({
   component: AdminCategories,
 });
 
-const empty = { slug: "", name: "", icon: "Shirt", sort_order: 0 };
+const empty = { slug: "", name: "", icon: "Shirt", image_url: "", sort_order: 0 };
 
-function AdminCategories() {
+export function AdminCategories() {
   const [rows, setRows] = useState<Category[]>([]);
   const [editing, setEditing] = useState<(typeof empty & { id?: string }) | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("categories")
-      .select("id,slug,name,icon,sort_order")
+      .select("id,slug,name,icon,image_url,sort_order")
       .order("sort_order")
       .returns<Category[]>();
     setRows(data ?? []);
@@ -34,7 +34,13 @@ function AdminCategories() {
       toast.error("أكمل الاسم والمعرّف");
       return;
     }
-    const payload = { slug: editing.slug, name: editing.name, icon: editing.icon, sort_order: editing.sort_order };
+    const payload = {
+      slug: editing.slug,
+      name: editing.name,
+      icon: editing.icon,
+      image_url: editing.image_url || null,
+      sort_order: editing.sort_order,
+    };
     const { error } = editing.id
       ? await supabase.from("categories").update(payload).eq("id", editing.id)
       : await supabase.from("categories").insert(payload);
@@ -68,13 +74,16 @@ function AdminCategories() {
         <ul className="space-y-2">
           {rows.map((r) => (
             <li key={r.id} className="flex items-center gap-2 rounded-xl border border-border/70 p-2 text-xs">
+              {r.image_url ? (
+                <img src={r.image_url} alt={r.name} className="h-8 w-8 rounded-full object-cover" />
+              ) : null}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-foreground">{r.name}</p>
-                <p dir="ltr" className="text-muted-foreground">
+                <p className="truncate text-foreground font-medium">{r.name}</p>
+                <p dir="ltr" className="text-muted-foreground text-[11px]">
                   {r.slug} · {r.icon}
                 </p>
               </div>
-              <button type="button" className={btnGhostCls} onClick={() => setEditing({ ...r })}>
+              <button type="button" className={btnGhostCls} onClick={() => setEditing({ ...r, image_url: r.image_url ?? "" })}>
                 تعديل
               </button>
               <button
@@ -117,6 +126,15 @@ function AdminCategories() {
                 value={editing.icon}
                 maxLength={40}
                 onChange={(e) => setEditing({ ...editing, icon: e.target.value })}
+              />
+            </Field>
+            <Field label="رابط صورة الفئة (اختياري)">
+              <input
+                dir="ltr"
+                className={inputCls}
+                placeholder="https://..."
+                value={editing.image_url}
+                onChange={(e) => setEditing({ ...editing, image_url: e.target.value })}
               />
             </Field>
             <Field label="الترتيب">
