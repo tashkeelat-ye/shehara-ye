@@ -1,8 +1,8 @@
 /* eslint-env serviceworker */
-const CACHE = "tashkilat-v2";
+const CACHE = "tashkilat-v3";
 const OFFLINE_URL = "/offline.html";
 
-// إضافة الصفحة الرئيسية والمسارات الأساسية للتخزين المسبق
+// الملفات الأساسية للتخزين المسبق
 const PRECACHE = [
   "/",
   OFFLINE_URL,
@@ -16,7 +16,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(PRECACHE))
+      .then((cache) => cache.addAll(PRECACHE).catch(() => undefined))
       .then(() => self.skipWaiting())
   );
 });
@@ -38,16 +38,25 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(req.url);
 
-  // استثناء طلبات External / Supabase / OAuth
+  // إرجاع استجابة فارغة فوراً لطلبات Supabase عند انقطاع الإنترنت لمنع تعليق Waite Skeletons
+  if (url.origin.includes("supabase.co")) {
+    event.respondWith(
+      fetch(req).catch(() => new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      }))
+    );
+    return;
+  }
+
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/~oauth")) return;
 
-  // 1. التعامل مع تنقل الصفحات (Navigation Requests)
+  // 1. طلبات الصفحات (Navigation)
   if (req.mode === "navigate") {
     event.respondWith(
       fetch(req)
         .then((networkResponse) => {
-          // تحديث كاش الصفحة الرئيسية/الصفحات عند توفر الإنترنت
           if (networkResponse.ok) {
             const copy = networkResponse.clone();
             caches.open(CACHE).then((c) => c.put(req, copy));
@@ -55,7 +64,6 @@ self.addEventListener("fetch", (event) => {
           return networkResponse;
         })
         .catch(async () => {
-          // عند انقطاع الإنترنت: إرجاع الصفحة المطلوبة إن كانت مخزنة، أو الصفحة الرئيسية "/"، أو offline.html
           const cachedPage = await caches.match(req);
           if (cachedPage) return cachedPage;
 
@@ -68,8 +76,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2. التعامل مع الملفات الساكنة (Images, CSS, JS, Fonts)
-  if (/\.(png|jpg|jpeg|webp|svg|woff2?|ttf|css|js)$/.test(url.pathname)) {
+  // 2. الملفات الساكنة والصور
+  if (/\.(png|jpg|jpeg|webp|svg|gif|woff2?|ttf|css|js)$/.test(url.pathname)) {
     event.respondWith(
       caches.match(req).then((cached) => {
         const network = fetch(req)
@@ -82,7 +90,6 @@ self.addEventListener("fetch", (event) => {
           })
           .catch(() => cached || Response.error());
 
-        // Stale-while-revalidate: استخدام النسخة المخزنة فوراً لجعل التطبيق فائق السرعة
         return cached || network;
       })
     );
