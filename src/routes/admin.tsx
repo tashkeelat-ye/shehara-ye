@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   CreditCard,
@@ -15,7 +15,9 @@ import {
   Bell,
   Bike,
   MessagesSquare,
-  Tag,
+  Menu,
+  X,
+  ChevronLeft,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandLogo } from "@/components/brand-logo";
@@ -38,8 +40,7 @@ export const Route = createFileRoute("/admin")({
 const NAV = [
   { to: "/admin", label: "نظرة عامة", icon: LayoutGrid, exact: true },
   { to: "/admin/products", label: "المنتجات", icon: Package },
-  { to: "/admin/categories", label: "الفئات", icon: LayoutGrid },
-  { to: "/admin/brands", label: "الماركات التجارية", icon: Tag },
+  { to: "/admin/categories", label: "الفئات والماركات", icon: LayoutGrid },
   { to: "/admin/banners", label: "الإعلانات والعروض", icon: Image },
   { to: "/admin/orders", label: "الطلبات", icon: ListOrdered },
   { to: "/admin/payment-requests", label: "طلبات الدفع المعلّقة", icon: ReceiptText },
@@ -54,7 +55,14 @@ const NAV = [
 
 function AdminLayout() {
   const [state, setState] = useState<"loading" | "guest" | "denied" | "admin">("loading");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // إغلاق القائمة عند التنقل بين الصفحات على الهاتف
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const check = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -77,8 +85,8 @@ function AdminLayout() {
 
   if (state === "loading") {
     return (
-      <div className="grid min-h-screen place-items-center bg-background">
-        <p className="text-sm text-muted-foreground">جارٍ التحقق من الصلاحيات...</p>
+      <div className="grid min-h-screen place-items-center bg-background px-4">
+        <p className="text-xs text-muted-foreground animate-pulse">جارٍ التحقق من الصلاحيات...</p>
       </div>
     );
   }
@@ -88,18 +96,31 @@ function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden dir-rtl">
+      {/* الشريط العلوي المخصص للهاتف */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <BrandLogo size={36} />
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-secondary text-foreground md:hidden active:scale-95 transition-transform"
+              aria-label="القائمة"
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+            <BrandLogo size={32} />
             <div className="min-w-0">
-              <p className="truncate text-sm text-foreground">لوحة تحكم تشكيلات</p>
-              <p className="truncate text-[11px] text-muted-foreground">إدارة المتجر بالكامل</p>
+              <p className="truncate text-xs font-bold leading-none text-foreground">لوحة التحكم</p>
+              <p className="truncate text-[10px] text-muted-foreground mt-0.5">تشكيلات</p>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
-            <Link to="/" className="rounded-xl border border-border px-3 py-2 text-xs text-foreground">
+            <Link
+              to="/"
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-border bg-secondary px-3 text-xs font-medium text-foreground"
+            >
               المتجر
             </Link>
             <button
@@ -109,35 +130,90 @@ function AdminLayout() {
                 setState("guest");
                 void navigate({ to: "/admin", replace: true });
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs text-primary-foreground"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-destructive/10 text-destructive border border-destructive/20"
+              aria-label="تسجيل الخروج"
             >
-              <LogOut className="h-3.5 w-3.5" />
-              خروج
+              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl gap-4 px-4 py-4 md:flex">
-        <nav className="mb-4 md:mb-0 md:w-56 md:shrink-0">
-          <ul className="flex gap-2 overflow-x-auto pb-1 md:flex-col md:overflow-visible">
-            {NAV.map((n) => (
-              <li key={n.to} className="shrink-0 md:shrink">
-                <Link
-                  to={n.to}
-                  activeOptions={{ exact: "exact" in n ? n.exact : false }}
-                  activeProps={{ className: "bg-brand-soft text-primary" }}
-                  inactiveProps={{ className: "text-muted-foreground" }}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-xl border border-border/70 px-3 py-2 text-xs md:w-full"
+      {/* قائمة التنقل الجانبية للهاتف (Drawer Overlay) */}
+      {isMobileMenuOpen ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div
+            className="fixed inset-y-0 right-0 w-4/5 max-w-xs bg-card p-4 shadow-xl border-l border-border flex flex-col justify-between"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <BrandLogo size={28} />
+                  <span className="text-xs font-bold">أقسام اللوحة</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-lg p-1 text-muted-foreground hover:bg-secondary"
                 >
-                  <n.icon className="h-4 w-4" />
-                  {n.label}
-                </Link>
-              </li>
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <nav className="overflow-y-auto max-h-[calc(100vh-140px)] space-y-1">
+                {NAV.map((n) => (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    activeOptions={{ exact: "exact" in n ? n.exact : false }}
+                    activeProps={{ className: "bg-primary text-primary-foreground font-semibold" }}
+                    inactiveProps={{ className: "text-muted-foreground hover:bg-secondary" }}
+                    className="flex items-center justify-between rounded-xl px-3 py-2.5 text-xs transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <n.icon className="h-4 w-4" />
+                      <span>{n.label}</span>
+                    </div>
+                    <ChevronLeft className="h-3.5 w-3.5 opacity-50" />
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            <div className="border-t border-border pt-3">
+              <p className="text-[10px] text-center text-muted-foreground">متجر تشكيلات © 2026</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* الهيكل العام للمحتوى الرئيسي */}
+      <div className="mx-auto max-w-6xl px-3 py-4 md:px-4 md:flex md:gap-4">
+        {/* قائمة الشاشات الكبيرة (Desktop Sidebar) */}
+        <nav className="hidden md:block md:w-56 md:shrink-0">
+          <div className="sticky top-20 space-y-1">
+            {NAV.map((n) => (
+              <Link
+                key={n.to}
+                to={n.to}
+                activeOptions={{ exact: "exact" in n ? n.exact : false }}
+                activeProps={{ className: "bg-primary text-primary-foreground font-semibold" }}
+                inactiveProps={{ className: "text-muted-foreground hover:bg-secondary" }}
+                className="flex items-center gap-2.5 rounded-xl border border-border/50 px-3 py-2.5 text-xs transition-colors"
+              >
+                <n.icon className="h-4 w-4" />
+                <span>{n.label}</span>
+              </Link>
             ))}
-          </ul>
+          </div>
         </nav>
-        <main className="min-w-0 flex-1 pb-10">
+
+        {/* جسم الصفحة الرئيسي للموبايل والمكتب */}
+        <main className="min-w-0 flex-1 pb-16">
           <Outlet />
         </main>
       </div>
@@ -189,23 +265,23 @@ function AdminLogin({ denied, onSuccess }: { denied: boolean; onSuccess: () => v
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-background px-4">
+    <div className="grid min-h-screen place-items-center bg-background px-4 py-8">
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-card">
         <div className="flex flex-col items-center gap-2 text-center">
-          <BrandLogo size={72} />
-          <h1 className="text-base text-foreground">دخول الإدارة</h1>
+          <BrandLogo size={64} />
+          <h1 className="text-base font-bold text-foreground">دخول الإدارة</h1>
           <p className="text-[11px] text-muted-foreground">
-            هذه الصفحة مخصّصة لإدارة المتجر فقط وليست لحسابات العملاء أو التجار.
+            تسجيل الدخول المخصص لوحدة التحكم لإدارة المتجر.
           </p>
         </div>
 
         {denied ? (
-          <p className="mt-4 rounded-xl bg-destructive/10 p-3 text-[11px] text-destructive">
+          <p className="mt-4 rounded-xl bg-destructive/10 p-3 text-[11px] text-destructive text-center">
             حسابك الحالي ليس حساب إدارة. سجّل الخروج ثم ادخل ببيانات الإدارة.
           </p>
         ) : null}
 
-        <form onSubmit={submit} className="mt-5 space-y-2">
+        <form onSubmit={submit} className="mt-5 space-y-3">
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -214,7 +290,7 @@ function AdminLogin({ denied, onSuccess }: { denied: boolean; onSuccess: () => v
             autoComplete="username"
             dir="ltr"
             maxLength={40}
-            className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-sm outline-none focus:border-primary"
+            className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-xs outline-none focus:border-primary"
           />
           <input
             type="password"
@@ -225,13 +301,13 @@ function AdminLogin({ denied, onSuccess }: { denied: boolean; onSuccess: () => v
             autoComplete="current-password"
             dir="ltr"
             maxLength={100}
-            className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-sm outline-none focus:border-primary"
+            className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-xs outline-none focus:border-primary"
           />
-          {error ? <p className="text-[11px] text-destructive">{error}</p> : null}
+          {error ? <p className="text-[11px] text-destructive text-center">{error}</p> : null}
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm text-primary-foreground disabled:opacity-60"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-xs font-medium text-primary-foreground disabled:opacity-60"
           >
             <ShieldCheck className="h-4 w-4" />
             {busy ? "جارٍ الدخول..." : "دخول"}
@@ -244,5 +320,4 @@ function AdminLogin({ denied, onSuccess }: { denied: boolean; onSuccess: () => v
       </div>
     </div>
   );
-          }
-          
+}
