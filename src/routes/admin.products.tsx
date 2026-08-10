@@ -1,4 +1,4 @@
-import { createFileRoute } from "@t.anstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit2, X, Upload, Loader2, AlertCircle, Truck, PackageCheck, Layers } from "lucide-react";
@@ -15,7 +15,6 @@ const PRESET_SIZES = ["S", "M", "L", "XL", "2XL", "قطعة", "ملي", "لتر"
 const PRESET_COLORS = ["وردي", "أسود", "أبيض", "أحمر", "أزرق", "كحلي", "بيج", "رمادي", "ذهبي"];
 const SAR_TO_YER_RATE = 420;
 
-// واجهة مخصصة لشاشات الإدارة تدمج الحقول الجديدة بأمان
 type ExtendedProduct = Product & {
   price_sar?: number | null;
   unit?: string | null;
@@ -199,7 +198,7 @@ export function AdminProducts() {
     if (error) toast.error("تعذّر الحذف: " + error.message);
     else toast.success("تم الحذف بنجاح");
     await load();
-  }
+      }
 
   return (
     <div className="space-y-4">
@@ -304,7 +303,6 @@ export function AdminProducts() {
         )}
       </AdminCard>
 
-      {/* النافذة المنبثقة */}
       {editing ? (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-3xl border border-border bg-card p-4 shadow-2xl space-y-3">
@@ -490,6 +488,7 @@ export function AdminProducts() {
                   </Field>
                 </>
               ) : null}
+
               {activeTab === "attributes" ? (
                 <div className="space-y-3">
                   <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
@@ -567,3 +566,130 @@ export function AdminProducts() {
                   </Field>
                 </div>
               ) : null}
+
+              {activeTab === "supplier" ? (
+                <div className="space-y-3">
+                  <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
+                    <Truck className="h-4 w-4 shrink-0 text-primary" />
+                    <span>بيانات خاصة بالإدارة والموردين (لا تظهر للزبائن).</span>
+                  </div>
+
+                  <Field label="اسم المورد / المصدر">
+                    <input
+                      className={inputCls}
+                      value={editing.supplier_info?.supplier_name || ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          supplier_info: {
+                            ...editing.supplier_info,
+                            supplier_name: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+
+                  <Field label="رقم هاتف المورد">
+                    <input
+                      className={inputCls}
+                      value={editing.supplier_info?.supplier_phone || ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          supplier_info: {
+                            ...editing.supplier_info,
+                            supplier_phone: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+
+                  <Field label="رابط المنتج الأصلي (علي إكسبرس / غيره)">
+                    <input
+                      className={inputCls}
+                      value={editing.supplier_info?.supplier_product_url || ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          supplier_info: {
+                            ...editing.supplier_info,
+                            supplier_product_url: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="سعر التكلفة">
+                      <input
+                        type="number"
+                        className={inputCls}
+                        value={editing.supplier_info?.cost_price || ""}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            supplier_info: {
+                              ...editing.supplier_info,
+                              cost_price: Number(e.target.value),
+                            },
+                          })
+                        }
+                      />
+                    </Field>
+
+                    <Field label="رسوم الشحن">
+                      <input
+                        type="number"
+                        className={inputCls}
+                        value={editing.supplier_info?.shipping_fee || ""}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            supplier_info: {
+                              ...editing.supplier_info,
+                              shipping_fee: Number(e.target.value),
+                            },
+                          })
+                        }
+                      />
+                    </Field>
+                                      </div>
+
+                  <Field label="مدة التوصيل المتوقعة">
+                    <input
+                      className={inputCls}
+                      placeholder="مثال: 7-14 يوم"
+                      value={editing.supplier_info?.delivery_duration || ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          supplier_info: {
+                            ...editing.supplier_info,
+                            delivery_duration: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-border">
+              <button type="button" className={btnCls} onClick={() => void save()}>
+                <PackageCheck className="h-4 w-4" /> حفظ
+              </button>
+              <button type="button" className={btnGhostCls} onClick={() => setEditing(null)}>
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+          }
+ 
