@@ -15,16 +15,16 @@ const PRESET_SIZES = ["S", "M", "L", "XL", "2XL", "قطعة", "ملي", "لتر"
 const PRESET_COLORS = ["وردي", "أسود", "أبيض", "أحمر", "أزرق", "كحلي", "بيج", "رمادي", "ذهبي"];
 const SAR_TO_YER_RATE = 420;
 
-// واجهة مخصصة لشاشات الإدارة تدمج الحقول الجديدة بأمان دون كسر db.ts
+// واجهة مخصصة لشاشات الإدارة تدمج الحقول الجديدة بأمان
 type ExtendedProduct = Product & {
-  price_sar?: number;
-  unit?: string;
+  price_sar?: number | null;
+  unit?: string | null;
   category_attributes?: {
     production_date?: string;
     expiry_date?: string;
     unit_capacity?: string;
     warranty_period?: string;
-  };
+  } | null;
   supplier_info?: {
     supplier_name?: string;
     supplier_phone?: string;
@@ -32,7 +32,7 @@ type ExtendedProduct = Product & {
     cost_price?: number;
     shipping_fee?: number;
     delivery_duration?: string;
-  };
+  } | null;
 };
 
 const emptyProductForm = {
@@ -91,7 +91,7 @@ export function AdminProducts() {
       if (pRes.error) {
         setFetchError(pRes.error.message);
       } else {
-        setProducts((pRes.data as ExtendedProduct[]) ?? []);
+        setProducts((pRes.data as unknown as ExtendedProduct[]) ?? []);
       }
 
       if (cRes.data) {
@@ -158,7 +158,8 @@ export function AdminProducts() {
 
     const generatedSlug = editing.slug || editing.name.toLowerCase().trim().replace(/\s+/g, "-");
 
-    const payload: Record<string, unknown> = {
+    // إعداد الكائن بدون خطأ في TypeScript Type
+    const payload = {
       name: editing.name,
       slug: generatedSlug,
       category_slug: editing.category_slug || (categories[0]?.slug ?? ""),
@@ -180,8 +181,8 @@ export function AdminProducts() {
     };
 
     const { error } = editing.id
-      ? await supabase.from("products").update(payload).eq("id", editing.id)
-      : await supabase.from("products").insert(payload);
+      ? await supabase.from("products").update(payload as never).eq("id", editing.id)
+      : await supabase.from("products").insert(payload as never);
 
     if (error) {
       toast.error("تعذّر حفظ المنتج: " + error.message);
@@ -494,5 +495,4 @@ export function AdminProducts() {
               {activeTab === "attributes" ? (
                 <div className="space-y-3">
                   <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
-                    <Layers className="h-4 w-4 shrink-0 text-primary" />
- 
+        
