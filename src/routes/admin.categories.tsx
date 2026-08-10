@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCard, Field, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
+import { BrandsManager } from "@/components/admin/brands-manager";
 import type { Category } from "@/lib/db";
 
 export const Route = createFileRoute("/admin/categories")({
@@ -62,7 +63,7 @@ export function AdminCategories() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <AdminCard
         title="الفئات"
         action={
@@ -78,12 +79,16 @@ export function AdminCategories() {
                 <img src={r.image_url} alt={r.name} className="h-8 w-8 rounded-full object-cover" />
               ) : null}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-foreground font-medium">{r.name}</p>
-                <p dir="ltr" className="text-muted-foreground text-[11px]">
+                <p className="truncate font-medium text-foreground">{r.name}</p>
+                <p dir="ltr" className="text-[11px] text-muted-foreground">
                   {r.slug} · {r.icon}
                 </p>
               </div>
-              <button type="button" className={btnGhostCls} onClick={() => setEditing({ ...r, image_url: r.image_url ?? "" })}>
+              <button
+                type="button"
+                className={btnGhostCls}
+                onClick={() => setEditing({ ...r, image_url: r.image_url ?? "" })}
+              >
                 تعديل
               </button>
               <button
@@ -156,6 +161,10 @@ export function AdminCategories() {
           </div>
         </AdminCard>
       ) : null}
+
+      <AdminCard title="إدارة الماركات التجارية">
+        <BrandsManager />
+      </AdminCard>
     </div>
   );
-}
+                }
