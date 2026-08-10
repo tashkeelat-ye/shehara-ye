@@ -120,7 +120,6 @@
   );
 }
 
-
 .dark {
   --background: oklch(0.14 0.03 15);
   --foreground: oklch(0.96 0.01 60);
@@ -180,4 +179,22 @@
     display: none;
   }
                    }
-  
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 15s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
