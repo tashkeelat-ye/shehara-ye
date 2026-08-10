@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, X, Upload, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit2, X, Upload, Loader2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCard, Field, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
 import { uploadManyMedia } from "@/lib/media";
@@ -34,16 +34,29 @@ export function AdminProducts() {
   const [editing, setEditing] = useState<(typeof emptyProduct & { id?: string }) | null>(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
+
+    // جلب المنتجات دون اشتراط وجود sort_order لتجنب فشل الاستعلام
     const [pRes, cRes] = await Promise.all([
-      supabase.from("products").select("*").order("sort_order"),
-      supabase.from("categories").select("*").order("sort_order"),
+      supabase.from("products").select("*").order("created_at", { ascending: false }),
+      supabase.from("categories").select("*"),
     ]);
 
-    setProducts((pRes.data as Product[]) ?? []);
-    setCategories((cRes.data as Category[]) ?? []);
+    if (pRes.error) {
+      console.error("خطأ في جلب المنتجات:", pRes.error);
+      setFetchError(pRes.error.message);
+    } else {
+      setProducts((pRes.data as Product[]) ?? []);
+    }
+
+    if (cRes.data) {
+      setCategories((cRes.data as Category[]) ?? []);
+    }
+
     setLoading(false);
   }, []);
 
@@ -80,7 +93,7 @@ export function AdminProducts() {
       return;
     }
 
-    const generatedSlug = editing.slug || editing.name.toLowerCase().replace(/\s+/g, "-");
+    const generatedSlug = editing.slug || editing.name.toLowerCase().trim().replace(/\s+/g, "-");
     const payload = {
       name: editing.name,
       slug: generatedSlug,
@@ -146,6 +159,13 @@ export function AdminProducts() {
       >
         {loading ? (
           <p className="p-4 text-center text-xs text-muted-foreground animate-pulse">جارٍ تحميل المنتجات...</p>
+        ) : fetchError ? (
+          <div className="flex flex-col items-center gap-2 p-4 text-center text-destructive">
+            <AlertCircle className="h-6 w-6" />
+            <p className="text-xs font-semibold">تعذر جلب المنتجات: {fetchError}</p>
+          </div>
+        ) : products.length === 0 ? (
+          <p className="p-4 text-center text-xs text-muted-foreground">لا توجد منتجات حالياً.</p>
         ) : (
           <ul className="space-y-2">
             {products.map((p) => (
@@ -381,5 +401,5 @@ export function AdminProducts() {
       ) : null}
     </div>
   );
-    }
-      
+                }
+                            
