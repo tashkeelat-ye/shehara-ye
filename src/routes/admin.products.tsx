@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@t.anstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit2, X, Upload, Loader2, AlertCircle, Truck, PackageCheck, Layers } from "lucide-react";
@@ -490,9 +490,80 @@ export function AdminProducts() {
                   </Field>
                 </>
               ) : null}
-{activeTab === "attributes" ? (
-  <div className="space-y-3">
-    <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
-      <Layers className="h-4 w-4 shrink-0 text-primary" />
-      <span>حدد الخصائص الإضافية للمنتج حسب فئته.</span>
-    </div>
+              {activeTab === "attributes" ? (
+                <div className="space-y-3">
+                  <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
+                    <Layers className="h-4 w-4 shrink-0 text-primary" />
+                    <span>حدد الخصائص الإضافية للمنتج حسب فئته.</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="تاريخ الإنتاج">
+                      <input
+                        type="date"
+                        className={inputCls}
+                        value={editing.category_attributes?.production_date || ""}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            category_attributes: {
+                              ...editing.category_attributes,
+                              production_date: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </Field>
+                    <Field label="تاريخ الانتهاء">
+                      <input
+                        type="date"
+                        className={inputCls}
+                        value={editing.category_attributes?.expiry_date || ""}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            category_attributes: {
+                              ...editing.category_attributes,
+                              expiry_date: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </Field>
+                  </div>
+
+                  <Field label="سعة / عبوة المنتج">
+                    <input
+                      className={inputCls}
+                      placeholder="مثال: 50 مل / 100 جرام"
+                      value={editing.category_attributes?.unit_capacity || ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          category_attributes: {
+                            ...editing.category_attributes,
+                            unit_capacity: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+
+                  <Field label="فترة الضمان">
+                    <input
+                      className={inputCls}
+                      placeholder="مثال: سنة واحدة"
+                      value={editing.category_attributes?.warranty_period || ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          category_attributes: {
+                            ...editing.category_attributes,
+                            warranty_period: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+              ) : null}
