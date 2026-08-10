@@ -15,7 +15,28 @@ const PRESET_SIZES = ["S", "M", "L", "XL", "2XL", "قطعة", "ملي", "لتر"
 const PRESET_COLORS = ["وردي", "أسود", "أبيض", "أحمر", "أزرق", "كحلي", "بيج", "رمادي", "ذهبي"];
 const SAR_TO_YER_RATE = 420;
 
-const emptyProduct = {
+// واجهة مخصصة لشاشات الإدارة تدمج الحقول الجديدة بأمان دون كسر db.ts
+type ExtendedProduct = Product & {
+  price_sar?: number;
+  unit?: string;
+  category_attributes?: {
+    production_date?: string;
+    expiry_date?: string;
+    unit_capacity?: string;
+    warranty_period?: string;
+  };
+  supplier_info?: {
+    supplier_name?: string;
+    supplier_phone?: string;
+    supplier_product_url?: string;
+    cost_price?: number;
+    shipping_fee?: number;
+    delivery_duration?: string;
+  };
+};
+
+const emptyProductForm = {
+  id: undefined as string | undefined,
   name: "",
   slug: "",
   category_slug: "",
@@ -49,9 +70,9 @@ const emptyProduct = {
 };
 
 export function AdminProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ExtendedProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [editing, setEditing] = useState<typeof emptyProduct & { id?: string } | null>(null);
+  const [editing, setEditing] = useState<typeof emptyProductForm | null>(null);
   const [activeTab, setActiveTab] = useState<"basic" | "attributes" | "supplier">("basic");
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -70,14 +91,15 @@ export function AdminProducts() {
       if (pRes.error) {
         setFetchError(pRes.error.message);
       } else {
-        setProducts((pRes.data as Product[]) ?? []);
+        setProducts((pRes.data as ExtendedProduct[]) ?? []);
       }
 
       if (cRes.data) {
         setCategories((cRes.data as Category[]) ?? []);
       }
-    } catch (err: any) {
-      setFetchError(err?.message || "حدث خطأ أثناء الاتصال بقاعدة البيانات");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "حدث خطأ أثناء تحميل البيانات";
+      setFetchError(msg);
     } finally {
       setLoading(false);
     }
@@ -135,14 +157,14 @@ export function AdminProducts() {
     }
 
     const generatedSlug = editing.slug || editing.name.toLowerCase().trim().replace(/\s+/g, "-");
-    
-    // بناء الحموله بأمان للتوافق مع شروطSupabase
-    const payload: Record<string, any> = {
+
+    const payload: Record<string, unknown> = {
       name: editing.name,
       slug: generatedSlug,
       category_slug: editing.category_slug || (categories[0]?.slug ?? ""),
       price: Number(editing.price) || 0,
       original_price: editing.original_price ? Number(editing.original_price) : null,
+      price_sar: editing.price_sar || null,
       badge: editing.badge || null,
       origin: editing.origin || null,
       description: editing.description || null,
@@ -151,14 +173,11 @@ export function AdminProducts() {
       is_yemeni_local: editing.is_yemeni_local,
       sizes: editing.sizes,
       colors: editing.colors,
+      unit: editing.unit,
       sort_order: Number(editing.sort_order) || 0,
+      category_attributes: editing.category_attributes,
+      supplier_info: editing.supplier_info,
     };
-
-    // إضافة الحقول الاختيارية والجديدة إذا كانت موجودة
-    if (editing.price_sar) payload.price_sar = editing.price_sar;
-    if (editing.unit) payload.unit = editing.unit;
-    if (editing.category_attributes) payload.category_attributes = editing.category_attributes;
-    if (editing.supplier_info) payload.supplier_info = editing.supplier_info;
 
     const { error } = editing.id
       ? await supabase.from("products").update(payload).eq("id", editing.id)
@@ -174,7 +193,7 @@ export function AdminProducts() {
     await load();
   }
 
-  async function remove(p: any) {
+  async function remove(p: ExtendedProduct) {
     if (!window.confirm(`حذف المنتج "${p.name}"؟`)) return;
     const { error } = await supabase.from("products").delete().eq("id", p.id);
     if (error) toast.error("تعذّر الحذف: " + error.message);
@@ -192,7 +211,7 @@ export function AdminProducts() {
             className={btnCls}
             onClick={() => {
               setActiveTab("basic");
-              setEditing({ ...emptyProduct, category_slug: categories[0]?.slug ?? "" });
+              setEditing({ ...emptyProductForm, category_slug: categories[0]?.slug ?? "" });
             }}
           >
             <Plus className="h-4 w-4" /> منتج جديد
@@ -210,7 +229,7 @@ export function AdminProducts() {
           <p className="p-4 text-center text-xs text-muted-foreground">لا توجد منتجات حالياً.</p>
         ) : (
           <ul className="space-y-2">
-            {products.map((p: any) => (
+            {products.map((p) => (
               <li
                 key={p.id}
                 className="flex items-center gap-2 rounded-2xl border border-border/70 p-2 text-xs bg-card"
@@ -233,12 +252,40 @@ export function AdminProducts() {
                   onClick={() => {
                     setActiveTab("basic");
                     setEditing({
-                      ...emptyProduct,
-                      ...p,
-                      sizes: Array.isArray(p.sizes) ? p.sizes : typeof p.sizes === 'string' ? p.sizes.split(',').map((s: string) => s.trim()) : [],
-                      colors: Array.isArray(p.colors) ? p.colors : typeof p.colors === 'string' ? p.colors.split(',').map((c: string) => c.trim()) : [],
-                      category_attributes: p.category_attributes || emptyProduct.category_attributes,
-                      supplier_info: p.supplier_info || emptyProduct.supplier_info,
+                      ...emptyProductForm,
+                      id: p.id,
+                      name: p.name || "",
+                      slug: p.slug || "",
+                      category_slug: p.category_slug || "",
+                      price: p.price || 0,
+                      original_price: p.original_price || 0,
+                      price_sar: p.price_sar || 0,
+                      badge: p.badge || "",
+                      origin: p.origin || "",
+                      description: p.description || "",
+                      images: Array.isArray(p.images) ? p.images : [],
+                      is_active: p.is_active ?? true,
+                      is_yemeni_local: p.is_yemeni_local ?? false,
+                      sizes: Array.isArray(p.sizes)
+                        ? p.sizes
+                        : typeof p.sizes === "string"
+                        ? (p.sizes as string).split(",").map((s) => s.trim())
+                        : [],
+                      colors: Array.isArray(p.colors)
+                        ? p.colors
+                        : typeof p.colors === "string"
+                        ? (p.colors as string).split(",").map((c) => c.trim())
+                        : [],
+                      unit: p.unit || "قطعة",
+                      sort_order: p.sort_order || 0,
+                      category_attributes: {
+                        ...emptyProductForm.category_attributes,
+                        ...(p.category_attributes || {}),
+                      },
+                      supplier_info: {
+                        ...emptyProductForm.supplier_info,
+                        ...(p.supplier_info || {}),
+                      },
                     });
                   }}
                 >
@@ -274,7 +321,6 @@ export function AdminProducts() {
               </button>
             </div>
 
-            {/* الأزرار العلوية لتغيير التبويبات */}
             <div className="flex rounded-xl bg-secondary p-1 text-xs">
               <button
                 type="button"
@@ -449,38 +495,4 @@ export function AdminProducts() {
                 <div className="space-y-3">
                   <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
                     <Layers className="h-4 w-4 shrink-0 text-primary" />
-                    <span>حقول وتفاصيل تختلف حسب صنف المنتج.</span>
-                  </div>
-
-                  <Field label="تاريخ الإنتاج (إن وجد)">
-                    <input
-                      type="date"
-                      className={inputCls}
-                      value={editing.category_attributes?.production_date || ""}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          category_attributes: { ...editing.category_attributes, production_date: e.target.value },
-                        })
-                      }
-                    />
-                  </Field>
-                  <Field label="تاريخ الانتهاء (إن وجد)">
-                    <input
-                      type="date"
-                      className={inputCls}
-                      value={editing.category_attributes?.expiry_date || ""}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          category_attributes: { ...editing.category_attributes, expiry_date: e.target.value },
-                        })
-                      }
-                    />
-                  </Field>
-
-                  <Field label="السعة / الحجم المخصص (مثال: 500 ملي أو 100 مل)">
-                    <input
-                      className={inputCls}
-                      placeholder="مثال: 750 مل"
  
