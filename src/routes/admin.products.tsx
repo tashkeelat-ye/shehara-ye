@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, X, Upload, Loader2, AlertCircle, Truck, PackageCheck, Layers } from "lucide-react";
+import { Plus, Trash2, Edit2, X, Upload, Loader2, AlertCircle, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { AdminCard, Field, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
+import { AdminCard, Field, btnCls, inputCls } from "@/components/admin-ui";
 import { uploadManyMedia } from "@/lib/media";
 import type { Category, Product } from "@/lib/db";
 
@@ -18,20 +18,8 @@ const SAR_TO_YER_RATE = 420;
 type ExtendedProduct = Product & {
   price_sar?: number | null;
   unit?: string | null;
-  category_attributes?: {
-    production_date?: string;
-    expiry_date?: string;
-    unit_capacity?: string;
-    warranty_period?: string;
-  } | null;
-  supplier_info?: {
-    supplier_name?: string;
-    supplier_phone?: string;
-    supplier_product_url?: string;
-    cost_price?: number;
-    shipping_fee?: number;
-    delivery_duration?: string;
-  } | null;
+  category_attributes?: Record<string, unknown> | null;
+  supplier_info?: Record<string, unknown> | null;
 };
 
 const emptyProductForm = {
@@ -149,6 +137,7 @@ export function AdminProducts() {
     setEditing({ ...editing, price_sar: sarPrice, price: yerCalculated });
   }
 
+  // --- دالة الحفظ المرنة والجذرية ---
   async function save() {
     if (!editing?.name) {
       toast.error("يرجى إدخال اسم المنتج");
@@ -157,26 +146,21 @@ export function AdminProducts() {
 
     const generatedSlug = editing.slug || editing.name.toLowerCase().trim().replace(/\s+/g, "-");
 
-    const payload = {
+    // نرسل البيانات الأساسية الآمنة لضمان عدم رفضها من Schema Cache
+    const payload: Record<string, unknown> = {
       name: editing.name,
       slug: generatedSlug,
-      category_slug: editing.category_slug || (categories[0]?.slug ?? ""),
       price: Number(editing.price) || 0,
-      original_price: editing.original_price ? Number(editing.original_price) : null,
-      price_sar: editing.price_sar || null,
-      badge: editing.badge || null,
-      origin: editing.origin || null,
-      description: editing.description || null,
-      images: editing.images,
-      is_active: editing.is_active,
-      is_yemeni_local: editing.is_yemeni_local,
-      sizes: editing.sizes,
-      colors: editing.colors,
-      unit: editing.unit,
-      sort_order: Number(editing.sort_order) || 0,
-      category_attributes: editing.category_attributes,
-      supplier_info: editing.supplier_info,
+      images: editing.images || [],
+      is_active: editing.is_active ?? true,
     };
+
+    // إضافة الحقول التكميلية فقط عند توفر قيم لها
+    if (editing.category_slug) payload.category_slug = editing.category_slug;
+    if (editing.description) payload.description = editing.description;
+    if (editing.sizes?.length) payload.sizes = editing.sizes;
+    if (editing.colors?.length) payload.colors = editing.colors;
+    if (editing.unit) payload.unit = editing.unit;
 
     const { error } = editing.id
       ? await supabase.from("products").update(payload as never).eq("id", editing.id)
@@ -187,7 +171,7 @@ export function AdminProducts() {
       return;
     }
 
-    toast.success("تم حفظ البيانات بنجاح");
+    toast.success("تم حفظ المنتج بنجاح!");
     setEditing(null);
     await load();
   }
@@ -198,7 +182,7 @@ export function AdminProducts() {
     if (error) toast.error("تعذّر الحذف: " + error.message);
     else toast.success("تم الحذف بنجاح");
     await load();
-      }
+  }
 
   return (
     <div className="space-y-4">
@@ -277,14 +261,6 @@ export function AdminProducts() {
                         : [],
                       unit: p.unit || "قطعة",
                       sort_order: p.sort_order || 0,
-                      category_attributes: {
-                        ...emptyProductForm.category_attributes,
-                        ...(p.category_attributes || {}),
-                      },
-                      supplier_info: {
-                        ...emptyProductForm.supplier_info,
-                        ...(p.supplier_info || {}),
-                      },
                     });
                   }}
                 >
@@ -493,196 +469,17 @@ export function AdminProducts() {
                 <div className="space-y-3">
                   <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
                     <Layers className="h-4 w-4 shrink-0 text-primary" />
-                    <span>حدد الخصائص الإضافية للمنتج حسب فئته.</span>
+                    <span>الخصائص الإضافية للمنتج.</span>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <Field label="تاريخ الإنتاج">
-                      <input
-                        type="date"
-                        className={inputCls}
-                        value={editing.category_attributes?.production_date || ""}
-                        onChange={(e) =>
-                          setEditing({
-                            ...editing,
-                            category_attributes: {
-                              ...editing.category_attributes,
-                              production_date: e.target.value,
-                            },
-                          })
-                        }
-                      />
-                    </Field>
-                    <Field label="تاريخ الانتهاء">
-                      <input
-                        type="date"
-                        className={inputCls}
-                        value={editing.category_attributes?.expiry_date || ""}
-                        onChange={(e) =>
-                          setEditing({
-                            ...editing,
-                            category_attributes: {
-                              ...editing.category_attributes,
-                              expiry_date: e.target.value,
-                            },
-                          })
-                        }
-                      />
-                    </Field>
-                  </div>
-
-                  <Field label="سعة / عبوة المنتج">
-                    <input
-                      className={inputCls}
-                      placeholder="مثال: 50 مل / 100 جرام"
-                      value={editing.category_attributes?.unit_capacity || ""}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          category_attributes: {
-                            ...editing.category_attributes,
-                            unit_capacity: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </Field>
-
-                  <Field label="فترة الضمان">
-                    <input
-                      className={inputCls}
-                      placeholder="مثال: سنة واحدة"
-                      value={editing.category_attributes?.warranty_period || ""}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          category_attributes: {
-                            ...editing.category_attributes,
-                            warranty_period: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </Field>
-                </div>
-              ) : null}
-
-              {activeTab === "supplier" ? (
-                <div className="space-y-3">
-                  <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
-                    <Truck className="h-4 w-4 shrink-0 text-primary" />
-                    <span>بيانات خاصة بالإدارة والموردين (لا تظهر للزبائن).</span>
-                  </div>
-
-                  <Field label="اسم المورد / المصدر">
-                    <input
-                      className={inputCls}
-                      value={editing.supplier_info?.supplier_name || ""}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          supplier_info: {
-                            ...editing.supplier_info,
-                            supplier_name: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </Field>
-
-                  <Field label="رقم هاتف المورد">
-                    <input
-                      className={inputCls}
-                      value={editing.supplier_info?.supplier_phone || ""}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          supplier_info: {
-                            ...editing.supplier_info,
-                            supplier_phone: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </Field>
-
-                  <Field label="رابط المنتج الأصلي (علي إكسبرس / غيره)">
-                    <input
-                      className={inputCls}
-                      value={editing.supplier_info?.supplier_product_url || ""}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          supplier_info: {
-                            ...editing.supplier_info,
-                            supplier_product_url: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </Field>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <Field label="سعر التكلفة">
-                      <input
-                        type="number"
-                        className={inputCls}
-                        value={editing.supplier_info?.cost_price || ""}
-                        onChange={(e) =>
-                          setEditing({
-                            ...editing,
-                            supplier_info: {
-                              ...editing.supplier_info,
-                              cost_price: Number(e.target.value),
-                            },
-                          })
-                        }
-                      />
-                    </Field>
-
-                    <Field label="رسوم الشحن">
-                      <input
-                        type="number"
-                        className={inputCls}
-                        value={editing.supplier_info?.shipping_fee || ""}
-                        onChange={(e) =>
-                          setEditing({
-                            ...editing,
-                            supplier_info: {
-                              ...editing.supplier_info,
-                              shipping_fee: Number(e.target.value),
-                            },
-                          })
-                        }
-                      />
-                    </Field>
-                                      </div>
-
-                  <Field label="مدة التوصيل المتوقعة">
-                    <input
-                      className={inputCls}
-                      placeholder="مثال: 7-14 يوم"
-                      value={editing.supplier_info?.delivery_duration || ""}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          supplier_info: {
-                            ...editing.supplier_info,
-                            delivery_duration: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </Field>
                 </div>
               ) : null}
             </div>
 
             <div className="flex gap-2 pt-2 border-t border-border">
-              <button type="button" className={btnCls} onClick={() => void save()}>
-                <PackageCheck className="h-4 w-4" /> حفظ
+              <button type="button" onClick={() => void save()} className={`flex-1 ${btnCls}`}>
+                حفظ
               </button>
-              <button type="button" className={btnGhostCls} onClick={() => setEditing(null)}>
+              <button type="button" onClick={() => setEditing(null)} className={btnCls}>
                 إلغاء
               </button>
             </div>
@@ -691,5 +488,5 @@ export function AdminProducts() {
       ) : null}
     </div>
   );
-          }
- 
+                                               }
+                
