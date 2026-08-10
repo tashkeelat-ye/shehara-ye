@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Tag } from "lucide-react";
+import { Plus, Trash2, Tag, Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCard, Field, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
+import { uploadManyMedia } from "@/lib/media";
 import type { Category } from "@/lib/db";
 
 export const Route = createFileRoute("/admin/categories")({
@@ -23,15 +24,15 @@ const emptyCat = { slug: "", name: "", icon: "Shirt", image_url: "", sort_order:
 const emptyBrand = { slug: "", name: "", logo_url: "", is_active: true, sort_order: 0 };
 
 export function AdminCategories() {
-  // Categories State
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCat, setEditingCat] = useState<(typeof emptyCat & { id?: string }) | null>(null);
 
-  // Brands State
   const [brands, setBrands] = useState<BrandRow[]>([]);
   const [editingBrand, setEditingBrand] = useState<(typeof emptyBrand & { id?: string }) | null>(null);
 
-  // Load Data
+  const [uploadingCat, setUploadingCat] = useState(false);
+  const [uploadingBrand, setUploadingBrand] = useState(false);
+
   const load = useCallback(async () => {
     const [cRes, bRes] = await Promise.all([
       supabase.from("categories").select("id,slug,name,icon,image_url,sort_order").order("sort_order"),
@@ -46,7 +47,36 @@ export function AdminCategories() {
     void load();
   }, [load]);
 
-  // Save Category
+  // رفع صورة الفئة
+  async function handleCatImageUpload(files: FileList | null) {
+    if (!files || files.length === 0 || !editingCat) return;
+    setUploadingCat(true);
+    const { urls, errors } = await uploadManyMedia("categories", Array.from(files));
+    setUploadingCat(false);
+    if (urls.length > 0) {
+      setEditingCat((prev) => (prev ? { ...prev, image_url: urls[0] } : prev));
+      toast.success("تم رفع صورة الفئة بنجاح");
+    }
+    if (errors.length > 0) {
+      toast.error("تعذّر رفع الصورة: " + errors.join(" | "));
+    }
+  }
+
+  // رفع شعار الماركة
+  async function handleBrandLogoUpload(files: FileList | null) {
+    if (!files || files.length === 0 || !editingBrand) return;
+    setUploadingBrand(true);
+    const { urls, errors } = await uploadManyMedia("brands", Array.from(files));
+    setUploadingBrand(false);
+    if (urls.length > 0) {
+      setEditingBrand((prev) => (prev ? { ...prev, logo_url: urls[0] } : prev));
+      toast.success("تم رفع شعار الماركة بنجاح");
+    }
+    if (errors.length > 0) {
+      toast.error("تعذّر رفع الشعار: " + errors.join(" | "));
+    }
+  }
+
   async function saveCategory() {
     if (!editingCat?.name || !editingCat.slug) {
       toast.error("أكمل الاسم والمعرّف للفئة");
@@ -72,7 +102,6 @@ export function AdminCategories() {
     await load();
   }
 
-  // Remove Category
   async function removeCategory(row: Category) {
     if (!window.confirm(`حذف الفئة "${row.name}"؟`)) return;
     const { error } = await supabase.from("categories").delete().eq("id", row.id);
@@ -81,7 +110,6 @@ export function AdminCategories() {
     await load();
   }
 
-  // Save Brand
   async function saveBrand() {
     if (!editingBrand?.name || !editingBrand.slug) {
       toast.error("أكمل اسم الماركة والمعرّف");
@@ -107,7 +135,6 @@ export function AdminCategories() {
     await load();
   }
 
-  // Remove Brand
   async function removeBrand(row: BrandRow) {
     if (!window.confirm(`حذف الماركة "${row.name}"؟`)) return;
     const { error } = await supabase.from("brands").delete().eq("id", row.id);
@@ -188,15 +215,43 @@ export function AdminCategories() {
                 onChange={(e) => setEditingCat({ ...editingCat, icon: e.target.value })}
               />
             </Field>
-            <Field label="رابط صورة الفئة (اختياري)">
-              <input
-                dir="ltr"
-                className={inputCls}
-                placeholder="https://..."
-                value={editingCat.image_url}
-                onChange={(e) => setEditingCat({ ...editingCat, image_url: e.target.value })}
-              />
-            </Field>
+
+            {/* رفع صورة الفئة */}
+            <div className="sm:col-span-2">
+              <Field label="صورة الفئة">
+                <div className="flex items-center gap-3">
+                  {editingCat.image_url ? (
+                    <div className="relative h-16 w-16 shrink-0 rounded-xl border border-border overflow-hidden bg-secondary">
+                      <img src={editingCat.image_url} alt="" className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        aria-label="حذف الصورة"
+                        onClick={() => setEditingCat({ ...editingCat, image_url: "" })}
+                        className="absolute top-1 left-1 grid h-5 w-5 place-items-center rounded-full bg-destructive text-destructive-foreground text-[10px]"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : null}
+                  <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-secondary px-3 text-xs font-medium text-foreground hover:border-primary">
+                    {uploadingCat ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : (
+                      <Upload className="h-4 w-4 text-primary" />
+                    )}
+                    <span>{uploadingCat ? "جارٍ الرفع..." : "تحميل صورة من الجهاز"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingCat}
+                      className="hidden"
+                      onChange={(e) => void handleCatImageUpload(e.target.files)}
+                    />
+                  </label>
+                </div>
+              </Field>
+            </div>
+
             <Field label="الترتيب">
               <input
                 type="number"
@@ -282,15 +337,43 @@ export function AdminCategories() {
                 onChange={(e) => setEditingBrand({ ...editingBrand, slug: e.target.value })}
               />
             </Field>
-            <Field label="رابط الشعار / اللوجو (اختياري)">
-              <input
-                dir="ltr"
-                className={inputCls}
-                placeholder="https://..."
-                value={editingBrand.logo_url}
-                onChange={(e) => setEditingBrand({ ...editingBrand, logo_url: e.target.value })}
-              />
-            </Field>
+
+            {/* رفع شعار الماركة */}
+            <div className="sm:col-span-2">
+              <Field label="شعار / لوجو الماركة">
+                <div className="flex items-center gap-3">
+                  {editingBrand.logo_url ? (
+                    <div className="relative h-16 w-16 shrink-0 rounded-xl border border-border p-1 bg-secondary">
+                      <img src={editingBrand.logo_url} alt="" className="h-full w-full object-contain" />
+                      <button
+                        type="button"
+                        aria-label="حذف الشعار"
+                        onClick={() => setEditingBrand({ ...editingBrand, logo_url: "" })}
+                        className="absolute -top-1 -left-1 grid h-5 w-5 place-items-center rounded-full bg-destructive text-destructive-foreground text-[10px]"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : null}
+                  <label className="flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-secondary px-3 text-xs font-medium text-foreground hover:border-primary">
+                    {uploadingBrand ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : (
+                      <Upload className="h-4 w-4 text-primary" />
+                    )}
+                    <span>{uploadingBrand ? "جارٍ الرفع..." : "تحميل الشعار من الجهاز"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingBrand}
+                      className="hidden"
+                      onChange={(e) => void handleBrandLogoUpload(e.target.files)}
+                    />
+                  </label>
+                </div>
+              </Field>
+            </div>
+
             <Field label="الترتيب">
               <input
                 type="number"
@@ -312,5 +395,5 @@ export function AdminCategories() {
       ) : null}
     </div>
   );
-      }
-                                                
+        }
+                      
