@@ -158,7 +158,6 @@ export function AdminProducts() {
 
     const generatedSlug = editing.slug || editing.name.toLowerCase().trim().replace(/\s+/g, "-");
 
-    // إعداد الكائن بدون خطأ في TypeScript Type
     const payload = {
       name: editing.name,
       slug: generatedSlug,
@@ -400,7 +399,7 @@ export function AdminProducts() {
                   <Field label="وحدة الصنف">
                     <select
                       className={inputCls}
-                      value={editing.unit}
+                      value={editing.unit || "قطعة"}
                       onChange={(e) => setEditing({ ...editing, unit: e.target.value })}
                     >
                       <option value="قطعة">قطعة</option>
@@ -491,8 +490,9 @@ export function AdminProducts() {
                   </Field>
                 </>
               ) : null}
-
-              {activeTab === "attributes" ? (
-                <div className="space-y-3">
-                  <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
-        
+{activeTab === "attributes" ? (
+  <div className="space-y-3">
+    <div className="p-2.5 rounded-xl bg-secondary/50 border border-border/60 text-[11px] text-muted-foreground flex items-center gap-2">
+      <Layers className="h-4 w-4 shrink-0 text-primary" />
+      <span>حدد الخصائص الإضافية للمنتج حسب فئته.</span>
+    </div>
