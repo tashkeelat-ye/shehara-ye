@@ -1,317 +1,328 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, ChevronLeft, Minus, Plus, Star } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Star, Send, Loader2, ArrowRight, ShoppingBag, Check } from "lucide-react";
 import { toast } from "sonner";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
-import { BottomNav } from "@/components/bottom-nav";
-import { ProductImage } from "@/components/product-image";
-import { ProductCard } from "@/components/product-card";
-import { SectionHeading } from "@/components/section-heading";
-import { useCart } from "@/lib/cart-context";
-import { fetchProduct, fetchProducts, fetchReviews, formatPrice } from "@/lib/db";
+import type { Product } from "@/lib/db";
 
 export const Route = createFileRoute("/product/$id")({
-  head: () => ({
-    meta: [
-      { title: "تفاصيل المنتج | تشكيلات" },
-      { name: "description", content: "تفاصيل المنتج، الصور، التقييمات، والسعر في متجر تشكيلات." },
-      { property: "og:title", content: "تفاصيل المنتج | تشكيلات" },
-      { property: "og:description", content: "تفاصيل المنتج والتقييمات في متجر تشكيلات." },
-    ],
-  }),
-  component: ProductPage,
+  component: ProductDetail,
 });
 
-function ProductPage() {
+function ProductDetail() {
   const { id } = Route.useParams();
-  const navigate = useNavigate();
-  const { addItem, setDrawerOpen } = useCart();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string>("");
+  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("");
 
-  const [imageIndex, setImageIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [size, setSize] = useState<string | null>(null);
-  const [color, setColor] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    async function loadProduct() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
 
-  const { data: product, isLoading } = useQuery({
-    queryKey: ["product", id],
-    queryFn: () => fetchProduct(id),
-  });
-  const { data: reviews = [] } = useQuery({
-    queryKey: ["reviews", id],
-    queryFn: () => fetchReviews(id),
-  });
-  const { data: related = [] } = useQuery({
-    queryKey: ["related", product?.category_id],
-    queryFn: () =>
-      fetchProducts({ categoryId: product?.category_id, sort: "best", limit: 8 }),
-    enabled: Boolean(product?.category_id),
-  });
-
-  const images = useMemo(() => product?.images ?? [], [product]);
-  const discount =
-    product?.old_price && product.old_price > product.price
-      ? Math.round(((product.old_price - product.price) / product.old_price) * 100)
-      : 0;
-
-  async function handleAdd(then?: "cart" | "checkout") {
-    if (!product) return;
-    if (product.sizes.length > 0 && !size) {
-      toast.error("يرجى اختيار المقاس");
-      return;
-    }
-    if (product.colors.length > 0 && !color) {
-      toast.error("يرجى اختيار اللون");
-      return;
-    }
-    setBusy(true);
-    try {
-      await addItem({ productId: product.id, quantity, size, color });
-      if (then === "checkout") {
-        void navigate({ to: "/checkout" });
-        return;
+      if (error) {
+        toast.error("تعذر تحميل بيانات المنتج");
+      } else if (data) {
+        setProduct(data as unknown as Product);
+        if (data.images && data.images.length > 0) {
+          setSelectedImage(data.images[0]);
+        }
       }
-      toast.success("تمت إضافة المنتج إلى السلة", {
-        action: { label: "عرض السلة", onClick: () => setDrawerOpen(true) },
-      });
-    } finally {
-      setBusy(false);
+      setLoading(false);
+    }
+
+    if (id) void loadProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="p-8 text-center dir-rtl">
+        <p className="text-muted-foreground">المنتج غير موجود أو تم حذفه.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container max-w-4xl mx-auto px-4 py-6 space-y-6 dir-rtl">
+      {/* زر العودة */}
+      <button
+        type="button"
+        onClick={() => window.history.back()}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowRight className="h-4 w-4" /> العودة للرئيسية
+      </button>
+
+      {/* تفاصيل المنتج الأساسية */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* معرض الصور */}
+        <div className="space-y-3">
+          <div className="aspect-square rounded-3xl overflow-hidden border border-border bg-secondary/30">
+            <img
+              src={selectedImage || product.images?.[0] || "/placeholder.svg"}
+              alt={product.name}
+              className="h-full w-full object-cover"
+            />
+          </div>
+          {product.images && product.images.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {product.images.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setSelectedImage(img)}
+                  className={`relative h-16 w-16 shrink-0 rounded-2xl overflow-hidden border-2 transition-all ${
+                    selectedImage === img ? "border-primary" : "border-border opacity-70"
+                  }`}
+                >
+                  <img src={img} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* تفاصيل ومعلومات المنتج */}
+        <div className="space-y-4">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-xl font-extrabold text-primary">
+                {product.price?.toLocaleString()} ر.ي
+              </span>
+              {product.original_price ? (
+                <span className="text-xs text-muted-foreground line-through">
+                  {product.original_price?.toLocaleString()} ر.ي
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {/* الخيارات: المقاسات */}
+          {product.sizes && product.sizes.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">المقاس / الحجم:</label>
+              <div className="flex flex-wrap gap-2">
+                {product.sizes.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSelectedSize(s)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                      selectedSize === s
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-foreground border-border"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* الخيارات: الألوان */}
+          {product.colors && product.colors.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">اللون:</label>
+              <div className="flex flex-wrap gap-2">
+                {product.colors.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setSelectedColor(c)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                      selectedColor === c
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-foreground border-border"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* الوصف */}
+          {product.description && (
+            <div className="space-y-1 pt-2 border-t border-border">
+              <p className="text-xs font-semibold text-foreground">وصف المنتج:</p>
+              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+                {product.description}
+              </p>
+            </div>
+          )}
+
+          {/* زر الشراء */}
+          <button
+            type="button"
+            onClick={() => toast.success("تمت إضافة المنتج إلى السلة!")}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-primary text-primary-foreground font-bold text-xs shadow-lg shadow-primary/20 hover:opacity-95 transition-opacity"
+          >
+            <ShoppingBag className="h-4 w-4" /> أضف إلى السلة
+          </button>
+        </div>
+      </div>
+
+      {/* --- قسم التعليقات والتقييمات المباشر --- */}
+      <ProductReviewsSection productId={product.id} />
+    </div>
+  );
+}
+
+// --- مكون التقييمات والتعليقات ---
+function ProductReviewsSection({ productId }: { productId: string }) {
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [name, setName] = useState("");
+  const [comment, setComment] = useState("");
+  const [rating, setRating] = useState(5);
+  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchReviews() {
+      setLoading(true);
+      const { data } = await supabase
+        .from("product_reviews")
+        .select("*")
+        .eq("product_id", productId)
+        .eq("is_approved", true)
+        .order("created_at", { ascending: false });
+
+      if (data) setReviews(data);
+      setLoading(false);
+    }
+    if (productId) void fetchReviews();
+  }, [productId]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !comment.trim()) {
+      toast.error("يرجى إدخال اسمك والتعليق كاملاً");
+      return;
+    }
+
+    setSubmitting(true);
+    const { error } = await supabase.from("product_reviews").insert([
+      {
+        product_id: productId,
+        user_name: name,
+        rating,
+        comment,
+        is_approved: true,
+      },
+    ]);
+
+    setSubmitting(false);
+
+    if (error) {
+      toast.error("تعذر إرسال التقييم: " + error.message);
+    } else {
+      toast.success("تم إضافة تقييمك بنجاح!");
+      setName("");
+      setComment("");
+
+      // تحديث القائمة فوراً
+      const { data } = await supabase
+        .from("product_reviews")
+        .select("*")
+        .eq("product_id", productId)
+        .eq("is_approved", true)
+        .order("created_at", { ascending: false });
+      if (data) setReviews(data);
     }
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8">
-      <SiteHeader />
-      <main className="mx-auto max-w-6xl">
-        {isLoading ? (
-          <div className="p-4">
-            <div className="aspect-square w-full animate-pulse rounded-2xl bg-muted" />
-          </div>
-        ) : !product ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">
-            لم يتم العثور على المنتج.{" "}
-            <Link to="/products" className="text-primary">
-              تصفح المنتجات
-            </Link>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-6 p-4 md:grid-cols-2">
-              <div>
-                <div className="relative overflow-hidden rounded-2xl border border-border/70">
-                  <ProductImage
-                    src={images[imageIndex]}
-                    alt={product.name}
-                    eager
-                    className="aspect-square w-full"
-                  />
-                  {images.length > 1 ? (
-                    <>
-                      <button
-                        type="button"
-                        aria-label="الصورة السابقة"
-                        onClick={() =>
-                          setImageIndex((i) => (i - 1 + images.length) % images.length)
-                        }
-                        className="absolute end-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-foreground shadow-card"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="الصورة التالية"
-                        onClick={() => setImageIndex((i) => (i + 1) % images.length)}
-                        className="absolute start-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-foreground shadow-card"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-                    </>
-                  ) : null}
-                </div>
-                {images.length > 1 ? (
-                  <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
-                    {images.map((img, i) => (
-                      <button
-                        key={img + i}
-                        type="button"
-                        aria-label={`صورة ${i + 1}`}
-                        onClick={() => setImageIndex(i)}
-                        className={`overflow-hidden rounded-xl border-2 ${
-                          i === imageIndex ? "border-primary" : "border-transparent"
-                        }`}
-                      >
-                        <ProductImage src={img} alt={product.name} className="h-16 w-16" />
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+    <div className="mt-10 pt-6 border-t border-border space-y-6 dir-rtl">
+      <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+        <span>آراء وتقييمات العملاء</span>
+        <span className="text-xs bg-secondary px-2.5 py-0.5 rounded-full text-muted-foreground font-normal">
+          ({reviews.length})
+        </span>
+      </h3>
 
-              <div className="space-y-4">
-                <h1 className="text-xl leading-snug text-foreground">{product.name}</h1>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-accent-solid text-accent-solid" />
-                    <span className="text-foreground">
-                      {Number(product.rating).toLocaleString("ar-EG")}
-                    </span>
-                  </span>
-                  <span>({product.reviews_count.toLocaleString("ar-EG")} مراجعة)</span>
-                  <span>• {product.city}</span>
-                </div>
+      {/* نموذج إضافة تقييم */}
+      <form onSubmit={handleSubmit} className="p-4 rounded-3xl bg-secondary/40 border border-border/80 space-y-3">
+        <h4 className="text-xs font-semibold text-foreground">شاركونا رأيكم بالمنتج</h4>
 
-                <div className="flex items-end gap-3">
-                  <p className="text-2xl text-primary">{formatPrice(product.price)}</p>
-                  {product.old_price ? (
-                    <p className="text-sm text-muted-foreground line-through">
-                      {formatPrice(product.old_price)}
-                    </p>
-                  ) : null}
-                  {discount > 0 ? (
-                    <span className="rounded-full bg-accent-solid px-2 py-0.5 text-[11px] text-accent-solid-foreground">
-                      خصم {discount.toLocaleString("ar-EG")}٪
-                    </span>
-                  ) : null}
-                </div>
+        <div className="flex gap-1 text-amber-400">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button key={star} type="button" onClick={() => setRating(star)} className="focus:outline-none">
+              <Star className={`h-5 w-5 ${star <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} />
+            </button>
+          ))}
+        </div>
 
-                <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-                  {product.description}
-                </p>
+        <input
+          type="text"
+          placeholder="الاسم"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full p-2.5 text-xs rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        />
 
-                {product.sizes.length > 0 ? (
-                  <div>
-                    <h2 className="text-sm text-foreground">المقاس</h2>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {product.sizes.map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => setSize(s)}
-                          className={`rounded-xl border px-3 py-2 text-xs ${
-                            size === s
-                              ? "border-primary bg-brand-soft text-primary"
-                              : "border-border text-foreground"
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+        <textarea
+          rows={3}
+          placeholder="اكتب تعليقك هنا..."
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          className="w-full p-2.5 text-xs rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        />
 
-                {product.colors.length > 0 ? (
-                  <div>
-                    <h2 className="text-sm text-foreground">اللون</h2>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {product.colors.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setColor(c)}
-                          className={`rounded-xl border px-3 py-2 text-xs ${
-                            color === c
-                              ? "border-primary bg-brand-soft text-primary"
-                              : "border-border text-foreground"
-                          }`}
-                        >
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity"
+        >
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          إرسال التقييم
+        </button>
+      </form>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-foreground">الكمية</span>
-                  <div className="flex items-center gap-1 rounded-xl border border-border">
-                    <button
-                      type="button"
-                      aria-label="تقليل الكمية"
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="grid h-10 w-10 place-items-center text-foreground"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="min-w-8 text-center text-sm">
-                      {quantity.toLocaleString("ar-EG")}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label="زيادة الكمية"
-                      onClick={() => setQuantity((q) => Math.min(20, q + 1))}
-                      className="grid h-10 w-10 place-items-center text-foreground"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void handleAdd("cart")}
-                    className="h-12 flex-1 rounded-2xl bg-primary text-sm text-primary-foreground disabled:opacity-60"
-                  >
-                    أضف للسلة
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void handleAdd("checkout")}
-                    className="h-12 flex-1 rounded-2xl bg-accent-solid text-sm text-accent-solid-foreground disabled:opacity-60"
-                  >
-                    اشترِ الآن
-                  </button>
+      {/* قائمة التعليقات السابقة */}
+      {loading ? (
+        <p className="text-xs text-center text-muted-foreground animate-pulse">جارٍ تحميل التقييمات...</p>
+      ) : reviews.length === 0 ? (
+        <p className="text-xs text-center text-muted-foreground py-2">لا توجد تقييمات بعد. كن أول من يشاركنا رأيه!</p>
+      ) : (
+        <div className="space-y-3">
+          {reviews.map((r) => (
+            <div key={r.id} className="p-3.5 rounded-2xl border border-border/70 bg-card space-y-1.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-foreground">{r.user_name}</span>
+                <div className="flex text-amber-400">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-3 w-3 ${i < r.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/20"}`}
+                    />
+                  ))}
                 </div>
               </div>
+              <p className="text-muted-foreground leading-relaxed">{r.comment}</p>
+              <span className="text-[10px] text-muted-foreground/60 block pt-1">
+                {new Date(r.created_at).toLocaleDateString("ar-YE")}
+              </span>
             </div>
-
-            <section className="mt-4 px-4">
-              <h2 className="text-base text-foreground">تعليقات المستخدمين</h2>
-              {reviews.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  لا توجد تعليقات على هذا المنتج بعد.
-                </p>
-              ) : (
-                <ul className="mt-3 space-y-3">
-                  {reviews.map((r) => (
-                    <li key={r.id} className="rounded-2xl border border-border/70 bg-card p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm text-foreground">{r.author_name}</p>
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Star className="h-3.5 w-3.5 fill-accent-solid text-accent-solid" />
-                          {Number(r.rating).toLocaleString("ar-EG")}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-                        {r.comment}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            <section className="mt-8">
-              <SectionHeading title="منتجات مشابهة" />
-              <div className="mt-3 grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 lg:grid-cols-4">
-                {related
-                  .filter((p) => p.id !== product.id)
-                  .slice(0, 4)
-                  .map((p) => (
-                    <ProductCard key={p.id} product={p} />
-                  ))}
-              </div>
-            </section>
-          </>
-        )}
-      </main>
-      <SiteFooter />
-      <BottomNav />
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+      }
