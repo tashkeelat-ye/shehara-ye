@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Star, Send, Loader2, ArrowRight, ShoppingBag, Zap, ChevronLeft, ChevronRight } from "lucide-react";
@@ -17,56 +17,53 @@ function ProductDetail() {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // حالة معرض الصور والسحب
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
+
+  // دعم التمرير باللمس للصور (Touch Swipe)
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
 
   useEffect(() => {
     async function loadProductData() {
       setLoading(true);
       
       // 1. جلب بيانات المنتج الحالي
-      const { data: currentProduct, error } = await supabase
+      const { data, error } = await supabase
         .from("products")
         .select("*")
         .eq("id", id)
         .maybeSingle();
 
-      if (error || !currentProduct) {
+      if (error) {
         toast.error("تعذر تحميل بيانات المنتج");
-        setLoading(false);
-        return;
-      }
+      } else if (data) {
+        const currentProd = data as unknown as Product;
+        setProduct(currentProd);
+        setSelectedImageIndex(0);
 
-      const prod = currentProduct as unknown as Product;
-      setProduct(prod);
-      setActiveImageIndex(0);
+        // 2. جلب المنتجات المشابهة من نفس الفئة
+        if (currentProd.category_slug) {
+          const { data: related } = await supabase
+            .from("products")
+            .select("*")
+            .eq("category_slug", currentProd.category_slug)
+            .neq("id", currentProd.id)
+            .limit(6);
 
-      // 2. جلب المنتجات المشابهة من نفس الفئة
-      if (prod.category_slug) {
-        const { data: related } = await supabase
-          .from("products")
-          .select("*")
-          .eq("category_slug", prod.category_slug)
-          .neq("id", prod.id)
-          .limit(6);
-
-        if (related) {
-          setRelatedProducts(related as unknown as Product[]);
+          if (related) {
+            setRelatedProducts(related as unknown as Product[]);
+          }
         }
       }
-
       setLoading(false);
     }
 
     if (id) void loadProductData();
   }, [id]);
 
-  // التحكم بسحب الصور باللمس (Swipe Handlers)
+  // دالة السحب باللمس للصور
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
@@ -76,25 +73,17 @@ function ProductDetail() {
   };
 
   const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current || !product?.images?.length) return;
+    if (!product?.images || product.images.length <= 1) return;
     const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > 40;
-    const isRightSwipe = distance < -40;
-
-    if (isLeftSwipe && activeImageIndex < product.images.length - 1) {
-      setActiveImageIndex((prev) => prev + 1);
+    
+    // سحب لليسار -> الصورة التالية
+    if (distance > 40 && selectedImageIndex < product.images.length - 1) {
+      setSelectedImageIndex((prev) => prev + 1);
     }
-    if (isRightSwipe && activeImageIndex > 0) {
-      setActiveImageIndex((prev) => prev - 1);
+    // سحب لليمين -> الصورة السابقة
+    if (distance < -40 && selectedImageIndex > 0) {
+      setSelectedImageIndex((prev) => prev - 1);
     }
-
-    touchStartX.current = null;
-    touchEndX.current = null;
-  };
-
-  const handleBuyNow = () => {
-    toast.success("تم الانتقال لإتمام الطلب مباشرة!");
-    void navigate({ to: "/checkout" });
   };
 
   if (loading) {
@@ -107,91 +96,91 @@ function ProductDetail() {
 
   if (!product) {
     return (
-      <div className="p-8 text-center dir-rtl">
+      <div className="p-8 text-center dir-rtl pb-24">
         <p className="text-muted-foreground">المنتج غير موجود أو تم حذفه.</p>
       </div>
     );
   }
 
-  const imagesList = product.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
+  const images = product.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
 
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-6 space-y-8 dir-rtl">
-      {/* زر العودة */}
-      <button
-        type="button"
-        onClick={() => window.history.back()}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowRight className="h-4 w-4" /> العودة
-      </button>
+    <div className="container max-w-4xl mx-auto px-4 py-4 space-y-6 dir-rtl pb-28">
+      {/* زر العودة العلوي */}
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground bg-secondary/60 px-3 py-1.5 rounded-xl transition-colors"
+        >
+          <ArrowRight className="h-4 w-4" /> العودة
+        </button>
+      </div>
 
-      {/* تفاصيل المنتج الأساسية والمعرض */}
+      {/* تفاصيل المنتج الرئيسية */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        {/* معرض الصور مع دعم السحب يميناً ويساراً */}
+        {/* معرض الصور التفاعلي باللمس */}
         <div className="space-y-3">
           <div 
-            className="relative aspect-square rounded-3xl overflow-hidden border border-border bg-secondary/30 touch-pan-y select-none"
+            className="relative aspect-square rounded-3xl overflow-hidden border border-border bg-secondary/30 touch-pan-y"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
             <img
-              src={imagesList[activeImageIndex]}
+              src={images[selectedImageIndex]}
               alt={product.name}
-              className="h-full w-full object-cover transition-all duration-300 pointer-events-none"
+              className="h-full w-full object-cover transition-all duration-300 select-none"
             />
 
-            {/* أزرار التنقل السريع */}
-            {imagesList.length > 1 && (
+            {/* أسهم التنقل للصور */}
+            {images.length > 1 && (
               <>
-                {activeImageIndex > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveImageIndex((prev) => prev - 1)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white backdrop-blur-md"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                )}
-                {activeImageIndex < imagesList.length - 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveImageIndex((prev) => prev + 1)}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white backdrop-blur-md"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                )}
-
-                {/* نقاط المؤشر التفاعلية */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">
-                  {imagesList.map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setActiveImageIndex(idx)}
-                      className={`h-2 rounded-full transition-all ${
-                        activeImageIndex === idx ? "w-5 bg-white" : "w-2 bg-white/50"
-                      }`}
-                    />
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImageIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={selectedImageIndex === 0}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 backdrop-blur border border-border grid place-items-center disabled:opacity-20"
+                >
+                  <ChevronLeft className="h-4 w-4 text-foreground" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImageIndex((prev) => Math.min(images.length - 1, prev + 1))}
+                  disabled={selectedImageIndex === images.length - 1}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 backdrop-blur border border-border grid place-items-center disabled:opacity-20"
+                >
+                  <ChevronRight className="h-4 w-4 text-foreground" />
+                </button>
               </>
+            )}
+
+            {/* مؤشر النطاق السفلي للصور */}
+            {images.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur">
+                {images.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`h-1.5 rounded-full transition-all ${
+                      selectedImageIndex === idx ? "w-4 bg-primary" : "w-1.5 bg-white/60"
+                    }`}
+                  />
+                ))}
+              </div>
             )}
           </div>
 
-          {/* المصغرات أسفل الصورة */}
-          {imagesList.length > 1 && (
+          {/* المصغرات الفردية */}
+          {images.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {imagesList.map((img, idx) => (
+              {images.map((img, idx) => (
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => setActiveImageIndex(idx)}
-                  className={`relative h-16 w-16 shrink-0 rounded-2xl overflow-hidden border-2 transition-all ${
-                    activeImageIndex === idx ? "border-primary" : "border-border opacity-60"
+                  onClick={() => setSelectedImageIndex(idx)}
+                  className={`relative h-14 w-14 shrink-0 rounded-2xl overflow-hidden border-2 transition-all ${
+                    selectedImageIndex === idx ? "border-primary scale-95" : "border-border opacity-60"
                   }`}
                 >
                   <img src={img} alt="" className="h-full w-full object-cover" />
@@ -201,10 +190,10 @@ function ProductDetail() {
           )}
         </div>
 
-        {/* معلومات وخيارات الشراء */}
+        {/* تفاصيل وخيارات المنتج */}
         <div className="space-y-4">
           <div>
-            <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
+            <h1 className="text-xl font-bold text-foreground leading-snug">{product.name}</h1>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-2xl font-extrabold text-primary">
                 {product.price?.toLocaleString()} ر.ي
@@ -217,10 +206,10 @@ function ProductDetail() {
             </div>
           </div>
 
-          {/* الخيارات: المقاسات */}
+          {/* تحديد المقاسات */}
           {product.sizes && product.sizes.length > 0 && (
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">المقاس / الحجم:</label>
+              <label className="text-xs font-semibold text-foreground">اختر المقاس:</label>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map((s) => (
                   <button
@@ -240,10 +229,10 @@ function ProductDetail() {
             </div>
           )}
 
-          {/* الخيارات: الألوان */}
+          {/* تحديد اللون */}
           {product.colors && product.colors.length > 0 && (
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">اللون:</label>
+              <label className="text-xs font-semibold text-foreground">اختر اللون:</label>
               <div className="flex flex-wrap gap-2">
                 {product.colors.map((c) => (
                   <button
@@ -263,64 +252,71 @@ function ProductDetail() {
             </div>
           )}
 
-          {/* الوصف */}
+          {/* وصف المنتج */}
           {product.description && (
             <div className="space-y-1 pt-2 border-t border-border">
-              <p className="text-xs font-semibold text-foreground">وصف المنتج:</p>
+              <p className="text-xs font-semibold text-foreground">الوصف:</p>
               <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
             </div>
           )}
 
-          {/* أزرار الإجراءات: شراء الآن + أضف للسلة */}
-          <div className="flex gap-2 pt-2">
-            <button
-              type="button"
-              onClick={handleBuyNow}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 hover:opacity-95 transition-opacity"
-            >
-              <Zap className="h-4 w-4 fill-white" /> شراء الآن
-            </button>
+          {/* أزرار الإجراءات والشراء (شراء الآن + أضف للسلة) */}
+          <div className="grid grid-cols-2 gap-3 pt-3">
             <button
               type="button"
               onClick={() => toast.success("تمت إضافة المنتج إلى السلة!")}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-primary text-primary-foreground font-bold text-xs shadow-lg shadow-primary/20 hover:opacity-95 transition-opacity"
+              className="flex items-center justify-center gap-1.5 py-3 rounded-2xl bg-secondary text-foreground border border-border font-bold text-xs hover:bg-secondary/80 transition-colors"
             >
-              <ShoppingBag className="h-4 w-4" /> أضف إلى السلة
+              <ShoppingBag className="h-4 w-4 text-primary" /> أضف إلى السلة
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                toast.success("جارٍ التوجه لإتمام الشراء...");
+                void navigate({ to: "/auth" });
+              }}
+              className="flex items-center justify-center gap-1.5 py-3 rounded-2xl bg-primary text-primary-foreground font-bold text-xs shadow-lg shadow-primary/20 hover:opacity-95 transition-opacity"
+            >
+              <Zap className="h-4 w-4 fill-primary-foreground" /> شراء الآن
             </button>
           </div>
         </div>
       </div>
 
-      {/* --- قسم المنتجات المشابهة --- */}
+      {/* --- قسم واجهة المنتجات المشابهة --- */}
       {relatedProducts.length > 0 && (
-        <div className="pt-6 border-t border-border space-y-4">
-          <h3 className="text-base font-bold text-foreground">منتجات مشابهة قد تعجبك</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div className="mt-10 pt-6 border-t border-border space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-base font-bold text-foreground">منتجات قد تعجبك أيضاً</h3>
+            <span className="text-xs text-muted-foreground">تشكيلة ممثالة</span>
+          </div>
+
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
             {relatedProducts.map((rel) => (
-              <Link
+              <div
                 key={rel.id}
-                to="/product/$id"
-                params={{ id: rel.id }}
-                className="group rounded-2xl border border-border p-2.5 bg-card hover:border-primary/50 transition-all space-y-2 block"
+                onClick={() => void navigate({ to: `/product/${rel.id}` })}
+                className="w-36 shrink-0 rounded-2xl border border-border/80 bg-card p-2.5 space-y-2 cursor-pointer hover:border-primary transition-all"
               >
                 <div className="aspect-square rounded-xl overflow-hidden bg-secondary">
                   <img
                     src={rel.images?.[0] || "/placeholder.svg"}
                     alt={rel.name}
-                    className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+                    className="h-full w-full object-cover"
                   />
                 </div>
-                <p className="text-xs font-bold text-foreground truncate">{rel.name}</p>
-                <p className="text-xs font-extrabold text-primary">{rel.price?.toLocaleString()} ر.ي</p>
-              </Link>
+                <h4 className="text-xs font-semibold text-foreground truncate">{rel.name}</h4>
+                <p className="text-xs font-bold text-primary">{rel.price?.toLocaleString()} ر.ي</p>
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* --- قسم التعليقات والتقييمات --- */}
+      {/* --- قسم التعليقات والتقييمات المباشر --- */}
       <ProductReviewsSection productId={product.id} />
     </div>
   );
@@ -378,6 +374,7 @@ function ProductReviewsSection({ productId }: { productId: string }) {
       setName("");
       setComment("");
 
+      // تحديث قائمة التقييمات فوراً
       const { data } = await supabase
         .from("product_reviews")
         .select("*")
@@ -389,7 +386,7 @@ function ProductReviewsSection({ productId }: { productId: string }) {
   }
 
   return (
-    <div className="pt-6 border-t border-border space-y-6 dir-rtl">
+    <div className="mt-10 pt-6 border-t border-border space-y-6 dir-rtl">
       <h3 className="text-base font-bold text-foreground flex items-center gap-2">
         <span>آراء وتقييمات العملاء</span>
         <span className="text-xs bg-secondary px-2.5 py-0.5 rounded-full text-muted-foreground font-normal">
@@ -397,8 +394,9 @@ function ProductReviewsSection({ productId }: { productId: string }) {
         </span>
       </h3>
 
+      {/* نموذج التقييم */}
       <form onSubmit={handleSubmit} className="p-4 rounded-3xl bg-secondary/40 border border-border/80 space-y-3">
-        <h4 className="text-xs font-semibold text-foreground">شاركونا رأيكم بالمنتج</h4>
+        <h4 className="text-xs font-semibold text-foreground">شاركنا رأيك بالمنتج</h4>
 
         <div className="flex gap-1 text-amber-400">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -413,7 +411,7 @@ function ProductReviewsSection({ productId }: { productId: string }) {
           placeholder="الاسم"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full p-2.5 text-xs rounded-xl border border-border bg-card text-foreground focus:outline-none"
+          className="w-full p-2.5 text-xs rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
         />
 
         <textarea
@@ -421,23 +419,24 @@ function ProductReviewsSection({ productId }: { productId: string }) {
           placeholder="اكتب تعليقك هنا..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="w-full p-2.5 text-xs rounded-xl border border-border bg-card text-foreground focus:outline-none"
+          className="w-full p-2.5 text-xs rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
         />
 
         <button
           type="submit"
           disabled={submitting}
-          className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-primary text-primary-foreground rounded-xl"
+          className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity"
         >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           إرسال التقييم
         </button>
       </form>
 
+      {/* التقييمات السابقة */}
       {loading ? (
         <p className="text-xs text-center text-muted-foreground animate-pulse">جارٍ تحميل التقييمات...</p>
       ) : reviews.length === 0 ? (
-        <p className="text-xs text-center text-muted-foreground py-2">لا توجد تقييمات بعد.</p>
+        <p className="text-xs text-center text-muted-foreground py-2">لا توجد تقييمات بعد. كن أول من يشاركنا رأيه!</p>
       ) : (
         <div className="space-y-3">
           {reviews.map((r) => (
