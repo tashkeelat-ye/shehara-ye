@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   Bell,
@@ -38,13 +38,15 @@ const FALLBACK = [
 ];
 
 export function BottomNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { count, setDrawerOpen } = useCart();
+  
   const { data } = useQuery({ 
     queryKey: ["nav-items"], 
     queryFn: () => fetchNavItems(true) 
   });
 
-  // استخدام البيانات المجلوبة أو القائمة الافتراضية
   const items = data && data.length > 0 ? data : FALLBACK;
 
   return (
@@ -60,7 +62,7 @@ export function BottomNav() {
           const Icon = ICONS[item.icon] ?? Home;
           const isCartAction = item.path === "#cart" || item.icon === "cart" || item.isCartBadge;
 
-          // إذا كان العنصر هو السلة، نقوم بفتح Drawer السلة
+          // زر السلة (يفتح الـ Drawer)
           if (isCartAction) {
             return (
               <li key={item.id} className="min-w-0">
@@ -83,18 +85,21 @@ export function BottomNav() {
             );
           }
 
-          // باقي الروابط العادية
+          // الأزرار العادية مع التمييز عند التفعيل
+          const isActive = location.pathname === item.path;
+
           return (
             <li key={item.id} className="min-w-0">
-              <Link
-                to={item.path}
-                activeProps={{ className: "text-primary font-bold" }}
-                inactiveProps={{ className: "text-muted-foreground" }}
-                className="flex w-full flex-col items-center gap-1 py-2.5 text-[11px] transition-colors"
+              <button
+                type="button"
+                onClick={() => void navigate({ to: item.path as any })}
+                className={`flex w-full flex-col items-center gap-1 py-2.5 text-[11px] transition-colors ${
+                  isActive ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"
+                }`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="max-w-full truncate px-0.5">{item.label}</span>
-              </Link>
+              </button>
             </li>
           );
         })}
