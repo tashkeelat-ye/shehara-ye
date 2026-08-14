@@ -32,14 +32,20 @@ const ICONS: Record<string, LucideIcon> = {
 const FALLBACK = [
   { id: "f1", label: "الرئيسية", path: "/", icon: "home" },
   { id: "f2", label: "المنتجات", path: "/products", icon: "grid" },
-  { id: "f3", label: "طلباتي", path: "/orders", icon: "package" },
-  { id: "f4", label: "حسابي", path: "/account", icon: "user" },
+  { id: "f3", label: "السلة", path: "#cart", icon: "cart", isCartBadge: true },
+  { id: "f4", label: "طلباتي", path: "/orders", icon: "package" },
+  { id: "f5", label: "حسابي", path: "/account", icon: "user" },
 ];
 
 export function BottomNav() {
   const { count, setDrawerOpen } = useCart();
-  const { data } = useQuery({ queryKey: ["nav-items"], queryFn: () => fetchNavItems(true) });
-  const items = (data && data.length > 0 ? data : FALLBACK).slice(0, 4);
+  const { data } = useQuery({ 
+    queryKey: ["nav-items"], 
+    queryFn: () => fetchNavItems(true) 
+  });
+
+  // استخدام البيانات المجلوبة أو القائمة الافتراضية
+  const items = data && data.length > 0 ? data : FALLBACK;
 
   return (
     <nav
@@ -48,17 +54,43 @@ export function BottomNav() {
     >
       <ul
         className="mx-auto grid max-w-md"
-        style={{ gridTemplateColumns: `repeat(${items.length + 1}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
       >
-        {items.map((item) => {
+        {items.map((item: any) => {
           const Icon = ICONS[item.icon] ?? Home;
+          const isCartAction = item.path === "#cart" || item.icon === "cart" || item.isCartBadge;
+
+          // إذا كان العنصر هو السلة، نقوم بفتح Drawer السلة
+          if (isCartAction) {
+            return (
+              <li key={item.id} className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(true)}
+                  className="flex w-full flex-col items-center gap-1 py-2.5 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <span className="relative">
+                    <Icon className="h-5 w-5 shrink-0" />
+                    {count > 0 ? (
+                      <span className="absolute -top-1.5 -left-2 grid h-4 min-w-4 place-items-center rounded-full bg-accent-solid px-1 text-[10px] text-accent-solid-foreground font-bold">
+                        {count.toLocaleString("ar-EG")}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="max-w-full truncate px-0.5">{item.label}</span>
+                </button>
+              </li>
+            );
+          }
+
+          // باقي الروابط العادية
           return (
             <li key={item.id} className="min-w-0">
               <Link
                 to={item.path}
-                activeProps={{ className: "text-primary" }}
+                activeProps={{ className: "text-primary font-bold" }}
                 inactiveProps={{ className: "text-muted-foreground" }}
-                className="flex w-full flex-col items-center gap-1 py-2.5 text-[11px]"
+                className="flex w-full flex-col items-center gap-1 py-2.5 text-[11px] transition-colors"
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="max-w-full truncate px-0.5">{item.label}</span>
@@ -66,23 +98,6 @@ export function BottomNav() {
             </li>
           );
         })}
-        <li className="min-w-0">
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-            className="flex w-full flex-col items-center gap-1 py-2.5 text-[11px] text-muted-foreground"
-          >
-            <span className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {count > 0 ? (
-                <span className="absolute -top-1.5 -left-2 grid h-4 min-w-4 place-items-center rounded-full bg-accent-solid px-1 text-[10px] text-accent-solid-foreground">
-                  {count.toLocaleString("ar-EG")}
-                </span>
-              ) : null}
-            </span>
-            السلة
-          </button>
-        </li>
       </ul>
     </nav>
   );
