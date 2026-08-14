@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site-header";
 import { PromoSlider } from "@/components/promo-slider";
+import { StoriesCategories } from "@/components/home/StoriesCategories";
+import { FlashSaleSection } from "@/components/home/FlashSaleSection";
 import { CategoryStrip } from "@/components/category-strip";
 import { OffersSection } from "@/components/offers-section";
 import { BrandsSection } from "@/components/brands-section";
@@ -41,9 +43,19 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
+      
+      {/* قسم ستوريات التصنيفات بالنمط الجديد */}
+      <StoriesCategories />
+
       <main className="mx-auto max-w-6xl pb-4 space-y-6">
+        {/* البنرات الرئيسية */}
         <PromoSlider />
+        
+        {/* شريط التصنيفات التقليدي */}
         <CategoryStrip />
+
+        {/* قسم العروض الخاطفة الجديدة بالعداد التنازلي */}
+        <FlashSaleSection />
         
         {/* قسم العروض والتخفيضات */}
         <OffersSection />
@@ -66,6 +78,7 @@ function Index() {
         {/* قسم المنتجات المحلية */}
         <LocalProducts />
       </main>
+
       <SiteFooter />
       <BottomNav />
     </div>
