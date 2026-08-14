@@ -10,11 +10,7 @@ import {
   FlaskConical, 
   ShieldCheck, 
   QrCode, 
-  Printer,
-  Phone,
-  Globe,
-  Facebook,
-  Instagram
+  Printer
 } from "lucide-react";
 
 export interface OrderItem {
@@ -57,11 +53,10 @@ interface InvoiceViewProps {
 }
 
 export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
-  // بيانات افتراضية مطابقة للصورة في حال عدم تمرير بيانات كاملة
   const data: InvoiceData = {
-    invoiceNumber: order?.invoiceNumber || "INV-2024-000567",
-    invoiceDate: order?.invoiceDate || "04 أغسطس 2024 - 10:30",
-    orderNumber: order?.orderNumber || "ORD-2024-001234",
+    invoiceNumber: order?.invoiceNumber || "INV-2026-001015",
+    invoiceDate: order?.invoiceDate || new Date().toLocaleDateString("ar-YE") + " - " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    orderNumber: order?.orderNumber || "TSK-1015",
     storeDetails: {
       name: order?.storeDetails?.name || "تشكيلات للتسوق",
       crNumber: order?.storeDetails?.crNumber || "123456-7",
@@ -70,50 +65,26 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
       phone: order?.storeDetails?.phone || "77 000 1111",
     },
     customerDetails: {
-      name: order?.customerDetails?.name || "أحمد محمد سعيد",
-      phone: order?.customerDetails?.phone || "77 123 4567",
-      address: order?.customerDetails?.address || "إب - جولة العدين - شارع الثلاثين",
-      paymentMethod: order?.customerDetails?.paymentMethod || "الدفع عند الاستلام",
+      name: order?.customerDetails?.name || "عميل المتجر",
+      phone: order?.customerDetails?.phone || "774234567",
+      address: order?.customerDetails?.address || "إب - المعابرة - شارع الثلاثين بجوار فندق قصر البنان الدخله حق مصنع خرسانة الخفجي جوار بقالة عبدالله البصير",
+      paymentMethod: order?.customerDetails?.paymentMethod || "wallet_balance",
       currency: order?.customerDetails?.currency || "ريال يمني (YER)",
     },
-    items: order?.items || [
+    items: order?.items && order.items.length > 0 ? order.items : [
       {
         id: "1",
-        title: "منتج تجريبي",
-        description: "الواصف: وصف مختصر للمنتج",
+        title: "عسل سدر دوعني أصلي - 1 كجم",
+        description: "منتج أصلي عالي الجودة",
         quantity: 1,
-        price: 25000,
-        image: "/logo.png",
-      },
-      {
-        id: "2",
-        title: "منتج تجريبي آخر",
-        description: "الواصف: وصف مختصر للمنتج",
-        quantity: 2,
-        price: 15000,
-        image: "/logo.png",
-      },
-      {
-        id: "3",
-        title: "منتج ثالث",
-        description: "الواصف: وصف مختصر للمنتج",
-        quantity: 1,
-        price: 40000,
-        image: "/logo.png",
-      },
-      {
-        id: "4",
-        title: "منتج رابع",
-        description: "الواصف: وصف مختصر للمنتج",
-        quantity: 1,
-        price: 18000,
+        price: 55000,
         image: "/logo.png",
       },
     ],
-    subtotal: order?.subtotal ?? 113000,
-    discount: order?.discount ?? 8000,
-    shippingFee: order?.shippingFee ?? 2000,
-    total: order?.total ?? 107000,
+    subtotal: order?.subtotal ?? 55000,
+    discount: order?.discount ?? 0,
+    shippingFee: order?.shippingFee ?? 4000,
+    total: order?.total ?? 59000,
     notes: order?.notes || "شكراً لتسوقكم معنا، نتمنى لكم تجربة تسوق ممتعة",
   };
 
@@ -122,31 +93,30 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white text-gray-800 p-6 md:p-8 dir-rtl font-sans print:p-0 print:m-0 print:w-full print:max-w-none shadow-xl rounded-2xl border print:border-none print:shadow-none">
+    <div className="w-full max-w-4xl mx-auto bg-white text-gray-800 p-4 md:p-8 dir-rtl font-sans print:p-0 print:m-0 print:w-full print:max-w-none shadow-2xl rounded-3xl border border-gray-100">
       
-      {/* شريط الإجراءات (يختفي أثناء الطباعة) */}
+      {/* شريط الإجراءات العلوي (يختفي عند الطباعة) */}
       <div className="flex justify-between items-center mb-6 print:hidden border-b pb-4">
-        <div className="text-xs text-gray-500">
-          معاينة الفاتورة الإلكترونية الرسمية لمتجر تشكيلات
+        <div className="text-xs text-gray-500 font-medium">
+          📄 الفاتورة الإلكترونية الضريبية الرسمية
         </div>
         <button
           onClick={handlePrint}
-          className="px-5 py-2.5 bg-[#3e0b1b] text-white text-sm font-bold rounded-xl hover:bg-[#581329] transition-all flex items-center gap-2 shadow-md"
+          className="px-4 py-2 bg-[#3e0b1b] text-white text-xs font-bold rounded-xl hover:bg-[#581329] transition-all flex items-center gap-2 shadow"
         >
           <Printer className="w-4 h-4" />
-          <span>طباعة / حفظ كـ PDF</span>
+          <span>طباعة الفاتورة / PDF</span>
         </button>
       </div>
 
-      {/* 1. الهيدر العادي والرسمي */}
-      <div className="flex justify-between items-start mb-6">
-        {/* جهة اليمين: الشعار والهوية */}
+      {/* 1. الهيدر والشعار */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b pb-6 border-gray-100">
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 bg-[#3e0b1b] rounded-2xl flex items-center justify-center p-2 shadow-inner">
+          <div className="w-16 h-16 md:w-20 md:h-20 bg-[#3e0b1b] rounded-2xl flex items-center justify-center p-2 shadow-md shrink-0">
             <img src="/logo.png" alt="تشكيلات" className="max-h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold text-[#3e0b1b] tracking-tight">تشكيلات</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-[#3e0b1b] tracking-tight">تشكيلات</h1>
             <p className="text-xs text-[#c49a37] font-bold tracking-widest mt-0.5">للتسوق</p>
             <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#c49a37] inline-block"></span>
@@ -155,8 +125,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
           </div>
         </div>
 
-        {/* جهة اليسار: بيانات الفاتورة وسارة الضريبية */}
-        <div className="text-left space-y-1">
+        <div className="text-right md:text-left w-full md:w-auto">
           <div className="inline-flex items-center gap-2 bg-[#3e0b1b] text-white px-4 py-1.5 rounded-xl text-xs font-bold shadow-sm mb-2">
             <FileText className="w-4 h-4 text-[#c49a37]" />
             <span>فاتورة ضريبية / Tax Invoice</span>
@@ -169,19 +138,17 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
         </div>
       </div>
 
-      {/* 2. بطاقتان: بيانات المتجر وبيانات العميل */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      {/* 2. بيانات المتجر والعميل */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* بيانات المتجر */}
         <div className="border border-gray-200 rounded-2xl overflow-hidden bg-[#fcf9fa]">
           <div className="bg-[#f5eef1] px-4 py-2 border-b border-gray-200 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#3e0b1b]">
-              <span>بيانات المتجر</span>
-            </div>
+            <span className="text-xs font-bold text-[#3e0b1b]">بيانات المتجر</span>
             <div className="w-6 h-6 rounded-full bg-[#3e0b1b] text-white flex items-center justify-center">
               <Store className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="p-3 text-xs space-y-1.5">
+          <div className="p-3 text-xs space-y-2">
             <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">اسم المتجر</span><span className="font-semibold text-gray-800">{data.storeDetails.name}</span></div>
             <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">السجل التجاري</span><span className="font-semibold font-mono text-gray-800">{data.storeDetails.crNumber}</span></div>
             <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">الرقم الضريبي</span><span className="font-semibold font-mono text-gray-800">{data.storeDetails.taxNumber}</span></div>
@@ -193,24 +160,22 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
         {/* بيانات العميل */}
         <div className="border border-gray-200 rounded-2xl overflow-hidden bg-[#fcf9fa]">
           <div className="bg-[#f5eef1] px-4 py-2 border-b border-gray-200 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#3e0b1b]">
-              <span>بيانات العميل</span>
-            </div>
+            <span className="text-xs font-bold text-[#3e0b1b]">بيانات العميل</span>
             <div className="w-6 h-6 rounded-full bg-[#3e0b1b] text-white flex items-center justify-center">
               <User className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="p-3 text-xs space-y-1.5">
+          <div className="p-3 text-xs space-y-2">
             <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">الاسم</span><span className="font-semibold text-gray-800">{data.customerDetails.name}</span></div>
             <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">رقم الجوال</span><span className="font-semibold font-mono text-gray-800">{data.customerDetails.phone}</span></div>
-            <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">العنوان</span><span className="font-semibold text-gray-800">{data.customerDetails.address}</span></div>
-            <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">طريقة الدفع</span><span className="font-semibold text-gray-800">{data.customerDetails.paymentMethod}</span></div>
+            <div className="flex justify-between py-1 border-b border-gray-100 items-start"><span className="text-gray-500 shrink-0">العنوان</span><span className="font-semibold text-gray-800 text-left max-w-[200px] truncate">{data.customerDetails.address}</span></div>
+            <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">طريقة الدفع</span><span className="font-semibold font-mono text-gray-800">{data.customerDetails.paymentMethod}</span></div>
             <div className="flex justify-between py-1"><span className="text-gray-500">العملة</span><span className="font-semibold text-gray-800">{data.customerDetails.currency}</span></div>
           </div>
         </div>
       </div>
 
-      {/* 3. جدول المنتجات الرئيسي */}
+      {/* 3. جدول المنتجات */}
       <div className="border border-gray-200 rounded-2xl overflow-hidden mb-6">
         <table className="w-full text-right border-collapse text-xs">
           <thead>
@@ -218,8 +183,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
               <th className="p-3 text-center w-10">#</th>
               <th className="p-3">المنتج</th>
               <th className="p-3 text-center w-20">الكمية</th>
-              <th className="p-3 text-center w-32">سعر الوحدة</th>
-              <th className="p-3 text-left w-32">الإجمالي</th>
+              <th className="p-3 text-center w-28">سعر الوحدة</th>
+              <th className="p-3 text-left w-28">الإجمالي</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
@@ -229,7 +194,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
                 <td className="p-3">
                   <div className="flex items-center gap-3">
                     {item.image && (
-                      <div className="w-10 h-10 rounded-lg border bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="w-9 h-9 rounded-lg border bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
                         <img src={item.image} alt={item.title} className="max-h-full max-w-full object-cover" />
                       </div>
                     )}
@@ -248,11 +213,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
         </table>
       </div>
 
-      {/* 4. القسم السفلية: الملاحظات والمجموع الكلي */}
-      <div className="grid grid-cols-12 gap-4 mb-6">
-        {/* ملاحظات وطريقة الدفع (اليمين) */}
-        <div className="col-span-7 space-y-3">
-          {/* صندوق الملاحظات */}
+      {/* 4. قسم الملاحظات والمجاميع */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+        <div className="md:col-span-7 space-y-3">
           <div className="border border-gray-200 rounded-2xl p-3 bg-[#fcf9fa] flex items-start gap-3">
             <div className="w-7 h-7 rounded-xl bg-[#3e0b1b] text-white flex items-center justify-center shrink-0 mt-0.5">
               <MessageSquare className="w-3.5 h-3.5" />
@@ -263,22 +226,18 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
             </div>
           </div>
 
-          {/* صندوق طريقة الدفع */}
-          <div className="border border-gray-200 rounded-2xl p-3 bg-[#fcf9fa] flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-xl bg-[#3e0b1b] text-white flex items-center justify-center shrink-0">
-                <Wallet className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#3e0b1b]">طريقة الدفع</p>
-                <p className="text-xs text-gray-600 font-semibold">{data.customerDetails.paymentMethod}</p>
-              </div>
+          <div className="border border-gray-200 rounded-2xl p-3 bg-[#fcf9fa] flex items-center gap-3">
+            <div className="w-7 h-7 rounded-xl bg-[#3e0b1b] text-white flex items-center justify-center shrink-0">
+              <Wallet className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-[#3e0b1b]">طريقة الدفع</p>
+              <p className="text-xs text-gray-600 font-semibold font-mono">{data.customerDetails.paymentMethod}</p>
             </div>
           </div>
         </div>
 
-        {/* ملخص الحساب والإجمالي (اليسار) */}
-        <div className="col-span-5 border border-gray-200 rounded-2xl overflow-hidden bg-[#fcf9fa] flex flex-col justify-between">
+        <div className="md:col-span-5 border border-gray-200 rounded-2xl overflow-hidden bg-[#fcf9fa] flex flex-col justify-between">
           <div className="p-3 text-xs space-y-2">
             <div className="flex justify-between text-gray-600">
               <span>المجموع الفرعي</span>
@@ -298,73 +257,70 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
 
           <div className="bg-[#3e0b1b] text-white p-3.5 flex justify-between items-center">
             <span className="text-xs font-bold">المجموع الكلي</span>
-            <span className="text-lg font-black text-white">{data.total.toLocaleString()} ر.ي</span>
+            <span className="text-base md:text-lg font-black text-white">{data.total.toLocaleString()} ر.ي</span>
           </div>
         </div>
       </div>
 
-      {/* 5. شريط الضمان والمميزات (4 أيقونات دائرية) */}
-      <div className="grid grid-cols-4 gap-2 mb-6 text-center border-t border-b py-4 border-gray-100">
-        <div className="flex flex-col items-center gap-1.5">
-          <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#3e0b1b] bg-[#fcf9fa]">
-            <Truck className="w-5 h-5" />
+      {/* 5. شريط المميزات */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 text-center border-t border-b py-4 border-gray-100">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-[#3e0b1b] bg-[#fcf9fa]">
+            <Truck className="w-4 h-4" />
           </div>
           <span className="text-[11px] font-bold text-gray-800">توصيل سريع</span>
           <span className="text-[9px] text-gray-400">إلى جميع المناطق</span>
         </div>
 
-        <div className="flex flex-col items-center gap-1.5">
-          <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#3e0b1b] bg-[#fcf9fa]">
-            <Clock className="w-5 h-5" />
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-[#3e0b1b] bg-[#fcf9fa]">
+            <Clock className="w-4 h-4" />
           </div>
           <span className="text-[11px] font-bold text-gray-800">دعم وخدمة</span>
           <span className="text-[9px] text-gray-400">على مدار الساعة</span>
         </div>
 
-        <div className="flex flex-col items-center gap-1.5">
-          <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#3e0b1b] bg-[#fcf9fa]">
-            <FlaskConical className="w-5 h-5" />
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-[#3e0b1b] bg-[#fcf9fa]">
+            <FlaskConical className="w-4 h-4" />
           </div>
           <span className="text-[11px] font-bold text-gray-800">مفحوص مخبرياً</span>
           <span className="text-[9px] text-gray-400">آمن وصحي</span>
         </div>
 
-        <div className="flex flex-col items-center gap-1.5">
-          <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-[#3e0b1b] bg-[#fcf9fa]">
-            <ShieldCheck className="w-5 h-5" />
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-[#3e0b1b] bg-[#fcf9fa]">
+            <ShieldCheck className="w-4 h-4" />
           </div>
           <span className="text-[11px] font-bold text-gray-800">منتجات أصلية</span>
           <span className="text-[9px] text-gray-400">100% جودة مضمونة</span>
         </div>
       </div>
 
-      {/* 6. الفوتر السفلي الأنيق مع الختم والـ QR Code */}
-      <div className="bg-[#3e0b1b] text-white rounded-3xl p-5 relative overflow-hidden flex justify-between items-center">
-        {/* QR Code وتواصل معنا */}
-        <div className="flex items-center gap-4 z-10">
-          <div className="w-16 h-16 bg-white rounded-xl p-1.5 flex items-center justify-center text-[#3e0b1b]">
+      {/* 6. الفوتر والختم */}
+      <div className="bg-[#3e0b1b] text-white rounded-3xl p-4 md:p-5 relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3 z-10 w-full md:w-auto justify-center md:justify-start">
+          <div className="w-14 h-14 bg-white rounded-xl p-1 flex items-center justify-center text-[#3e0b1b] shrink-0">
             <QrCode className="w-full h-full" />
           </div>
-          <div className="text-[11px] space-y-1">
-            <p className="font-bold text-white mb-1">تواصل معنا</p>
+          <div className="text-[11px] space-y-0.5">
+            <p className="font-bold text-white">تواصل معنا</p>
             <p className="text-gray-300 font-mono dir-ltr text-right">{data.storeDetails.phone}</p>
             <p className="text-gray-300">tashkeelat.com</p>
             <p className="text-gray-400 text-[10px]">@tashkeelat.shop</p>
           </div>
         </div>
 
-        {/* الختم الذهبي في الوسط */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
-          <div className="w-14 h-14 bg-[#c49a37] rounded-full p-1 shadow-lg border-2 border-amber-200 flex items-center justify-center">
+        <div className="z-10 flex flex-col items-center my-2 md:my-0">
+          <div className="w-12 h-12 bg-[#c49a37] rounded-full p-1 shadow-lg border-2 border-amber-200 flex items-center justify-center">
             <div className="w-full h-full border border-dashed border-white/60 rounded-full flex items-center justify-center bg-[#3e0b1b]/20">
-              <img src="/logo.png" alt="ختم" className="w-8 h-8 object-contain" />
+              <img src="/logo.png" alt="ختم" className="w-6 h-6 object-contain" />
             </div>
           </div>
         </div>
 
-        {/* عبارة شكر لثقتكم */}
-        <div className="text-left z-10 max-w-xs">
-          <h3 className="text-base font-bold text-[#c49a37]">شكراً لثقتكم بنا</h3>
+        <div className="text-center md:text-left z-10 max-w-xs">
+          <h3 className="text-sm md:text-base font-bold text-[#c49a37]">شكراً لثقتكم بنا</h3>
           <p className="text-[10px] text-gray-300 mt-0.5">تشكيلات للتسوق... كل ما تحتاجه في مكان واحد</p>
         </div>
       </div>
@@ -372,4 +328,3 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
     </div>
   );
 };
-    
