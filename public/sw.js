@@ -32,6 +32,48 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// --- إضافة معالجة الإشعارات (Push Notifications) ---
+
+self.addEventListener('push', function(event) {
+  if (!(self.Notification && self.Notification.permission === 'granted')) {
+    return;
+  }
+
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: "إشعار جديد من تشكيلات", body: event.data.text() };
+    }
+  }
+
+  const title = data.title || "متجر تشكيلات";
+  const options = {
+    body: data.body || "لديك تحديث جديد في المتجر",
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    data: { url: data.link_url || '/' } // الرابط الذي يفتح عند النقر
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// التعامل مع النقر على الإشعار في شريط الإشعارات
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      // محاولة فتح الرابط في نافذة جديدة أو التركيز على الموجودة
+      if (clients.openWindow) {
+        return clients.openWindow(event.notification.data.url || '/');
+      }
+    })
+  );
+});
+
+// --- نهاية إضافة الإشعارات ---
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
