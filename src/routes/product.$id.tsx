@@ -17,8 +17,6 @@ import {
 import { toast } from "sonner";
 import type { Product } from "@/lib/db";
 import { useCart } from "@/lib/cart-context";
-// استيراد القائمة السفلية الرئيسية الخاصة بالمتجر كما هي في الواجهة الرئيسية
-import { BottomNav } from "@/components/BottomNav";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductDetail,
@@ -395,8 +393,8 @@ function ProductDetail() {
         <ProductReviewsSection productId={product.id} />
       </div>
 
-      {/* 6. الشريط الثابت لشراء المنتج (ثابت فوق القائمة السفلية للمتجر) */}
-      <div className="fixed bottom-16 left-0 right-0 z-40 p-3 bg-background/90 backdrop-blur-lg border-t border-border shadow-lg">
+      {/* 6. الشريط الثابت للشراء فوق القائمة السفلية التطبيقية الإجمالية */}
+      <div className="fixed bottom-16 left-0 right-0 z-40 p-3 bg-background/95 backdrop-blur-lg border-t border-border shadow-2xl">
         <div className="container max-w-md mx-auto flex items-center gap-2">
           {/* زر أضف إلى السلة */}
           <button
@@ -420,9 +418,6 @@ function ProductDetail() {
           </button>
         </div>
       </div>
-
-      {/* 7. القائمة السفلية الأصلية المعتمدة في الواجهة الرئيسية للمتجر */}
-      <BottomNav />
     </div>
   );
 }
