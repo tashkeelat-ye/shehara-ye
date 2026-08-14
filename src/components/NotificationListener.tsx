@@ -7,7 +7,8 @@ export function NotificationListener({ currentUserId }: { currentUserId?: string
   useEffect(() => {
     const playNotificationSound = () => {
       try {
-        const audio = new Audio("/sounds/notification.mp3");
+        // تم تحديث المسار ليشير مباشرة للملف داخل مجلد public
+        const audio = new Audio("/notification.mp3");
         void audio.play();
       } catch (e) {
         console.log("Audio playback blocked by browser policy");
