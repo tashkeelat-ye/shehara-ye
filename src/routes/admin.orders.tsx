@@ -7,6 +7,9 @@ import { formatPrice } from "@/lib/db";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, formatDate } from "@/lib/store";
 import { LocationPicker } from "@/components/location-picker";
 import { fetchCouriers, type Courier } from "@/lib/store";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { InvoiceView } from "@/components/InvoiceView";
+import { FileText } from "lucide-react";
 
 export const Route = createFileRoute("/admin/orders")({
   component: AdminOrders,
@@ -99,14 +102,51 @@ function AdminOrders() {
         {rows.map((o) => (
           <li key={o.id} className="rounded-xl border border-border/70 p-3 text-xs">
             <div className="flex flex-wrap items-center gap-2">
-              <span dir="ltr" className="text-foreground">
+              <span dir="ltr" className="text-foreground font-mono font-bold">
                 {o.order_number}
               </span>
               <span className="rounded-full bg-brand-soft px-2 py-0.5 text-primary">
                 {PAYMENT_STATUS_LABELS[o.payment_status] ?? o.payment_status}
               </span>
               <span className="text-muted-foreground">{formatDate(o.created_at)}</span>
-              <span className="text-primary">{formatPrice(o.total)}</span>
+              <span className="text-primary font-bold">{formatPrice(o.total)}</span>
+
+              {/* زر عرض الفاتورة للآدمن */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button type="button" className={`${btnGhostCls} flex items-center gap-1`}>
+                    <FileText className="w-3.5 h-3.5 text-[#3e0b1b]" />
+                    <span>الفاتورة</span>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-2 sm:p-6 bg-white rounded-3xl border-none shadow-2xl">
+                  <InvoiceView
+                    order={{
+                      invoiceNumber: `INV-2026-${o.order_number.replace(/\D/g, "")}`,
+                      invoiceDate: new Date(o.created_at).toLocaleDateString("ar-YE"),
+                      orderNumber: o.order_number,
+                      customerDetails: {
+                        name: o.shipping_name,
+                        phone: o.shipping_phone,
+                        address: `${o.shipping_city} - ${o.shipping_district} (${o.shipping_details})`,
+                        paymentMethod: PAYMENT_STATUS_LABELS[o.payment_status] || o.payment_method_code,
+                        currency: "ريال يمني (YER)",
+                      },
+                      items: o.order_items.map((it) => ({
+                        id: it.id,
+                        title: it.product_name,
+                        quantity: it.quantity,
+                        price: it.unit_price,
+                        image: "/logo.png",
+                      })),
+                      subtotal: o.subtotal,
+                      shippingFee: o.delivery_fee,
+                      total: o.total,
+                    }}
+                  />
+                </DialogContent>
+              </Dialog>
+
               <select
                 aria-label="حالة الطلب"
                 value={o.status}
