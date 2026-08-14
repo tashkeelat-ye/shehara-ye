@@ -13,6 +13,9 @@ import {
   ChevronRight,
   Sparkles,
   ShoppingCart,
+  Home,
+  Grid,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Product } from "@/lib/db";
@@ -180,7 +183,7 @@ function ProductDetail() {
   const imagesList = product.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
 
   return (
-    <div className="min-h-screen pb-24 dir-rtl bg-background text-foreground">
+    <div className="min-h-screen pb-36 dir-rtl bg-background text-foreground">
       {/* 1. القائمة العلوية التفاعلية مع السلة والمشاركة */}
       <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-background/80 backdrop-blur-md border-b border-border">
         <button
@@ -393,8 +396,8 @@ function ProductDetail() {
         <ProductReviewsSection productId={product.id} />
       </div>
 
-      {/* 6. الشريط السفلي الثابت للشراء والإضافة للسلة */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-background/90 backdrop-blur-lg border-t border-border shadow-2xl">
+      {/* 6. الشريط الثابت لشراء المنتج (مستقر فوق القائمة السفلية) */}
+      <div className="fixed bottom-16 left-0 right-0 z-40 p-3 bg-background/90 backdrop-blur-lg border-t border-border shadow-lg">
         <div className="container max-w-md mx-auto flex items-center gap-2">
           {/* زر أضف إلى السلة */}
           <button
@@ -418,7 +421,61 @@ function ProductDetail() {
           </button>
         </div>
       </div>
+
+      {/* 7. القائمة السفلية الرئيسية للتطبيق (Bottom Navigation) */}
+      <BottomNavigation />
     </div>
+  );
+}
+
+// --- مكون القائمة السفلية للتطبيق ---
+function BottomNavigation() {
+  const navigate = useNavigate();
+  const { count, setDrawerOpen } = useCart();
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-card border-t border-border flex items-center justify-around px-2 text-muted-foreground">
+      <button
+        type="button"
+        onClick={() => void navigate({ to: "/" })}
+        className="flex flex-col items-center gap-1 text-[10px] font-medium hover:text-primary transition-colors"
+      >
+        <Home className="h-5 w-5" />
+        <span>الرئيسية</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => void navigate({ to: "/categories" })}
+        className="flex flex-col items-center gap-1 text-[10px] font-medium hover:text-primary transition-colors"
+      >
+        <Grid className="h-5 w-5" />
+        <span>الأقسام</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setDrawerOpen(true)}
+        className="relative flex flex-col items-center gap-1 text-[10px] font-medium hover:text-primary transition-colors"
+      >
+        <ShoppingCart className="h-5 w-5" />
+        {count > 0 && (
+          <span className="absolute -top-1 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+            {count}
+          </span>
+        )}
+        <span>السلة</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => void navigate({ to: "/profile" })}
+        className="flex flex-col items-center gap-1 text-[10px] font-medium hover:text-primary transition-colors"
+      >
+        <User className="h-5 w-5" />
+        <span>حسابي</span>
+      </button>
+    </nav>
   );
 }
 
