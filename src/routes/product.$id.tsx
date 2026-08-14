@@ -12,9 +12,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  ShoppingCart,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Product } from "@/lib/db";
+import { useCart } from "@/lib/cart-context";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductDetail,
@@ -23,10 +25,12 @@ export const Route = createFileRoute("/product/$id")({
 function ProductDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const { addItem, setDrawerOpen, count } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
 
   // إدارات ومعرض الصور وسحب التاتش
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
@@ -80,6 +84,42 @@ function ProductDetail() {
 
     if (id) void loadProductData();
   }, [id]);
+
+  // دالة إضافة المنتج إلى السلة
+  const handleAddToCart = async () => {
+    if (!product) return;
+    setAdding(true);
+    try {
+      await addItem({
+        productId: product.id,
+        quantity: 1,
+        size: selectedSize || null,
+        color: selectedColor || null,
+      });
+      toast.success("تمت إضافة المنتج إلى السلة!");
+      setDrawerOpen(true);
+    } catch (e) {
+      toast.error("حدث خطأ أثناء إضافة المنتج للسلة");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  // دالة شراء الآن
+  const handleBuyNow = async () => {
+    if (!product) return;
+    try {
+      await addItem({
+        productId: product.id,
+        quantity: 1,
+        size: selectedSize || null,
+        color: selectedColor || null,
+      });
+      void navigate({ to: "/checkout" });
+    } catch (e) {
+      toast.error("تعذر الانتقال لصفحة الشراء");
+    }
+  };
 
   // دالة السحب للأجهزة المحمولة
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -141,7 +181,7 @@ function ProductDetail() {
 
   return (
     <div className="min-h-screen pb-24 dir-rtl bg-background text-foreground">
-      {/* 1. القائمة العلوية الخاصة بواجهة المنتج (Top Header Bar) */}
+      {/* 1. القائمة العلوية التفاعلية مع السلة والمشاركة */}
       <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-background/80 backdrop-blur-md border-b border-border">
         <button
           type="button"
@@ -150,7 +190,7 @@ function ProductDetail() {
         >
           <ArrowRight className="h-4 w-4" /> العودة
         </button>
-        <span className="text-xs font-bold line-clamp-1 max-w-[200px]">{product.name}</span>
+        <span className="text-xs font-bold line-clamp-1 max-w-[180px]">{product.name}</span>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -159,11 +199,25 @@ function ProductDetail() {
           >
             <Share2 className="h-4 w-4" />
           </button>
+          
+          {/* أيقونة السلة في الشريط العلوي */}
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="relative p-2 rounded-full border border-border bg-card text-foreground hover:bg-secondary"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {count > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                {count}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
       <div className="container max-w-3xl mx-auto px-4 py-4 space-y-6">
-        {/* 2. معرض الصور المتفاعل يدعم التاتش والسحب */}
+        {/* 2. معرض الصور */}
         <div className="space-y-3">
           <div
             className="relative aspect-square rounded-3xl overflow-hidden border border-border bg-secondary/20 touch-pan-y"
@@ -177,7 +231,6 @@ function ProductDetail() {
               className="h-full w-full object-cover select-none transition-all duration-300"
             />
 
-            {/* أسهم التنقل للكمبيوتر والموبايل */}
             {imagesList.length > 1 && (
               <>
                 {activeImageIndex > 0 && (
@@ -199,7 +252,6 @@ function ProductDetail() {
                   </button>
                 )}
                 
-                {/* مؤشرات النقاط للسحب */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 p-1 rounded-full bg-black/30 backdrop-blur-md">
                   {imagesList.map((_, idx) => (
                     <div
@@ -214,7 +266,6 @@ function ProductDetail() {
             )}
           </div>
 
-          {/* مصغرات الصور (Thumbnails) */}
           {imagesList.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-1">
               {imagesList.map((img, idx) => (
@@ -306,7 +357,7 @@ function ProductDetail() {
           )}
         </div>
 
-        {/* 4. قسم المنتجات المشابهة المُطور */}
+        {/* 4. قسم المنتجات المشابهة */}
         {similarProducts.length > 0 && (
           <div className="space-y-3 pt-4">
             <div className="flex items-center justify-between">
@@ -342,26 +393,25 @@ function ProductDetail() {
         <ProductReviewsSection productId={product.id} />
       </div>
 
-      {/* 6. الشريط السفلي الثابت للوظائف الأساسية (Bottom App Bar) */}
+      {/* 6. الشريط السفلي الثابت للشراء والإضافة للسلة */}
       <div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-background/90 backdrop-blur-lg border-t border-border shadow-2xl">
         <div className="container max-w-md mx-auto flex items-center gap-2">
           {/* زر أضف إلى السلة */}
           <button
             type="button"
-            onClick={() => toast.success("تمت إضافة المنتج إلى السلة!")}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-primary text-primary bg-primary/10 font-bold text-xs hover:bg-primary/20 transition-all"
+            disabled={adding}
+            onClick={handleAddToCart}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-primary text-primary bg-primary/10 font-bold text-xs hover:bg-primary/20 transition-all active:scale-95 disabled:opacity-50"
           >
-            <ShoppingBag className="h-4 w-4" />
+            {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
             أضف للسلة
           </button>
 
           {/* زر شراء الآن */}
           <button
             type="button"
-            onClick={() => {
-              toast.success("جارٍ الانتقال لصفحة إتمام الطلب...");
-            }}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-primary text-primary-foreground font-bold text-xs shadow-lg shadow-primary/25 hover:opacity-95 transition-all"
+            onClick={handleBuyNow}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-primary text-primary-foreground font-bold text-xs shadow-lg shadow-primary/25 hover:opacity-95 transition-all active:scale-95"
           >
             <Zap className="h-4 w-4" />
             شراء الآن
@@ -443,7 +493,6 @@ function ProductReviewsSection({ productId }: { productId: string }) {
         </span>
       </h3>
 
-      {/* نموذج إضافة تقييم */}
       <form onSubmit={handleSubmit} className="p-4 rounded-3xl bg-card border border-border space-y-3">
         <h4 className="text-xs font-semibold text-foreground">شاركنا رأيك في هذا المنتج</h4>
 
@@ -483,7 +532,6 @@ function ProductReviewsSection({ productId }: { productId: string }) {
         </button>
       </form>
 
-      {/* قائمة التعليقات السابقة */}
       {loading ? (
         <p className="text-xs text-center text-muted-foreground animate-pulse">جارٍ تحميل التقييمات...</p>
       ) : reviews.length === 0 ? (
