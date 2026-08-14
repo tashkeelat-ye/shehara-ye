@@ -66,9 +66,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
     },
     customerDetails: {
       name: order?.customerDetails?.name || "عميل المتجر",
-      phone: order?.customerDetails?.phone || "774234567",
-      address: order?.customerDetails?.address || "إب - المعابرة - شارع الثلاثين بجوار فندق قصر البنان الدخله حق مصنع خرسانة الخفجي جوار بقالة عبدالله البصير",
-      paymentMethod: order?.customerDetails?.paymentMethod || "wallet_balance",
+      phone: order?.customerDetails?.phone || "770000000",
+      address: order?.customerDetails?.address || "إب - اليمن",
+      paymentMethod: order?.customerDetails?.paymentMethod || "محفظة تشكيلات",
       currency: order?.customerDetails?.currency || "ريال يمني (YER)",
     },
     items: order?.items && order.items.length > 0 ? order.items : [
@@ -104,7 +104,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
           onClick={handlePrint}
           className="px-4 py-2 bg-[#3e0b1b] text-white text-xs font-bold rounded-xl hover:bg-[#581329] transition-all flex items-center gap-2 shadow"
         >
-          <Printer className="w-4 h-4" />
+          <Printer className="w-4 h-4 text-[#c49a37]" />
           <span>طباعة الفاتورة / PDF</span>
         </button>
       </div>
