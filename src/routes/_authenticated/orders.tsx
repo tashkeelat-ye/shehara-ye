@@ -31,9 +31,9 @@ type Order = {
   shipping_district: string;
   shipping_details: string;
   created_at: string;
-  order_items: OrderItem[];
+  order_items: OrderItem[] | null;
   couriers: { name: string; phone: string } | null;
-  invoices: { invoice_number: string }[];
+  invoices: { invoice_number: string }[] | null;
 };
 
 const statusLabels: Record<string, string> = {
@@ -91,74 +91,79 @@ function OrdersPage() {
           </p>
         ) : (
           <ul className="mt-4 space-y-3">
-            {orders.map((o) => (
-              <li key={o.id} className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
-                <div className="flex items-center justify-between gap-2 text-sm">
-                  <span dir="ltr" className="text-foreground font-mono font-bold">
-                    {o.order_number}
-                  </span>
-                  <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-bold text-primary">
-                    {statusLabels[o.status] ?? o.status}
-                  </span>
-                </div>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  {new Date(o.created_at).toLocaleDateString("ar-YE")}
-                </p>
-                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  {o.order_items.map((it) => (
-                    <li key={it.id}>
-                      {it.product_name} × {it.quantity.toLocaleString("ar-YE")} —{" "}
-                      {formatPrice(it.unit_price * it.quantity)}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2 text-sm text-primary font-bold">الإجمالي: {formatPrice(o.total)}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  الدفع: {PAYMENT_STATUS_LABELS[o.payment_status] ?? o.payment_status}
-                  {o.couriers ? ` · المندوب: ${o.couriers.name} (${o.couriers.phone})` : ""}
-                </p>
+            {orders.map((o) => {
+              const items = o.order_items || [];
+              const invoiceNum = o.invoices?.[0]?.invoice_number || `INV-2026-${o.order_number?.replace(/\D/g, "") || "000"}`;
 
-                {/* فتح الفاتورة داخل المودال */}
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <button
-                      type="button"
-                      className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-[11px] font-bold text-foreground hover:bg-accent transition-colors"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-[#c49a37]" />
-                      <span>عرض الفاتورة الإلكترونية</span>
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-2 sm:p-6 bg-white rounded-3xl border-none shadow-2xl">
-                    <InvoiceView
-                      order={{
-                        invoiceNumber: o.invoices[0]?.invoice_number || `INV-2026-${o.order_number.replace(/\D/g, "")}`,
-                        invoiceDate: new Date(o.created_at).toLocaleDateString("ar-YE"),
-                        orderNumber: o.order_number,
-                        customerDetails: {
-                          name: o.shipping_name,
-                          phone: o.shipping_phone,
-                          address: `${o.shipping_city} - ${o.shipping_district} (${o.shipping_details})`,
-                          paymentMethod: PAYMENT_STATUS_LABELS[o.payment_status] || o.payment_method_code,
-                          currency: "ريال يمني (YER)",
-                        },
-                        items: o.order_items.map((it) => ({
-                          id: it.id,
-                          title: it.product_name,
-                          quantity: it.quantity,
-                          price: it.unit_price,
-                          image: "/logo.png",
-                        })),
-                        subtotal: o.subtotal,
-                        shippingFee: o.delivery_fee,
-                        total: o.total,
-                      }}
-                    />
-                  </DialogContent>
-                </Dialog>
+              return (
+                <li key={o.id} className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span dir="ltr" className="text-foreground font-mono font-bold">
+                      {o.order_number}
+                    </span>
+                    <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-bold text-primary">
+                      {statusLabels[o.status] ?? o.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {new Date(o.created_at).toLocaleDateString("ar-YE")}
+                  </p>
+                  <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {items.map((it) => (
+                      <li key={it.id}>
+                        {it.product_name} × {it.quantity.toLocaleString("ar-YE")} —{" "}
+                        {formatPrice(it.unit_price * it.quantity)}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-sm text-primary font-bold">الإجمالي: {formatPrice(o.total)}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    الدفع: {PAYMENT_STATUS_LABELS[o.payment_status] ?? o.payment_status}
+                    {o.couriers ? ` · المندوب: ${o.couriers.name} (${o.couriers.phone})` : ""}
+                  </p>
 
-              </li>
-            ))}
+                  {/* فتح الفاتورة داخل المودال */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-[11px] font-bold text-foreground hover:bg-accent transition-colors"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#c49a37]" />
+                        <span>عرض الفاتورة الإلكترونية</span>
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-2 sm:p-6 bg-white rounded-3xl border-none shadow-2xl">
+                      <InvoiceView
+                        order={{
+                          invoiceNumber: invoiceNum,
+                          invoiceDate: new Date(o.created_at).toLocaleDateString("ar-YE"),
+                          orderNumber: o.order_number,
+                          customerDetails: {
+                            name: o.shipping_name,
+                            phone: o.shipping_phone,
+                            address: `${o.shipping_city || ''} - ${o.shipping_district || ''} (${o.shipping_details || ''})`,
+                            paymentMethod: PAYMENT_STATUS_LABELS[o.payment_status] || o.payment_method_code,
+                            currency: "ريال يمني (YER)",
+                          },
+                          items: items.map((it) => ({
+                            id: it.id,
+                            title: it.product_name,
+                            quantity: it.quantity,
+                            price: it.unit_price,
+                            image: "/logo.png",
+                          })),
+                          subtotal: o.subtotal,
+                          shippingFee: o.delivery_fee,
+                          total: o.total,
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
+
+                </li>
+              );
+            })}
           </ul>
         )}
       </main>
