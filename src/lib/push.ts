@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// استبدل هذا بالمفتاح العام (Public Key) الذي ستولده لاحقاً
-const VAPID_PUBLIC_KEY = "هنا_ضع_المفتاح_العام_الذي_ستولده";
+// المفتاح العام المولّد من VAPID
+const VAPID_PUBLIC_KEY = "BOGjwmnqUsfAkzMnKpQ2--b3WyTW-QjmClUt3-QXNF4g_aATBnFPcDWgk7gS1swL0UZWJBlj16Aj1_BkafdyEjk";
 
 export async function registerPushNotifications() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
@@ -9,21 +9,24 @@ export async function registerPushNotifications() {
   try {
     const registration = await navigator.serviceWorker.ready;
     
-    // طلب الصلاحية
+    // طلب الصلاحية من المستخدم
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return;
 
-    // الاشتراك
+    // الحصول على الاشتراك من المتصفح
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: VAPID_PUBLIC_KEY,
     });
 
-    // حفظ الاشتراك في Supabase
+    // حفظ الاشتراك في قاعدة البيانات
+    const { data: { user } } = await supabase.auth.getUser();
+
     await supabase.from("user_push_subscriptions").insert({
+      user_id: user?.id || null,
       subscription: subscription,
     });
   } catch (error) {
-    console.error("خطأ في الاشتراك:", error);
+    console.error("خطأ في تسجيل إشعارات الويب:", error);
   }
 }
