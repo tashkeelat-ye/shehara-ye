@@ -29,6 +29,7 @@ type AddArgs = {
   quantity?: number;
   size?: string | null;
   color?: string | null;
+  openDrawer?: boolean;
 };
 
 type CartContextValue = {
@@ -43,6 +44,7 @@ type CartContextValue = {
   removeItem: (lineId: string) => Promise<void>;
   clearCart: () => Promise<void>;
   refresh: () => Promise<void>;
+  getItemQuantity: (productId: string, size?: string | null, color?: string | null) => number;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -123,7 +125,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [user, loadDbCart, hydrateProducts]);
 
-  // دمج سلة الزائر مع سلة الحساب لمرة واحدة فقط عند تسجيل الدخول
+  // دمج سلة الزائر مع السلة السحابية بعد تسجيل الدخول
   useEffect(() => {
     let cancelled = false;
     async function run() {
@@ -161,7 +163,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 });
               }
             }
-            // مسح السلة المحلية بعد الدمج بنجاح لعدم تكرار الإضافة
             writeLocal([]);
           } catch (e) {
             console.warn("Failed to merge cart to cloud:", e);
@@ -177,12 +178,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [user, refresh, loadDbCart]);
 
   const addItem = useCallback<CartContextValue["addItem"]>(
-    async ({ productId, quantity = 1, size = null, color = null }) => {
+    async ({ productId, quantity = 1, size = null, color = null, openDrawer = false }) => {
+      if (openDrawer) setDrawerOpen(true);
+
+      // تحديث متفائل في الواجهة فوراً
+      const key = lineKey(productId, size, color);
+      setLines((prev) => {
+        const index = prev.findIndex((l) => lineKey(l.product_id, l.size, l.color) === key);
+        if (index > -1) {
+          const updated = [...prev];
+          updated[index] = { ...updated[index], quantity: updated[index].quantity + quantity };
+          return updated;
+        }
+        return [...prev, { id: key, product_id: productId, quantity, size, color }];
+      });
+
       if (user && navigator.onLine) {
         try {
           const dbCart = await loadDbCart(user.id);
           const dbFound = dbCart.find(
-            (l) => lineKey(l.product_id, l.size, l.color) === lineKey(productId, size, color),
+            (l) => lineKey(l.product_id, l.size, l.color) === key,
           );
           if (dbFound) {
             await supabase
@@ -203,7 +218,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       } else {
         const current = readLocal();
-        const key = lineKey(productId, size, color);
         const found = current.find((l) => lineKey(l.product_id, l.size, l.color) === key);
         if (found) {
           found.quantity += quantity;
@@ -219,7 +233,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = useCallback<CartContextValue["updateQuantity"]>(
     async (lineId, quantity) => {
-      if (quantity < 1) return;
+      if (quantity < 1) {
+        await removeItem(lineId);
+        return;
+      }
+
+      setLines((prev) => prev.map((l) => (l.id === lineId ? { ...l, quantity } : l)));
 
       if (user && navigator.onLine) {
         try {
@@ -238,6 +257,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = useCallback<CartContextValue["removeItem"]>(
     async (lineId) => {
+      setLines((prev) => prev.filter((l) => l.id !== lineId));
+
       if (user && navigator.onLine) {
         try {
           await supabase.from("cart_items").delete().eq("id", lineId);
@@ -254,6 +275,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const clearCart = useCallback(async () => {
+    setLines([]);
     writeLocal([]);
     if (user && navigator.onLine) {
       try {
@@ -264,6 +286,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     await refresh();
   }, [user, refresh]);
+
+  const getItemQuantity = useCallback(
+    (productId: string, size: string | null = null, color: string | null = null) => {
+      const key = lineKey(productId, size, color);
+      const found = lines.find((l) => lineKey(l.product_id, l.size, l.color) === key);
+      return found ? found.quantity : 0;
+    },
+    [lines],
+  );
 
   const items = useMemo<CartItem[]>(
     () =>
@@ -289,8 +320,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem,
       clearCart,
       refresh,
+      getItemQuantity,
     }),
-    [items, lines, loading, drawerOpen, addItem, updateQuantity, removeItem, clearCart, refresh],
+    [items, lines, loading, drawerOpen, addItem, updateQuantity, removeItem, clearCart, refresh, getItemQuantity],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
@@ -300,4 +332,4 @@ export function useCart(): CartContextValue {
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error("useCart must be used inside CartProvider");
   return ctx;
-            }
+}
