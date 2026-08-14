@@ -19,6 +19,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { SupportChat } from "@/components/support-chat";
 import { PermissionPrompt } from "@/components/permission-prompt";
 import { NotificationListener } from "@/components/NotificationListener";
+import { registerPushNotifications } from "@/lib/push";
 
 // تهيئة وإعداد QueryClient مخصص يدعم القراءة من الكاش أولاً عند انقطاع الشبكة
 export const defaultQueryClient = new QueryClient({
@@ -172,6 +173,11 @@ function GlobalFetchingLoader({ showSplash }: { showSplash: boolean }) {
 function AppContent({ showSplash }: { showSplash: boolean }) {
   const { user } = useAuth();
 
+  useEffect(() => {
+    // تفعيل وتسجيل اشتراكات الإشعارات في الخلفية
+    void registerPushNotifications();
+  }, []);
+
   return (
     <>
       {showSplash && (
@@ -207,13 +213,16 @@ function RootComponent() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  // تسجيل Service Worker للعمل في وضع الأوفلاين
+  // تسجيل Service Worker للعمل في وضع الأوفلاين وتسجيل الإشعارات
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker
           .register("/sw.js")
-          .then((reg) => console.log("SW active:", reg.scope))
+          .then((reg) => {
+            console.log("SW active:", reg.scope);
+            void registerPushNotifications();
+          })
           .catch((err) => console.error("SW failed:", err));
       });
     }
