@@ -11,13 +11,14 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AuthProvider } from "@/lib/auth-context";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
 import { CartDrawer } from "@/components/cart-drawer";
 import { CurrencyProvider } from "@/lib/currency-context";
 import { Toaster } from "@/components/ui/sonner";
 import { SupportChat } from "@/components/support-chat";
 import { PermissionPrompt } from "@/components/permission-prompt";
+import { NotificationListener } from "@/components/NotificationListener";
 
 // تهيئة وإعداد QueryClient مخصص يدعم القراءة من الكاش أولاً عند انقطاع الشبكة
 export const defaultQueryClient = new QueryClient({
@@ -167,9 +168,35 @@ function GlobalFetchingLoader({ showSplash }: { showSplash: boolean }) {
   );
 }
 
+// مكون داخلي لتمرير ID المستخدم الحالي للـ NotificationListener
+function AppContent({ showSplash }: { showSplash: boolean }) {
+  const { user } = useAuth();
+
+  return (
+    <>
+      {showSplash && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#4a1525]">
+          <img
+            src="/splash.gif"
+            alt="تشكيلات"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+            className="max-w-[200px] max-h-[200px] object-contain"
+          />
+        </div>
+      )}
+      <GlobalFetchingLoader showSplash={showSplash} />
+      <NotificationListener currentUserId={user?.id} />
+      <Outlet />
+      <CartDrawer />
+      <SupportChat />
+      <PermissionPrompt />
+      <Toaster position="top-center" />
+    </>
+  );
+}
+
 function RootComponent() {
   const context = Route.useRouteContext();
-  // استخدام queryClient القادم من السياق أو الاعتماد على القيمة الافتراضية المجهزة أوفلاين
   const queryClient = context?.queryClient ?? defaultQueryClient;
   const [showSplash, setShowSplash] = useState(true);
 
@@ -197,25 +224,10 @@ function RootComponent() {
       <AuthProvider>
         <CurrencyProvider>
           <CartProvider>
-            {showSplash && (
-              <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#4a1525]">
-                <img
-                  src="/splash.gif"
-                  alt="تشكيلات"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
-                  className="max-w-[200px] max-h-[200px] object-contain"
-                />
-              </div>
-            )}
-            <GlobalFetchingLoader showSplash={showSplash} />
-            <Outlet />
-            <CartDrawer />
-            <SupportChat />
-            <PermissionPrompt />
-            <Toaster position="top-center" />
+            <AppContent showSplash={showSplash} />
           </CartProvider>
         </CurrencyProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
-                              }
+}
