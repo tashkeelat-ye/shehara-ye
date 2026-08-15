@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +61,8 @@ export function StoriesCategories() {
         {categories.map((cat) => (
           <Link
             key={cat.id}
-            to={`/category/${cat.slug}`}
+            to="/products"
+            search={{ category: cat.slug }}
             className="group flex flex-col items-center gap-1.5 shrink-0 transition-transform active:scale-95"
           >
             {/* الإطار المتدرج حول القصة */}
