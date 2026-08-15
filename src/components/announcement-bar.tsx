@@ -33,12 +33,12 @@ export function AnnouncementBar() {
   ];
 
   const renderContent = () => (
-    <div className="flex whitespace-nowrap animate-marquee items-center">
-      {/* تكرار القائمة مرتين لضمان استمرارية الحركة بدون فراغات (Looping) */}
-      {[...announcements, ...announcements].map((item, idx) => {
+    <div className="flex whitespace-nowrap animate-marquee-container items-center">
+      {/* تكرار القائمة عدة مرات لضمان ملء الشاشة واستمرار الحركة بلا توقف أو فراغات */}
+      {[...announcements, ...announcements, ...announcements, ...announcements].map((item, idx) => {
         const IconComponent = item.icon;
         return (
-          <div key={idx} className="flex items-center gap-2 px-6">
+          <div key={idx} className="flex items-center gap-2 px-6 shrink-0">
             <IconComponent className="h-3.5 w-3.5 text-amber-300 shrink-0" />
             <span>{item.text}</span>
           </div>
@@ -61,4 +61,3 @@ export function AnnouncementBar() {
 }
 
 export default AnnouncementBar;
-    
