@@ -1,5 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export type Banner4to1 = {
+  image: string;
+  link?: string;
+  title?: string;
+};
+
 export type SiteSettings = {
   id: boolean;
   store_name: string;
@@ -23,6 +29,7 @@ export type SiteSettings = {
   announcement_text: string;
   announcement_link: string;
   announcement_active: boolean;
+  custom_banners_4to1: Banner4to1[];
 };
 
 export type Courier = {
@@ -32,7 +39,6 @@ export type Courier = {
   city: string;
   is_active: boolean;
 };
-
 
 export type Banner = {
   id: string;
@@ -100,7 +106,7 @@ export type PaymentRequest = {
 };
 
 const SETTINGS_COLUMNS =
-  "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee,sar_rate,is_open,closed_message,announcement_text,announcement_link,announcement_active";
+  "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee,sar_rate,is_open,closed_message,announcement_text,announcement_link,announcement_active,custom_banners_4to1";
 const BANNER_COLUMNS = "id,title,subtitle,cta_label,link_url,image_url,sort_order,is_active";
 const PM_COLUMNS =
   "id,code,kind,display_name,account_number,account_name,instructions,requires_receipt,is_active,sort_order";
@@ -109,8 +115,14 @@ export async function fetchSettings(): Promise<SiteSettings | null> {
   const { data } = await supabase
     .from("site_settings")
     .select(SETTINGS_COLUMNS)
-    .maybeSingle<SiteSettings>();
-  return data ?? null;
+    .maybeSingle<any>();
+  
+  if (!data) return null;
+
+  return {
+    ...data,
+    custom_banners_4to1: Array.isArray(data.custom_banners_4to1) ? data.custom_banners_4to1 : [],
+  };
 }
 
 export async function fetchBanners(onlyActive = true): Promise<Banner[]> {
@@ -133,7 +145,7 @@ export async function fetchPage(slug: string): Promise<PageRow | null> {
     .select("id,slug,title,content,is_published,updated_at")
     .eq("slug", slug)
     .maybeSingle<PageRow>();
-  return data ?? null;
+  return data ?? [];
 }
 
 export async function fetchPages(): Promise<PageRow[]> {
@@ -194,4 +206,5 @@ export function formatDate(value: string) {
     month: "long",
     day: "numeric",
   });
-}
+  }
+    
