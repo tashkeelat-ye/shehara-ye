@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { Zap, Clock, ShoppingBag, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/lib/cart-context";
@@ -50,7 +50,6 @@ export function FlashSaleSection() {
           .limit(4);
 
         if (!error && data) {
-          // فلترة العناصر التي تحتوي على منتج صالح
           const validSales = data.filter((item) => item.product) as unknown as FlashSaleItem[];
           setSales(validSales);
         }
@@ -64,7 +63,6 @@ export function FlashSaleSection() {
     void fetchFlashSales();
   }, []);
 
-  // حساب العدّاد التنازلي لأقرب نهاية عرض
   useEffect(() => {
     if (sales.length === 0) return;
 
@@ -119,7 +117,6 @@ export function FlashSaleSection() {
             </div>
           </div>
 
-          {/* عداد الأوقات التنازلي */}
           <div className="flex items-center gap-1.5 self-start sm:self-auto bg-background border px-3 py-1.5 rounded-full shadow-sm text-xs font-bold">
             <Clock className="h-4 w-4 text-destructive" />
             <span>ينتهي خلال:</span>
@@ -137,7 +134,7 @@ export function FlashSaleSection() {
           </div>
         </div>
 
-        {/* شبكة المنتجات في العرض الخاطف */}
+        {/* شبكة المنتجات */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {sales.map(({ id, discount_percentage, product }) => {
             const stockLeft = product.stock_left ?? 5;
@@ -149,7 +146,6 @@ export function FlashSaleSection() {
                 key={id}
                 className="group relative bg-card border rounded-2xl p-3 flex flex-col justify-between transition-all hover:shadow-lg hover:-translate-y-1"
               >
-                {/* الشارات وزر المفضلة */}
                 <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-muted mb-3">
                   <img
                     src={product.images?.[0] || "/placeholder.svg"}
@@ -171,11 +167,11 @@ export function FlashSaleSection() {
                   </button>
                 </div>
 
-                {/* التفاصيل والأسعار */}
                 <div className="space-y-2 flex-1 flex flex-col justify-between">
                   <div>
                     <Link
-                      to={`/product/${product.id}`}
+                      to="/product/$productId"
+                      params={{ productId: product.id }}
                       className="font-medium text-sm line-clamp-1 hover:text-primary transition-colors"
                     >
                       {product.name}
@@ -192,7 +188,6 @@ export function FlashSaleSection() {
                     </div>
                   </div>
 
-                  {/* شريط التقدم للمخزون */}
                   <div className="space-y-1 pt-2">
                     <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
                       <span>تم بيع الأكثرية</span>
@@ -201,7 +196,6 @@ export function FlashSaleSection() {
                     <Progress value={progressValue} className="h-1.5 bg-muted" />
                   </div>
 
-                  {/* زر الإضافة السريعة للسلة */}
                   <Button
                     size="sm"
                     className="w-full mt-2 rounded-xl gap-1.5"
