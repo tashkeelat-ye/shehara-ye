@@ -1,18 +1,44 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Megaphone, Sparkles, Truck, Tag } from "lucide-react";
 import { fetchSettings, type SiteSettings } from "@/lib/store";
 
-/** شريط إعلانات وحالة المتجر — متحرك ويُدار بالكامل من لوحة التحكم. */
 export function AnnouncementBar() {
   const [s, setS] = useState<SiteSettings | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void (async () => setS(await fetchSettings()))();
   }, []);
 
+  // حركة شريط إخباري سلسة ودائمة باستخدام JavaScript لضمان عدم توقفها نهائياً
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    let animationFrameId: number;
+    let scrollPos = 0;
+    const speed = 0.8; // سرعة الحركة (يمكنك زيادتها أو تقليلها)
+
+    const step = () => {
+      scrollPos += speed;
+      // إذا تجاوزنا منتصف المسافة (نصف المحتوى المكرر)، نعيد البداية بسلاسة تامة
+      if (scrollPos >= scrollContainer.scrollWidth / 2) {
+        scrollPos = 0;
+      }
+      scrollContainer.style.transform = `translateX(${scrollPos}px)`;
+      animationFrameId = requestAnimationFrame(step);
+    };
+
+    animationFrameId = requestAnimationFrame(step);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [s]);
+
   if (!s) return null;
 
-  // إذا كان المتجر مغلقاً يظهر شريط التنبيه بكونه مغلقاً
   if (!s.is_open) {
     return (
       <div className="bg-destructive px-4 py-2 text-center text-[11px] font-medium text-destructive-foreground">
@@ -21,10 +47,8 @@ export function AnnouncementBar() {
     );
   }
 
-  // النص الرئيسي المجلوب من لوحة التحكم
   const mainAnnouncement = s.announcement_text || "المتجر مفتوح لاستقبال الطلبات من 8 صباحاً حتى 12 مساءً.";
 
-  // قائمة النصوص الترويجية الأساسية
   const baseAnnouncements = [
     { text: mainAnnouncement, icon: Megaphone },
     { text: "توصيل سريع لكافة المحافظات 🚚", icon: Truck },
@@ -32,12 +56,12 @@ export function AnnouncementBar() {
     { text: "أهلاً بكم في تشكيلات - تسوق ممتع ✨", icon: Sparkles },
   ];
 
-  // تكرار القائمة عدة مرات لضمان سلاسة حركة الـ Loop بنسبة 100%
-  const announcements = [...baseAnnouncements, ...baseAnnouncements, ...baseAnnouncements];
+  // تكرار العناصر عدة مرات لملء الفراغات وضمان استمرار الحلقة
+  const announcements = [...baseAnnouncements, ...baseAnnouncements, ...baseAnnouncements, ...baseAnnouncements];
 
   const renderContent = () => (
-    <div className="overflow-hidden w-full">
-      <div className="animate-marquee-container flex items-center py-0.5">
+    <div ref={containerRef} className="overflow-hidden w-full relative flex whitespace-nowrap">
+      <div ref={scrollRef} className="flex items-center py-0.5" style={{ willChange: "transform" }}>
         {announcements.map((item, idx) => {
           const IconComponent = item.icon;
           return (
@@ -52,7 +76,7 @@ export function AnnouncementBar() {
   );
 
   return (
-    <div className="relative w-full overflow-hidden bg-primary text-primary-foreground py-2 text-xs font-medium border-b border-white/10 z-50">
+    <div className="relative w-full overflow-hidden bg-primary text-primary-foreground py-2 text-xs font-medium border-b border-white/10 z-50" dir="ltr">
       {s.announcement_link ? (
         <a href={s.announcement_link} className="block hover:underline">
           {renderContent()}
