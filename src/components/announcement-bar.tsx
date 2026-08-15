@@ -21,29 +21,33 @@ export function AnnouncementBar() {
     );
   }
 
-  // النص الرئيسي المجلوب من لوحة التحكم (أو نص افتراضي في حال عدم وجوده للاختبار)
+  // النص الرئيسي المجلوب من لوحة التحكم
   const mainAnnouncement = s.announcement_text || "المتجر مفتوح لاستقبال الطلبات من 8 صباحاً حتى 12 مساءً.";
 
-  // قائمة النصوص الترويجية المضافة للاختبار ولإعطاء مظهر متكامل
-  const announcements = [
+  // قائمة النصوص الترويجية الأساسية
+  const baseAnnouncements = [
     { text: mainAnnouncement, icon: Megaphone },
     { text: "توصيل سريع لكافة المحافظات 🚚", icon: Truck },
     { text: "خصومات مميزة على الفئات المختارة 🔥", icon: Tag },
     { text: "أهلاً بكم في تشكيلات - تسوق ممتع ✨", icon: Sparkles },
   ];
 
+  // تكرار القائمة عدة مرات لضمان سلاسة حركة الـ Loop بنسبة 100%
+  const announcements = [...baseAnnouncements, ...baseAnnouncements, ...baseAnnouncements];
+
   const renderContent = () => (
-    <div className="flex whitespace-nowrap animate-marquee-container items-center">
-      {/* تكرار القائمة عدة مرات لضمان ملء الشاشة واستمرار الحركة بلا توقف أو فراغات */}
-      {[...announcements, ...announcements, ...announcements, ...announcements].map((item, idx) => {
-        const IconComponent = item.icon;
-        return (
-          <div key={idx} className="flex items-center gap-2 px-6 shrink-0">
-            <IconComponent className="h-3.5 w-3.5 text-amber-300 shrink-0" />
-            <span>{item.text}</span>
-          </div>
-        );
-      })}
+    <div className="overflow-hidden w-full">
+      <div className="animate-marquee-container flex items-center py-0.5">
+        {announcements.map((item, idx) => {
+          const IconComponent = item.icon;
+          return (
+            <div key={idx} className="flex items-center gap-2 px-6 shrink-0">
+              <IconComponent className="h-3.5 w-3.5 text-amber-300 shrink-0" />
+              <span>{item.text}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 
