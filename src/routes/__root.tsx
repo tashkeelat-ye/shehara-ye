@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
+import { WishlistProvider } from "@/lib/wishlist-context";
 import { CartDrawer } from "@/components/cart-drawer";
 import { CurrencyProvider } from "@/lib/currency-context";
 import { Toaster } from "@/components/ui/sonner";
@@ -152,7 +153,6 @@ function RootShell({ children }: { children: ReactNode }) {
 function GlobalFetchingLoader({ showSplash }: { showSplash: boolean }) {
   const isFetching = useIsFetching();
 
-  // عدم عرض مؤشر التحميل أثناء انقطاع الإنترنت لمنع إزعاج المستخدم
   if (showSplash || isFetching === 0 || (typeof navigator !== "undefined" && !navigator.onLine)) {
     return null;
   }
@@ -169,12 +169,10 @@ function GlobalFetchingLoader({ showSplash }: { showSplash: boolean }) {
   );
 }
 
-// مكون داخلي لتمرير ID المستخدم الحالي للـ NotificationListener
 function AppContent({ showSplash }: { showSplash: boolean }) {
   const { user } = useAuth();
 
   useEffect(() => {
-    // تفعيل وتسجيل اشتراكات الإشعارات في الخلفية
     void registerPushNotifications();
   }, []);
 
@@ -213,7 +211,6 @@ function RootComponent() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  // تسجيل Service Worker للعمل في وضع الأوفلاين وتسجيل الإشعارات
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
@@ -232,9 +229,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CurrencyProvider>
-          <CartProvider>
-            <AppContent showSplash={showSplash} />
-          </CartProvider>
+          <WishlistProvider>
+            <CartProvider>
+              <AppContent showSplash={showSplash} />
+            </CartProvider>
+          </WishlistProvider>
         </CurrencyProvider>
       </AuthProvider>
     </QueryClientProvider>
