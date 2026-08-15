@@ -165,7 +165,6 @@
   }
 }
 
-/* تنسيق الشريط الإخباري المتحرك باستمرار بدون انقطاع */
 @keyframes continuous-marquee {
   0% {
     transform: translateX(0);
@@ -178,7 +177,8 @@
 .animate-marquee-container {
   display: flex;
   width: max-content;
-  animation: continuous-marquee 25s linear infinite;
+  animation: continuous-marquee 20s linear infinite;
+  will-change: transform;
 }
 
 .animate-marquee-container:hover {
