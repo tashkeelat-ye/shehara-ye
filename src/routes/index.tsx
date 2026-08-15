@@ -13,6 +13,7 @@ import { LocalProducts } from "@/components/local-products";
 import { SiteFooter } from "@/components/site-footer";
 import { BottomNav } from "@/components/bottom-nav";
 import { fetchProducts } from "@/lib/db";
+import { BannerCarousel4to1 } from "@/components/home/BannerCarousel4to1"; // <--- استدعاء المكون الجديد
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -60,6 +61,9 @@ function Index() {
         {/* قسم العروض والتخفيضات */}
         <OffersSection />
 
+        {/* ================= كتل الإعلانات 4:1 المضافة حديثاً ================= */}
+        <BannerCarousel4to1 />
+
         {/* قسم الأكثر مبيعاً */}
         <section className="mt-8">
           <SectionHeading title="الأكثر مبيعًا" to="/products" />
@@ -84,3 +88,4 @@ function Index() {
     </div>
   );
 }
+
