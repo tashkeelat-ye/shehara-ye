@@ -1,6 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney } from "@/lib/money";
 
+/**
+ * تنسيق ثابت بالريال اليمني فقط — لا يتفاعل مع تبديل العملة.
+ * استخدمه فقط في سياقات لا تملك مكوّن React (مثل بناء نص خارج JSX)،
+ * وإلا استخدم useFormatPrice() من "@/lib/currency-context" داخل المكوّنات
+ * حتى تتحدّث الأسعار تلقائيًا عند تبديل المستخدم للعملة.
+ */
+
 export type Category = {
   id: string;
   slug: string;
