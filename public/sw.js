@@ -1,23 +1,38 @@
 /* eslint-env serviceworker */
-const CACHE = "tashkilat-v3";
+
+const SHELL_CACHE = "tashkilat-shell-v4";
+const RUNTIME_CACHE = "tashkilat-runtime-v4";
+
 const OFFLINE_URL = "/offline.html";
 
-// الملفات الأساسية للتخزين المسبق
-const PRECACHE = [
+const PRECACHE_URLS = [
   "/",
   OFFLINE_URL,
   "/manifest.webmanifest",
   "/logo.png",
+  "/favicon.png",
   "/icon-192.png",
-  "/icon-512.png"
+  "/icon-512.png",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
-      .open(CACHE)
-      .then((cache) => cache.addAll(PRECACHE).catch(() => undefined))
-      .then(() => self.skipWaiting())
+      .open(SHELL_CACHE)
+      .then(async (cache) => {
+        for (const url of PRECACHE_URLS) {
+          try {
+            await cache.add(url);
+          } catch (error) {
+            console.warn(
+              "[Tashkilat SW] Failed to precache:",
+              url,
+              error,
+            );
+          }
+        }
+      })
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -25,115 +40,219 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-      )
-      .then(() => self.clients.claim())
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter(
+              (cacheName) =>
+                cacheName !== SHELL_CACHE &&
+                cacheName !== RUNTIME_CACHE,
+            )
+            .map((cacheName) =>
+              caches.delete(cacheName),
+            ),
+        );
+      })
+      .then(() => self.clients.claim()),
   );
 });
 
-// --- إضافة معالجة الإشعارات (Push Notifications) ---
-
-self.addEventListener('push', function(event) {
-  if (!(self.Notification && self.Notification.permission === 'granted')) {
-    return;
-  }
-
+/**
+ * Push Notifications
+ */
+self.addEventListener("push", (event) => {
   let data = {};
+
   if (event.data) {
     try {
       data = event.data.json();
-    } catch (e) {
-      data = { title: "إشعار جديد من تشكيلات", body: event.data.text() };
+    } catch {
+      data = {
+        title: "إشعار جديد من تشكيلات",
+        body: event.data.text(),
+      };
     }
   }
 
-  const title = data.title || "متجر تشكيلات";
+  const title =
+    data.title || "إشعار جديد من تشكيلات";
+
   const options = {
-    body: data.body || "لديك تحديث جديد في المتجر",
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    data: { url: data.link_url || '/' } // الرابط الذي يفتح عند النقر
+    body:
+      data.body ||
+      "لديك تحديث جديد في المتجر",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    dir: "rtl",
+    lang: "ar",
+    data: {
+      url: data.link_url || "/",
+    },
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-// التعامل مع النقر على الإشعار في شريط الإشعارات
-self.addEventListener('notificationclick', function(event) {
-  event.notification.close();
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      // محاولة فتح الرابط في نافذة جديدة أو التركيز على الموجودة
-      if (clients.openWindow) {
-        return clients.openWindow(event.notification.data.url || '/');
-      }
-    })
+    self.registration.showNotification(
+      title,
+      options,
+    ),
   );
 });
 
-// --- نهاية إضافة الإشعارات ---
+/**
+ * Notification click
+ */
+self.addEventListener(
+  "notificationclick",
+  (event) => {
+    event.notification.close();
 
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
+    const targetUrl =
+      event.notification?.data?.url || "/";
 
-  const url = new URL(req.url);
+    event.waitUntil(
+      self.clients
+        .matchAll({
+          type: "window",
+          includeUncontrolled: true,
+        })
+        .then((clientList) => {
+          for (const client of clientList) {
+            if ("focus" in client) {
+              if ("navigate" in client) {
+                client.navigate(targetUrl);
+              }
 
-  // إرجاع استجابة فارغة فوراً لطلبات Supabase عند انقطاع الإنترنت لمنع تعليق Waite Skeletons
-  if (url.origin.includes("supabase.co")) {
-    event.respondWith(
-      fetch(req).catch(() => new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      }))
+              return client.focus();
+            }
+          }
+
+          return self.clients.openWindow(
+            targetUrl,
+          );
+        }),
     );
+  },
+);
+
+/**
+ * Fetch handling
+ */
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+
+  if (request.method !== "GET") {
     return;
   }
 
-  if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith("/~oauth")) return;
+  const url = new URL(request.url);
 
-  // 1. طلبات الصفحات (Navigation)
-  if (req.mode === "navigate") {
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (url.pathname.startsWith("/~oauth")) {
+    return;
+  }
+
+  /**
+   * HTML navigation:
+   * Network First → Cache → Offline page
+   */
+  if (request.mode === "navigate") {
     event.respondWith(
-      fetch(req)
-        .then((networkResponse) => {
-          if (networkResponse.ok) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy));
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+
+            void caches
+              .open(RUNTIME_CACHE)
+              .then((cache) =>
+                cache.put(request, copy),
+              );
           }
-          return networkResponse;
+
+          return response;
         })
         .catch(async () => {
-          const cachedPage = await caches.match(req);
-          if (cachedPage) return cachedPage;
+          const cachedPage =
+            await caches.match(request);
 
-          const homePage = await caches.match("/");
-          if (homePage) return homePage;
+          if (cachedPage) {
+            return cachedPage;
+          }
 
-          return (await caches.match(OFFLINE_URL)) || Response.error();
-        })
+          const cachedHome =
+            await caches.match("/");
+
+          if (cachedHome) {
+            return cachedHome;
+          }
+
+          const offlinePage =
+            await caches.match(
+              OFFLINE_URL,
+            );
+
+          return (
+            offlinePage ||
+            new Response(
+              "أنت غير متصل بالإنترنت.",
+              {
+                status: 503,
+                headers: {
+                  "Content-Type":
+                    "text/plain; charset=utf-8",
+                },
+              },
+            )
+          );
+        }),
     );
+
     return;
   }
 
-  // 2. الملفات الساكنة والصور
-  if (/\.(png|jpg|jpeg|webp|svg|gif|woff2?|ttf|css|js)$/.test(url.pathname)) {
-    event.respondWith(
-      caches.match(req).then((cached) => {
-        const network = fetch(req)
-          .then((res) => {
-            if (res.ok) {
-              const copy = res.clone();
-              caches.open(CACHE).then((c) => c.put(req, copy));
-            }
-            return res;
-          })
-          .catch(() => cached || Response.error());
+  /**
+   * Static assets:
+   * Cache First → Network → Runtime Cache
+   */
+  const isStaticAsset =
+    /\.(?:js|css|png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf)$/i.test(
+      url.pathname,
+    );
 
-        return cached || network;
-      })
+  if (isStaticAsset) {
+    event.respondWith(
+      caches
+        .match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+
+          return fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                const copy =
+                  response.clone();
+
+                void caches
+                  .open(RUNTIME_CACHE)
+                  .then((cache) =>
+                    cache.put(
+                      request,
+                      copy,
+                    ),
+                  );
+              }
+
+              return response;
+            })
+            .catch(() =>
+              Response.error(),
+            );
+        }),
     );
   }
 });
