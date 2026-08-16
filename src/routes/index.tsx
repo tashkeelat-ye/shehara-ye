@@ -13,7 +13,7 @@ import { LocalProducts } from "@/components/local-products";
 import { SiteFooter } from "@/components/site-footer";
 import { BottomNav } from "@/components/bottom-nav";
 import { fetchProducts } from "@/lib/db";
-import { BannerCarousel4to1 } from "@/components/banner-carousel-4to1";
+import { BannerCarousel4to1 } from "@/components/home/BannerCarousel4to1";
 
 export const Route = createFileRoute("/")({
   head: () => ({
