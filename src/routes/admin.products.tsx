@@ -5,6 +5,8 @@ import { Plus, Trash2, Edit2, X, Upload, Loader2, AlertCircle, Layers } from "lu
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCard, Field, btnCls, inputCls } from "@/components/admin-ui";
 import { uploadManyMedia } from "@/lib/media";
+import { fetchSettings } from "@/lib/store";
+import { DEFAULT_SAR_RATE } from "@/lib/money";
 import type { Category, Product } from "@/lib/db";
 
 export const Route = createFileRoute("/admin/products")({
@@ -13,7 +15,10 @@ export const Route = createFileRoute("/admin/products")({
 
 const PRESET_SIZES = ["S", "M", "L", "XL", "2XL", "قطعة", "ملي", "لتر", "100 جم", "نصف كيلو", "1 كيلو"];
 const PRESET_COLORS = ["وردي", "أسود", "أبيض", "أحمر", "أزرق", "كحلي", "بيج", "رمادي", "ذهبي"];
-const SAR_TO_YER_RATE = 420;
+// ملاحظة: كان هذا الرقم ثابتًا (420) ومنفصلاً تمامًا عن سعر الصرف الحقيقي
+// المخزَّن في site_settings.sar_rate (والمستخدم في كل مكان آخر بالمتجر).
+// النتيجة كانت أسعارًا سعودية غير متطابقة بين لوحة التحكم والمتجر الفعلي.
+// الآن يُجلب السعر الحيّ من الإعدادات ويُستخدم كمصدر وحيد للتحويل.
 
 type ExtendedProduct = Product & {
   price_sar?: number | null;
@@ -64,15 +69,17 @@ export function AdminProducts() {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [sarRate, setSarRate] = useState(DEFAULT_SAR_RATE);
 
   const load = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
 
     try {
-      const [pRes, cRes] = await Promise.all([
+      const [pRes, cRes, settings] = await Promise.all([
         supabase.from("products").select("*").order("created_at", { ascending: false }),
         supabase.from("categories").select("*"),
+        fetchSettings().catch(() => null),
       ]);
 
       if (pRes.error) {
@@ -83,6 +90,10 @@ export function AdminProducts() {
 
       if (cRes.data) {
         setCategories((cRes.data as Category[]) ?? []);
+      }
+
+      if (settings?.sar_rate && settings.sar_rate > 0) {
+        setSarRate(settings.sar_rate);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "حدث خطأ أثناء تحميل البيانات";
@@ -127,13 +138,13 @@ export function AdminProducts() {
 
   function handleYerPriceChange(yerPrice: number) {
     if (!editing) return;
-    const sarCalculated = Math.round((yerPrice / SAR_TO_YER_RATE) * 100) / 100;
+    const sarCalculated = Math.round((yerPrice / sarRate) * 100) / 100;
     setEditing({ ...editing, price: yerPrice, price_sar: sarCalculated });
   }
 
   function handleSarPriceChange(sarPrice: number) {
     if (!editing) return;
-    const yerCalculated = Math.round(sarPrice * SAR_TO_YER_RATE);
+    const yerCalculated = Math.round(sarPrice * sarRate);
     setEditing({ ...editing, price_sar: sarPrice, price: yerCalculated });
   }
 
@@ -360,15 +371,19 @@ export function AdminProducts() {
                         onChange={(e) => handleYerPriceChange(Number(e.target.value))}
                       />
                     </Field>
-                    <Field label="السعر (ريال سعودي)">
+                    <Field label={`السعر (ريال سعودي) — بسعر صرف ١ ر.س = ${sarRate.toLocaleString("ar-EG")} ر.ي`}>
                       <input
                         type="number"
+                        step="0.01"
                         className={inputCls}
                         value={editing.price_sar || ""}
                         onChange={(e) => handleSarPriceChange(Number(e.target.value))}
                       />
                     </Field>
                   </div>
+                  <p className="text-[11px] text-muted-foreground -mt-1">
+                    يُحتسب تلقائيًا من سعر الصرف الحالي في «إعدادات المتجر». عدّل أي حقل والآخر يتحدّث تلقائيًا.
+                  </p>
 
                   <Field label="وحدة الصنف">
                     <select
