@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminCard, Field, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
 import { uploadMedia } from "@/lib/media";
 import { fetchBanners, type Banner } from "@/lib/store";
+import { Banners4to1Manager } from "@/components/admin/Banners4to1Manager";
 
 export const Route = createFileRoute("/admin/banners")({
   component: AdminBanners,
@@ -101,9 +102,17 @@ function AdminBanners() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
+      {/* قسم إدارة بنرات العروض (4:1) الجديد */}
+      <div className="rounded-2xl border border-border bg-card p-4 md:p-6 shadow-sm">
+        <Banners4to1Manager />
+      </div>
+
+      <hr className="border-border" />
+
+      {/* قسم البانرات الإعلانية الأساسية */}
       <AdminCard
-        title={`الإعلانات والعروض (${rows.length.toLocaleString("ar-EG")})`}
+        title={`الإعلانات والعروض الأساسية (${rows.length.toLocaleString("ar-EG")})`}
         action={
           <button
             type="button"
@@ -157,13 +166,13 @@ function AdminBanners() {
               </li>
             ))}
           {rows.length === 0 ? (
-            <li className="text-muted-foreground">لا توجد بانرات بعد.</li>
+            <li className="text-muted-foreground">لا توجد بانرات أساسية بعد.</li>
           ) : null}
         </ul>
       </AdminCard>
 
       {editing ? (
-        <AdminCard title={editing.id ? "تعديل بانر" : "بانر جديد"}>
+        <AdminCard title={editing.id ? "تعديل بانر أساسي" : "بانر أساسي جديد"}>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="العنوان">
               <input
