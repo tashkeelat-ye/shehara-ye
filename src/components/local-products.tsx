@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchProducts, formatPrice } from "@/lib/db";
+import { fetchProducts } from "@/lib/db";
+import { useFormatPrice } from "@/lib/currency-context";
 import { ProductImage } from "./product-image";
 
 export function LocalProducts() {
+  const formatPrice = useFormatPrice();
   const { data: products = [] } = useQuery({
     queryKey: ["products", "local"],
     queryFn: () => fetchProducts({ local: true, sort: "best", limit: 6 }),

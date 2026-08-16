@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Minus, Plus, ShoppingCart, Trash2, X } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
-import { formatPrice } from "@/lib/db";
+import { useFormatPrice } from "@/lib/currency-context";
 import { ProductImage } from "./product-image";
 
 export function CartDrawer() {
+  const formatPrice = useFormatPrice();
   const { items, total, count, drawerOpen, setDrawerOpen, updateQuantity, removeItem } =
     useCart();
 

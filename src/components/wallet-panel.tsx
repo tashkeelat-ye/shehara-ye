@@ -5,7 +5,7 @@ import { ArrowDownLeft, Upload, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { FormField, fieldCls } from "@/components/form-ui";
 import { useAuth } from "@/lib/auth-context";
-import { formatPrice } from "@/lib/db";
+import { useFormatPrice } from "@/lib/currency-context";
 import { fetchPaymentMethods, fetchWalletTransactions, formatDate } from "@/lib/store";
 import { uploadReceipt } from "@/lib/media";
 
@@ -18,6 +18,7 @@ const KIND_LABELS: Record<string, string> = {
 
 /** لوحة المحفظة الكاملة: الرصيد، الشحن، الاسترداد، وكشف الحساب. */
 export function WalletPanel() {
+  const formatPrice = useFormatPrice();
   const { user, profile, refreshProfile } = useAuth();
   const userId = user?.id ?? "";
 

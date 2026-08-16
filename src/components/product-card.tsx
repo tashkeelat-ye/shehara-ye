@@ -1,12 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { Plus, Star } from "lucide-react";
 import { toast } from "sonner";
-import { formatPrice, type Product } from "@/lib/db";
+import { type Product } from "@/lib/db";
 import { useCart } from "@/lib/cart-context";
+import { useFormatPrice } from "@/lib/currency-context";
 import { ProductImage } from "./product-image";
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem, setDrawerOpen } = useCart();
+  const formatPrice = useFormatPrice();
 
   async function quickAdd(e: React.MouseEvent) {
     e.preventDefault();
