@@ -7,7 +7,7 @@ export type Banner4to1 = {
 };
 
 export type SiteSettings = {
-  id: boolean;
+  id: boolean | string | number;
   store_name: string;
   tagline: string;
   logo_url: string;
@@ -206,5 +206,4 @@ export function formatDate(value: string) {
     month: "long",
     day: "numeric",
   });
-  }
-    
+}
