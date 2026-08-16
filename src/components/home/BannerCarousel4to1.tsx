@@ -12,7 +12,6 @@ export function BannerCarousel4to1() {
     })();
   }, []);
 
-  // صور افتراضية تظهر دائماً لضمان عدم اختفاء القسم، ويتم استبدالها تلقائياً بالصور المضافة من لوحة التحكم
   const defaultBanners = [
     {
       image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&h=300&fit=crop",
@@ -26,7 +25,6 @@ export function BannerCarousel4to1() {
     }
   ];
 
-  // التحقق مما إذا كان هناك بنرات مضافة من لوحة التحكم وتحتوي على صور صالحة
   const customBanners = settings?.custom_banners_4to1?.filter(b => b.image && b.image.trim() !== "") || [];
   const banners = customBanners.length > 0 ? customBanners : defaultBanners;
 
@@ -56,7 +54,6 @@ export function BannerCarousel4to1() {
           />
         </a>
 
-        {/* نقاط التنقل بين الشرائح */}
         {banners.length > 1 && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
             {banners.map((_, idx) => (
