@@ -1,38 +1,98 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  offlineGetMetadata,
+  offlineSetMetadata,
+} from "@/lib/offline-db";
+
+type OfflineDataState<T> = {
+  value: T;
+  hydrated: boolean;
+};
+
+function metadataKey(key: string): string {
+  return `hook:${key}`;
+}
 
 /**
- * Hook مخصص لحفظ واسترجاع البيانات محلياً (Offline Persistence)
+ * حفظ واسترجاع بيانات بسيطة محلياً باستخدام IndexedDB.
+ *
+ * يستخدم هذا الـHook للبيانات غير الحساسة التي نريد الاحتفاظ بها
+ * أثناء انقطاع الإنترنت.
  */
-export function useOfflineData<T>(key: string, initialData: T): [T, (data: T) => void] {
-  const [data, setData] = useState<T>(() => {
-    if (typeof window === "undefined") return initialData;
-    try {
-      const localData = localStorage.getItem(`tashkilat_offline_${key}`);
-      return localData ? JSON.parse(localData) : initialData;
-    } catch (error) {
-      console.error("Error reading offline data:", error);
-      return initialData;
-    }
+export function useOfflineData<T>(
+  key: string,
+  initialData: T,
+): [T, (data: T) => void] {
+  const [state, setState] = useState<OfflineDataState<T>>({
+    value: initialData,
+    hydrated: false,
   });
 
-  const updateData = (newData: T) => {
-    setData(newData);
-    try {
-      localStorage.setItem(`tashkilat_offline_${key}`, JSON.stringify(newData));
-    } catch (error) {
-      console.error("Error saving offline data:", error);
-    }
-  };
-
   useEffect(() => {
-    if (data && typeof window !== "undefined") {
+    let cancelled = false;
+
+    async function load() {
       try {
-        localStorage.setItem(`tashkilat_offline_${key}`, JSON.stringify(data));
+        const stored = await offlineGetMetadata<T>(
+          metadataKey(key),
+        );
+
+        if (!cancelled && stored !== null) {
+          setState({
+            value: stored,
+            hydrated: true,
+          });
+
+          return;
+        }
+
+        if (!cancelled) {
+          setState({
+            value: initialData,
+            hydrated: true,
+          });
+        }
       } catch (error) {
-        console.error("Error syncing offline data:", error);
+        console.warn(
+          `[Offline] تعذر قراءة البيانات المحلية للمفتاح "${key}".`,
+          error,
+        );
+
+        if (!cancelled) {
+          setState({
+            value: initialData,
+            hydrated: true,
+          });
+        }
       }
     }
-  }, [key, data]);
 
-  return [data, updateData];
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [key, initialData]);
+
+  const updateData = useCallback(
+    (newData: T) => {
+      setState({
+        value: newData,
+        hydrated: true,
+      });
+
+      void offlineSetMetadata(
+        metadataKey(key),
+        newData,
+      ).catch((error) => {
+        console.warn(
+          `[Offline] تعذر حفظ البيانات المحلية للمفتاح "${key}".`,
+          error,
+        );
+      });
+    },
+    [key],
+  );
+
+  return [state.value, updateData];
 }
