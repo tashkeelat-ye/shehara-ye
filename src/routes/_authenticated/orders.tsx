@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
-import { formatPrice } from "@/lib/db";
+import { useFormatPrice } from "@/lib/currency-context";
 import { PAYMENT_STATUS_LABELS } from "@/lib/store";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { InvoiceView } from "@/components/InvoiceView";
@@ -58,6 +58,7 @@ export const Route = createFileRoute("/_authenticated/orders")({
 });
 
 function OrdersPage() {
+  const formatPrice = useFormatPrice();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 

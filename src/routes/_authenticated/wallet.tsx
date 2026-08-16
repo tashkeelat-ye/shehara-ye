@@ -8,7 +8,7 @@ import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
 import { FormField, fieldCls } from "@/components/form-ui";
 import { useAuth } from "@/lib/auth-context";
-import { formatPrice } from "@/lib/db";
+import { useFormatPrice } from "@/lib/currency-context";
 import { fetchPaymentMethods, fetchWalletTransactions, formatDate } from "@/lib/store";
 import { uploadReceipt } from "@/lib/media";
 
@@ -30,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/wallet")({
 });
 
 function WalletPage() {
+  const formatPrice = useFormatPrice();
   const { user, profile, refreshProfile } = useAuth();
   const userId = user?.id ?? "";
 

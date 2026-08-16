@@ -10,7 +10,7 @@ import { LocationPicker } from "@/components/location-picker";
 import { FormField, areaCls, fieldCls } from "@/components/form-ui";
 import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
-import { formatPrice } from "@/lib/db";
+import { useFormatPrice } from "@/lib/currency-context";
 import { fetchPaymentMethods, fetchSettings } from "@/lib/store";
 import { YEMEN_GOVERNORATES } from "@/lib/yemen";
 import { uploadReceipt } from "@/lib/media";
@@ -51,6 +51,7 @@ const ADDRESS_COLUMNS =
   "id,label,recipient_name,phone,city,district,details,landmark,latitude,longitude,is_default";
 
 function CheckoutPage() {
+  const formatPrice = useFormatPrice();
   const { user, profile, refreshProfile } = useAuth();
   const { items, total: subtotal, clearCart } = useCart();
   const navigate = useNavigate();
