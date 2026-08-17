@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   isValidYemeniPhone,
   normalizeYemeniPhone,
@@ -11,39 +10,60 @@ import {
 
 export const ADMIN_EMAIL_DOMAIN = "tashkilat.app";
 
-/**
- * =========================================================
- * أنواع الحسابات التي تستطيع الإدارة إنشاؤها
- * =========================================================
- */
+type ManagedAccountType =
+  | "vendor"
+  | "courier";
 
-const managedAccountTypeSchema = z.enum([
-  "vendor",
-  "courier",
-]);
-
-type ManagedAccountType = z.infer<
-  typeof managedAccountTypeSchema
->;
+const managedAccountTypeSchema =
+  z.enum([
+    "vendor",
+    "courier",
+  ]);
 
 
 /**
- * =========================================================
- * التحقق من أن المستخدم الحالي Admin
- * =========================================================
+ * تحميل Supabase Admin Client على الخادم فقط.
  *
- * لا نعتمد على الواجهة الأمامية.
- * التحقق يتم على الخادم باستخدام Service Role.
+ * مهم:
+ * لا نستورد client.server.ts في أعلى الملف،
+ * لأن ملفات *.functions.ts يمكن أن تدخل ضمن bundle العميل.
  */
+async function getSupabaseAdmin() {
+  const {
+    supabaseAdmin,
+  } = await import(
+    "@/integrations/supabase/client.server"
+  );
 
+  return supabaseAdmin;
+}
+
+
+/**
+ * التحقق من أن المستخدم الحالي Admin.
+ */
 async function assertAdmin(
   userId: string,
 ) {
-  const { data, error } = await supabaseAdmin
+  const supabaseAdmin =
+    await getSupabaseAdmin();
+
+  const {
+    data,
+    error,
+  } = await supabaseAdmin
     .from("user_roles")
-    .select("user_id, role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
+    .select(
+      "user_id,role",
+    )
+    .eq(
+      "user_id",
+      userId,
+    )
+    .eq(
+      "role",
+      "admin",
+    )
     .maybeSingle();
 
   if (error) {
@@ -69,136 +89,161 @@ async function assertAdmin(
 
 /**
  * =========================================================
- * إنشاء حساب الإدارة الأساسي
+ * إنشاء / تجهيز حساب الإدارة
  * =========================================================
- *
- * هذه الدالة تستخدم أثناء إعداد المشروع الأولي.
- *
- * لا نعتمد عليها لإنشاء حسابات المستخدمين العادية.
  */
 
 export const ensureAdminAccount =
   createServerFn({
     method: "POST",
-  }).handler(async () => {
-    const password =
-      process.env["ADMIN_INITIAL_PASSWORD"];
+  }).handler(
+    async () => {
+      const supabaseAdmin =
+        await getSupabaseAdmin();
 
-    if (!password) {
-      return {
-        ok: false as const,
-        reason: "missing_password",
-      };
-    }
+      const password =
+        process.env[
+          "ADMIN_INITIAL_PASSWORD"
+        ];
 
-    const email =
-      `ameer@${ADMIN_EMAIL_DOMAIN}`;
-
-    const {
-      data: list,
-      error: listError,
-    } =
-      await supabaseAdmin.auth.admin.listUsers({
-        page: 1,
-        perPage: 200,
-      });
-
-    if (listError) {
-      return {
-        ok: false as const,
-        reason: listError.message,
-      };
-    }
-
-    let userId =
-      list?.users.find(
-        (user) =>
-          user.email?.toLowerCase() ===
-          email.toLowerCase(),
-      )?.id;
-
-    if (!userId) {
-      const {
-        data: created,
-        error,
-      } =
-        await supabaseAdmin.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-          user_metadata: {
-            full_name: "Ameer",
-            username: "Ameer",
-            account_type: "admin",
-          },
-        });
-
-      if (error || !created.user) {
+      if (!password) {
         return {
           ok: false as const,
           reason:
-            error?.message ??
-            "create_failed",
+            "missing_password",
         };
       }
 
-      userId = created.user.id;
-    }
+      const email =
+        `ameer@${ADMIN_EMAIL_DOMAIN}`;
 
-    const {
-      error: profileError,
-    } =
-      await supabaseAdmin
-        .from("profiles")
-        .upsert(
+      const {
+        data: list,
+        error: listError,
+      } =
+        await supabaseAdmin.auth.admin.listUsers(
           {
-            id: userId,
-            full_name: "Ameer",
-          },
-          {
-            onConflict: "id",
+            page: 1,
+            perPage: 200,
           },
         );
 
-    if (profileError) {
+      if (listError) {
+        return {
+          ok: false as const,
+          reason:
+            listError.message,
+        };
+      }
+
+      let userId =
+        list?.users.find(
+          (user) =>
+            user.email?.toLowerCase() ===
+            email.toLowerCase(),
+        )?.id;
+
+      if (!userId) {
+        const {
+          data: created,
+          error,
+        } =
+          await supabaseAdmin.auth.admin.createUser(
+            {
+              email,
+              password,
+              email_confirm:
+                true,
+              user_metadata: {
+                full_name:
+                  "Ameer",
+                username:
+                  "Ameer",
+                account_type:
+                  "admin",
+              },
+            },
+          );
+
+        if (
+          error ||
+          !created.user
+        ) {
+          return {
+            ok: false as const,
+            reason:
+              error?.message ??
+              "create_failed",
+          };
+        }
+
+        userId =
+          created.user.id;
+      }
+
+      const {
+        error:
+          profileError,
+      } =
+        await supabaseAdmin
+          .from("profiles")
+          .upsert(
+            {
+              id: userId,
+              full_name:
+                "Ameer",
+            },
+            {
+              onConflict:
+                "id",
+            },
+          );
+
+      if (profileError) {
+        return {
+          ok: false as const,
+          reason:
+            profileError.message,
+        };
+      }
+
+      const {
+        error:
+          roleError,
+      } =
+        await supabaseAdmin
+          .from("user_roles")
+          .upsert(
+            {
+              user_id:
+                userId,
+              role: "admin",
+            },
+            {
+              onConflict:
+                "user_id,role",
+            },
+          );
+
+      if (roleError) {
+        return {
+          ok: false as const,
+          reason:
+            roleError.message,
+        };
+      }
+
       return {
-        ok: false as const,
-        reason: profileError.message,
+        ok: true as const,
+        userId,
       };
-    }
-
-    const {
-      error: roleError,
-    } =
-      await supabaseAdmin
-        .from("user_roles")
-        .upsert(
-          {
-            user_id: userId,
-            role: "admin",
-          },
-          {
-            onConflict: "user_id,role",
-          },
-        );
-
-    if (roleError) {
-      return {
-        ok: false as const,
-        reason: roleError.message,
-      };
-    }
-
-    return {
-      ok: true as const,
-      userId,
-    };
-  });
+    },
+  );
 
 
 /**
  * =========================================================
- * Schema إنشاء حساب تاجر / عامل توصيل
+ * إنشاء حساب تاجر / عامل توصيل
  * =========================================================
  */
 
@@ -262,12 +307,6 @@ const createManagedAccountSchema =
   });
 
 
-/**
- * =========================================================
- * إنشاء حساب تاجر أو عامل توصيل
- * =========================================================
- */
-
 export const createManagedAccount =
   createServerFn({
     method: "POST",
@@ -287,6 +326,9 @@ export const createManagedAccount =
           context.userId,
         );
 
+        const supabaseAdmin =
+          await getSupabaseAdmin();
+
         const phone =
           normalizeYemeniPhone(
             data.phone,
@@ -305,17 +347,16 @@ export const createManagedAccount =
         const email =
           phoneToEmail(phone);
 
-        /**
-         * منع إنشاء حسابين بنفس الهاتف.
-         */
         const {
           data: usersData,
           error: usersError,
         } =
-          await supabaseAdmin.auth.admin.listUsers({
-            page: 1,
-            perPage: 1000,
-          });
+          await supabaseAdmin.auth.admin.listUsers(
+            {
+              page: 1,
+              perPage: 1000,
+            },
+          );
 
         if (usersError) {
           throw new Error(
@@ -336,24 +377,27 @@ export const createManagedAccount =
           );
         }
 
-        /**
-         * إنشاء حساب Auth.
-         */
         const {
           data: created,
-          error: createError,
+          error:
+            createError,
         } =
-          await supabaseAdmin.auth.admin.createUser({
-            email,
-            password: data.password,
-            email_confirm: true,
-            user_metadata: {
-              full_name: data.name,
-              phone,
-              account_type:
-                data.accountType,
+          await supabaseAdmin.auth.admin.createUser(
+            {
+              email,
+              password:
+                data.password,
+              email_confirm:
+                true,
+              user_metadata: {
+                full_name:
+                  data.name,
+                phone,
+                account_type:
+                  data.accountType,
+              },
             },
-          });
+          );
 
         if (
           createError ||
@@ -373,7 +417,8 @@ export const createManagedAccount =
            * Profile
            */
           const {
-            error: profileError,
+            error:
+              profileError,
           } =
             await supabaseAdmin
               .from("profiles")
@@ -383,10 +428,12 @@ export const createManagedAccount =
                   full_name:
                     data.name,
                   phone,
-                  is_disabled: false,
+                  is_disabled:
+                    false,
                 },
                 {
-                  onConflict: "id",
+                  onConflict:
+                    "id",
                 },
               );
 
@@ -398,18 +445,16 @@ export const createManagedAccount =
 
           /**
            * Role
-           *
-           * لا نعتمد على Database Type هنا لأن
-           * generated types الحالية لا تعرّف user_roles
-           * بشكل كامل.
            */
           const {
-            error: roleError,
+            error:
+              roleError,
           } =
             await supabaseAdmin
               .from("user_roles")
               .insert({
-                user_id: userId,
+                user_id:
+                  userId,
                 role:
                   data.accountType,
               });
@@ -421,38 +466,49 @@ export const createManagedAccount =
           }
 
           /**
-           * =================================================
-           * تاجر
-           * =================================================
+           * Vendor
            */
           if (
             data.accountType ===
             "vendor"
           ) {
-            if (data.recordId) {
+            if (
+              data.recordId
+            ) {
               const {
-                data: vendor,
+                data:
+                  vendor,
                 error:
                   vendorError,
               } =
                 await supabaseAdmin
-                  .from("vendors")
+                  .from(
+                    "vendors",
+                  )
                   .update({
-                    user_id: userId,
+                    user_id:
+                      userId,
                     account_enabled:
                       true,
-                    is_active: true,
-                    name: data.name,
-                    city: data.city,
+                    is_active:
+                      true,
+                    name:
+                      data.name,
+                    city:
+                      data.city,
                   })
                   .eq(
                     "id",
                     data.recordId,
                   )
-                  .select("id")
+                  .select(
+                    "id",
+                  )
                   .maybeSingle();
 
-              if (vendorError) {
+              if (
+                vendorError
+              ) {
                 throw new Error(
                   vendorError.message,
                 );
@@ -475,24 +531,35 @@ export const createManagedAccount =
             }
 
             const {
-              data: vendor,
+              data:
+                vendor,
               error:
                 vendorError,
             } =
               await supabaseAdmin
-                .from("vendors")
+                .from(
+                  "vendors",
+                )
                 .insert({
-                  user_id: userId,
+                  user_id:
+                    userId,
                   account_enabled:
                     true,
-                  is_active: true,
-                  name: data.name,
-                  city: data.city,
+                  is_active:
+                    true,
+                  name:
+                    data.name,
+                  city:
+                    data.city,
                 })
-                .select("id")
+                .select(
+                  "id",
+                )
                 .single();
 
-            if (vendorError) {
+            if (
+              vendorError
+            ) {
               throw new Error(
                 vendorError.message,
               );
@@ -501,46 +568,58 @@ export const createManagedAccount =
             return {
               ok: true as const,
               userId,
-              recordId: vendor.id,
+              recordId:
+                vendor.id,
               accountType:
                 "vendor" as const,
             };
           }
 
           /**
-           * =================================================
-           * عامل توصيل
-           * =================================================
+           * Courier
            */
           if (
             data.accountType ===
             "courier"
           ) {
-            if (data.recordId) {
+            if (
+              data.recordId
+            ) {
               const {
-                data: courier,
+                data:
+                  courier,
                 error:
                   courierError,
               } =
                 await supabaseAdmin
-                  .from("couriers")
+                  .from(
+                    "couriers",
+                  )
                   .update({
-                    user_id: userId,
+                    user_id:
+                      userId,
                     account_enabled:
                       true,
-                    is_active: true,
-                    name: data.name,
+                    is_active:
+                      true,
+                    name:
+                      data.name,
                     phone,
-                    city: data.city,
+                    city:
+                      data.city,
                   })
                   .eq(
                     "id",
                     data.recordId,
                   )
-                  .select("id")
+                  .select(
+                    "id",
+                  )
                   .maybeSingle();
 
-              if (courierError) {
+              if (
+                courierError
+              ) {
                 throw new Error(
                   courierError.message,
                 );
@@ -563,25 +642,36 @@ export const createManagedAccount =
             }
 
             const {
-              data: courier,
+              data:
+                courier,
               error:
                 courierError,
             } =
               await supabaseAdmin
-                .from("couriers")
+                .from(
+                  "couriers",
+                )
                 .insert({
-                  user_id: userId,
+                  user_id:
+                    userId,
                   account_enabled:
                     true,
-                  is_active: true,
-                  name: data.name,
+                  is_active:
+                    true,
+                  name:
+                    data.name,
                   phone,
-                  city: data.city,
+                  city:
+                    data.city,
                 })
-                .select("id")
+                .select(
+                  "id",
+                )
                 .single();
 
-            if (courierError) {
+            if (
+              courierError
+            ) {
               throw new Error(
                 courierError.message,
               );
@@ -601,11 +691,6 @@ export const createManagedAccount =
             "نوع الحساب غير مدعوم.",
           );
         } catch (error) {
-          /**
-           * إذا فشل إنشاء Profile / Role /
-           * Vendor / Courier، نحذف حساب Auth
-           * حتى لا يبقى حساب يتيم.
-           */
           await supabaseAdmin.auth.admin.deleteUser(
             userId,
           );
@@ -618,7 +703,7 @@ export const createManagedAccount =
 
 /**
  * =========================================================
- * Schema تفعيل / تعطيل الحساب
+ * تفعيل / تعطيل الحساب
  * =========================================================
  */
 
@@ -628,15 +713,10 @@ const managedAccountStatusSchema =
       .string()
       .uuid(),
 
-    disabled: z.boolean(),
+    disabled:
+      z.boolean(),
   });
 
-
-/**
- * =========================================================
- * تفعيل / تعطيل حساب تاجر أو عامل توصيل
- * =========================================================
- */
 
 export const setManagedAccountDisabled =
   createServerFn({
@@ -657,11 +737,12 @@ export const setManagedAccountDisabled =
           context.userId,
         );
 
-        /**
-         * تحديث Profile.
-         */
+        const supabaseAdmin =
+          await getSupabaseAdmin();
+
         const {
-          error: profileError,
+          error:
+            profileError,
         } =
           await supabaseAdmin
             .from("profiles")
@@ -680,13 +761,9 @@ export const setManagedAccountDisabled =
           );
         }
 
-        /**
-         * تعطيل Auth نفسه.
-         *
-         * لا نعتمد على is_disabled وحده.
-         */
         const {
-          error: authError,
+          error:
+            authError,
         } =
           await supabaseAdmin.auth.admin.updateUserById(
             data.userId,
@@ -704,9 +781,6 @@ export const setManagedAccountDisabled =
           );
         }
 
-        /**
-         * تحديث التاجر المرتبط.
-         */
         await supabaseAdmin
           .from("vendors")
           .update({
@@ -718,9 +792,6 @@ export const setManagedAccountDisabled =
             data.userId,
           );
 
-        /**
-         * تحديث عامل التوصيل المرتبط.
-         */
         await supabaseAdmin
           .from("couriers")
           .update({
@@ -743,7 +814,7 @@ export const setManagedAccountDisabled =
 
 /**
  * =========================================================
- * Schema إعادة تعيين كلمة المرور
+ * إعادة تعيين كلمة المرور
  * =========================================================
  */
 
@@ -766,12 +837,6 @@ const resetPasswordSchema =
   });
 
 
-/**
- * =========================================================
- * إعادة تعيين كلمة مرور تاجر / مندوب
- * =========================================================
- */
-
 export const resetManagedAccountPassword =
   createServerFn({
     method: "POST",
@@ -791,6 +856,9 @@ export const resetManagedAccountPassword =
           context.userId,
         );
 
+        const supabaseAdmin =
+          await getSupabaseAdmin();
+
         const {
           error,
         } =
@@ -799,7 +867,8 @@ export const resetManagedAccountPassword =
             {
               password:
                 data.password,
-              email_confirm: true,
+              email_confirm:
+                true,
             },
           );
 
