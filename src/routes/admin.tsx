@@ -22,7 +22,6 @@ import {
   Package,
   ReceiptText,
   Settings,
-  ShieldCheck,
   Users,
   Bell,
   Bike,
@@ -30,12 +29,16 @@ import {
   Menu,
   X,
   ChevronLeft,
-  Boxes,
+  CirclePlay,
 } from "lucide-react";
 
-import { supabase } from "@/integrations/supabase/client";
+import {
+  supabase,
+} from "@/integrations/supabase/client";
 
-import { BrandLogo } from "@/components/brand-logo";
+import {
+  BrandLogo,
+} from "@/components/brand-logo";
 
 import {
   ensureAdminAccount,
@@ -43,8 +46,23 @@ import {
 } from "@/lib/admin.functions";
 
 
+/**
+ * =========================================================
+ * تشكيلات للتسوق
+ * الهيكل الرئيسي للوحة التحكم
+ * =========================================================
+ */
+
+
+/**
+ * =========================================================
+ * Route
+ * =========================================================
+ */
 export const Route =
-  createFileRoute("/admin")({
+  createFileRoute(
+    "/admin",
+  )({
     ssr: false,
 
     head: () => ({
@@ -55,19 +73,25 @@ export const Route =
         },
 
         {
-          name: "description",
+          name:
+            "description",
+
           content:
             "لوحة تحكم إدارة متجر تشكيلات.",
         },
 
         {
-          name: "robots",
+          name:
+            "robots",
+
           content:
             "noindex, nofollow",
         },
 
         {
-          property: "og:title",
+          property:
+            "og:title",
+
           content:
             "لوحة تحكم الإدارة | تشكيلات",
         },
@@ -75,6 +99,7 @@ export const Route =
         {
           property:
             "og:description",
+
           content:
             "منطقة إدارة متجر تشكيلات.",
         },
@@ -86,12 +111,11 @@ export const Route =
   });
 
 
-/*
+/**
  * =========================================================
- * قائمة أقسام لوحة التحكم
+ * قائمة لوحة التحكم
  * =========================================================
  */
-
 const NAV = [
   {
     to: "/admin",
@@ -106,15 +130,6 @@ const NAV = [
     icon: Package,
   },
 
-  /*
-   * نظام المخزون
-   */
-  {
-    to: "/admin/inventory",
-    label: "إدارة المخزون",
-    icon: Boxes,
-  },
-
   {
     to: "/admin/categories",
     label: "الفئات والماركات",
@@ -125,6 +140,12 @@ const NAV = [
     to: "/admin/banners",
     label: "الإعلانات والعروض",
     icon: Image,
+  },
+
+  {
+    to: "/admin/stories",
+    label: "القصص",
+    icon: CirclePlay,
   },
 
   {
@@ -183,28 +204,31 @@ const NAV = [
 ] as const;
 
 
-/*
+/**
  * =========================================================
- * التخطيط الرئيسي للوحة التحكم
+ * Admin Layout
  * =========================================================
  */
-
 function AdminLayout() {
   const [
     state,
     setState,
-  ] = useState<
-    "loading" |
-    "guest" |
-    "denied" |
-    "admin"
-  >("loading");
+  ] =
+    useState<
+      | "loading"
+      | "guest"
+      | "denied"
+      | "admin"
+    >(
+      "loading",
+    );
 
 
   const [
     isMobileMenuOpen,
     setIsMobileMenuOpen,
-  ] = useState(false);
+  ] =
+    useState(false);
 
 
   const navigate =
@@ -215,8 +239,8 @@ function AdminLayout() {
     useLocation();
 
 
-  /*
-   * إغلاق القائمة عند الانتقال
+  /**
+   * إغلاق القائمة عند التنقل.
    */
   useEffect(() => {
     setIsMobileMenuOpen(
@@ -227,14 +251,17 @@ function AdminLayout() {
   ]);
 
 
-  /*
-   * التحقق من صلاحيات الإدارة
+  /**
+   * =======================================================
+   * التحقق من صلاحيات المدير
+   * =======================================================
    */
   const check =
     useCallback(
       async () => {
         const {
-          data: userData,
+          data:
+            userData,
         } =
           await supabase.auth.getUser();
 
@@ -262,7 +289,8 @@ function AdminLayout() {
             )
             .eq(
               "user_id",
-              userData.user.id,
+              userData
+                .user.id,
             )
             .eq(
               "role",
@@ -289,19 +317,38 @@ function AdminLayout() {
 
   useEffect(() => {
     void check();
-  }, [check]);
+  }, [
+    check,
+  ]);
 
 
-  /*
-   * شاشة التحقق
+  /**
+   * =======================================================
+   * تحميل
+   * =======================================================
    */
   if (
     state ===
     "loading"
   ) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background px-4">
-        <p className="text-xs text-muted-foreground animate-pulse">
+      <div
+        className="
+          grid
+          min-h-screen
+          place-items-center
+          bg-background
+          px-4
+        "
+        dir="rtl"
+      >
+        <p
+          className="
+            animate-pulse
+            text-xs
+            text-muted-foreground
+          "
+        >
           جارٍ التحقق من الصلاحيات...
         </p>
       </div>
@@ -309,8 +356,10 @@ function AdminLayout() {
   }
 
 
-  /*
-   * تسجيل الدخول
+  /**
+   * =======================================================
+   * تسجيل الدخول / رفض الصلاحية
+   * =======================================================
    */
   if (
     state !==
@@ -330,19 +379,53 @@ function AdminLayout() {
   }
 
 
+  /**
+   * =======================================================
+   * لوحة التحكم
+   * =======================================================
+   */
   return (
     <div
-      className="min-h-screen overflow-x-hidden bg-background text-foreground dir-rtl"
+      dir="rtl"
+      className="
+        min-h-screen
+        overflow-x-hidden
+        bg-background
+        text-foreground
+      "
     >
-      {/* =====================================================
+      {/* =================================================
           الشريط العلوي
-      ====================================================== */}
+          ================================================= */}
 
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="flex items-center justify-between px-4 py-3">
-
-          <div className="flex min-w-0 items-center gap-2.5">
-
+      <header
+        className="
+          sticky
+          top-0
+          z-40
+          border-b
+          border-border
+          bg-card/95
+          backdrop-blur
+        "
+      >
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            px-4
+            py-3
+          "
+        >
+          <div
+            className="
+              flex
+              min-w-0
+              items-center
+              gap-2.5
+            "
+          >
             <button
               type="button"
               onClick={() =>
@@ -350,7 +433,20 @@ function AdminLayout() {
                   !isMobileMenuOpen,
                 )
               }
-              className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-secondary text-foreground transition-transform active:scale-95 md:hidden"
+              className="
+                grid
+                h-10
+                w-10
+                place-items-center
+                rounded-xl
+                border
+                border-border
+                bg-secondary
+                text-foreground
+                transition-transform
+                active:scale-95
+                md:hidden
+              "
               aria-label="القائمة"
             >
               {isMobileMenuOpen ? (
@@ -360,34 +456,67 @@ function AdminLayout() {
               )}
             </button>
 
-
             <BrandLogo
               size={32}
             />
 
-
-            <div className="min-w-0">
-              <p className="truncate text-xs font-bold leading-none text-foreground">
+            <div
+              className="
+                min-w-0
+              "
+            >
+              <p
+                className="
+                  truncate
+                  text-xs
+                  font-bold
+                  leading-none
+                  text-foreground
+                "
+              >
                 لوحة التحكم
               </p>
 
-              <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+              <p
+                className="
+                  mt-0.5
+                  truncate
+                  text-[10px]
+                  text-muted-foreground
+                "
+              >
                 تشكيلات
               </p>
             </div>
-
           </div>
 
 
-          <div className="flex items-center gap-2">
-
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+            "
+          >
             <Link
               to="/"
-              className="inline-flex h-9 items-center justify-center rounded-xl border border-border bg-secondary px-3 text-xs font-medium text-foreground"
+              className="
+                inline-flex
+                h-9
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-border
+                bg-secondary
+                px-3
+                text-xs
+                font-medium
+                text-foreground
+              "
             >
               المتجر
             </Link>
-
 
             <button
               type="button"
@@ -403,57 +532,104 @@ function AdminLayout() {
                   replace: true,
                 });
               }}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-destructive/20 bg-destructive/10 text-destructive"
+              className="
+                inline-flex
+                h-9
+                w-9
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-destructive/20
+                bg-destructive/10
+                text-destructive
+              "
               aria-label="تسجيل الخروج"
             >
               <LogOut className="h-4 w-4" />
             </button>
-
           </div>
-
         </div>
       </header>
 
 
-      {/* =====================================================
+      {/* =================================================
           قائمة الهاتف
-      ====================================================== */}
+          ================================================= */}
 
       {isMobileMenuOpen ? (
         <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm md:hidden"
+          className="
+            fixed
+            inset-0
+            z-50
+            bg-black/50
+            backdrop-blur-sm
+            md:hidden
+          "
           onClick={() =>
             setIsMobileMenuOpen(
               false,
             )
           }
         >
-
           <div
-            className="fixed inset-y-0 right-0 flex w-4/5 max-w-xs flex-col justify-between border-l border-border bg-card p-4 shadow-xl"
+            className="
+              fixed
+              inset-y-0
+              right-0
+              flex
+              w-4/5
+              max-w-xs
+              flex-col
+              justify-between
+              border-l
+              border-border
+              bg-card
+              p-4
+              shadow-xl
+            "
             onClick={(
               event,
             ) =>
               event.stopPropagation()
             }
           >
-
-            <div className="space-y-4">
-
-              <div className="flex items-center justify-between border-b border-border pb-3">
-
-                <div className="flex items-center gap-2">
-
+            <div
+              className="
+                space-y-4
+              "
+            >
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  border-b
+                  border-border
+                  pb-3
+                "
+              >
+                <div
+                  className="
+                    flex
+                    items-center
+                    gap-2
+                  "
+                >
                   <BrandLogo
                     size={28}
                   />
 
-                  <span className="text-xs font-bold">
+                  <span
+                    className="
+                      text-xs
+                      font-bold
+                    "
+                  >
                     أقسام اللوحة
                   </span>
-
                 </div>
-
 
                 <button
                   type="button"
@@ -462,18 +638,30 @@ function AdminLayout() {
                       false,
                     )
                   }
-                  className="rounded-lg p-1 text-muted-foreground hover:bg-secondary"
+                  className="
+                    rounded-lg
+                    p-1
+                    text-muted-foreground
+                    hover:bg-secondary
+                  "
+                  aria-label="إغلاق القائمة"
                 >
                   <X className="h-5 w-5" />
                 </button>
-
               </div>
 
 
-              <nav className="max-h-[calc(100vh-140px)] space-y-1 overflow-y-auto">
-
+              <nav
+                className="
+                  max-h-[calc(100vh-140px)]
+                  space-y-1
+                  overflow-y-auto
+                "
+              >
                 {NAV.map(
-                  (n) => (
+                  (
+                    n,
+                  ) => (
                     <Link
                       key={
                         n.to
@@ -496,11 +684,24 @@ function AdminLayout() {
                         className:
                           "text-muted-foreground hover:bg-secondary",
                       }}
-                      className="flex items-center justify-between rounded-xl px-3 py-2.5 text-xs transition-colors"
+                      className="
+                        flex
+                        items-center
+                        justify-between
+                        rounded-xl
+                        px-3
+                        py-2.5
+                        text-xs
+                        transition-colors
+                      "
                     >
-
-                      <div className="flex items-center gap-2.5">
-
+                      <div
+                        className="
+                          flex
+                          items-center
+                          gap-2.5
+                        "
+                      >
                         <n.icon className="h-4 w-4" />
 
                         <span>
@@ -508,51 +709,76 @@ function AdminLayout() {
                             n.label
                           }
                         </span>
-
                       </div>
 
-
                       <ChevronLeft className="h-3.5 w-3.5 opacity-50" />
-
                     </Link>
                   ),
                 )}
-
               </nav>
-
             </div>
 
 
-            <div className="border-t border-border pt-3">
-
-              <p className="text-center text-[10px] text-muted-foreground">
+            <div
+              className="
+                border-t
+                border-border
+                pt-3
+              "
+            >
+              <p
+                className="
+                  text-center
+                  text-[10px]
+                  text-muted-foreground
+                "
+              >
                 متجر تشكيلات © 2026
               </p>
-
             </div>
-
           </div>
-
         </div>
       ) : null}
 
 
-      {/* =====================================================
-          المحتوى الرئيسي
-      ====================================================== */}
+      {/* =================================================
+          المحتوى
+          ================================================= */}
 
-      <div className="mx-auto max-w-6xl px-3 py-4 md:flex md:gap-4 md:px-4">
+      <div
+        className="
+          mx-auto
+          max-w-6xl
+          px-3
+          py-4
+          md:flex
+          md:gap-4
+          md:px-4
+        "
+      >
+        {/* ===============================================
+            Sidebar Desktop
+            =============================================== */}
 
-        {/* ===================================================
-            القائمة الجانبية للكمبيوتر
-        ==================================================== */}
-
-        <nav className="hidden md:block md:w-56 md:shrink-0">
-
-          <div className="sticky top-20 space-y-1">
-
+        <nav
+          className="
+            hidden
+            md:block
+            md:w-56
+            md:shrink-0
+          "
+        >
+          <div
+            className="
+              sticky
+              top-20
+              space-y-1
+            "
+          >
             {NAV.map(
-              (n) => (
+              (
+                n,
+              ) => (
                 <Link
                   key={
                     n.to
@@ -575,9 +801,19 @@ function AdminLayout() {
                     className:
                       "text-muted-foreground hover:bg-secondary",
                   }}
-                  className="flex items-center gap-2.5 rounded-xl border border-border/50 px-3 py-2.5 text-xs transition-colors"
+                  className="
+                    flex
+                    items-center
+                    gap-2.5
+                    rounded-xl
+                    border
+                    border-border/50
+                    px-3
+                    py-2.5
+                    text-xs
+                    transition-colors
+                  "
                 >
-
                   <n.icon className="h-4 w-4" />
 
                   <span>
@@ -585,37 +821,37 @@ function AdminLayout() {
                       n.label
                     }
                   </span>
-
                 </Link>
               ),
             )}
-
           </div>
-
         </nav>
 
 
-        {/* ===================================================
-            الصفحة الحالية
-        ==================================================== */}
+        {/* ===============================================
+            الصفحة
+            =============================================== */}
 
-        <main className="min-w-0 flex-1 pb-16">
+        <main
+          className="
+            min-w-0
+            flex-1
+            pb-16
+          "
+        >
           <Outlet />
         </main>
-
       </div>
-
     </div>
   );
 }
 
 
-/*
+/**
  * =========================================================
- * شاشة تسجيل دخول الإدارة
+ * تسجيل دخول الإدارة
  * =========================================================
  */
-
 function AdminLogin({
   denied,
   onSuccess,
@@ -626,32 +862,37 @@ function AdminLogin({
   const [
     username,
     setUsername,
-  ] = useState("");
+  ] =
+    useState("");
 
 
   const [
     password,
     setPassword,
-  ] = useState("");
+  ] =
+    useState("");
 
 
   const [
     error,
     setError,
-  ] = useState<
-    string | null
-  >(null);
+  ] =
+    useState<
+      string | null
+    >(null);
 
 
   const [
     busy,
     setBusy,
-  ] = useState(false);
+  ] =
+    useState(false);
 
 
   useEffect(() => {
     void ensureAdminAccount({
-      data: undefined,
+      data:
+        undefined,
     }).catch(
       () =>
         undefined,
@@ -664,7 +905,10 @@ function AdminLogin({
   ) {
     event.preventDefault();
 
-    setError(null);
+    setError(
+      null,
+    );
+
 
     const clean =
       username
@@ -684,7 +928,9 @@ function AdminLogin({
     }
 
 
-    setBusy(true);
+    setBusy(
+      true,
+    );
 
 
     const {
@@ -704,7 +950,9 @@ function AdminLogin({
       signInError ||
       !data.user
     ) {
-      setBusy(false);
+      setBusy(
+        false,
+      );
 
       setError(
         "اسم المستخدم أو كلمة المرور غير صحيحة",
@@ -739,7 +987,9 @@ function AdminLogin({
         >();
 
 
-    setBusy(false);
+    setBusy(
+      false,
+    );
 
 
     if (
@@ -750,7 +1000,7 @@ function AdminLogin({
       await supabase.auth.signOut();
 
       setError(
-        "هذا الحساب لا يملك صلاحية الدخول للوحة التحكم",
+        "هذا الحساب ليس لديه صلاحية مدير",
       );
 
       return;
@@ -762,40 +1012,113 @@ function AdminLogin({
 
 
   return (
-    <div className="grid min-h-screen place-items-center bg-background px-4 py-8">
-
-      <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-card">
-
-        <div className="flex flex-col items-center gap-2 text-center">
-
+    <div
+      dir="rtl"
+      className="
+        grid
+        min-h-screen
+        place-items-center
+        bg-background
+        px-4
+      "
+    >
+      <form
+        onSubmit={
+          submit
+        }
+        className="
+          w-full
+          max-w-sm
+          space-y-4
+          rounded-2xl
+          border
+          border-border
+          bg-card
+          p-5
+          shadow-sm
+        "
+      >
+        <div
+          className="
+            text-center
+          "
+        >
           <BrandLogo
-            size={64}
+            size={48}
           />
 
-          <h1 className="text-base font-bold text-foreground">
-            دخول الإدارة
+          <h1
+            className="
+              mt-3
+              text-lg
+              font-bold
+            "
+          >
+            لوحة تحكم تشكيلات
           </h1>
 
-          <p className="text-[11px] text-muted-foreground">
-            تسجيل الدخول المخصص لوحدة التحكم لإدارة المتجر.
+          <p
+            className="
+              mt-1
+              text-xs
+              text-muted-foreground
+            "
+          >
+            تسجيل دخول الإدارة
           </p>
-
         </div>
 
 
         {denied ? (
-          <p className="mt-4 rounded-xl bg-destructive/10 p-3 text-center text-[11px] text-destructive">
-            حسابك الحالي ليس حساب إدارة. سجّل الخروج ثم ادخل ببيانات الإدارة.
-          </p>
+          <div
+            className="
+              rounded-xl
+              border
+              border-destructive/20
+              bg-destructive/5
+              p-3
+              text-xs
+              text-destructive
+            "
+          >
+            ليس لديك صلاحية الوصول إلى
+            لوحة التحكم.
+          </div>
         ) : null}
 
 
-        <form
-          onSubmit={
-            submit
-          }
-          className="mt-5 space-y-3"
+        {error ? (
+          <div
+            className="
+              rounded-xl
+              border
+              border-destructive/20
+              bg-destructive/5
+              p-3
+              text-xs
+              text-destructive
+            "
+          >
+            {error}
+          </div>
+        ) : null}
+
+
+        <label
+          className="
+            block
+          "
         >
+          <span
+            className="
+              mb-1
+              block
+              text-[11px]
+              text-muted-foreground
+            "
+          >
+            اسم المستخدم
+          </span>
 
           <input
             value={
@@ -805,18 +1128,42 @@ function AdminLogin({
               event,
             ) =>
               setUsername(
-                event.target
-                  .value,
+                event.target.value,
               )
             }
-            placeholder="اسم المستخدم"
-            aria-label="اسم المستخدم"
             autoComplete="username"
-            dir="ltr"
-            maxLength={40}
-            className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-xs outline-none focus:border-primary"
+            className="
+              h-11
+              w-full
+              rounded-xl
+              border
+              border-border
+              bg-secondary
+              px-3
+              text-sm
+              outline-none
+              focus:border-primary
+            "
+            placeholder="اسم المستخدم"
           />
+        </label>
 
+
+        <label
+          className="
+            block
+          "
+        >
+          <span
+            className="
+              mb-1
+              block
+              text-[11px]
+              text-muted-foreground
+            "
+          >
+            كلمة المرور
+          </span>
 
           <input
             type="password"
@@ -827,54 +1174,51 @@ function AdminLogin({
               event,
             ) =>
               setPassword(
-                event.target
-                  .value,
+                event.target.value,
               )
             }
-            placeholder="كلمة المرور"
-            aria-label="كلمة المرور"
             autoComplete="current-password"
-            dir="ltr"
-            maxLength={100}
-            className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-xs outline-none focus:border-primary"
+            className="
+              h-11
+              w-full
+              rounded-xl
+              border
+              border-border
+              bg-secondary
+              px-3
+              text-sm
+              outline-none
+              focus:border-primary
+            "
+            placeholder="كلمة المرور"
           />
+        </label>
 
 
-          {error ? (
-            <p className="text-center text-[11px] text-destructive">
-              {error}
-            </p>
-          ) : null}
-
-
-          <button
-            type="submit"
-            disabled={
-              busy
-            }
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-xs font-medium text-primary-foreground disabled:opacity-60"
-          >
-
-            <ShieldCheck className="h-4 w-4" />
-
-            {busy
-              ? "جارٍ الدخول..."
-              : "دخول"}
-
-          </button>
-
-        </form>
-
-
-        <Link
-          to="/"
-          className="mt-4 block text-center text-[11px] text-muted-foreground"
+        <button
+          type="submit"
+          disabled={
+            busy
+          }
+          className="
+            inline-flex
+            h-11
+            w-full
+            items-center
+            justify-center
+            rounded-xl
+            bg-primary
+            text-sm
+            font-bold
+            text-primary-foreground
+            disabled:opacity-60
+          "
         >
-          العودة إلى المتجر
-        </Link>
-
-      </div>
-
+          {busy
+            ? "جارٍ الدخول..."
+            : "دخول"}
+        </button>
+      </form>
     </div>
   );
 }
