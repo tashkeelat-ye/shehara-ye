@@ -31,6 +31,7 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
+import { Route as AdminStoriesRouteImport } from './routes/admin.stories'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
@@ -42,130 +43,162 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+
 const AuthenticatedCheckoutRoute = AuthenticatedCheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+
 const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+
 const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminBannersRoute = AdminBannersRouteImport.update({
   id: '/banners',
   path: '/banners',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminContentRoute = AdminContentRouteImport.update({
   id: '/content',
   path: '/content',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminCouriersRoute = AdminCouriersRouteImport.update({
   id: '/couriers',
   path: '/couriers',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminPaymentRequestsRoute = AdminPaymentRequestsRouteImport.update({
   id: '/payment-requests',
   path: '/payment-requests',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminProductsRoute = AdminProductsRouteImport.update({
   id: '/products',
   path: '/products',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const AdminSupportRoute = AdminSupportRouteImport.update({
   id: '/support',
   path: '/support',
   getParentRoute: () => AdminRoute,
 } as any)
+
+const AdminStoriesRoute = AdminStoriesRouteImport.update({
+  id: '/stories',
+  path: '/stories',
+  getParentRoute: () => AdminRoute,
+} as any)
+
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 const PageSlugRoute = PageSlugRouteImport.update({
   id: '/page/$slug',
   path: '/page/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+
 const ProductIdRoute = ProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
@@ -193,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/stories': typeof AdminStoriesRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -200,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
 }
+
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
@@ -220,6 +255,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/stories': typeof AdminStoriesRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -227,6 +263,7 @@ export interface FileRoutesByTo {
   '/product/$id': typeof ProductIdRoute
   '/admin': typeof AdminIndexRoute
 }
+
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
@@ -250,6 +287,7 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/stories': typeof AdminStoriesRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -257,8 +295,10 @@ export interface FileRoutesById {
   '/product/$id': typeof ProductIdRoute
   '/admin/': typeof AdminIndexRoute
 }
+
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
+
   fullPaths:
     | '/'
     | '/admin'
@@ -280,13 +320,16 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/settings'
     | '/admin/support'
+    | '/admin/stories'
     | '/admin/users'
     | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
     | '/admin/'
+
   fileRoutesByTo: FileRoutesByTo
+
   to:
     | '/'
     | '/auth'
@@ -307,12 +350,14 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/settings'
     | '/admin/support'
+    | '/admin/stories'
     | '/admin/users'
     | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
     | '/admin'
+
   id:
     | '__root__'
     | '/'
@@ -336,14 +381,17 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/settings'
     | '/admin/support'
+    | '/admin/stories'
     | '/admin/users'
     | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
     | '/admin/'
+
   fileRoutesById: FileRoutesById
 }
+
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
@@ -366,6 +414,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -373,6 +422,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -380,62 +430,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/faq': {
-      id: '/faq'
-      path: '/faq'
-      fullPath: '/faq'
-      preLoaderRoute: typeof FaqRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/products': {
-      id: '/products'
-      path: '/products'
-      fullPath: '/products'
-      preLoaderRoute: typeof ProductsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/account': {
-      id: '/_authenticated/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AuthenticatedAccountRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/checkout': {
-      id: '/_authenticated/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof AuthenticatedCheckoutRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/orders': {
-      id: '/_authenticated/orders'
-      path: '/orders'
-      fullPath: '/orders'
-      preLoaderRoute: typeof AuthenticatedOrdersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/wallet': {
-      id: '/_authenticated/wallet'
-      path: '/wallet'
-      fullPath: '/wallet'
-      preLoaderRoute: typeof AuthenticatedWalletRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/admin/': {
-      id: '/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
+
     '/admin/banners': {
       id: '/admin/banners'
       path: '/banners'
@@ -443,6 +438,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBannersRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/categories': {
       id: '/admin/categories'
       path: '/categories'
@@ -450,6 +446,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/content': {
       id: '/admin/content'
       path: '/content'
@@ -457,6 +454,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContentRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/couriers': {
       id: '/admin/couriers'
       path: '/couriers'
@@ -464,6 +462,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCouriersRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/notifications': {
       id: '/admin/notifications'
       path: '/notifications'
@@ -471,6 +470,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNotificationsRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -478,6 +478,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/payment-requests': {
       id: '/admin/payment-requests'
       path: '/payment-requests'
@@ -485,6 +486,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPaymentRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/payments': {
       id: '/admin/payments'
       path: '/payments'
@@ -492,6 +494,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPaymentsRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/products': {
       id: '/admin/products'
       path: '/products'
@@ -499,6 +502,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProductsRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -506,6 +510,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/admin/support': {
       id: '/admin/support'
       path: '/support'
@@ -513,6 +518,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSupportRouteImport
       parentRoute: typeof AdminRoute
     }
+
+    '/admin/stories': {
+      id: '/admin/stories'
+      path: '/stories'
+      fullPath: '/admin/stories'
+      preLoaderRoute: typeof AdminStoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -520,6 +534,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -527,6 +542,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+
     '/category/$slug': {
       id: '/category/$slug'
       path: '/category/$slug'
@@ -534,6 +550,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+
     '/page/$slug': {
       id: '/page/$slug'
       path: '/page/$slug'
@@ -541,6 +558,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PageSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+
     '/product/$id': {
       id: '/product/$id'
       path: '/product/$id'
@@ -580,6 +598,7 @@ interface AdminRouteChildren {
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminSupportRoute: typeof AdminSupportRoute
+  AdminStoriesRoute: typeof AdminStoriesRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -596,6 +615,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminProductsRoute: AdminProductsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminSupportRoute: AdminSupportRoute,
+  AdminStoriesRoute: AdminStoriesRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -614,6 +634,7 @@ const rootRouteChildren: RootRouteChildren = {
   PageSlugRoute: PageSlugRoute,
   ProductIdRoute: ProductIdRoute,
 }
+
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
