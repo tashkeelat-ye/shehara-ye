@@ -1,8 +1,10 @@
-import { FormEvent, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  Moon,
   Search,
   ShoppingCart,
+  Sun,
   User,
   X,
 } from "lucide-react";
@@ -14,22 +16,40 @@ import { NotificationBell } from "@/components/notification-bell";
 import { CurrencySwitcher } from "@/lib/currency-context";
 import { AnnouncementBar } from "@/components/announcement-bar";
 
+const THEME_STORAGE_KEY = "tashkilat-theme";
+
 export function SiteHeader() {
   const { count, setDrawerOpen } = useCart();
   const [term, setTerm] = useState("");
+  const [isDark, setIsDark] = useState(false);
   const navigate = useNavigate();
 
-  function submitSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  useEffect(() => {
+    const root = document.documentElement;
 
-    const query = term.trim();
+    const current =
+      root.classList.contains("dark");
 
-    void navigate({
-      to: "/products",
-      search: {
-        q: query || undefined,
-      },
-    });
+    setIsDark(current);
+  }, []);
+
+  function toggleTheme() {
+    const nextTheme = isDark ? "light" : "dark";
+
+    document.documentElement.classList.toggle(
+      "dark",
+      nextTheme === "dark",
+    );
+
+    document.documentElement.style.colorScheme =
+      nextTheme;
+
+    localStorage.setItem(
+      THEME_STORAGE_KEY,
+      nextTheme,
+    );
+
+    setIsDark(nextTheme === "dark");
   }
 
   function clearSearch() {
@@ -41,9 +61,7 @@ export function SiteHeader() {
       <AnnouncementBar />
 
       <div className="mx-auto w-full max-w-6xl px-3 pb-2.5 pt-2 sm:px-4 sm:py-3">
-        {/* الشريط العلوي */}
         <div className="flex min-h-10 items-center justify-between gap-2 sm:min-h-11 sm:gap-3">
-          {/* الشعار */}
           <Link
             to="/"
             aria-label="العودة إلى الصفحة الرئيسية"
@@ -65,18 +83,50 @@ export function SiteHeader() {
             </div>
           </Link>
 
-          {/* إجراءات التطبيق */}
           <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
             <CurrencySwitcher className="hidden sm:inline-flex" />
 
             <NotificationBell />
 
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={
+                isDark
+                  ? "تفعيل الوضع النهاري"
+                  : "تفعيل الوضع الليلي"
+              }
+              title={
+                isDark
+                  ? "الوضع النهاري"
+                  : "الوضع الليلي"
+              }
+              className="grid h-10 w-10 place-items-center rounded-xl text-foreground transition-colors hover:bg-accent active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {isDark ? (
+                <Sun
+                  aria-hidden="true"
+                  className="h-[19px] w-[19px]"
+                  strokeWidth={2}
+                />
+              ) : (
+                <Moon
+                  aria-hidden="true"
+                  className="h-[19px] w-[19px]"
+                  strokeWidth={2}
+                />
+              )}
+            </button>
+
             <Link
               to="/account"
               aria-label="حسابي"
-              className="grid h-10 w-10 place-items-center rounded-xl text-foreground transition-colors hover:bg-accent active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-10 sm:w-10"
+              className="grid h-10 w-10 place-items-center rounded-xl text-foreground transition-colors hover:bg-accent active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
-              <User className="h-[19px] w-[19px]" strokeWidth={2} />
+              <User
+                className="h-[19px] w-[19px]"
+                strokeWidth={2}
+              />
             </Link>
 
             <button
@@ -95,7 +145,9 @@ export function SiteHeader() {
                   aria-label={`${count.toLocaleString("ar-EG")} منتجات في السلة`}
                   className="absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[9px] font-extrabold leading-none text-primary-foreground shadow-sm ring-2 ring-card"
                 >
-                  {count > 99 ? "99+" : count.toLocaleString("ar-EG")}
+                  {count > 99
+                    ? "99+"
+                    : count.toLocaleString("ar-EG")}
                 </span>
               ) : null}
             </button>
@@ -104,10 +156,20 @@ export function SiteHeader() {
           </div>
         </div>
 
-        {/* البحث */}
         <form
           role="search"
-          onSubmit={submitSearch}
+          onSubmit={(event) => {
+            event.preventDefault();
+
+            const query = term.trim();
+
+            void navigate({
+              to: "/products",
+              search: {
+                q: query || undefined,
+              },
+            });
+          }}
           className="mt-2.5 sm:mt-3"
         >
           <div className="relative">
@@ -121,7 +183,9 @@ export function SiteHeader() {
               type="search"
               inputMode="search"
               value={term}
-              onChange={(event) => setTerm(event.target.value)}
+              onChange={(event) =>
+                setTerm(event.target.value)
+              }
               placeholder="ابحث عن منتج أو ماركة أو فئة..."
               aria-label="البحث في متجر تشكيلات"
               enterKeyHint="search"
