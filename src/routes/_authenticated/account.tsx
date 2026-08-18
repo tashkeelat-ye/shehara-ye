@@ -1,6 +1,30 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import {
+  createFileRoute,
+  Link,
+} from "@tanstack/react-router";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
+import {
+  ArrowLeft,
+  Check,
+  ChevronLeft,
+  CreditCard,
+  LogOut,
+  MapPin,
+  Plus,
+  Save,
+  Settings,
+  ShoppingBag,
+  Trash2,
+  User,
+  Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
+
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
@@ -19,13 +43,28 @@ type Address = {
   is_default: boolean;
 };
 
-export const Route = createFileRoute("/_authenticated/account")({
+export const Route = createFileRoute(
+  "/_authenticated/account",
+)({
   head: () => ({
     meta: [
-      { title: "حسابي | تشكيلات" },
-      { name: "description", content: "إدارة بياناتك الشخصية وعناوين التوصيل في تشكيلات." },
-      { property: "og:title", content: "حسابي | تشكيلات" },
-      { property: "og:description", content: "إدارة الحساب والعناوين في متجر تشكيلات." },
+      {
+        title: "حسابي | تشكيلات",
+      },
+      {
+        name: "description",
+        content:
+          "إدارة حسابك وبياناتك وعناوين التوصيل في تشكيلات.",
+      },
+      {
+        property: "og:title",
+        content: "حسابي | تشكيلات",
+      },
+      {
+        property: "og:description",
+        content:
+          "إدارة الحساب والعناوين في متجر تشكيلات.",
+      },
     ],
   }),
   component: AccountPage,
@@ -41,24 +80,64 @@ const emptyAddress = {
 };
 
 function AccountPage() {
-  const { user, profile, refreshProfile, signOut } = useAuth();
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [form, setForm] = useState(emptyAddress);
-  const [busy, setBusy] = useState(false);
+  const {
+    user,
+    profile,
+    refreshProfile,
+    signOut,
+  } = useAuth();
+
+  const [fullName, setFullName] =
+    useState("");
+
+  const [phone, setPhone] =
+    useState("");
+
+  const [addresses, setAddresses] =
+    useState<Address[]>([]);
+
+  const [form, setForm] =
+    useState(emptyAddress);
+
+  const [busy, setBusy] =
+    useState(false);
+
+  const [savingAddress, setSavingAddress] =
+    useState(false);
 
   useEffect(() => {
-    setFullName(profile?.full_name ?? "");
-    setPhone(profile?.phone ?? "");
+    setFullName(
+      profile?.full_name ?? "",
+    );
+
+    setPhone(
+      profile?.phone ?? "",
+    );
   }, [profile]);
 
   const loadAddresses = async () => {
-    const { data } = await supabase
-      .from("addresses")
-      .select("id,label,recipient_name,phone,city,district,details,is_default")
-      .order("created_at")
-      .returns<Address[]>();
+    if (!user?.id) {
+      setAddresses([]);
+      return;
+    }
+
+    const { data, error } =
+      await supabase
+        .from("addresses")
+        .select(
+          "id,label,recipient_name,phone,city,district,details,is_default",
+        )
+        .eq("user_id", user.id)
+        .order("created_at")
+        .returns<Address[]>();
+
+    if (error) {
+      toast.error(
+        "تعذّر تحميل عناوين التوصيل",
+      );
+      return;
+    }
+
     setAddresses(data ?? []);
   };
 
@@ -66,184 +145,206 @@ function AccountPage() {
     void loadAddresses();
   }, [user?.id]);
 
-  async function saveProfile(e: React.FormEvent) {
-    e.preventDefault();
-    if (fullName.trim().length < 3) {
-      toast.error("أدخل اسمًا صحيحًا");
+  async function saveProfile(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    const name =
+      fullName.trim();
+
+    if (name.length < 3) {
+      toast.error(
+        "أدخل اسماً صحيحاً",
+      );
       return;
     }
+
+    if (!user?.id) {
+      toast.error(
+        "يجب تسجيل الدخول أولاً",
+      );
+      return;
+    }
+
     setBusy(true);
-    const { error } = await supabase
+
+    const {
+      error,
+    } = await supabase
       .from("profiles")
-      .update({ full_name: fullName.trim(), phone })
-      .eq("id", user!.id);
-    setBusy(false);
-    if (error) toast.error("تعذّر حفظ البيانات");
-    else {
-      toast.success("تم تحديث بياناتك");
-      await refreshProfile();
-    }
-  }
+      .update({
+        full_name: name,
+        phone: phone.trim(),
+      })
+      .eq("id", user.id);
 
-  async function addAddress(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.recipient_name || !form.city || !form.details) {
-      toast.error("أكمل بيانات العنوان");
+    setBusy(false);
+
+    if (error) {
+      toast.error(
+        "تعذّر حفظ البيانات",
+      );
       return;
     }
-    setBusy(true);
-    const { error } = await supabase.from("addresses").insert({
-      user_id: user!.id,
-      ...form,
-      is_default: addresses.length === 0,
-    });
-    setBusy(false);
-    if (error) toast.error("تعذّر إضافة العنوان");
-    else {
-      toast.success("تمت إضافة العنوان");
-      setForm(emptyAddress);
-      await loadAddresses();
+
+    toast.success(
+      "تم تحديث بياناتك",
+    );
+
+    await refreshProfile();
+  }
+
+  async function addAddress(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    if (
+      !form.recipient_name.trim() ||
+      !form.city.trim() ||
+      !form.details.trim()
+    ) {
+      toast.error(
+        "أكمل بيانات العنوان الأساسية",
+      );
+      return;
     }
-  }
 
-  async function removeAddress(id: string) {
-    await supabase.from("addresses").delete().eq("id", id);
+    if (!user?.id) {
+      toast.error(
+        "يجب تسجيل الدخول أولاً",
+      );
+      return;
+    }
+
+    setSavingAddress(true);
+
+    const {
+      error,
+    } = await supabase
+      .from("addresses")
+      .insert({
+        user_id: user.id,
+        label: form.label.trim(),
+        recipient_name:
+          form.recipient_name.trim(),
+        phone: form.phone.trim(),
+        city: form.city.trim(),
+        district: form.district.trim(),
+        details: form.details.trim(),
+        is_default:
+          addresses.length === 0,
+      });
+
+    setSavingAddress(false);
+
+    if (error) {
+      toast.error(
+        "تعذّر إضافة العنوان",
+      );
+      return;
+    }
+
+    toast.success(
+      "تمت إضافة العنوان",
+    );
+
+    setForm({
+      ...emptyAddress,
+    });
+
     await loadAddresses();
   }
 
-  async function makeDefault(id: string) {
-    await supabase.from("addresses").update({ is_default: false }).eq("user_id", user!.id);
-    await supabase.from("addresses").update({ is_default: true }).eq("id", id);
+  async function removeAddress(
+    id: string,
+  ) {
+    if (!window.confirm("هل تريد حذف هذا العنوان؟")) {
+      return;
+    }
+
+    const {
+      error,
+    } = await supabase
+      .from("addresses")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user!.id);
+
+    if (error) {
+      toast.error(
+        "تعذّر حذف العنوان",
+      );
+      return;
+    }
+
+    toast.success(
+      "تم حذف العنوان",
+    );
+
     await loadAddresses();
   }
 
-  return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8 dir-rtl">
-      <SiteHeader />
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
-        {/* شريط العنوان وأزرار التنقل السريع */}
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-xl font-bold text-foreground">حسابي</h1>
-          <div className="flex gap-2">
-            <Link
-              to="/orders"
-              className="rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
-            >
-              طلباتي
-            </Link>
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-2 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/20"
-            >
-              تسجيل الخروج
-            </button>
-          </div>
-        </div>
+  async function makeDefault(
+    id: string,
+  ) {
+    if (!user?.id) {
+      return;
+    }
 
-        {/* 1. بطاقة المحفظة (في أعلى الصفحة) */}
-        <WalletPanel />
+    const {
+      error: resetError,
+    } = await supabase
+      .from("addresses")
+      .update({
+        is_default: false,
+      })
+      .eq("user_id", user.id);
 
-        {/* 2. البيانات الشخصية */}
-        <form onSubmit={saveProfile} className="space-y-3 rounded-2xl border border-border/70 bg-card p-4 shadow-xs">
-          <h2 className="text-sm font-bold text-foreground">البيانات الشخصية</h2>
-          <input
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            aria-label="الاسم الثلاثي"
-            placeholder="الاسم الثلاثي"
-            maxLength={100}
-            className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-sm outline-none focus:border-primary"
-          />
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            aria-label="رقم الهاتف"
-            placeholder="رقم الهاتف"
-            dir="ltr"
-            maxLength={20}
-            className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-sm outline-none focus:border-primary"
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:opacity-60 hover:opacity-90 active:scale-[0.98]"
-          >
-            حفظ التعديلات
-          </button>
-        </form>
+    if (resetError) {
+      toast.error(
+        "تعذّر تحديث العنوان الافتراضي",
+      );
+      return;
+    }
 
-        {/* 3. تفضيلات الإشعارات */}
-        <NotificationPrefsPanel />
+    const {
+      error,
+    } = await supabase
+      .from("addresses")
+      .update({
+        is_default: true,
+      })
+      .eq("id", id)
+      .eq("user_id", user.id);
 
-        {/* 4. عناوين التوصيل */}
-        <section className="rounded-2xl border border-border/70 bg-card p-4 shadow-xs">
-          <h2 className="text-sm font-bold text-foreground">عناوين التوصيل</h2>
-          <ul className="mt-3 space-y-2">
-            {addresses.map((a) => (
-              <li key={a.id} className="rounded-xl border border-border/70 p-3 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-foreground">
-                    {a.label} — {a.recipient_name}
-                    {a.is_default ? (
-                      <span className="ms-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                        افتراضي
-                      </span>
-                    ) : null}
-                  </p>
-                  <div className="flex gap-2">
-                    {!a.is_default ? (
-                      <button type="button" onClick={() => void makeDefault(a.id)} className="font-semibold text-primary hover:underline">
-                        تعيين افتراضي
-                      </button>
-                    ) : null}
-                    <button type="button" onClick={() => void removeAddress(a.id)} className="font-semibold text-destructive hover:underline">
-                      حذف
-                    </button>
-                  </div>
-                </div>
-                <p className="mt-1 text-muted-foreground">
-                  {a.city} • {a.district} • {a.details} • {a.phone}
-                </p>
-              </li>
-            ))}
-            {addresses.length === 0 ? (
-              <li className="text-xs text-muted-foreground">لا توجد عناوين محفوظة</li>
-            ) : null}
-          </ul>
+    if (error) {
+      toast.error(
+        "تعذّر تعيين العنوان",
+      );
+      return;
+    }
 
-          <form onSubmit={addAddress} className="mt-4 grid gap-2 sm:grid-cols-2">
-            {(
-              [
-                ["label", "الوسم (المنزل/العمل)"],
-                ["recipient_name", "اسم المستلم"],
-                ["phone", "رقم الهاتف"],
-                ["city", "المدينة"],
-                ["district", "المديرية/الحي"],
-                ["details", "تفاصيل العنوان"],
-              ] as const
-            ).map(([key, label]) => (
-              <input
-                key={key}
-                value={form[key]}
-                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                aria-label={label}
-                placeholder={label}
-                maxLength={200}
-                className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-sm outline-none focus:border-primary"
-              />
-            ))}
-            <button
-              type="submit"
-              disabled={busy}
-              className="h-11 rounded-xl bg-accent-solid px-5 text-sm font-bold text-accent-solid-foreground transition-opacity disabled:opacity-60 hover:opacity-90 active:scale-[0.98] sm:col-span-2"
-            >
-              إضافة عنوان
-            </button>
-          </form>
-        </section>
-      </main>
-      <BottomNav />
-    </div>
-  );
-          }
+    toast.success(
+      "تم تعيين العنوان الافتراضي",
+    );
+
+    await loadAddresses();
+  }
+
+  const displayName = useMemo(() => {
+    const name =
+      profile?.full_name?.trim();
+
+    if (name) {
+      return name;
+    }
+
+    return "عميل تشكيلات";
+  }, [profile?.full_name]);
+
+  const initials = useMemo(() => {
+    const parts =
+      displayName
+        .split(/\s+/
