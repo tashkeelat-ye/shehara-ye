@@ -24,49 +24,47 @@ import {
   useAuth,
 } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
-import {
-  WishlistProvider,
-} from "@/lib/wishlist-context";
+import { WishlistProvider } from "@/lib/wishlist-context";
 import { CartDrawer } from "@/components/cart-drawer";
-import {
-  CurrencyProvider,
-} from "@/lib/currency-context";
+import { CurrencyProvider } from "@/lib/currency-context";
 import { Toaster } from "@/components/ui/sonner";
 import { SupportChat } from "@/components/support-chat";
-import {
-  PermissionPrompt,
-} from "@/components/permission-prompt";
-import {
-  NotificationListener,
-} from "@/components/NotificationListener";
-import {
-  OfflineIndicator,
-} from "@/components/offline-indicator";
-import {
-  registerPushNotifications,
-} from "@/lib/push";
+import { PermissionPrompt } from "@/components/permission-prompt";
+import { NotificationListener } from "@/components/NotificationListener";
+import { OfflineIndicator } from "@/components/offline-indicator";
+import { registerPushNotifications } from "@/lib/push";
 
-export const defaultQueryClient =
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime:
-          1000 * 60 * 60 * 24,
-
-        gcTime:
-          1000 *
-          60 *
-          60 *
-          24 *
-          7,
-
-        refetchOnWindowFocus: false,
-
-        networkMode:
-          "offlineFirst",
-      },
+export const defaultQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 60 * 24,
+      gcTime: 1000 * 60 * 60 * 24 * 7,
+      refetchOnWindowFocus: false,
+      networkMode: "offlineFirst",
     },
-  });
+  },
+});
+
+const THEME_STORAGE_KEY = "tashkilat-theme";
+
+function getInitialThemeScript() {
+  return `
+    (function () {
+      try {
+        var stored = localStorage.getItem("${THEME_STORAGE_KEY}");
+        var theme = stored === "dark" || stored === "light"
+          ? stored
+          : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        document.documentElement.style.colorScheme = theme;
+      } catch (_) {
+        document.documentElement.classList.remove("dark");
+        document.documentElement.style.colorScheme = "light";
+      }
+    })();
+  `;
+}
 
 function NotFoundComponent() {
   return (
@@ -77,11 +75,11 @@ function NotFoundComponent() {
         </h1>
 
         <h2 className="mt-4 text-xl font-semibold text-foreground">
-          Page not found
+          الصفحة غير موجودة
         </h2>
 
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          الصفحة التي تبحث عنها غير موجودة أو تم نقلها.
         </p>
 
         <div className="mt-6">
@@ -89,7 +87,7 @@ function NotFoundComponent() {
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            العودة للرئيسية
           </Link>
         </div>
       </div>
@@ -109,161 +107,129 @@ function ErrorComponent({
   const router = useRouter();
 
   useEffect(() => {
-    reportLovableError(
-      error,
-      {
-        boundary:
-          "tanstack_root_error_component",
-      },
-    );
+    reportLovableError(error, {
+      boundary: "tanstack_root_error_component",
+    });
   }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          تعذّر تحميل الصفحة
         </h1>
 
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          حدث خطأ غير متوقع. يمكنك المحاولة مرة أخرى أو العودة إلى الصفحة الرئيسية.
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
+            type="button"
             onClick={() => {
               router.invalidate();
               reset();
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            المحاولة مرة أخرى
           </button>
 
-          <a
-            href="/"
+          <Link
+            to="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
-          </a>
+            الرئيسية
+          </Link>
         </div>
       </div>
     </div>
   );
 }
 
-export const Route =
-  createRootRouteWithContext<{
-    queryClient: QueryClient;
-  }>()({
-    head: () => ({
-      meta: [
-        {
-          charSet: "utf-8",
-        },
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+}>()({
+  head: () => ({
+    meta: [
+      {
+        charSet: "utf-8",
+      },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
+      },
+      {
+        title: "تشكيلات | متجر يمني إلكتروني",
+      },
+      {
+        name: "description",
+        content:
+          "تشكيلات — كل ما تحتاجه بتشكيلة واحدة. متجر إلكتروني يمني.",
+      },
+      {
+        name: "theme-color",
+        content: "#4a1525",
+      },
+      {
+        property: "og:title",
+        content: "تشكيلات | متجر يمني إلكتروني",
+      },
+      {
+        property: "og:description",
+        content:
+          "تشكيلات — كل ما تحتاجه بتشكيلة واحدة.",
+      },
+      {
+        property: "og:type",
+        content: "website",
+      },
+      {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+    ],
 
-        {
-          name: "viewport",
-          content:
-            "width=device-width, initial-scale=1",
-        },
+    links: [
+      {
+        rel: "stylesheet",
+        href: appCss,
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.googleapis.com",
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "stylesheet",
+        href:
+          "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap",
+      },
+      {
+        rel: "icon",
+        href: "/favicon.png",
+        type: "image/png",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/icon-192.png",
+      },
+      {
+        rel: "manifest",
+        href: "/manifest.webmanifest",
+      },
+    ],
+  }),
 
-        {
-          title:
-            "تشكيلات | متجر يمني إلكتروني",
-        },
-
-        {
-          name: "description",
-          content:
-            "تشكيلات — كل ما تحتاجه بتشكيلة واحدة. متجر إلكتروني يمني.",
-        },
-
-        {
-          name: "theme-color",
-          content: "#5b2a86",
-        },
-
-        {
-          property: "og:title",
-          content:
-            "تشكيلات | متجر يمني إلكتروني",
-        },
-
-        {
-          property: "og:description",
-          content:
-            "تشكيلات — كل ما تحتاجه بتشكيلة واحدة.",
-        },
-
-        {
-          property: "og:type",
-          content: "website",
-        },
-
-        {
-          name: "twitter:card",
-          content:
-            "summary_large_image",
-        },
-      ],
-
-      links: [
-        {
-          rel: "stylesheet",
-          href: appCss,
-        },
-
-        {
-          rel: "preconnect",
-          href:
-            "https://fonts.googleapis.com",
-        },
-
-        {
-          rel: "preconnect",
-          href:
-            "https://fonts.gstatic.com",
-          crossOrigin:
-            "anonymous",
-        },
-
-        {
-          rel: "stylesheet",
-          href:
-            "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap",
-        },
-
-        {
-          rel: "icon",
-          href: "/favicon.png",
-          type: "image/png",
-        },
-
-        {
-          rel: "apple-touch-icon",
-          href: "/icon-192.png",
-        },
-
-        {
-          rel: "manifest",
-          href:
-            "/manifest.webmanifest",
-        },
-      ],
-    }),
-
-    shellComponent: RootShell,
-
-    component:
-      RootComponent,
-
-    notFoundComponent:
-      NotFoundComponent,
-
-    errorComponent:
-      ErrorComponent,
-  });
+  shellComponent: RootShell,
+  component: RootComponent,
+  notFoundComponent: NotFoundComponent,
+  errorComponent: ErrorComponent,
+});
 
 function RootShell({
   children,
@@ -271,12 +237,15 @@ function RootShell({
   children: ReactNode;
 }) {
   return (
-    <html
-      lang="ar"
-      dir="rtl"
-    >
+    <html lang="ar" dir="rtl">
       <head>
         <HeadContent />
+
+        <script
+          dangerouslySetInnerHTML={{
+            __html: getInitialThemeScript(),
+          }}
+        />
       </head>
 
       <body>
@@ -287,19 +256,75 @@ function RootShell({
   );
 }
 
+function ThemeController() {
+  useEffect(() => {
+    const root = document.documentElement;
+
+    function applyTheme(theme: "dark" | "light") {
+      root.classList.toggle("dark", theme === "dark");
+      root.style.colorScheme = theme;
+    }
+
+    try {
+      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+
+      if (stored === "dark" || stored === "light") {
+        applyTheme(stored);
+        return;
+      }
+
+      const mediaQuery = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      );
+
+      applyTheme(mediaQuery.matches ? "dark" : "light");
+
+      const handleSystemThemeChange = (
+        event: MediaQueryListEvent,
+      ) => {
+        const currentStored =
+          localStorage.getItem(THEME_STORAGE_KEY);
+
+        if (
+          currentStored !== "dark" &&
+          currentStored !== "light"
+        ) {
+          applyTheme(
+            event.matches ? "dark" : "light",
+          );
+        }
+      };
+
+      mediaQuery.addEventListener(
+        "change",
+        handleSystemThemeChange,
+      );
+
+      return () => {
+        mediaQuery.removeEventListener(
+          "change",
+          handleSystemThemeChange,
+        );
+      };
+    } catch {
+      applyTheme("light");
+    }
+  }, []);
+
+  return null;
+}
+
 function GlobalFetchingLoader({
   showSplash,
 }: {
   showSplash: boolean;
 }) {
-  const isFetching =
-    useIsFetching();
+  const isFetching = useIsFetching();
 
   if (
     showSplash ||
     isFetching === 0 ||
-    (typeof navigator !==
-      "undefined" &&
+    (typeof navigator !== "undefined" &&
       !navigator.onLine)
   ) {
     return null;
@@ -311,8 +336,7 @@ function GlobalFetchingLoader({
         src="/splash.gif"
         alt="جاري التحميل..."
         onError={(event) => {
-          event.currentTarget.style.display =
-            "none";
+          event.currentTarget.style.display = "none";
         }}
         className="h-20 w-20 object-contain bg-transparent"
       />
@@ -325,8 +349,7 @@ function AppContent({
 }: {
   showSplash: boolean;
 }) {
-  const { user } =
-    useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     void registerPushNotifications();
@@ -334,29 +357,26 @@ function AppContent({
 
   return (
     <>
+      <ThemeController />
+
       {showSplash && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#4a1525]">
           <img
             src="/splash.gif"
             alt="تشكيلات"
             onError={(event) => {
-              event.currentTarget.style.display =
-                "none";
+              event.currentTarget.style.display = "none";
             }}
             className="max-h-[200px] max-w-[200px] object-contain"
           />
         </div>
       )}
 
-      <GlobalFetchingLoader
-        showSplash={showSplash}
-      />
+      <GlobalFetchingLoader showSplash={showSplash} />
 
       <OfflineIndicator />
 
-      <NotificationListener
-        currentUserId={user?.id}
-      />
+      <NotificationListener currentUserId={user?.id} />
 
       <Outlet />
 
@@ -366,38 +386,30 @@ function AppContent({
 
       <PermissionPrompt />
 
-      <Toaster
-        position="top-center"
-      />
+      <Toaster position="top-center" />
     </>
   );
 }
 
 function RootComponent() {
-  const context =
-    Route.useRouteContext();
+  const context = Route.useRouteContext();
 
   const queryClient =
-    context?.queryClient ??
-    defaultQueryClient;
+    context?.queryClient ?? defaultQueryClient;
 
   const [showSplash, setShowSplash] =
     useState(true);
 
   useEffect(() => {
-    const timer =
-      window.setTimeout(() => {
-        setShowSplash(false);
-      }, 2500);
+    const timer = window.setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
 
-    return () =>
-      window.clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (
-      !("serviceWorker" in navigator)
-    ) {
+    if (!("serviceWorker" in navigator)) {
       return;
     }
 
@@ -422,35 +434,22 @@ function RootComponent() {
         });
     };
 
-    if (
-      document.readyState ===
-      "complete"
-    ) {
+    if (document.readyState === "complete") {
       register();
     } else {
-      window.addEventListener(
-        "load",
-        register,
-        {
-          once: true,
-        },
-      );
+      window.addEventListener("load", register, {
+        once: true,
+      });
     }
   }, []);
 
   return (
-    <QueryClientProvider
-      client={queryClient}
-    >
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CurrencyProvider>
           <WishlistProvider>
             <CartProvider>
-              <AppContent
-                showSplash={
-                  showSplash
-                }
-              />
+              <AppContent showSplash={showSplash} />
             </CartProvider>
           </WishlistProvider>
         </CurrencyProvider>
