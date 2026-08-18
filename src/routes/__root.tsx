@@ -13,7 +13,6 @@ import {
 } from "@tanstack/react-router";
 import {
   useEffect,
-  useState,
   type ReactNode,
 } from "react";
 
@@ -32,6 +31,7 @@ import { SupportChat } from "@/components/support-chat";
 import { PermissionPrompt } from "@/components/permission-prompt";
 import { NotificationListener } from "@/components/NotificationListener";
 import { OfflineIndicator } from "@/components/offline-indicator";
+import { AppSplash } from "@/components/app-splash";
 import { registerPushNotifications } from "@/lib/push";
 
 export const defaultQueryClient = new QueryClient({
@@ -102,9 +102,9 @@ function ErrorComponent({
   error: Error;
   reset: () => void;
 }) {
-  console.error(error);
-
   const router = useRouter();
+
+  console.error(error);
 
   useEffect(() => {
     reportLovableError(error, {
@@ -266,7 +266,9 @@ function ThemeController() {
     }
 
     try {
-      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      const stored = localStorage.getItem(
+        THEME_STORAGE_KEY,
+      );
 
       if (stored === "dark" || stored === "light") {
         applyTheme(stored);
@@ -277,13 +279,17 @@ function ThemeController() {
         "(prefers-color-scheme: dark)",
       );
 
-      applyTheme(mediaQuery.matches ? "dark" : "light");
+      applyTheme(
+        mediaQuery.matches ? "dark" : "light",
+      );
 
       const handleSystemThemeChange = (
         event: MediaQueryListEvent,
       ) => {
         const currentStored =
-          localStorage.getItem(THEME_STORAGE_KEY);
+          localStorage.getItem(
+            THEME_STORAGE_KEY,
+          );
 
         if (
           currentStored !== "dark" &&
@@ -314,15 +320,10 @@ function ThemeController() {
   return null;
 }
 
-function GlobalFetchingLoader({
-  showSplash,
-}: {
-  showSplash: boolean;
-}) {
+function GlobalFetchingLoader() {
   const isFetching = useIsFetching();
 
   if (
-    showSplash ||
     isFetching === 0 ||
     (typeof navigator !== "undefined" &&
       !navigator.onLine)
@@ -331,24 +332,18 @@ function GlobalFetchingLoader({
   }
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[9990] flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
-      <img
-        src="/splash.gif"
-        alt="جاري التحميل..."
-        onError={(event) => {
-          event.currentTarget.style.display = "none";
-        }}
-        className="h-20 w-20 object-contain bg-transparent"
-      />
+    <div
+      className="pointer-events-none fixed inset-0 z-[9990] flex items-center justify-center bg-black/10 backdrop-blur-[1px]"
+      aria-hidden="true"
+    >
+      <div className="rounded-full border border-border/70 bg-card/95 p-3 shadow-lg">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+      </div>
     </div>
   );
 }
 
-function AppContent({
-  showSplash,
-}: {
-  showSplash: boolean;
-}) {
+function AppContent() {
   const { user } = useAuth();
 
   useEffect(() => {
@@ -359,24 +354,11 @@ function AppContent({
     <>
       <ThemeController />
 
-      {showSplash && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#4a1525]">
-          <img
-            src="/splash.gif"
-            alt="تشكيلات"
-            onError={(event) => {
-              event.currentTarget.style.display = "none";
-            }}
-            className="max-h-[200px] max-w-[200px] object-contain"
-          />
-        </div>
-      )}
-
-      <GlobalFetchingLoader showSplash={showSplash} />
-
       <OfflineIndicator />
 
-      <NotificationListener currentUserId={user?.id} />
+      <NotificationListener
+        currentUserId={user?.id}
+      />
 
       <Outlet />
 
@@ -385,6 +367,8 @@ function AppContent({
       <SupportChat />
 
       <PermissionPrompt />
+
+      <GlobalFetchingLoader />
 
       <Toaster position="top-center" />
     </>
@@ -395,18 +379,8 @@ function RootComponent() {
   const context = Route.useRouteContext();
 
   const queryClient =
-    context?.queryClient ?? defaultQueryClient;
-
-  const [showSplash, setShowSplash] =
-    useState(true);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setShowSplash(false);
-    }, 2500);
-
-    return () => window.clearTimeout(timer);
-  }, []);
+    context?.queryClient ??
+    defaultQueryClient;
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) {
@@ -434,22 +408,32 @@ function RootComponent() {
         });
     };
 
-    if (document.readyState === "complete") {
+    if (
+      document.readyState === "complete"
+    ) {
       register();
     } else {
-      window.addEventListener("load", register, {
-        once: true,
-      });
+      window.addEventListener(
+        "load",
+        register,
+        {
+          once: true,
+        },
+      );
     }
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider
+      client={queryClient}
+    >
       <AuthProvider>
         <CurrencyProvider>
           <WishlistProvider>
             <CartProvider>
-              <AppContent showSplash={showSplash} />
+              <AppSplash duration={2200} />
+
+              <AppContent />
             </CartProvider>
           </WishlistProvider>
         </CurrencyProvider>
