@@ -361,6 +361,18 @@ function CheckoutPage() {
   ] =
     useState(false);
 
+  /**
+   * معرّف ثابت لمحاولة الدفع الحالية.
+   *
+   * إذا انقطع الاتصال بعد تنفيذ العملية في Supabase،
+   * يمكن إعادة المحاولة بأمان بدون إنشاء طلب مكرر.
+   */
+  const [checkoutToken] =
+    useState<string>(() =>
+      globalThis.crypto?.randomUUID?.() ??
+      `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
+
   const deliveryFee =
     Number(
       settings?.delivery_fee ??
@@ -407,9 +419,6 @@ function CheckoutPage() {
       selected?.requires_receipt,
     );
 
-  /**
-   * تحديد أول طريقة دفع تلقائيًا.
-   */
   useEffect(() => {
     if (
       methodCode ||
@@ -432,9 +441,6 @@ function CheckoutPage() {
     methodCode,
   ]);
 
-  /**
-   * اختيار العنوان الافتراضي.
-   */
   useEffect(() => {
     if (
       addresses.length ===
@@ -457,9 +463,6 @@ function CheckoutPage() {
     addresses,
   ]);
 
-  /**
-   * تعبئة بيانات العنوان.
-   */
   useEffect(() => {
     if (
       addressId ===
@@ -537,11 +540,6 @@ function CheckoutPage() {
     profile,
   ]);
 
-  /**
-   * =========================================================
-   * التحقق من الطلب
-   * =========================================================
-   */
   function validateCheckout() {
     if (!user?.id) {
       toast.error(
@@ -625,28 +623,16 @@ function CheckoutPage() {
     return true;
   }
 
-  /**
-   * =========================================================
-   * إنشاء الطلب
-   * =========================================================
-   */
   async function submit(
     e: React.FormEvent,
   ) {
     e.preventDefault();
 
-    /*
-     * منع الضغط المتكرر.
-     *
-     * هذه نقطة مهمة جدًا في الهاتف.
-     */
     if (busy) {
       return;
     }
 
-    if (
-      !validateCheckout()
-    ) {
+    if (!validateCheckout()) {
       return;
     }
 
@@ -656,27 +642,11 @@ function CheckoutPage() {
 
     setBusy(true);
 
-    let orderId: string | null =
-      null;
-
     try {
       const normalizedPhone =
-        normalizeYemeniPhone(
-          phone,
-        );
+        normalizeYemeniPhone(phone);
 
-      /**
-       * -------------------------------------------------------
-       * 1. رفع الإيصال
-       * -------------------------------------------------------
-       *
-       * يتم فقط إذا كانت طريقة الدفع تحتاج إيصالًا.
-       *
-       * uploadReceipt الآن تضغط الصورة وتعيد المحاولة
-       * عند مشاكل الشبكة.
-       */
-      let receiptPath =
-        "";
+      let receiptPath = "";
 
       if (
         needsReceipt &&
@@ -685,8 +655,7 @@ function CheckoutPage() {
         toast.loading(
           "جارٍ رفع إيصال التحويل...",
           {
-            id:
-              "checkout-progress",
+            id: "checkout-progress",
           },
         );
 
@@ -703,197 +672,181 @@ function CheckoutPage() {
         }
       }
 
-      /**
-       * -------------------------------------------------------
-       * 2. تحديد حالة الطلب
-       * -------------------------------------------------------
-       */
-      const status =
+      const status = (
         isWallet
           ? "pending"
           : needsReceipt
             ? "awaiting_payment"
-            : "pending";
+            : "pending"
+      ) as
+        | "pending"
+        | "awaiting_payment";
 
       const paymentStatus =
         needsReceipt
           ? "pending"
           : "unpaid";
 
-      /**
-       * -------------------------------------------------------
-       * 3. إنشاء الطلب
-       * -------------------------------------------------------
-       */
-      const {
-        data: order,
-        error: orderError,
-      } =
-        await supabase
-          .from("orders")
-          .insert({
-            user_id:
-              user.id,
-
-            subtotal:
-              Number(
-                subtotal,
-              ),
-
-            delivery_fee:
-              deliveryFee,
-
-            total:
-              Number(
-                total,
-              ),
-
-            payment_method_code:
-              methodCode,
-
-            payment_status:
-              paymentStatus,
-
-            status,
-
-            shipping_name:
-              name.trim(),
-
-            shipping_phone:
-              normalizedPhone,
-
-            shipping_city:
-              city,
-
-            shipping_district:
-              district.trim(),
-
-            shipping_details:
-              details.trim(),
-
-            shipping_landmark:
-              landmark.trim(),
-
-            notes:
-              notes.trim(),
-
-            latitude:
-              coords?.lat ??
-              null,
-
-            longitude:
-              coords?.lng ??
-              null,
-          })
-          .select(
-            "id,order_number",
-          )
-          .single<{
-            id: string;
-            order_number: string;
-          }>();
-
-      if (
-        orderError ||
-        !order
-      ) {
-        throw new Error(
-          orderError?.message ??
-            "تعذر إنشاء الطلب.",
-        );
-      }
-
-      orderId =
-        order.id;
-
-      /**
-       * -------------------------------------------------------
-       * 4. حفظ عناصر الطلب
-       * -------------------------------------------------------
-       */
       const orderItems =
         items.map(
           (item) => ({
-            order_id:
-              order.id,
-
             product_id:
               item.product_id,
-
             product_name:
               item.product.name,
-
             product_image:
-              item.product
-                .images?.[0] ??
+              item.product.images?.[0] ??
               "",
-
             unit_price:
               Number(
-                item.product
-                  .price,
+                item.product.price,
               ),
-
             quantity:
               Number(
                 item.quantity,
               ),
-
             size:
               item.size ??
               null,
-
             color:
               item.color ??
               null,
           }),
         );
 
+      toast.loading(
+        "جارٍ تأكيد الطلب...",
+        {
+          id: "checkout-progress",
+        },
+      );
+
       const {
+        data:
+          checkoutData,
         error:
-          itemsError,
+          checkoutError,
       } =
-        await supabase
-          .from(
-            "order_items",
-          )
-          .insert(
-            orderItems,
-          );
+        await supabase.rpc(
+          "create_checkout_order",
+          {
+            _checkout_token:
+              checkoutToken,
 
-      if (
-        itemsError
-      ) {
-        /*
-         * حذف الطلب الذي أنشئ للتو حتى لا نترك
-         * طلبًا بدون منتجات.
-         */
-        await supabase
-          .from("orders")
-          .delete()
-          .eq(
-            "id",
-            order.id,
-          )
-          .eq(
-            "user_id",
-            user.id,
-          );
+            _items:
+              orderItems,
 
-        orderId =
-          null;
+            _subtotal:
+              Number(
+                subtotal,
+              ),
 
+            _delivery_fee:
+              Number(
+                deliveryFee,
+              ),
+
+            _total:
+              Number(
+                total,
+              ),
+
+            _payment_method_code:
+              methodCode,
+
+            _payment_status:
+              paymentStatus,
+
+            _status:
+              status,
+
+            _shipping_name:
+              name.trim(),
+
+            _shipping_phone:
+              normalizedPhone,
+
+            _shipping_city:
+              city,
+
+            _shipping_district:
+              district.trim(),
+
+            _shipping_details:
+              details.trim(),
+
+            _shipping_landmark:
+              landmark.trim(),
+
+            _notes:
+              notes.trim(),
+
+            _latitude:
+              coords?.lat ??
+              null,
+
+            _longitude:
+              coords?.lng ??
+              null,
+
+            _needs_payment_request:
+              needsReceipt,
+
+            _sender_name:
+              senderName.trim() ||
+              name.trim(),
+
+            _sender_phone:
+              senderPhone.trim() ||
+              normalizedPhone,
+
+            _reference:
+              reference.trim(),
+
+            _receipt_path:
+              receiptPath,
+          },
+        );
+
+      toast.dismiss(
+        "checkout-progress",
+      );
+
+      if (checkoutError) {
         throw new Error(
-          itemsError.message ||
-            "تعذر حفظ منتجات الطلب.",
+          checkoutError.message ||
+            "تعذر إنشاء الطلب.",
         );
       }
 
-      /**
-       * -------------------------------------------------------
-       * 5. الدفع من المحفظة
-       * -------------------------------------------------------
-       */
+      if (
+        !checkoutData ||
+        typeof checkoutData !==
+          "object"
+      ) {
+        throw new Error(
+          "لم يستلم التطبيق نتيجة صحيحة من الخادم.",
+        );
+      }
+
+      const result =
+        checkoutData as {
+          id?: string;
+          order_number?: string;
+          status?: string;
+          payment_status?: string;
+          existing?: boolean;
+        };
+
+      if (
+        !result.id ||
+        !result.order_number
+      ) {
+        throw new Error(
+          "تم تنفيذ الطلب لكن لم يتم استلام رقم الطلب.",
+        );
+      }
+
       if (isWallet) {
         const {
           error:
@@ -903,13 +856,11 @@ function CheckoutPage() {
             "pay_order_from_wallet",
             {
               _order_id:
-                order.id,
+                result.id,
             },
           );
 
-        if (
-          paymentError
-        ) {
+        if (paymentError) {
           throw new Error(
             paymentError.message ||
               "تعذر إتمام الدفع من المحفظة.",
@@ -917,260 +868,158 @@ function CheckoutPage() {
         }
       }
 
-      /**
-       * -------------------------------------------------------
-       * 6. إنشاء طلب إثبات الدفع
-       * -------------------------------------------------------
-       */
-      else if (
-        needsReceipt
-      ) {
-        const {
-          error:
-            paymentRequestError,
-        } =
-          await supabase
-            .from(
-              "payment_requests",
-            )
-            .insert({
-              user_id:
-                user.id,
+      if (saveAddress) {
+        const addressPayload = {
+          user_id:
+            user.id,
 
-              purpose:
-                "order",
+          label:
+            `${city} - ${district.trim()}`
+              .slice(0, 60),
 
-              order_id:
-                order.id,
+          recipient_name:
+            name.trim(),
 
-              method_code:
-                methodCode,
+          phone:
+            normalizedPhone,
 
-              amount:
-                Number(
-                  total,
-                ),
+          city,
 
-              sender_name:
-                senderName.trim() ||
-                name.trim(),
+          district:
+            district.trim(),
 
-              sender_phone:
-                senderPhone.trim() ||
-                normalizedPhone,
+          details:
+            details.trim(),
 
-              reference:
-                reference.trim(),
+          landmark:
+            landmark.trim(),
 
-              receipt_path:
-                receiptPath,
-            });
+          latitude:
+            coords?.lat ??
+            null,
 
-        if (
-          paymentRequestError
+          longitude:
+            coords?.lng ??
+            null,
+
+          is_default:
+            addresses.length ===
+            0,
+        };
+
+        try {
+          if (
+            addressId ===
+            "new"
+          ) {
+            const {
+              error,
+            } =
+              await supabase
+                .from(
+                  "addresses",
+                )
+                .insert(
+                  addressPayload,
+                );
+
+            if (error) {
+              console.warn(
+                "[Checkout] Failed to save address:",
+                error,
+              );
+            }
+          } else {
+            const {
+              error,
+            } =
+              await supabase
+                .from(
+                  "addresses",
+                )
+                .update(
+                  addressPayload,
+                )
+                .eq(
+                  "id",
+                  addressId,
+                )
+                .eq(
+                  "user_id",
+                  user.id,
+                );
+
+            if (error) {
+              console.warn(
+                "[Checkout] Failed to update address:",
+                error,
+              );
+            }
+          }
+
+          await refetchAddresses();
+        } catch (
+          addressError
         ) {
-          /*
-           * الطلب موجود لكن إثبات الدفع لم يُحفظ.
-           *
-           * نحاول تنظيف الطلب لأن المستخدم لم يحصل على
-           * طلب مكتمل.
-           */
-          await supabase
-            .from("orders")
-            .delete()
-            .eq(
-              "id",
-              order.id,
-            )
-            .eq(
-              "user_id",
-              user.id,
-            );
-
-          orderId =
-            null;
-
-          throw new Error(
-            paymentRequestError.message ||
-              "تعذر تسجيل إيصال الدفع.",
+          console.warn(
+            "[Checkout] Address save warning:",
+            addressError,
           );
         }
       }
 
-      /**
-       * -------------------------------------------------------
-       * 7. حفظ العنوان
-       * -------------------------------------------------------
-       */
-      if (saveAddress) {
-        const addressPayload =
-          {
-            user_id:
-              user.id,
-
-            label:
-              `${city} - ${district.trim()}`.slice(
-                0,
-                60,
-              ),
-
-            recipient_name:
-              name.trim(),
-
-            phone:
-              normalizedPhone,
-
-            city,
-
-            district:
-              district.trim(),
-
-            details:
-              details.trim(),
-
-            landmark:
-              landmark.trim(),
-
-            latitude:
-              coords?.lat ??
-              null,
-
-            longitude:
-              coords?.lng ??
-              null,
-
-            is_default:
-              addresses.length ===
-              0,
-          };
-
-        if (
-          addressId ===
-          "new"
-        ) {
-          const {
-            error:
-              addressError,
-          } =
-            await supabase
-              .from(
-                "addresses",
-              )
-              .insert(
-                addressPayload,
-              );
-
-          if (
-            addressError
-          ) {
-            console.warn(
-              "[Checkout] Failed to save address:",
-              addressError,
-            );
-          }
-        } else {
-          const {
-            error:
-              addressError,
-          } =
-            await supabase
-              .from(
-                "addresses",
-              )
-              .update(
-                addressPayload,
-              )
-              .eq(
-                "id",
-                addressId,
-              )
-              .eq(
-                "user_id",
-                user.id,
-              );
-
-          if (
-            addressError
-          ) {
-            console.warn(
-              "[Checkout] Failed to update address:",
-              addressError,
-            );
-          }
-        }
-
-        await refetchAddresses();
-      }
-
-      /**
-       * -------------------------------------------------------
-       * 8. تسجيل موافقة الشروط
-       * -------------------------------------------------------
-       */
       if (
         mustAgree &&
         agree
       ) {
-        const {
-          error:
-            policyError,
-        } =
-          await supabase
-            .from(
-              "profiles",
-            )
-            .update({
-              accepted_order_policy:
-                true,
+        try {
+          const {
+            error:
+              policyError,
+          } =
+            await supabase
+              .from(
+                "profiles",
+              )
+              .update({
+                accepted_order_policy:
+                  true,
 
-              accepted_terms:
-                true,
-            })
-            .eq(
-              "id",
-              user.id,
+                accepted_terms:
+                  true,
+              })
+              .eq(
+                "id",
+                user.id,
+              );
+
+          if (policyError) {
+            console.warn(
+              "[Checkout] Failed to save policy acceptance:",
+              policyError,
             );
-
-        if (
+          }
+        } catch (
           policyError
         ) {
           console.warn(
-            "[Checkout] Failed to save policy acceptance:",
+            "[Checkout] Policy save warning:",
             policyError,
           );
         }
       }
 
-      /**
-       * -------------------------------------------------------
-       * 9. تفريغ السلة
-       * -------------------------------------------------------
-       *
-       * هذه الخطوة آخر شيء.
-       *
-       * لا يتم تفريغ السلة قبل نجاح الطلب.
-       */
       try {
         await clearCart();
       } catch (
         cartError
       ) {
-        /*
-         * الطلب ناجح حتى لو فشل حذف السلة من قاعدة البيانات.
-         *
-         * clearCart لديه fallback محلي أصلًا.
-         */
         console.warn(
           "[Checkout] Cart cleanup warning:",
           cartError,
         );
       }
 
-      /**
-       * -------------------------------------------------------
-       * 10. تحديث بيانات الحساب
-       * -------------------------------------------------------
-       */
       try {
         await refreshProfile();
       } catch (
@@ -1182,23 +1031,19 @@ function CheckoutPage() {
         );
       }
 
-      /**
-       * -------------------------------------------------------
-       * 11. نجاح الطلب
-       * -------------------------------------------------------
-       */
       toast.success(
         needsReceipt
-          ? `تم إنشاء الطلب ${order.order_number} وهو بانتظار تأكيد الدفع من الإدارة.`
-          : `تم إنشاء الطلب ${order.order_number} بنجاح.`,
+          ? `تم إنشاء الطلب ${result.order_number} وهو بانتظار تأكيد الدفع من الإدارة.`
+          : `تم إنشاء الطلب ${result.order_number} بنجاح.`,
+        {
+          duration: 5000,
+        },
       );
 
       await navigate({
         to: "/orders",
       });
-    } catch (
-      error
-    ) {
+    } catch (error) {
       console.error(
         "[Checkout] Submit failed:",
         error,
@@ -1214,52 +1059,34 @@ function CheckoutPage() {
           error.message;
       }
 
-      /**
-       * تحويل رسائل الشبكة غير المفيدة للمستخدم
-       * إلى رسالة عربية واضحة.
-       */
       if (
         /HTTP request cancelled|request cancelled|AbortError|aborted/i.test(
           message,
         )
       ) {
         message =
-          "تم إلغاء الاتصال أثناء تنفيذ الطلب. تحقق من اتصال الإنترنت وحاول مرة أخرى.";
-      }
-
-      if (
-        /Failed to fetch|NetworkError|Load failed|fetch failed/i.test(
+          "انقطع الاتصال أثناء تأكيد الطلب. لا تضغط عدة مرات؛ أعد المحاولة مرة واحدة عند عودة الإنترنت. وسيتم منع تكرار الطلب تلقائيًا.";
+      } else if (
+        /Failed to fetch|NetworkError|Load failed|fetch failed|network/i.test(
           message,
         )
       ) {
         message =
-          "تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.";
+          "تعذر الاتصال بالخادم أثناء تأكيد الطلب. تحقق من الإنترنت ثم اضغط تأكيد الطلب مرة أخرى؛ لن يتم إنشاء طلب مكرر.";
       }
 
       toast.error(
         message,
         {
-          duration:
-            5000,
+          duration: 6000,
         },
       );
-
-      /*
-       * إذا كان لدينا orderId فهذا يعني أن الطلب وصل إلى
-       * قاعدة البيانات، لذلك لا نعيد المحاولة تلقائيًا.
-       *
-       * هذا يمنع إنشاء طلبات مكررة.
-       */
-      if (orderId) {
-        console.error(
-          "[Checkout] Order may already exist:",
-          orderId,
-        );
-      }
     } finally {
-      setBusy(
-        false,
+      toast.dismiss(
+        "checkout-progress",
       );
+
+      setBusy(false);
     }
   }
 
@@ -1518,7 +1345,9 @@ function CheckoutPage() {
                 </option>
 
                 {YEMEN_GOVERNORATES.map(
-                  (governorate) => (
+                  (
+                    governorate,
+                  ) => (
                     <option
                       key={
                         governorate
