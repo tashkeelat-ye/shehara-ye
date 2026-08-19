@@ -303,6 +303,47 @@ export type Database = {
           },
         ]
       }
+      inventory_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          movement_type: string
+          note: string
+          product_id: string
+          quantity: number
+          reference_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type: string
+          note?: string
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type?: string
+          note?: string
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nav_items: {
         Row: {
           created_at: string
@@ -452,6 +493,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          checkout_token: string | null
           courier_id: string | null
           created_at: string
           delivery_fee: number
@@ -475,6 +517,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          checkout_token?: string | null
           courier_id?: string | null
           created_at?: string
           delivery_fee?: number
@@ -498,6 +541,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          checkout_token?: string | null
           courier_id?: string | null
           created_at?: string
           delivery_fee?: number
@@ -831,6 +875,170 @@ export type Database = {
           },
         ]
       }
+      site_settings: {
+        Row: {
+          address: string
+          announcement_active: boolean
+          announcement_link: string
+          announcement_text: string
+          closed_message: string
+          created_at: string
+          delivery_fee: number
+          email: string
+          facebook: string
+          footer_copyright: string
+          footer_note: string
+          id: boolean
+          instagram: string
+          is_open: boolean
+          logo_url: string
+          phone: string
+          sar_rate: number
+          store_name: string
+          tagline: string
+          telegram: string
+          tiktok: string
+          twitter: string
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          address?: string
+          announcement_active?: boolean
+          announcement_link?: string
+          announcement_text?: string
+          closed_message?: string
+          created_at?: string
+          delivery_fee?: number
+          email?: string
+          facebook?: string
+          footer_copyright?: string
+          footer_note?: string
+          id?: boolean
+          instagram?: string
+          is_open?: boolean
+          logo_url?: string
+          phone?: string
+          sar_rate?: number
+          store_name?: string
+          tagline?: string
+          telegram?: string
+          tiktok?: string
+          twitter?: string
+          updated_at?: string
+          whatsapp?: string
+        }
+        Update: {
+          address?: string
+          announcement_active?: boolean
+          announcement_link?: string
+          announcement_text?: string
+          closed_message?: string
+          created_at?: string
+          delivery_fee?: number
+          email?: string
+          facebook?: string
+          footer_copyright?: string
+          footer_note?: string
+          id?: boolean
+          instagram?: string
+          is_open?: boolean
+          logo_url?: string
+          phone?: string
+          sar_rate?: number
+          store_name?: string
+          tagline?: string
+          telegram?: string
+          tiktok?: string
+          twitter?: string
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_read: boolean
+          sender: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender?: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "support_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vendors: {
         Row: {
           created_at: string
@@ -860,6 +1068,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          order_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string
+          id?: string
+          kind: string
+          order_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          order_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wishlists: {
         Row: {
@@ -895,11 +1141,75 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      broadcast_notification: {
+        Args: { _title: string; _body: string; _link?: string }
+        Returns: number
+      }
+      create_checkout_order: {
+        Args: {
+          _checkout_token: string
+          _items: Json
+          _subtotal: number
+          _delivery_fee: number
+          _total: number
+          _payment_method_code: string
+          _payment_status: string
+          _status: string
+          _shipping_name: string
+          _shipping_phone: string
+          _shipping_city: string
+          _shipping_district: string
+          _shipping_details: string
+          _shipping_landmark?: string
+          _notes?: string
+          _latitude?: number
+          _longitude?: number
+          _needs_payment_request?: boolean
+          _sender_name?: string
+          _sender_phone?: string
+          _reference?: string
+          _receipt_path?: string
+        }
+        Returns: Json
+      }
+      deduct_order_stock: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      pay_order_from_wallet: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
+      restore_order_stock: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
+      review_payment_request: {
+        Args: { _id: string; _approve: boolean; _note?: string }
+        Returns: undefined
+      }
+      set_product_stock: {
+        Args: { _product_id: string; _total_stock: number }
+        Returns: Database["public"]["Tables"]["products"]["Row"]
+      }
     }
     Enums: {
+      app_role: "customer" | "vendor" | "admin"
       order_status:
         | "pending"
+        | "awaiting_payment"
+        | "confirmed"
         | "processing"
         | "shipped"
         | "delivered"
