@@ -22,12 +22,6 @@ function validateImage(file: File) {
     throw new Error("الملف المختار ليس صورة.");
   }
 
-  /*
-   * على الهواتف قد تكون صورة الإيصال من الكاميرا
-   * بحجم كبير جدًا.
-   *
-   * نسمح بحد أقصى 8MB قبل الضغط.
-   */
   const maxSize = 8 * 1024 * 1024;
 
   if (file.size > maxSize) {
@@ -60,30 +54,23 @@ function getExtension(file: File) {
 }
 
 /**
- * =========================================================
- * ضغط صورة الإيصال قبل رفعها
- * =========================================================
+ * ضغط صورة إيصال الدفع.
  *
- * مهم جدًا للهواتف وشبكات 4G الضعيفة.
- *
- * صور الكاميرا قد تكون 5MB - 12MB أو أكثر.
- * لا نحتاج هذه الجودة لإيصال الدفع.
+ * الهدف:
+ * - تقليل حجم صور كاميرا الهاتف.
+ * - تقليل احتمالية HTTP request cancelled.
+ * - المحافظة على وضوح مناسب لقراءة الإيصال.
  */
 async function compressReceiptImage(
   file: File,
 ): Promise<File> {
   validateImage(file);
 
-  /*
-   * إذا كانت الصورة صغيرة أصلًا فلا داعي لمعالجتها.
-   */
-  if (file.size <= 1.5 * 1024 * 1024) {
+  // إذا كانت الصورة صغيرة فلا داعي لإعادة ضغطها.
+  if (file.size <= 500 * 1024) {
     return file;
   }
 
-  /*
-   * بعض المتصفحات قد لا توفر canvas أثناء الاختبار.
-   */
   if (
     typeof window === "undefined" ||
     typeof document === "undefined"
@@ -98,6 +85,7 @@ async function compressReceiptImage(
 
     await new Promise<void>((resolve, reject) => {
       image.onload = () => resolve();
+
       image.onerror = () =>
         reject(
           new Error(
@@ -108,23 +96,28 @@ async function compressReceiptImage(
       image.src = objectUrl;
     });
 
-    /*
-     * نخفض أكبر ضلع إلى 1600px.
-     */
-    const maxDimension = 1600;
+    // أقصى ضلع للصورة.
+    const maxDimension = 1280;
 
     let width = image.naturalWidth;
     let height = image.naturalHeight;
 
-    if (width > maxDimension || height > maxDimension) {
-      const ratio =
-        Math.min(
-          maxDimension / width,
-          maxDimension / height,
-        );
+    if (
+      width > maxDimension ||
+      height > maxDimension
+    ) {
+      const ratio = Math.min(
+        maxDimension / width,
+        maxDimension / height,
+      );
 
-      width = Math.round(width * ratio);
-      height = Math.round(height * ratio);
+      width = Math.round(
+        width * ratio,
+      );
+
+      height = Math.round(
+        height * ratio,
+      );
     }
 
     const canvas =
@@ -154,7 +147,7 @@ async function compressReceiptImage(
           canvas.toBlob(
             resolve,
             "image/jpeg",
-            0.78,
+            0.65,
           );
         },
       );
@@ -163,9 +156,7 @@ async function compressReceiptImage(
       return file;
     }
 
-    /*
-     * إذا كان الناتج أكبر من الأصل، نحتفظ بالأصل.
-     */
+    // إذا كان الضغط جعل الملف أكبر فلا نستبدل الأصل.
     if (blob.size >= file.size) {
       return file;
     }
@@ -191,9 +182,7 @@ async function compressReceiptImage(
 }
 
 /**
- * =========================================================
- * رفع صورة عامة
- * =========================================================
+ * رفع صورة عامة.
  */
 export async function uploadMedia(
   bucket: MediaBucket,
@@ -264,9 +253,7 @@ export async function uploadMedia(
 }
 
 /**
- * =========================================================
- * رفع عدة صور
- * =========================================================
+ * رفع عدة صور.
  */
 export async function uploadManyMedia(
   bucket: MediaBucket,
@@ -307,22 +294,13 @@ export async function uploadManyMedia(
 }
 
 /**
- * =========================================================
- * رفع إيصال الدفع
- * =========================================================
+ * رفع إيصال الدفع.
  *
- * النسخة الجديدة:
- *
- * 1. تتحقق من الصورة.
- * 2. تضغط الصورة على الهاتف.
- * 3. تستخدم اسمًا آمنًا.
- * 4. تعيد مسار Storage فقط.
- *
- * وهذا يمنع أغلب حالات:
- *
- * HTTP request cancelled
- *
- * الناتجة عن رفع صور الكاميرا الكبيرة.
+ * مميزات النسخة:
+ * - ضغط الصورة.
+ * - اسم ثابت أثناء المحاولات.
+ * - محاولتان فقط.
+ * - إذا كان الملف موجودًا بالفعل نعتبر الرفع ناجحًا.
  */
 export async function uploadReceipt(
   userId: string,
@@ -349,11 +327,6 @@ export async function uploadReceipt(
 
   let lastError: unknown = null;
 
-  /*
-   * محاولتان فقط.
-   *
-   * هذا مفيد جدًا عند ضعف شبكة الهاتف.
-   */
   for (
     let attempt = 1;
     attempt <= 2;
@@ -383,9 +356,6 @@ export async function uploadReceipt(
 
       lastError = error;
 
-      /*
-       * إذا كان الملف قد تم رفعه بالفعل فلا نعيد رفعه.
-       */
       if (
         /already exists|duplicate/i.test(
           error.message,
@@ -397,9 +367,6 @@ export async function uploadReceipt(
       lastError = error;
     }
 
-    /*
-     * انتظار بسيط قبل المحاولة الثانية.
-     */
     if (attempt < 2) {
       await new Promise(
         (resolve) =>
@@ -415,8 +382,7 @@ export async function uploadReceipt(
     lastError instanceof Error
       ? lastError.message
       : String(
-          lastError ??
-            "",
+          lastError ?? "",
         );
 
   if (
