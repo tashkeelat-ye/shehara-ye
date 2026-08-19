@@ -22,10 +22,18 @@ function validateImage(file: File) {
     throw new Error("الملف المختار ليس صورة.");
   }
 
+  /*
+   * على الهواتف قد تكون صورة الإيصال من الكاميرا
+   * بحجم كبير جدًا.
+   *
+   * نسمح بحد أقصى 8MB قبل الضغط.
+   */
   const maxSize = 8 * 1024 * 1024;
 
   if (file.size > maxSize) {
-    throw new Error("حجم الصورة يجب ألا يتجاوز 8 ميجابايت.");
+    throw new Error(
+      "حجم الصورة كبير جدًا. اختر صورة أقل من 8 ميجابايت.",
+    );
   }
 }
 
@@ -52,15 +60,140 @@ function getExtension(file: File) {
 }
 
 /**
- * رفع صورة إلى Supabase Storage.
+ * =========================================================
+ * ضغط صورة الإيصال قبل رفعها
+ * =========================================================
  *
- * هذه الدالة هي نقطة الرفع المركزية للوحة التحكم.
+ * مهم جدًا للهواتف وشبكات 4G الضعيفة.
  *
- * Buckets المدعومة:
- * - products
- * - banners
- * - categories
- * - brands
+ * صور الكاميرا قد تكون 5MB - 12MB أو أكثر.
+ * لا نحتاج هذه الجودة لإيصال الدفع.
+ */
+async function compressReceiptImage(
+  file: File,
+): Promise<File> {
+  validateImage(file);
+
+  /*
+   * إذا كانت الصورة صغيرة أصلًا فلا داعي لمعالجتها.
+   */
+  if (file.size <= 1.5 * 1024 * 1024) {
+    return file;
+  }
+
+  /*
+   * بعض المتصفحات قد لا توفر canvas أثناء الاختبار.
+   */
+  if (
+    typeof window === "undefined" ||
+    typeof document === "undefined"
+  ) {
+    return file;
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = new Image();
+
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () =>
+        reject(
+          new Error(
+            "تعذر قراءة صورة الإيصال.",
+          ),
+        );
+
+      image.src = objectUrl;
+    });
+
+    /*
+     * نخفض أكبر ضلع إلى 1600px.
+     */
+    const maxDimension = 1600;
+
+    let width = image.naturalWidth;
+    let height = image.naturalHeight;
+
+    if (width > maxDimension || height > maxDimension) {
+      const ratio =
+        Math.min(
+          maxDimension / width,
+          maxDimension / height,
+        );
+
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+    }
+
+    const canvas =
+      document.createElement("canvas");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const context =
+      canvas.getContext("2d");
+
+    if (!context) {
+      return file;
+    }
+
+    context.drawImage(
+      image,
+      0,
+      0,
+      width,
+      height,
+    );
+
+    const blob =
+      await new Promise<Blob | null>(
+        (resolve) => {
+          canvas.toBlob(
+            resolve,
+            "image/jpeg",
+            0.78,
+          );
+        },
+      );
+
+    if (!blob) {
+      return file;
+    }
+
+    /*
+     * إذا كان الناتج أكبر من الأصل، نحتفظ بالأصل.
+     */
+    if (blob.size >= file.size) {
+      return file;
+    }
+
+    const baseName =
+      file.name.replace(
+        /\.[^/.]+$/,
+        "",
+      );
+
+    return new File(
+      [blob],
+      `${baseName}.jpg`,
+      {
+        type: "image/jpeg",
+        lastModified:
+          Date.now(),
+      },
+    );
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+/**
+ * =========================================================
+ * رفع صورة عامة
+ * =========================================================
  */
 export async function uploadMedia(
   bucket: MediaBucket,
@@ -69,21 +202,35 @@ export async function uploadMedia(
 ): Promise<string> {
   validateImage(file);
 
-  const extension = getExtension(file);
+  const extension =
+    getExtension(file);
 
-  const fileName = `${crypto.randomUUID()}-${safeFileName(
-    file.name.replace(/\.[^/.]+$/, ""),
-  )}.${extension}`;
+  const fileName =
+    `${crypto.randomUUID()}-${safeFileName(
+      file.name.replace(
+        /\.[^/.]+$/,
+        "",
+      ),
+    )}.${extension}`;
 
-  const path = `${folder}/${fileName}`;
+  const path =
+    `${folder}/${fileName}`;
 
-  const { error: uploadError } = await supabase.storage
+  const {
+    error: uploadError,
+  } = await supabase.storage
     .from(bucket)
-    .upload(path, file, {
-      contentType: file.type,
-      cacheControl: "31536000",
-      upsert: false,
-    });
+    .upload(
+      path,
+      file,
+      {
+        contentType:
+          file.type,
+        cacheControl:
+          "31536000",
+        upsert: false,
+      },
+    );
 
   if (uploadError) {
     throw new Error(
@@ -92,15 +239,21 @@ export async function uploadMedia(
     );
   }
 
-  /*
-   * نستخدم رابطًا موقعًا طويل الأمد حتى لا تعتمد
-   * الواجهات الحالية على كون الـ bucket عامًا.
-   */
-  const { data, error: signError } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, TEN_YEARS);
+  const {
+    data,
+    error: signError,
+  } =
+    await supabase.storage
+      .from(bucket)
+      .createSignedUrl(
+        path,
+        TEN_YEARS,
+      );
 
-  if (signError || !data?.signedUrl) {
+  if (
+    signError ||
+    !data?.signedUrl
+  ) {
     throw new Error(
       signError?.message ||
         "تم رفع الصورة ولكن تعذر إنشاء رابط عرض الصورة.",
@@ -111,9 +264,9 @@ export async function uploadMedia(
 }
 
 /**
- * رفع عدة صور بالتتابع.
- *
- * لا تتوقف العملية بالكامل إذا فشل ملف واحد.
+ * =========================================================
+ * رفع عدة صور
+ * =========================================================
  */
 export async function uploadManyMedia(
   bucket: MediaBucket,
@@ -128,11 +281,12 @@ export async function uploadManyMedia(
 
   for (const file of files) {
     try {
-      const url = await uploadMedia(
-        bucket,
-        file,
-        folder,
-      );
+      const url =
+        await uploadMedia(
+          bucket,
+          file,
+          folder,
+        );
 
       urls.push(url);
     } catch (error) {
@@ -153,38 +307,130 @@ export async function uploadManyMedia(
 }
 
 /**
- * رفع إيصال دفع إلى bucket خاص.
+ * =========================================================
+ * رفع إيصال الدفع
+ * =========================================================
  *
- * لا يعيد رابطًا عامًا.
- * يعيد مسار الملف فقط حتى يتم إنشاء Signed URL
- * عند الحاجة للعرض.
+ * النسخة الجديدة:
+ *
+ * 1. تتحقق من الصورة.
+ * 2. تضغط الصورة على الهاتف.
+ * 3. تستخدم اسمًا آمنًا.
+ * 4. تعيد مسار Storage فقط.
+ *
+ * وهذا يمنع أغلب حالات:
+ *
+ * HTTP request cancelled
+ *
+ * الناتجة عن رفع صور الكاميرا الكبيرة.
  */
 export async function uploadReceipt(
   userId: string,
   file: File,
 ): Promise<string> {
-  validateImage(file);
-
-  const fileName = `${Date.now()}-${crypto.randomUUID()}-${safeFileName(
-    file.name,
-  )}`;
-
-  const path = `${userId}/${fileName}`;
-
-  const { error } = await supabase.storage
-    .from("receipts")
-    .upload(path, file, {
-      contentType: file.type,
-      cacheControl: "3600",
-      upsert: false,
-    });
-
-  if (error) {
+  if (!userId) {
     throw new Error(
-      error.message ||
-        "تعذر رفع إيصال الدفع.",
+      "تعذر تحديد حساب المستخدم.",
     );
   }
 
-  return path;
+  validateImage(file);
+
+  const compressed =
+    await compressReceiptImage(file);
+
+  const fileName =
+    `${Date.now()}-${crypto.randomUUID()}-${safeFileName(
+      compressed.name,
+    )}`;
+
+  const path =
+    `${userId}/${fileName}`;
+
+  let lastError: unknown = null;
+
+  /*
+   * محاولتان فقط.
+   *
+   * هذا مفيد جدًا عند ضعف شبكة الهاتف.
+   */
+  for (
+    let attempt = 1;
+    attempt <= 2;
+    attempt++
+  ) {
+    try {
+      const {
+        error,
+      } = await supabase.storage
+        .from("receipts")
+        .upload(
+          path,
+          compressed,
+          {
+            contentType:
+              compressed.type ||
+              "image/jpeg",
+            cacheControl:
+              "3600",
+            upsert: false,
+          },
+        );
+
+      if (!error) {
+        return path;
+      }
+
+      lastError = error;
+
+      /*
+       * إذا كان الملف قد تم رفعه بالفعل فلا نعيد رفعه.
+       */
+      if (
+        /already exists|duplicate/i.test(
+          error.message,
+        )
+      ) {
+        return path;
+      }
+    } catch (error) {
+      lastError = error;
+    }
+
+    /*
+     * انتظار بسيط قبل المحاولة الثانية.
+     */
+    if (attempt < 2) {
+      await new Promise(
+        (resolve) =>
+          setTimeout(
+            resolve,
+            700,
+          ),
+      );
+    }
+  }
+
+  const message =
+    lastError instanceof Error
+      ? lastError.message
+      : String(
+          lastError ??
+            "",
+        );
+
+  if (
+    /cancel|abort|network|fetch|failed/i.test(
+      message,
+    )
+  ) {
+    throw new Error(
+      "تعذر رفع صورة الإيصال بسبب اتصال الشبكة. تأكد من اتصال الإنترنت ثم حاول مرة أخرى.",
+    );
+  }
+
+  throw new Error(
+    message ||
+      "تعذر رفع إيصال الدفع.",
+  );
 }
