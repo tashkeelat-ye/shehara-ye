@@ -76,6 +76,7 @@ import {
   isValidYemeniPhone,
 } from "@/lib/phone";
 
+
 export const Route =
   createFileRoute(
     "/_authenticated/checkout",
@@ -123,6 +124,7 @@ export const Route =
       CheckoutPage,
   });
 
+
 type AddressRow = {
   id: string;
   label: string;
@@ -137,163 +139,155 @@ type AddressRow = {
   is_default: boolean;
 };
 
+
 const ADDRESS_COLUMNS =
   "id,label,recipient_name,phone,city,district,details,landmark,latitude,longitude,is_default";
 
-const CHECKOUT_TOKEN_STORAGE_KEY =
-  "tashkeelat_checkout_token";
 
-function createUuidFallback(): string {
-  const hex = (
-    length: number,
-  ) =>
-    Array.from(
-      {
-        length,
-      },
-      () =>
-        Math.floor(
-          Math.random() * 16,
-        ).toString(16),
-    ).join("");
-
-  const variant =
-    [8, 9, 10, 11][
-      Math.floor(
-        Math.random() * 4,
-      )
-    ].toString(16);
-
-  return [
-    hex(8),
-    hex(4),
-    `4${hex(3)}`,
-    `${variant}${hex(3)}`,
-    hex(12),
-  ].join("-");
-}
-
-function getCheckoutToken(): string {
-  if (
-    typeof window ===
-    "undefined"
-  ) {
-    return createUuidFallback();
-  }
-
-  const existing =
-    window.sessionStorage.getItem(
-      CHECKOUT_TOKEN_STORAGE_KEY,
-    );
-
-  if (existing) {
-    return existing;
-  }
-
-  const token =
-    globalThis.crypto?.randomUUID?.() ??
-    createUuidFallback();
-
-  window.sessionStorage.setItem(
-    CHECKOUT_TOKEN_STORAGE_KEY,
-    token,
-  );
-
-  return token;
-}
-
-function isRetryableCheckoutError(
+/**
+ * استخراج رسالة الخطأ الحقيقية من أي كائن
+ * قادم من Supabase / PostgREST / PostgreSQL.
+ */
+function extractErrorDetails(
   error: unknown,
-): boolean {
-  const message =
-    error instanceof Error
-      ? error.message
-      : String(
-          error ?? "",
-        );
-
-  return /HTTP request cancelled|request cancelled|AbortError|aborted|Failed to fetch|NetworkError|Load failed|fetch failed|network/i.test(
-    message,
-  );
-}
-
-function sleep(
-  milliseconds: number,
-): Promise<void> {
-  return new Promise(
-    (resolve) =>
-      setTimeout(
-        resolve,
-        milliseconds,
-      ),
-  );
-}
-
-async function createCheckoutOrderWithRetry(
-  payload: Record<
-    string,
-    unknown
-  >,
-) {
-  let lastError:
-    | unknown
-    = null;
-
-  for (
-    let attempt = 1;
-    attempt <= 2;
-    attempt += 1
+): {
+  message: string;
+  code: string;
+  details: string;
+  hint: string;
+  raw: string;
+} {
+  if (
+    error &&
+    typeof error === "object"
   ) {
+    const value =
+      error as Record<
+        string,
+        unknown
+      >;
+
+    const message =
+      typeof value.message ===
+      "string"
+        ? value.message
+        : "";
+
+    const code =
+      typeof value.code ===
+      "string"
+        ? value.code
+        : "";
+
+    const details =
+      typeof value.details ===
+      "string"
+        ? value.details
+        : "";
+
+    const hint =
+      typeof value.hint ===
+      "string"
+        ? value.hint
+        : "";
+
+    let raw = "";
+
     try {
-      const {
-        data,
-        error,
-      } =
-        await supabase.rpc(
-          "create_checkout_order",
-          payload,
+      raw =
+        JSON.stringify(
+          error,
+          null,
+          2,
         );
-
-      if (!error) {
-        return data;
-      }
-
-      lastError = error;
-
-      if (
-        !isRetryableCheckoutError(
-          error,
-        ) ||
-        attempt >= 2
-      ) {
-        throw error;
-      }
-    } catch (
-      error
-    ) {
-      lastError = error;
-
-      if (
-        !isRetryableCheckoutError(
-          error,
-        ) ||
-        attempt >= 2
-      ) {
-        throw error;
-      }
+    } catch {
+      raw = String(error);
     }
 
-    await sleep(900);
+    return {
+      message,
+      code,
+      details,
+      hint,
+      raw,
+    };
   }
 
-  throw (
-    lastError instanceof Error
-      ? lastError
-      : new Error(
-          "تعذر إنشاء الطلب.",
-        )
+  if (
+    error instanceof Error
+  ) {
+    return {
+      message:
+        error.message,
+      code: "",
+      details: "",
+      hint: "",
+      raw:
+        error.stack ??
+        error.message,
+    };
+  }
+
+  return {
+    message:
+      typeof error ===
+      "string"
+        ? error
+        : "",
+    code: "",
+    details: "",
+    hint: "",
+    raw: String(error),
+  };
+}
+
+
+/**
+ * تحويل خطأ Supabase إلى نص واضح
+ * حتى لا نخسر code/details/hint.
+ */
+function buildErrorMessage(
+  error: unknown,
+  stage: string,
+): string {
+  const info =
+    extractErrorDetails(
+      error,
+    );
+
+  const parts = [
+    `المرحلة: ${stage}`,
+  ];
+
+  if (info.message) {
+    parts.push(
+      `الرسالة: ${info.message}`,
+    );
+  }
+
+  if (info.code) {
+    parts.push(
+      `الكود: ${info.code}`,
+    );
+  }
+
+  if (info.details) {
+    parts.push(
+      `التفاصيل: ${info.details}`,
+    );
+  }
+
+  if (info.hint) {
+    parts.push(
+      `التلميح: ${info.hint}`,
+    );
+  }
+
+  return parts.join(
+    "\n",
   );
 }
+
 
 function CheckoutPage() {
   const formatPrice =
@@ -359,35 +353,32 @@ function CheckoutPage() {
         const {
           data,
           error,
-        } =
-          await supabase
-            .from(
-              "addresses",
-            )
-            .select(
-              ADDRESS_COLUMNS,
-            )
-            .eq(
-              "user_id",
-              user.id,
-            )
-            .order(
-              "is_default",
-              {
-                ascending:
-                  false,
-              },
-            )
-            .order(
-              "created_at",
-              {
-                ascending:
-                  false,
-              },
-            )
-            .returns<
-              AddressRow[]
-            >();
+        } = await supabase
+          .from(
+            "addresses",
+          )
+          .select(
+            ADDRESS_COLUMNS,
+          )
+          .eq(
+            "user_id",
+            user.id,
+          )
+          .order(
+            "is_default",
+            {
+              ascending:
+                false,
+            },
+          )
+          .order(
+            "created_at",
+            {
+              ascending:
+                false,
+            },
+          )
+          .returns<AddressRow[]>();
 
         if (error) {
           console.error(
@@ -401,6 +392,7 @@ function CheckoutPage() {
         return data ?? [];
       },
   });
+
 
   const [
     addressId,
@@ -519,18 +511,21 @@ function CheckoutPage() {
   ] =
     useState(false);
 
-  /*
-   * Token ثابت لنفس محاولة الطلب.
-   *
-   * يتم تخزينه في sessionStorage حتى يبقى نفسه إذا أعاد
-   * المستخدم تحميل صفحة الدفع أو حدثت إعادة محاولة.
+
+  /**
+   * Token ثابت لمنع إنشاء طلب مكرر
+   * عند إعادة المحاولة.
    */
   const [
     checkoutToken,
   ] =
-    useState<string>(
-      getCheckoutToken,
+    useState<string>(() =>
+      globalThis.crypto?.randomUUID?.() ??
+      `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}`,
     );
+
 
   const deliveryFee =
     Number(
@@ -553,6 +548,7 @@ function CheckoutPage() {
       profile?.accepted_order_policy,
     );
 
+
   const selected =
     useMemo(
       () =>
@@ -567,17 +563,23 @@ function CheckoutPage() {
       ],
     );
 
+
   const isWallet =
     selected?.kind ===
       "wallet_balance" ||
     selected?.code ===
       "wallet_balance";
 
+
   const needsReceipt =
     Boolean(
       selected?.requires_receipt,
     );
 
+
+  /**
+   * اختيار أول طريقة دفع تلقائيًا.
+   */
   useEffect(() => {
     if (
       methodCode ||
@@ -600,6 +602,10 @@ function CheckoutPage() {
     methodCode,
   ]);
 
+
+  /**
+   * اختيار العنوان الافتراضي.
+   */
   useEffect(() => {
     if (
       addresses.length ===
@@ -622,6 +628,10 @@ function CheckoutPage() {
     addresses,
   ]);
 
+
+  /**
+   * تعبئة بيانات العنوان.
+   */
   useEffect(() => {
     if (
       addressId ===
@@ -699,6 +709,10 @@ function CheckoutPage() {
     profile,
   ]);
 
+
+  /**
+   * التحقق من الطلب.
+   */
   function validateCheckout() {
     if (!user?.id) {
       toast.error(
@@ -790,6 +804,13 @@ function CheckoutPage() {
     return true;
   }
 
+
+  /**
+   * تنفيذ الطلب.
+   *
+   * تم هنا إضافة متغير stage
+   * لمعرفة المكان الدقيق للفشل.
+   */
   async function submit(
     e: React.FormEvent,
   ) {
@@ -799,9 +820,7 @@ function CheckoutPage() {
       return;
     }
 
-    if (
-      !validateCheckout()
-    ) {
+    if (!validateCheckout()) {
       return;
     }
 
@@ -811,19 +830,34 @@ function CheckoutPage() {
 
     setBusy(true);
 
+    let stage =
+      "بدء تنفيذ الطلب";
+
+
     try {
+      stage =
+        "تطبيع رقم الهاتف";
+
       const normalizedPhone =
         normalizeYemeniPhone(
           phone,
         );
 
-      let receiptPath =
-        "";
+
+      /**
+       * -------------------------------------------------------
+       * 1. رفع إيصال الدفع
+       * -------------------------------------------------------
+       */
+      let receiptPath = "";
 
       if (
         needsReceipt &&
         receipt
       ) {
+        stage =
+          "رفع إيصال الدفع";
+
         toast.loading(
           "جارٍ رفع إيصال التحويل...",
           {
@@ -838,6 +872,15 @@ function CheckoutPage() {
               user.id,
               receipt,
             );
+        } catch (receiptError) {
+          console.error(
+            "[Checkout][ReceiptUpload]",
+            extractErrorDetails(
+              receiptError,
+            ),
+          );
+
+          throw receiptError;
         } finally {
           toast.dismiss(
             "checkout-progress",
@@ -845,21 +888,38 @@ function CheckoutPage() {
         }
       }
 
-      const status =
-        (
-          isWallet
-            ? "pending"
-            : needsReceipt
-              ? "awaiting_payment"
-              : "pending"
-        ) as
-          | "pending"
-          | "awaiting_payment";
+
+      /**
+       * -------------------------------------------------------
+       * 2. تحديد الحالة
+       * -------------------------------------------------------
+       */
+      stage =
+        "تحديد حالة الطلب والدفع";
+
+      const status = (
+        isWallet
+          ? "pending"
+          : needsReceipt
+            ? "awaiting_payment"
+            : "pending"
+      ) as
+        | "pending"
+        | "awaiting_payment";
 
       const paymentStatus =
         needsReceipt
           ? "pending"
           : "unpaid";
+
+
+      /**
+       * -------------------------------------------------------
+       * 3. تجهيز عناصر الطلب
+       * -------------------------------------------------------
+       */
+      stage =
+        "تجهيز عناصر الطلب";
 
       const orderItems =
         items.map(
@@ -868,8 +928,7 @@ function CheckoutPage() {
               item.product_id,
 
             product_name:
-              item.product
-                .name,
+              item.product.name,
 
             product_image:
               item.product
@@ -878,8 +937,7 @@ function CheckoutPage() {
 
             unit_price:
               Number(
-                item.product
-                  .price,
+                item.product.price,
               ),
 
             quantity:
@@ -897,6 +955,21 @@ function CheckoutPage() {
           }),
         );
 
+
+      console.log(
+        "[Checkout] Prepared order items:",
+        orderItems,
+      );
+
+
+      /**
+       * -------------------------------------------------------
+       * 4. RPC create_checkout_order
+       * -------------------------------------------------------
+       */
+      stage =
+        "استدعاء create_checkout_order";
+
       toast.loading(
         "جارٍ تأكيد الطلب...",
         {
@@ -905,88 +978,152 @@ function CheckoutPage() {
         },
       );
 
-      const checkoutData =
-        await createCheckoutOrderWithRetry(
-          {
-            _checkout_token:
-              checkoutToken,
 
-            _items:
-              orderItems,
+      const rpcPayload = {
+        _checkout_token:
+          checkoutToken,
 
-            _subtotal:
-              Number(
-                subtotal,
-              ),
+        _items:
+          orderItems,
 
-            _delivery_fee:
-              deliveryFee,
+        _subtotal:
+          Number(
+            subtotal,
+          ),
 
-            _total:
-              Number(
-                total,
-              ),
+        _delivery_fee:
+          deliveryFee,
 
-            _payment_method_code:
-              methodCode,
+        _total:
+          Number(
+            total,
+          ),
 
-            _payment_status:
-              paymentStatus,
+        _payment_method_code:
+          methodCode,
 
-            _status:
-              status,
+        _payment_status:
+          paymentStatus,
 
-            _shipping_name:
-              name.trim(),
+        _status:
+          status,
 
-            _shipping_phone:
-              normalizedPhone,
+        _shipping_name:
+          name.trim(),
 
-            _shipping_city:
-              city,
+        _shipping_phone:
+          normalizedPhone,
 
-            _shipping_district:
-              district.trim(),
+        _shipping_city:
+          city,
 
-            _shipping_details:
-              details.trim(),
+        _shipping_district:
+          district.trim(),
 
-            _shipping_landmark:
-              landmark.trim(),
+        _shipping_details:
+          details.trim(),
 
-            _notes:
-              notes.trim(),
+        _shipping_landmark:
+          landmark.trim(),
 
-            _latitude:
-              coords?.lat ??
-              null,
+        _notes:
+          notes.trim(),
 
-            _longitude:
-              coords?.lng ??
-              null,
+        _latitude:
+          coords?.lat ??
+          null,
 
-            _needs_payment_request:
-              needsReceipt,
+        _longitude:
+          coords?.lng ??
+          null,
 
-            _sender_name:
-              senderName.trim() ||
-              name.trim(),
+        _needs_payment_request:
+          needsReceipt,
 
-            _sender_phone:
-              senderPhone.trim() ||
-              normalizedPhone,
+        _sender_name:
+          senderName.trim() ||
+          name.trim(),
 
-            _reference:
-              reference.trim(),
+        _sender_phone:
+          senderPhone.trim() ||
+          normalizedPhone,
 
-            _receipt_path:
-              receiptPath,
-          },
+        _reference:
+          reference.trim(),
+
+        _receipt_path:
+          receiptPath,
+      };
+
+
+      console.log(
+        "[Checkout] Calling create_checkout_order",
+        {
+          payload:
+            rpcPayload,
+        },
+      );
+
+
+      const {
+        data: checkoutData,
+        error:
+          checkoutError,
+      } =
+        await supabase.rpc(
+          "create_checkout_order",
+          rpcPayload,
         );
+
+
+      console.log(
+        "[Checkout] RPC response",
+        {
+          data:
+            checkoutData,
+          error:
+            checkoutError,
+        },
+      );
+
 
       toast.dismiss(
         "checkout-progress",
       );
+
+
+      /**
+       * لا نخفي تفاصيل خطأ Supabase.
+       */
+      if (checkoutError) {
+        const info =
+          extractErrorDetails(
+            checkoutError,
+          );
+
+        console.error(
+          "[Checkout][RPC ERROR]",
+          {
+            message:
+              info.message,
+
+            code:
+              info.code,
+
+            details:
+              info.details,
+
+            hint:
+              info.hint,
+
+            raw:
+              info.raw,
+          },
+        );
+
+        throw checkoutError;
+      }
+
 
       if (
         !checkoutData ||
@@ -998,6 +1135,7 @@ function CheckoutPage() {
         );
       }
 
+
       const result =
         checkoutData as {
           id?: string;
@@ -1006,6 +1144,13 @@ function CheckoutPage() {
           payment_status?: string;
           existing?: boolean;
         };
+
+
+      console.log(
+        "[Checkout] RPC result:",
+        result,
+      );
+
 
       if (
         !result.id ||
@@ -1016,10 +1161,16 @@ function CheckoutPage() {
         );
       }
 
-      /*
-       * دفع المحفظة.
+
+      /**
+       * -------------------------------------------------------
+       * 5. الدفع من المحفظة
+       * -------------------------------------------------------
        */
       if (isWallet) {
+        stage =
+          "الدفع من المحفظة";
+
         const {
           error:
             paymentError,
@@ -1032,30 +1183,40 @@ function CheckoutPage() {
             },
           );
 
-        if (
-          paymentError
-        ) {
-          throw new Error(
-            paymentError.message ||
-              "تعذر إتمام الدفع من المحفظة.",
+
+        if (paymentError) {
+          console.error(
+            "[Checkout][WalletPayment]",
+            extractErrorDetails(
+              paymentError,
+            ),
           );
+
+          throw paymentError;
         }
       }
 
-      /*
-       * حفظ العنوان ليس جزءًا من عملية إنشاء الطلب.
+
+      /**
+       * -------------------------------------------------------
+       * 6. حفظ العنوان
+       * -------------------------------------------------------
        */
       if (saveAddress) {
+        stage =
+          "حفظ عنوان التوصيل";
+
         const addressPayload =
           {
             user_id:
               user.id,
 
             label:
-              `${city} - ${district.trim()}`.slice(
-                0,
-                60,
-              ),
+              `${city} - ${district.trim()}`
+                .slice(
+                  0,
+                  60,
+                ),
 
             recipient_name:
               name.trim(),
@@ -1086,6 +1247,7 @@ function CheckoutPage() {
               addresses.length ===
               0,
           };
+
 
         try {
           if (
@@ -1148,13 +1310,19 @@ function CheckoutPage() {
         }
       }
 
-      /*
-       * حفظ الموافقة.
+
+      /**
+       * -------------------------------------------------------
+       * 7. حفظ موافقة الشروط
+       * -------------------------------------------------------
        */
       if (
         mustAgree &&
         agree
       ) {
+        stage =
+          "حفظ موافقة الشروط";
+
         try {
           const {
             error:
@@ -1194,9 +1362,15 @@ function CheckoutPage() {
         }
       }
 
-      /*
-       * تفريغ السلة بعد نجاح الطلب.
+
+      /**
+       * -------------------------------------------------------
+       * 8. تفريغ السلة
+       * -------------------------------------------------------
        */
+      stage =
+        "تفريغ السلة";
+
       try {
         await clearCart();
       } catch (
@@ -1207,6 +1381,15 @@ function CheckoutPage() {
           cartError,
         );
       }
+
+
+      /**
+       * -------------------------------------------------------
+       * 9. تحديث الملف الشخصي
+       * -------------------------------------------------------
+       */
+      stage =
+        "تحديث الملف الشخصي";
 
       try {
         await refreshProfile();
@@ -1219,26 +1402,22 @@ function CheckoutPage() {
         );
       }
 
+
+      /**
+       * -------------------------------------------------------
+       * 10. النجاح
+       * -------------------------------------------------------
+       */
       toast.success(
         needsReceipt
           ? `تم إنشاء الطلب ${result.order_number} وهو بانتظار تأكيد الدفع من الإدارة.`
           : `تم إنشاء الطلب ${result.order_number} بنجاح.`,
         {
-          duration: 5000,
+          duration:
+            5000,
         },
       );
 
-      /*
-       * حذف token فقط بعد النجاح الكامل.
-       */
-      if (
-        typeof window !==
-        "undefined"
-      ) {
-        window.sessionStorage.removeItem(
-          CHECKOUT_TOKEN_STORAGE_KEY,
-        );
-      }
 
       await navigate({
         to: "/orders",
@@ -1246,34 +1425,111 @@ function CheckoutPage() {
     } catch (
       error
     ) {
+      const info =
+        extractErrorDetails(
+          error,
+        );
+
+
+      /**
+       * تسجيل كامل في Console.
+       */
       console.error(
-        "[Checkout] Submit failed:",
+        "================================================",
+      );
+
+      console.error(
+        "[CHECKOUT FINAL ERROR]",
+      );
+
+      console.error(
+        "Stage:",
+        stage,
+      );
+
+      console.error(
+        "Message:",
+        info.message,
+      );
+
+      console.error(
+        "Code:",
+        info.code,
+      );
+
+      console.error(
+        "Details:",
+        info.details,
+      );
+
+      console.error(
+        "Hint:",
+        info.hint,
+      );
+
+      console.error(
+        "Raw:",
+        info.raw,
+      );
+
+      console.error(
+        "Original error:",
         error,
       );
 
+      console.error(
+        "================================================",
+      );
+
+
+      /**
+       * رسالة المستخدم.
+       *
+       * نعرض الخطأ الحقيقي مؤقتًا حتى نستطيع
+       * تحديد السبب النهائي.
+       */
       let message =
-        "تعذر إتمام الطلب.";
+        buildErrorMessage(
+          error,
+          stage,
+        );
+
 
       if (
-        error instanceof Error
+        !message ||
+        message.trim() ===
+          `المرحلة: ${stage}`
       ) {
         message =
-          error.message;
+          `تعذر إتمام الطلب.\nالمرحلة: ${stage}`;
       }
 
+
+      /**
+       * أخطاء الشبكة.
+       */
       if (
-        isRetryableCheckoutError(
-          error,
+        /HTTP request cancelled|request cancelled|AbortError|aborted/i.test(
+          info.message,
         )
       ) {
         message =
-          "انقطع الاتصال أثناء تأكيد الطلب. سيتم استخدام نفس معرّف الطلب عند إعادة المحاولة لمنع إنشاء طلب مكرر.";
+          `انقطع الاتصال أثناء تنفيذ الطلب.\nالمرحلة: ${stage}\n\nلا تضغط عدة مرات. أعد المحاولة مرة واحدة بعد استقرار الإنترنت.`;
+      } else if (
+        /Failed to fetch|NetworkError|Load failed|fetch failed|network/i.test(
+          info.message,
+        )
+      ) {
+        message =
+          `تعذر الاتصال بالخادم.\nالمرحلة: ${stage}\n\nتحقق من الإنترنت ثم حاول مرة أخرى.`;
       }
+
 
       toast.error(
         message,
         {
-          duration: 6000,
+          duration:
+            10000,
         },
       );
     } finally {
@@ -1284,6 +1540,7 @@ function CheckoutPage() {
       setBusy(false);
     }
   }
+
 
   return (
     <div
@@ -1298,8 +1555,8 @@ function CheckoutPage() {
           إتمام الطلب
         </h1>
 
-        <ul className="mt-4 space-y-2 rounded-2xl border border-border/70 bg-card p-4 text-xs">
 
+        <ul className="mt-4 space-y-2 rounded-2xl border border-border/70 bg-card p-4 text-xs">
           {items.map(
             (item) => (
               <li
@@ -1330,6 +1587,7 @@ function CheckoutPage() {
             ),
           )}
 
+
           <li className="flex justify-between border-t border-border pt-2">
             <span className="text-muted-foreground">
               المجموع الفرعي
@@ -1341,6 +1599,7 @@ function CheckoutPage() {
               )}
             </span>
           </li>
+
 
           <li className="flex justify-between">
             <span className="text-muted-foreground">
@@ -1354,6 +1613,7 @@ function CheckoutPage() {
             </span>
           </li>
 
+
           <li className="flex justify-between border-t border-border pt-2 text-sm">
             <span className="text-muted-foreground">
               الإجمالي
@@ -1365,8 +1625,8 @@ function CheckoutPage() {
               )}
             </span>
           </li>
-
         </ul>
+
 
         <form
           onSubmit={
@@ -1416,6 +1676,7 @@ function CheckoutPage() {
                         }
                       />
 
+
                       <span className="min-w-0">
 
                         <span className="block text-foreground">
@@ -1445,6 +1706,7 @@ function CheckoutPage() {
                     </label>
                   ),
                 )}
+
 
                 <label
                   className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-xs ${
@@ -1481,11 +1743,13 @@ function CheckoutPage() {
             </section>
           ) : null}
 
+
           <section className="grid gap-3 rounded-2xl border border-border/70 bg-card p-4 sm:grid-cols-2">
 
             <h2 className="text-sm text-foreground sm:col-span-2">
               بيانات التوصيل
             </h2>
+
 
             <FormField
               label="اسم المستلم"
@@ -1503,13 +1767,16 @@ function CheckoutPage() {
                       .value,
                   )
                 }
-                maxLength={100}
+                maxLength={
+                  100
+                }
                 placeholder="الاسم الثلاثي"
                 className={
                   fieldCls
                 }
               />
             </FormField>
+
 
             <FormField
               label="رقم الهاتف"
@@ -1530,13 +1797,16 @@ function CheckoutPage() {
                 }
                 dir="ltr"
                 inputMode="tel"
-                maxLength={20}
+                maxLength={
+                  20
+                }
                 placeholder="7XXXXXXXX"
                 className={
                   fieldCls
                 }
               />
             </FormField>
+
 
             <FormField
               label="المحافظة"
@@ -1586,6 +1856,7 @@ function CheckoutPage() {
               </select>
             </FormField>
 
+
             <FormField
               label="المديرية"
               required
@@ -1602,13 +1873,16 @@ function CheckoutPage() {
                       .value,
                   )
                 }
-                maxLength={80}
+                maxLength={
+                  80
+                }
                 placeholder="اسم المديرية"
                 className={
                   fieldCls
                 }
               />
             </FormField>
+
 
             <FormField
               label="تفاصيل العنوان"
@@ -1626,13 +1900,16 @@ function CheckoutPage() {
                       .value,
                   )
                 }
-                maxLength={300}
+                maxLength={
+                  300
+                }
                 placeholder="الحي، الشارع، رقم المنزل"
                 className={
                   fieldCls
                 }
               />
             </FormField>
+
 
             <FormField
               label="أقرب معلم"
@@ -1650,13 +1927,16 @@ function CheckoutPage() {
                       .value,
                   )
                 }
-                maxLength={120}
+                maxLength={
+                  120
+                }
                 placeholder="مثال: أمام صيدلية النور"
                 className={
                   fieldCls
                 }
               />
             </FormField>
+
 
             <div className="sm:col-span-2">
 
@@ -1674,7 +1954,9 @@ function CheckoutPage() {
                         .value,
                     )
                   }
-                  maxLength={400}
+                  maxLength={
+                    400
+                  }
                   placeholder="أي تفاصيل تود إخبارنا بها"
                   className={
                     areaCls
@@ -1684,6 +1966,7 @@ function CheckoutPage() {
               </FormField>
 
             </div>
+
 
             <div className="sm:col-span-2">
 
@@ -1708,6 +1991,7 @@ function CheckoutPage() {
 
               </button>
 
+
               {coords ? (
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
 
@@ -1726,6 +2010,7 @@ function CheckoutPage() {
                 </p>
               ) : null}
 
+
               {showMap ? (
                 <div className="mt-2">
 
@@ -1742,6 +2027,7 @@ function CheckoutPage() {
               ) : null}
 
             </div>
+
 
             <label className="flex items-center gap-2 text-xs text-foreground sm:col-span-2">
 
@@ -1767,11 +2053,13 @@ function CheckoutPage() {
 
           </section>
 
+
           <section className="rounded-2xl border border-border/70 bg-card p-4">
 
             <h2 className="mb-2 text-sm text-foreground">
               طريقة الدفع
             </h2>
+
 
             <div className="grid gap-2">
 
@@ -1779,7 +2067,6 @@ function CheckoutPage() {
                 (
                   method,
                 ) => {
-
                   const wallet =
                     method.code ===
                       "wallet_balance" ||
@@ -1814,6 +2101,7 @@ function CheckoutPage() {
                         }
                       />
 
+
                       <span className="min-w-0">
 
                         <span className="flex items-center gap-1.5 text-foreground">
@@ -1828,6 +2116,7 @@ function CheckoutPage() {
 
                         </span>
 
+
                         {wallet ? (
                           <span className="block text-muted-foreground">
 
@@ -1840,32 +2129,28 @@ function CheckoutPage() {
                           </span>
                         ) : null}
 
+
                         {method.account_number ? (
                           <span
                             className="block text-muted-foreground"
                             dir="ltr"
                           >
-
                             {
                               method.account_number
                             }{" "}
-
                             —{" "}
-
                             {
                               method.account_name
                             }
-
                           </span>
                         ) : null}
 
+
                         {method.instructions ? (
                           <span className="block text-muted-foreground">
-
                             {
                               method.instructions
                             }
-
                           </span>
                         ) : null}
 
@@ -1877,6 +2162,7 @@ function CheckoutPage() {
               )}
 
             </div>
+
 
             {isWallet &&
             walletBalance <
@@ -1895,6 +2181,7 @@ function CheckoutPage() {
               </p>
             ) : null}
 
+
             {needsReceipt ? (
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
 
@@ -1912,13 +2199,16 @@ function CheckoutPage() {
                           .value,
                       )
                     }
-                    maxLength={100}
+                    maxLength={
+                      100
+                    }
                     className={
                       fieldCls
                     }
                   />
 
                 </FormField>
+
 
                 <FormField label="رقم المُحوِّل">
 
@@ -1935,13 +2225,16 @@ function CheckoutPage() {
                       )
                     }
                     dir="ltr"
-                    maxLength={20}
+                    maxLength={
+                      20
+                    }
                     className={
                       fieldCls
                     }
                   />
 
                 </FormField>
+
 
                 <FormField label="رقم عملية التحويل">
 
@@ -1957,13 +2250,16 @@ function CheckoutPage() {
                           .value,
                       )
                     }
-                    maxLength={60}
+                    maxLength={
+                      60
+                    }
                     className={
                       fieldCls
                     }
                   />
 
                 </FormField>
+
 
                 <FormField
                   label="صورة الإيصال"
@@ -2003,6 +2299,7 @@ function CheckoutPage() {
             ) : null}
 
           </section>
+
 
           {mustAgree ? (
             <label className="flex items-start gap-2 rounded-2xl border border-border/70 bg-card p-4 text-xs text-foreground">
@@ -2049,9 +2346,9 @@ function CheckoutPage() {
                   className="text-primary underline"
                 >
                   سياسة الخصوصية
-                </Link>
+                </Link>{" "}
 
-                {" "}و{" "}
+                و{" "}
 
                 <Link
                   to="/page/$slug"
@@ -2070,6 +2367,7 @@ function CheckoutPage() {
 
             </label>
           ) : null}
+
 
           <button
             type="submit"
