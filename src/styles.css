@@ -19,6 +19,7 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -38,12 +39,13 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -52,44 +54,74 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
   --color-accent-solid: var(--accent-solid);
   --color-accent-solid-foreground: var(--accent-solid-foreground);
   --color-brand-soft: var(--brand-soft);
+
   --font-display: "CustomFont", "Tajawal", "Tahoma", sans-serif;
   --font-sans: "CustomFont", "Tajawal", "Tahoma", sans-serif;
-  --shadow-brand: 0 8px 24px -12px color-mix(in oklab, var(--primary) 55%, transparent);
-  --shadow-card: 0 2px 10px -6px oklch(0 0 0 / 18%);
+
+  --shadow-brand:
+    0 8px 24px -12px color-mix(in oklab, var(--primary) 55%, transparent);
+
+  --shadow-card:
+    0 2px 10px -6px oklch(0 0 0 / 18%);
 }
+
+/* =========================================================
+   TASHKILAT BRAND SYSTEM
+   العنابي + الذهبي
+   ========================================================= */
 
 :root {
   --radius: 1rem;
+
+  /* Brand */
+  --brand-burgundy: #4a1525;
+  --brand-burgundy-dark: #35101c;
+  --brand-gold: #e0b85c;
+  --brand-gold-deep: #c99a3b;
+
   --background: oklch(0.985 0.005 60);
   --foreground: oklch(0.20 0.08 15);
+
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.20 0.08 15);
+
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.20 0.08 15);
+
   --primary: oklch(0.25 0.11 15);
   --primary-foreground: oklch(0.98 0.01 60);
+
   --secondary: oklch(0.95 0.015 60);
   --secondary-foreground: oklch(0.25 0.11 15);
+
   --muted: oklch(0.96 0.01 60);
   --muted-foreground: oklch(0.48 0.03 20);
+
   --accent: oklch(0.94 0.02 75);
   --accent-foreground: oklch(0.25 0.11 15);
+
   --accent-solid: oklch(0.72 0.11 75);
   --accent-solid-foreground: oklch(0.18 0.06 15);
+
   --brand-soft: oklch(0.94 0.02 15);
+
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
+
   --border: oklch(0.91 0.015 60);
   --input: oklch(0.91 0.015 60);
   --ring: oklch(0.25 0.11 15);
+
   --chart-1: oklch(0.25 0.11 15);
   --chart-2: oklch(0.72 0.11 75);
   --chart-3: oklch(0.40 0.09 15);
   --chart-4: oklch(0.80 0.08 75);
   --chart-5: oklch(0.30 0.08 15);
+
   --sidebar: oklch(0.985 0.005 60);
   --sidebar-foreground: oklch(0.20 0.08 15);
   --sidebar-primary: oklch(0.25 0.11 15);
@@ -98,38 +130,54 @@
   --sidebar-accent-foreground: oklch(0.25 0.11 15);
   --sidebar-border: oklch(0.91 0.015 60);
   --sidebar-ring: oklch(0.25 0.11 15);
+
   --gradient-brand: linear-gradient(
     135deg,
-    oklch(0.22 0.10 15),
-    oklch(0.32 0.12 20)
+    #35101c 0%,
+    #4a1525 55%,
+    #642338 100%
   );
 }
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
 
 .dark {
   --background: oklch(0.14 0.03 15);
   --foreground: oklch(0.96 0.01 60);
+
   --card: oklch(0.18 0.04 15);
   --card-foreground: oklch(0.96 0.01 60);
+
   --popover: oklch(0.18 0.04 15);
   --popover-foreground: oklch(0.96 0.01 60);
+
   --primary: oklch(0.72 0.11 75);
   --primary-foreground: oklch(0.14 0.03 15);
+
   --secondary: oklch(0.22 0.04 15);
   --secondary-foreground: oklch(0.96 0.01 60);
+
   --muted: oklch(0.22 0.04 15);
   --muted-foreground: oklch(0.68 0.03 60);
+
   --accent: oklch(0.25 0.05 15);
   --accent-foreground: oklch(0.96 0.01 60);
+
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
+
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.72 0.11 75);
+
   --chart-1: oklch(0.72 0.11 75);
   --chart-2: oklch(0.40 0.09 15);
   --chart-3: oklch(0.80 0.08 75);
   --chart-4: oklch(0.30 0.08 15);
   --chart-5: oklch(0.60 0.08 75);
+
   --sidebar: oklch(0.18 0.04 15);
   --sidebar-foreground: oklch(0.96 0.01 60);
   --sidebar-primary: oklch(0.72 0.11 75);
@@ -138,7 +186,18 @@
   --sidebar-accent-foreground: oklch(0.96 0.01 60);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.72 0.11 75);
+
+  --gradient-brand: linear-gradient(
+    135deg,
+    #250b14 0%,
+    #401522 55%,
+    #5b2335 100%
+  );
 }
+
+/* =========================================================
+   BASE
+   ========================================================= */
 
 @layer base {
   * {
@@ -146,13 +205,44 @@
     font-family: var(--font-sans) !important;
   }
 
+  html {
+    background: var(--color-background);
+    overscroll-behavior-x: none;
+  }
+
   body {
+    min-width: 320px;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-x: none;
+  }
+
+  /* منع تحديد النص في عناصر الواجهة الحساسة */
+  img,
+  svg {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+
+  img {
+    -webkit-touch-callout: none;
+  }
+
+  ::selection {
+    background: color-mix(
+      in oklab,
+      var(--brand-gold) 35%,
+      transparent
+    );
+    color: var(--brand-burgundy);
   }
 }
+
+/* =========================================================
+   BRAND UTILITIES
+   ========================================================= */
 
 @utility bg-brand-gradient {
   background-image: var(--gradient-brand);
@@ -160,27 +250,153 @@
 
 @utility no-scrollbar {
   scrollbar-width: none;
+
   &::-webkit-scrollbar {
     display: none;
   }
 }
 
+/* =========================================================
+   WATERMARK / YEMENI HERITAGE BACKGROUND
+   ========================================================= */
+
+.app-brand-watermark {
+  position: relative;
+  isolation: isolate;
+}
+
+.app-brand-watermark::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  opacity: 0.035;
+
+  background-image:
+    linear-gradient(
+      135deg,
+      transparent 0%,
+      transparent 46%,
+      var(--brand-gold) 46%,
+      var(--brand-gold) 47%,
+      transparent 47%,
+      transparent 100%
+    ),
+    linear-gradient(
+      45deg,
+      transparent 0%,
+      transparent 46%,
+      var(--brand-burgundy) 46%,
+      var(--brand-burgundy) 47%,
+      transparent 47%,
+      transparent 100%
+    );
+
+  background-size: 42px 42px;
+  background-position: 0 0, 21px 21px;
+  mask-image: linear-gradient(
+    to bottom,
+    black,
+    transparent 85%
+  );
+}
+
+.dark .app-brand-watermark::before {
+  opacity: 0.045;
+}
+
+/* زخرفة ذهبية خفيفة */
+.brand-ornament {
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-ornament::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  left: -70px;
+  bottom: -90px;
+  border: 1px solid var(--brand-gold);
+  border-radius: 50%;
+  opacity: 0.10;
+  pointer-events: none;
+}
+
+/* =========================================================
+   IMAGE PROTECTION
+   ========================================================= */
+
+.protected-image {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.protected-image-container {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* =========================================================
+   MARQUEE
+   ========================================================= */
+
 @keyframes continuous-marquee {
-  0% {
-    transform: translateX(0);
+  from {
+    transform: translate3d(0, 0, 0);
   }
-  100% {
-    transform: translateX(-50%);
+
+  to {
+    transform: translate3d(50%, 0, 0);
   }
 }
 
 .animate-marquee-container {
   display: flex;
   width: max-content;
-  animation: continuous-marquee 20s linear infinite;
+  flex-shrink: 0;
+
+  animation:
+    continuous-marquee
+    28s
+    linear
+    infinite;
+
   will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 .animate-marquee-container:hover {
   animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-container {
+    animation: none;
+  }
+}
+
+/* =========================================================
+   SAFE AREA
+   ========================================================= */
+
+.safe-area-bottom {
+  padding-bottom: env(
+    safe-area-inset-bottom,
+    0px
+  );
+}
+
+.safe-area-top {
+  padding-top: env(
+    safe-area-inset-top,
+    0px
+  );
 }
