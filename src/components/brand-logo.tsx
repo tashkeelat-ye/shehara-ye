@@ -7,16 +7,19 @@ type BrandLogoProps = {
   priority?: boolean;
 };
 
+/**
+ * شعار تشكيلات للتسوق.
+ *
+ * المكوّن مصمم ليعمل على الخلفيات الفاتحة والداكنة،
+ * مع الحفاظ على الهوية الرسمية: العنابي + الذهبي + الكريمي.
+ */
 export function BrandLogo({
   size = 40,
   className = "",
   decorative = true,
   priority = false,
 }: BrandLogoProps) {
-  const safeSize = Math.max(
-    24,
-    Math.round(size),
-  );
+  const safeSize = Math.max(24, Math.round(size));
 
   return (
     <span
@@ -26,12 +29,10 @@ export function BrandLogo({
         shrink-0
         items-center
         justify-center
+        overflow-visible
         ${className}
       `}
-      style={{
-        width: safeSize,
-        height: safeSize,
-      }}
+      style={{ width: safeSize, height: safeSize }}
       aria-label="شعار تشكيلات للتسوق"
     >
       {decorative && (
@@ -41,11 +42,13 @@ export function BrandLogo({
             className="
               pointer-events-none
               absolute
-              -inset-1
+              -inset-1.5
               rounded-[1.15rem]
               border
-              border-[#E0B85C]/35
+              border-[color:var(--brand-gold)]/30
               opacity-80
+              transition-opacity
+              duration-300
             "
           />
 
@@ -54,11 +57,11 @@ export function BrandLogo({
             className="
               pointer-events-none
               absolute
-              -inset-[3px]
-              rounded-[1.25rem]
+              -inset-[4px]
+              rounded-[1.3rem]
               border
-              border-[#4A1525]/10
-              dark:border-[#E0B85C]/10
+              border-[color:var(--brand-burgundy)]/10
+              dark:border-[color:var(--brand-gold)]/12
             "
           />
 
@@ -67,15 +70,16 @@ export function BrandLogo({
             className="
               pointer-events-none
               absolute
-              -left-1
-              -top-1
-              h-2
-              w-2
+              -left-1.5
+              -top-1.5
+              h-2.5
+              w-2.5
               rotate-45
+              rounded-[2px]
               border
-              border-[#E0B85C]/70
-              bg-[#FBF7EF]
-              dark:bg-[#35101C]
+              border-[color:var(--brand-gold)]/65
+              bg-[color:var(--brand-cream)]
+              dark:bg-[color:var(--brand-burgundy-deep)]
             "
           />
 
@@ -84,15 +88,16 @@ export function BrandLogo({
             className="
               pointer-events-none
               absolute
-              -bottom-1
-              -right-1
-              h-2
-              w-2
+              -bottom-1.5
+              -right-1.5
+              h-2.5
+              w-2.5
               rotate-45
+              rounded-[2px]
               border
-              border-[#E0B85C]/70
-              bg-[#FBF7EF]
-              dark:bg-[#35101C]
+              border-[color:var(--brand-gold)]/65
+              bg-[color:var(--brand-cream)]
+              dark:bg-[color:var(--brand-burgundy-deep)]
             "
           />
         </>
@@ -108,23 +113,32 @@ export function BrandLogo({
           items-center
           justify-center
           overflow-hidden
-          rounded-xl
-          bg-[#4A1525]
-          shadow-[0_6px_18px_-10px_rgba(74,21,37,0.55)]
+          rounded-[0.9rem]
+          bg-[color:var(--brand-burgundy)]
+          shadow-[0_8px_24px_-12px_color-mix(in_srgb,var(--brand-burgundy)_65%,transparent)]
           ring-1
-          ring-[#E0B85C]/20
-          dark:bg-[#35101C]
+          ring-inset
+          ring-[color:var(--brand-gold)]/25
+          dark:bg-[color:var(--brand-burgundy-deep)]
         "
       >
+        <span
+          aria-hidden="true"
+          className="
+            pointer-events-none
+            absolute
+            inset-0
+            bg-[radial-gradient(circle_at_30%_20%,color-mix(in_srgb,var(--brand-gold)_14%,transparent),transparent_42%)]
+          "
+        />
+
         <img
           src={LOGO_URL}
           alt="شعار تشكيلات للتسوق"
           width={safeSize}
           height={safeSize}
           loading={priority ? "eager" : "lazy"}
-          fetchPriority={
-            priority ? "high" : "auto"
-          }
+          fetchPriority={priority ? "high" : "auto"}
           decoding="async"
           draggable={false}
           onContextMenu={(event) => {
@@ -134,6 +148,8 @@ export function BrandLogo({
             event.preventDefault();
           }}
           className="
+            relative
+            z-10
             h-full
             w-full
             shrink-0
@@ -149,10 +165,11 @@ export function BrandLogo({
             pointer-events-none
             absolute
             inset-0
-            rounded-xl
+            z-20
+            rounded-[0.9rem]
             ring-1
             ring-inset
-            ring-[#E0B85C]/10
+            ring-[color:var(--brand-gold)]/12
           "
         />
       </span>
