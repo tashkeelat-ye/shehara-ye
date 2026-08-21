@@ -1,89 +1,305 @@
-import { useEffect, useState, useRef } from "react";
-import { Megaphone, Sparkles, Truck, Tag } from "lucide-react";
-import { fetchSettings, type SiteSettings } from "@/lib/store";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import {
+  Megaphone,
+  Sparkles,
+  Truck,
+  Tag,
+} from "lucide-react";
+import {
+  fetchSettings,
+  type SiteSettings,
+} from "@/lib/store";
+
+/**
+ * =========================================================
+ * تشكيلات للتسوق
+ * Announcement Bar
+ * =========================================================
+ *
+ * تم إعادة بناء حركة الشريط لتكون:
+ *
+ * - CSS based بدلاً من requestAnimationFrame.
+ * - أكثر استقراراً على الهواتف.
+ * - أقل استهلاكاً للمعالج والبطارية.
+ * - متوافقة مع RTL.
+ * - متوافقة مع prefers-reduced-motion.
+ * - قابلة للإيقاف عند مرور المؤشر.
+ * - قابلة للإيقاف عند التركيز للوصولية.
+ * =========================================================
+ */
+
+type AnnouncementItem = {
+  text: string;
+  icon: typeof Megaphone;
+};
 
 export function AnnouncementBar() {
-  const [s, setS] = useState<SiteSettings | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [
+    settings,
+    setSettings,
+  ] =
+    useState<SiteSettings | null>(
+      null,
+    );
 
   useEffect(() => {
-    void (async () => setS(await fetchSettings()))();
-  }, []);
+    let mounted = true;
 
-  // حركة شريط إخباري سلسة ودائمة باستخدام JavaScript لضمان عدم توقفها نهائياً
-  useEffect(() => {
-    const scrollContainer = scrollRef.current;
-    if (!scrollContainer) return;
+    const loadSettings =
+      async () => {
+        try {
+          const result =
+            await fetchSettings();
 
-    let animationFrameId: number;
-    let scrollPos = 0;
-    const speed = 0.8; // سرعة الحركة (يمكنك زيادتها أو تقليلها)
+          if (mounted) {
+            setSettings(result);
+          }
+        } catch (error) {
+          console.error(
+            "Failed to load announcement settings:",
+            error,
+          );
 
-    const step = () => {
-      scrollPos += speed;
-      // إذا تجاوزنا منتصف المسافة (نصف المحتوى المكرر)، نعيد البداية بسلاسة تامة
-      if (scrollPos >= scrollContainer.scrollWidth / 2) {
-        scrollPos = 0;
-      }
-      scrollContainer.style.transform = `translateX(${scrollPos}px)`;
-      animationFrameId = requestAnimationFrame(step);
-    };
+          if (mounted) {
+            setSettings(null);
+          }
+        }
+      };
 
-    animationFrameId = requestAnimationFrame(step);
+    void loadSettings();
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      mounted = false;
     };
-  }, [s]);
+  }, []);
 
-  if (!s) return null;
+  const announcements =
+    useMemo<AnnouncementItem[]>(
+      () => {
+        if (!settings) {
+          return [];
+        }
 
-  if (!s.is_open) {
+        const mainAnnouncement =
+          settings.announcement_text ||
+          "المتجر مفتوح لاستقبال الطلبات من 8 صباحاً حتى 12 مساءً.";
+
+        const baseAnnouncements: AnnouncementItem[] =
+          [
+            {
+              text: mainAnnouncement,
+              icon: Megaphone,
+            },
+            {
+              text: "توصيل سريع لكافة المحافظات 🚚",
+              icon: Truck,
+            },
+            {
+              text: "خصومات مميزة على الفئات المختارة 🔥",
+              icon: Tag,
+            },
+            {
+              text: "أهلاً بكم في تشكيلات - تسوق ممتع ✨",
+              icon: Sparkles,
+            },
+          ];
+
+        /*
+         * نحتاج نسختين متطابقتين فقط.
+         *
+         * CSS يحرك المجموعة الأولى إلى موضع المجموعة
+         * الثانية، ثم يعيد الحركة من البداية بدون قفزة.
+         */
+        return [
+          ...baseAnnouncements,
+          ...baseAnnouncements,
+        ];
+      },
+      [settings],
+    );
+
+  if (!settings) {
+    return null;
+  }
+
+  /*
+   * عندما يكون المتجر مغلقاً، نعرض الرسالة الحالية
+   * بدون تشغيل Marquee.
+   */
+  if (!settings.is_open) {
     return (
-      <div className="bg-destructive px-4 py-2 text-center text-[11px] font-medium text-destructive-foreground">
-        {s.closed_message || "المتجر مغلق مؤقتًا."}
+      <div
+        className="
+          relative
+          z-50
+          w-full
+          border-b
+          border-[#E0B85C]/20
+          bg-[#4A1525]
+          px-4
+          py-2.5
+          text-center
+          text-xs
+          font-bold
+          text-white
+        "
+        dir="rtl"
+        role="status"
+      >
+        <span>
+          {settings.closed_message ||
+            "المتجر مغلق مؤقتًا."}
+        </span>
       </div>
     );
   }
 
-  const mainAnnouncement = s.announcement_text || "المتجر مفتوح لاستقبال الطلبات من 8 صباحاً حتى 12 مساءً.";
+  /**
+   * محتوى النسخة الواحدة.
+   *
+   * نحافظ على نفس البنية البصرية لكل عنصر.
+   */
+  const renderAnnouncementSet = (
+    setIndex: number,
+  ) => (
+    <div
+      key={setIndex}
+      className="
+        flex
+        shrink-0
+        items-center
+        whitespace-nowrap
+      "
+      aria-hidden={
+        setIndex !== 0
+      }
+    >
+      {announcements
+        .slice(
+          setIndex === 0
+            ? 0
+            : announcements.length / 2,
+          setIndex === 0
+            ? announcements.length / 2
+            : announcements.length,
+        )
+        .map(
+          (
+            item,
+            index,
+          ) => {
+            const IconComponent =
+              item.icon;
 
-  const baseAnnouncements = [
-    { text: mainAnnouncement, icon: Megaphone },
-    { text: "توصيل سريع لكافة المحافظات 🚚", icon: Truck },
-    { text: "خصومات مميزة على الفئات المختارة 🔥", icon: Tag },
-    { text: "أهلاً بكم في تشكيلات - تسوق ممتع ✨", icon: Sparkles },
-  ];
+            return (
+              <div
+                key={`${setIndex}-${index}`}
+                className="
+                  flex
+                  shrink-0
+                  items-center
+                  gap-2
+                  px-6
+                  py-0.5
+                  text-[11px]
+                  font-semibold
+                  sm:px-8
+                  sm:text-xs
+                "
+              >
+                <IconComponent
+                  className="
+                    h-3.5
+                    w-3.5
+                    shrink-0
+                    text-[#E0B85C]
+                  "
+                  strokeWidth={
+                    2.2
+                  }
+                  aria-hidden="true"
+                />
 
-  // تكرار العناصر عدة مرات لملء الفراغات وضمان استمرار الحلقة
-  const announcements = [...baseAnnouncements, ...baseAnnouncements, ...baseAnnouncements, ...baseAnnouncements];
+                <span>
+                  {item.text}
+                </span>
+              </div>
+            );
+          },
+        )}
+    </div>
+  );
 
-  const renderContent = () => (
-    <div ref={containerRef} className="overflow-hidden w-full relative flex whitespace-nowrap">
-      <div ref={scrollRef} className="flex items-center py-0.5" style={{ willChange: "transform" }}>
-        {announcements.map((item, idx) => {
-          const IconComponent = item.icon;
-          return (
-            <div key={idx} className="flex items-center gap-2 px-6 shrink-0">
-              <IconComponent className="h-3.5 w-3.5 text-amber-300 shrink-0" />
-              <span>{item.text}</span>
-            </div>
-          );
-        })}
+  const marqueeContent = (
+    <div
+      className="
+        relative
+        w-full
+        overflow-hidden
+      "
+      dir="rtl"
+    >
+      <div
+        className="
+          tashkilat-marquee
+          flex
+          w-max
+          min-w-max
+          items-center
+        "
+      >
+        {renderAnnouncementSet(0)}
+        {renderAnnouncementSet(1)}
       </div>
     </div>
   );
 
+  const content = settings.announcement_link ? (
+    <a
+      href={settings.announcement_link}
+      className="
+        block
+        w-full
+        transition-opacity
+        hover:opacity-90
+        focus-visible:outline-none
+        focus-visible:ring-2
+        focus-visible:ring-inset
+        focus-visible:ring-[#E0B85C]
+      "
+      aria-label="فتح الإعلان"
+    >
+      {marqueeContent}
+    </a>
+  ) : (
+    marqueeContent
+  );
+
   return (
-    <div className="relative w-full overflow-hidden bg-primary text-primary-foreground py-2 text-xs font-medium border-b border-white/10 z-50" dir="ltr">
-      {s.announcement_link ? (
-        <a href={s.announcement_link} className="block hover:underline">
-          {renderContent()}
-        </a>
-      ) : (
-        renderContent()
-      )}
+    <div
+      className="
+        relative
+        z-50
+        w-full
+        overflow-hidden
+        border-b
+        border-[#E0B85C]/20
+        bg-[#4A1525]
+        py-2
+        text-xs
+        font-medium
+        text-white
+        shadow-sm
+      "
+      dir="rtl"
+      role="region"
+      aria-label="الإعلانات"
+    >
+      {content}
     </div>
   );
 }
