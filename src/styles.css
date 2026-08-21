@@ -79,33 +79,70 @@
 
   --shadow-card:
     0 2px 10px -6px oklch(0 0 0 / 18%);
+
+  --shadow-brand-gold:
+    0 8px 24px -14px
+    color-mix(
+      in srgb,
+      var(--brand-gold) 45%,
+      transparent
+    );
 }
 
 :root {
   /*
    * =========================================================
-   * تشكيلات — الهوية البصرية الأساسية
+   * تشكيلات — الهوية البصرية الرسمية
    * =========================================================
    *
-   * العنابي:
+   * العنابي الرئيسي:
    * #4A1525
    *
-   * الذهبي:
+   * الذهبي الرئيسي:
    * #E0B85C
    *
-   * يتم استخدام القيم اللونية عبر متغيرات CSS حتى تبقى
-   * الهوية موحدة في كامل التطبيق.
+   * الخلفية:
+   * كريمية دافئة مستوحاة من الورق الفاخر المستخدم
+   * في الهوية البصرية المرجعية.
    */
 
   --brand-burgundy: #4a1525;
   --brand-burgundy-deep: #35101c;
   --brand-burgundy-soft: #6a263a;
+  --brand-burgundy-light: #8a3a50;
 
   --brand-gold: #e0b85c;
   --brand-gold-deep: #c99a3b;
   --brand-gold-soft: #f2d58b;
+  --brand-gold-pale: #f6e7bb;
 
   --brand-cream: #fbf7ef;
+  --brand-paper: #f8f2e7;
+  --brand-paper-deep: #eee3d0;
+
+  /*
+   * درجات خاصة بالعلامة المائية التراثية.
+   */
+  --heritage-burgundy:
+    color-mix(
+      in srgb,
+      var(--brand-burgundy) 5%,
+      transparent
+    );
+
+  --heritage-gold:
+    color-mix(
+      in srgb,
+      var(--brand-gold-deep) 9%,
+      transparent
+    );
+
+  --heritage-gold-soft:
+    color-mix(
+      in srgb,
+      var(--brand-gold) 5%,
+      transparent
+    );
 
   --radius: 1rem;
 
@@ -163,13 +200,24 @@
       oklch(0.22 0.10 15),
       oklch(0.32 0.12 20)
     );
+
+  --gradient-brand-gold:
+    linear-gradient(
+      135deg,
+      var(--brand-gold-deep),
+      var(--brand-gold),
+      var(--brand-gold-soft)
+    );
 }
 
 .dark {
   /*
    * =========================================================
-   * الوضع الليلي — متوافق مع العنابي والذهبي
+   * الوضع الليلي
    * =========================================================
+   *
+   * لا يتم تحويل الهوية إلى ألوان زاهية أو بنفسجية.
+   * يبقى العنابي هو الأساس والذهبي هو لون الإبراز.
    */
 
   --background: oklch(0.14 0.03 15);
@@ -221,6 +269,13 @@
       oklch(0.16 0.04 15),
       oklch(0.24 0.06 15)
     );
+
+  --gradient-brand-gold:
+    linear-gradient(
+      135deg,
+      var(--brand-gold-deep),
+      var(--brand-gold)
+    );
 }
 
 /*
@@ -239,43 +294,49 @@
     min-height: 100%;
     background-color: var(--color-background);
 
-    /*
-     * منع السلوكيات التي تسبب تكبيراً غير مقصود من اللمس.
-     * الإعداد الأساسي للـ viewport موجود أيضاً في __root.tsx.
-     */
     touch-action: manipulation;
 
-    /*
-     * منع تحديد النصوص بشكل عشوائي أثناء الضغط المطول
-     * مع السماح بإعادة التفعيل للعناصر التي تحتاج تحديداً.
-     */
     -webkit-tap-highlight-color: transparent;
+
+    /*
+     * يمنع المتصفح من محاولة تحويل اللمس إلى تكبير
+     * أو تمرير غير مرغوب فيه.
+     */
+    overscroll-behavior-x: none;
   }
 
   body {
     min-height: 100vh;
+
     background-color: var(--color-background);
     color: var(--color-foreground);
+
     font-family: var(--font-sans);
 
     -webkit-tap-highlight-color: transparent;
 
-    /*
-     * منع السحب الأفقي غير المقصود على مستوى التطبيق.
-     */
     overflow-x: hidden;
 
-    /*
-     * تحسين تجربة اللمس على الهواتف.
-     */
     touch-action: manipulation;
 
-    /*
-     * تحسين عرض النصوص العربية.
-     */
     text-rendering: optimizeLegibility;
+
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /*
+     * تحسين الخلفية في الشاشات الطويلة.
+     */
+    background-image:
+      linear-gradient(
+        180deg,
+        color-mix(
+          in srgb,
+          var(--brand-cream) 35%,
+          transparent
+        ),
+        transparent 34rem
+      );
   }
 
   /*
@@ -292,9 +353,6 @@
    * =======================================================
    * حماية الصور — طبقة ردعية
    * =======================================================
-   *
-   * هذه الحماية تمنع السحب المباشر والنقر المطول في معظم
-   * المتصفحات، لكنها ليست حماية مطلقة من أدوات المطور.
    */
 
   img {
@@ -312,10 +370,6 @@
     pointer-events: none;
   }
 
-  /*
-   * الروابط التي تحتوي صوراً تبقى قابلة للنقر من خلال
-   * الرابط نفسه حتى عند وجود صورة محمية.
-   */
   a img {
     -webkit-user-drag: none;
     user-drag: none;
@@ -332,9 +386,6 @@
     scroll-behavior: smooth;
   }
 
-  /*
-   * منع شريط التمرير الأفقي الناتج عن مكونات خارجية.
-   */
   body::-webkit-scrollbar {
     width: 8px;
   }
@@ -349,6 +400,7 @@
       var(--primary) 45%,
       transparent
     );
+
     border-radius: 999px;
   }
 
@@ -361,8 +413,9 @@
   }
 
   /*
-   * تحسين ظهور التركيز للوصولية.
+   * تحسين ظهور التركيز.
    */
+
   :focus-visible {
     outline: 2px solid var(--brand-gold);
     outline-offset: 2px;
@@ -371,6 +424,7 @@
   /*
    * احترام إعداد المستخدم لتقليل الحركة.
    */
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -385,59 +439,108 @@
 
 /*
  * =========================================================
- * خلفية الهوية — زخارف تراثية يمنية بشكل خفي
+ * خلفية تشكيلات — الهوية التراثية اليمنية
  * =========================================================
  *
- * لا نستخدم صورة خارجية حتى لا نضيف اعتماداً جديداً أو
- * نؤثر على حجم التطبيق.
+ * مستوحاة بصرياً من:
  *
- * يتم رسم زخرفة هندسية بسيطة باستخدام CSS:
- * - شفافية شديدة الانخفاض.
- * - العنابي والذهبي فقط.
- * - لا تؤثر على قراءة المحتوى.
+ * - واجهات العمارة اليمنية.
+ * - الأقواس والنوافذ الهندسية.
+ * - الزخارف المركزية.
+ * - الإطار الذهبي الموجود في الهوية المرجعية.
+ *
+ * جميع العناصر:
+ *
+ * - CSS فقط.
+ * - منخفضة الشفافية.
+ * - لا تمنع النقر.
+ * - لا تؤثر على أداء صور المنتجات.
+ * =========================================================
  */
 
 @layer components {
+  /*
+   * الحاوية الأساسية.
+   */
+
   .tashkilat-brand-background {
     position: relative;
     isolation: isolate;
+
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(
+          in srgb,
+          var(--brand-cream) 94%,
+          white
+        ),
+        var(--brand-cream)
+      );
   }
+
+  /*
+   * الطبقة الأولى:
+   *
+   * وهج ورقي خفيف.
+   */
 
   .tashkilat-brand-background::before {
     content: "";
+
     position: fixed;
     inset: 0;
-    z-index: -2;
+
+    z-index: -3;
+
     pointer-events: none;
 
     background:
       radial-gradient(
-        circle at 12% 18%,
+        circle at 10% 10%,
         color-mix(
           in srgb,
-          var(--brand-gold) 5%,
+          var(--brand-gold) 7%,
           transparent
         ) 0,
         transparent 24%
       ),
       radial-gradient(
-        circle at 88% 78%,
+        circle at 90% 82%,
         color-mix(
           in srgb,
           var(--brand-burgundy) 5%,
           transparent
         ) 0,
-        transparent 26%
+        transparent 27%
+      ),
+      radial-gradient(
+        circle at 50% 48%,
+        color-mix(
+          in srgb,
+          var(--brand-gold) 2.5%,
+          transparent
+        ) 0,
+        transparent 38%
       );
 
     opacity: 0.9;
   }
 
+  /*
+   * الطبقة الثانية:
+   *
+   * شبكة هندسية دقيقة مستوحاة من الزخارف اليمنية.
+   */
+
   .tashkilat-brand-background::after {
     content: "";
+
     position: fixed;
     inset: 0;
-    z-index: -1;
+
+    z-index: -2;
+
     pointer-events: none;
 
     background-image:
@@ -446,12 +549,12 @@
         transparent 46%,
         color-mix(
           in srgb,
-          var(--brand-gold) 3%,
+          var(--brand-gold) 2.4%,
           transparent
         ) 47%,
         color-mix(
           in srgb,
-          var(--brand-gold) 3%,
+          var(--brand-gold) 2.4%,
           transparent
         ) 53%,
         transparent 54%
@@ -461,38 +564,240 @@
         transparent 46%,
         color-mix(
           in srgb,
-          var(--brand-burgundy) 2.5%,
+          var(--brand-burgundy) 1.8%,
           transparent
         ) 47%,
         color-mix(
           in srgb,
-          var(--brand-burgundy) 2.5%,
+          var(--brand-burgundy) 1.8%,
           transparent
         ) 53%,
         transparent 54%
       );
 
     background-size: 72px 72px;
-    opacity: 0.32;
+
+    opacity: 0.42;
   }
 
   /*
-   * زخرفة ذهبية صغيرة يمكن استخدامها حول العناوين
-   * دون فرضها على جميع المكونات.
+   * العلامة المائية المعمارية.
+   *
+   * تظهر في الجانبين بشكل خافت جداً.
    */
-  .tashkilat-gold-divider {
+
+  .tashkilat-architecture-watermark {
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+
+    width: min(31vw, 360px);
+
+    pointer-events: none;
+
+    opacity: 0.055;
+
+    color: var(--brand-burgundy);
+
+    z-index: -1;
+
+    overflow: hidden;
+  }
+
+  .tashkilat-architecture-watermark::before {
+    content: "";
+
+    position: absolute;
+
+    inset-inline: 0;
+    bottom: 0;
+
+    height: 78%;
+
+    background:
+      linear-gradient(
+        90deg,
+        transparent 0 5%,
+        currentColor 5% 7%,
+        transparent 7% 17%,
+        currentColor 17% 19%,
+        transparent 19% 31%,
+        currentColor 31% 33%,
+        transparent 33% 45%,
+        currentColor 45% 47%,
+        transparent 47% 59%,
+        currentColor 59% 61%,
+        transparent 61% 73%,
+        currentColor 73% 75%,
+        transparent 75% 87%,
+        currentColor 87% 89%,
+        transparent 89% 100%
+      );
+
+    border-top:
+      2px solid currentColor;
+
+    clip-path: polygon(
+      0 13%,
+      8% 8%,
+      15% 13%,
+      23% 7%,
+      31% 13%,
+      39% 7%,
+      47% 13%,
+      55% 7%,
+      63% 13%,
+      71% 7%,
+      79% 13%,
+      87% 7%,
+      100% 13%,
+      100% 100%,
+      0 100%
+    );
+  }
+
+  .tashkilat-architecture-watermark::after {
+    content: "";
+
+    position: absolute;
+
+    inset-inline: 8%;
+    bottom: 10%;
+
+    height: 42%;
+
+    background:
+      radial-gradient(
+        ellipse 17% 34% at 12% 100%,
+        transparent 48%,
+        currentColor 49% 52%,
+        transparent 53%
+      ),
+      radial-gradient(
+        ellipse 17% 34% at 37% 100%,
+        transparent 48%,
+        currentColor 49% 52%,
+        transparent 53%
+      ),
+      radial-gradient(
+        ellipse 17% 34% at 62% 100%,
+        transparent 48%,
+        currentColor 49% 52%,
+        transparent 53%
+      ),
+      radial-gradient(
+        ellipse 17% 34% at 87% 100%,
+        transparent 48%,
+        currentColor 49% 52%,
+        transparent 53%
+      );
+
+    opacity: 0.75;
+  }
+
+  /*
+   * الجانب الأيمن.
+   */
+
+  .tashkilat-architecture-watermark.is-right {
+    inset-inline-end: 0;
+  }
+
+  /*
+   * الجانب الأيسر.
+   */
+
+  .tashkilat-architecture-watermark.is-left {
+    inset-inline-start: 0;
+
+    transform: scaleX(-1);
+  }
+
+  /*
+   * العلامة الهندسية المركزية.
+   *
+   * مستوحاة من العنصر الزخرفي الموجود في الصورة المرجعية.
+   */
+
+  .tashkilat-heritage-emblem {
     position: relative;
-    display: flex;
+
+    display: inline-flex;
+
     align-items: center;
     justify-content: center;
+
+    width: 2.5rem;
+    height: 2.5rem;
+
+    color: var(--brand-gold-deep);
+
+    opacity: 0.7;
+  }
+
+  .tashkilat-heritage-emblem::before {
+    content: "";
+
+    position: absolute;
+
+    width: 1.1rem;
+    height: 1.1rem;
+
+    border:
+      1px solid currentColor;
+
+    transform: rotate(45deg);
+
+    box-shadow:
+      0 0 0 3px
+      color-mix(
+        in srgb,
+        currentColor 10%,
+        transparent
+      );
+  }
+
+  .tashkilat-heritage-emblem::after {
+    content: "";
+
+    position: absolute;
+
+    width: 0.42rem;
+    height: 0.42rem;
+
+    border:
+      1px solid currentColor;
+
+    transform: rotate(45deg);
+
+    background:
+      var(--brand-cream);
+  }
+
+  /*
+   * زخرفة ذهبية أفقية.
+   */
+
+  .tashkilat-gold-divider {
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
     gap: 0.75rem;
   }
 
   .tashkilat-gold-divider::before,
   .tashkilat-gold-divider::after {
     content: "";
+
     height: 1px;
+
     flex: 1;
+
     max-width: 96px;
 
     background:
@@ -501,7 +806,7 @@
         transparent,
         color-mix(
           in srgb,
-          var(--brand-gold) 55%,
+          var(--brand-gold) 60%,
           transparent
         ),
         transparent
@@ -509,31 +814,232 @@
   }
 
   /*
-   * عنصر زخرفي معماري بسيط.
+   * علامة تراثية صغيرة.
    */
+
   .tashkilat-heritage-mark {
     position: relative;
+
     display: inline-flex;
+
     align-items: center;
     justify-content: center;
+
     width: 2rem;
     height: 2rem;
+
     color: var(--brand-gold);
+
     opacity: 0.55;
   }
 
   .tashkilat-heritage-mark::before,
   .tashkilat-heritage-mark::after {
     content: "";
+
     position: absolute;
+
     inset: 5px;
-    border: 1px solid currentColor;
+
+    border:
+      1px solid currentColor;
+
     transform: rotate(45deg);
   }
 
   .tashkilat-heritage-mark::after {
     inset: 9px;
+
     opacity: 0.65;
+  }
+
+  /*
+   * إطار فاخر مستوحى من الإطارات الموجودة في الهوية.
+   */
+
+  .tashkilat-brand-frame {
+    position: relative;
+
+    border:
+      1px solid
+      color-mix(
+        in srgb,
+        var(--brand-gold-deep) 42%,
+        transparent
+      );
+
+    border-radius: 1.25rem;
+
+    box-shadow:
+      inset 0 0 0 1px
+      color-mix(
+        in srgb,
+        var(--brand-gold) 7%,
+        transparent
+      ),
+      0 8px 30px -20px
+      rgb(74 21 37 / 22%);
+
+    background:
+      color-mix(
+        in srgb,
+        var(--card) 96%,
+        var(--brand-cream)
+      );
+  }
+
+  /*
+   * خلفية كريمية فاخرة للبطاقات.
+   */
+
+  .tashkilat-paper-surface {
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(
+          in srgb,
+          var(--brand-cream) 92%,
+          white
+        ),
+        var(--card)
+      );
+  }
+
+  /*
+   * خلفية عنابية فاخرة.
+   */
+
+  .tashkilat-burgundy-surface {
+    background:
+      linear-gradient(
+        135deg,
+        var(--brand-burgundy-deep),
+        var(--brand-burgundy),
+        var(--brand-burgundy-soft)
+      );
+
+    color: white;
+  }
+
+  /*
+   * شريط زخرفي أعلى الأقسام.
+   */
+
+  .tashkilat-section-accent {
+    position: relative;
+
+    padding-inline-start: 0.875rem;
+  }
+
+  .tashkilat-section-accent::before {
+    content: "";
+
+    position: absolute;
+
+    inset-inline-start: 0;
+    top: 50%;
+
+    width: 3px;
+    height: 70%;
+
+    transform:
+      translateY(-50%);
+
+    border-radius: 999px;
+
+    background:
+      linear-gradient(
+        180deg,
+        var(--brand-gold-soft),
+        var(--brand-gold-deep)
+      );
+  }
+
+  /*
+   * خلفية لواجهة البطل.
+   */
+
+  .tashkilat-hero-surface {
+    position: relative;
+
+    overflow: hidden;
+
+    background:
+      radial-gradient(
+        circle at 15% 20%,
+        rgb(224 184 92 / 12%),
+        transparent 26%
+      ),
+      radial-gradient(
+        circle at 85% 80%,
+        rgb(224 184 92 / 8%),
+        transparent 30%
+      ),
+      linear-gradient(
+        135deg,
+        var(--brand-burgundy-deep),
+        var(--brand-burgundy)
+      );
+
+    color: white;
+  }
+
+  .tashkilat-hero-surface::after {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    opacity: 0.16;
+
+    background-image:
+      linear-gradient(
+        45deg,
+        transparent 44%,
+        var(--brand-gold) 45%,
+        var(--brand-gold) 47%,
+        transparent 48%
+      ),
+      linear-gradient(
+        -45deg,
+        transparent 44%,
+        var(--brand-gold) 45%,
+        var(--brand-gold) 47%,
+        transparent 48%
+      );
+
+    background-size: 54px 54px;
+  }
+
+  /*
+   * وضع العلامة المائية داخل قسم معين.
+   */
+
+  .tashkilat-watermark {
+    position: absolute;
+
+    pointer-events: none;
+
+    user-select: none;
+
+    color: var(--brand-gold);
+
+    opacity: 0.055;
+
+    z-index: 0;
+  }
+
+  /*
+   * الطبقة التي تحتوي المحتوى تكون فوق العلامة المائية.
+   */
+
+  .tashkilat-content-layer {
+    position: relative;
+
+    z-index: 1;
   }
 }
 
@@ -547,12 +1053,20 @@
   background-image: var(--gradient-brand);
 }
 
+@utility bg-brand-gold-gradient {
+  background-image: var(--gradient-brand-gold);
+}
+
 @utility bg-brand-burgundy {
   background-color: var(--brand-burgundy);
 }
 
 @utility bg-brand-gold {
   background-color: var(--brand-gold);
+}
+
+@utility bg-brand-cream {
+  background-color: var(--brand-cream);
 }
 
 @utility text-brand-burgundy {
@@ -565,6 +1079,10 @@
 
 @utility border-brand-gold {
   border-color: var(--brand-gold);
+}
+
+@utility border-brand-burgundy {
+  border-color: var(--brand-burgundy);
 }
 
 /*
@@ -589,11 +1107,14 @@
 
 @utility horizontal-scroll {
   display: flex;
+
   overflow-x: auto;
   overflow-y: hidden;
+
   gap: 0.75rem;
 
   scroll-snap-type: x mandatory;
+
   overscroll-behavior-x: contain;
 
   scrollbar-width: none;
@@ -606,8 +1127,17 @@
 
   > * {
     flex-shrink: 0;
+
     scroll-snap-align: start;
   }
+}
+
+/*
+ * تحسين اتجاه التمرير للبطاقات في RTL.
+ */
+
+.horizontal-scroll {
+  direction: rtl;
 }
 
 /*
@@ -618,7 +1148,9 @@
 
 @utility sticky-search {
   position: sticky;
+
   top: 0;
+
   z-index: 40;
 }
 
@@ -630,8 +1162,11 @@
 
 @utility image-protected {
   user-select: none;
+
   -webkit-user-select: none;
+
   -webkit-user-drag: none;
+
   user-drag: none;
 }
 
@@ -639,35 +1174,85 @@
  * =========================================================
  * شريط Marquee
  * =========================================================
- *
- * الحركة تعتمد على اتجاه RTL ويتم إيقافها عند طلب المستخدم
- * تقليل الحركة.
  */
 
 @keyframes continuous-marquee {
   0% {
-    transform: translate3d(0, 0, 0);
+    transform:
+      translate3d(
+        0,
+        0,
+        0
+      );
   }
 
   100% {
-    transform: translate3d(-50%, 0, 0);
+    transform:
+      translate3d(
+        -50%,
+        0,
+        0
+      );
   }
 }
 
-.animate-marquee-container {
+.tashkilat-marquee {
   display: flex;
+
   width: max-content;
   min-width: max-content;
 
   animation:
     continuous-marquee
-    28s
+    30s
     linear
     infinite;
 
   will-change: transform;
 
-  transform: translate3d(0, 0, 0);
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    );
+
+  backface-visibility: hidden;
+}
+
+.tashkilat-marquee:hover {
+  animation-play-state: paused;
+}
+
+.tashkilat-marquee:focus-within {
+  animation-play-state: paused;
+}
+
+/*
+ * دعم الكلاس القديم حتى لا تتعطل أي مكونات أخرى
+ * ما زالت تستخدم animate-marquee-container.
+ */
+
+.animate-marquee-container {
+  display: flex;
+
+  width: max-content;
+  min-width: max-content;
+
+  animation:
+    continuous-marquee
+    30s
+    linear
+    infinite;
+
+  will-change: transform;
+
+  transform:
+    translate3d(
+      0,
+      0,
+      0
+    );
 
   backface-visibility: hidden;
 }
@@ -688,13 +1273,17 @@
 
 .tashkilat-offline-banner {
   position: fixed;
+
   inset-inline: 0;
+
   bottom: 0;
+
   z-index: 10000;
 
   min-height: 44px;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -735,11 +1324,13 @@
  */
 
 .safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom:
+    env(safe-area-inset-bottom);
 }
 
 .safe-area-top {
-  padding-top: env(safe-area-inset-top);
+  padding-top:
+    env(safe-area-inset-top);
 }
 
 /*
@@ -764,12 +1355,15 @@
 
 .no-select {
   user-select: none;
+
   -webkit-user-select: none;
+
   -webkit-touch-callout: none;
 }
 
 .no-drag {
   -webkit-user-drag: none;
+
   user-drag: none;
 }
 
@@ -795,6 +1389,40 @@
   html {
     font-size: 15px;
   }
+
+  .tashkilat-architecture-watermark {
+    width: 42vw;
+
+    opacity: 0.035;
+  }
+}
+
+/*
+ * =========================================================
+ * شاشات الهواتف المتوسطة
+ * =========================================================
+ */
+
+@media (min-width: 381px) and (max-width: 767px) {
+  .tashkilat-architecture-watermark {
+    width: 34vw;
+
+    opacity: 0.04;
+  }
+}
+
+/*
+ * =========================================================
+ * الأجهزة اللوحية
+ * =========================================================
+ */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tashkilat-architecture-watermark {
+    width: 28vw;
+
+    opacity: 0.05;
+  }
 }
 
 /*
@@ -807,4 +1435,180 @@
   body {
     overflow-x: hidden;
   }
+
+  .tashkilat-architecture-watermark {
+    width: min(25vw, 380px);
+
+    opacity: 0.055;
+  }
 }
+
+/*
+ * =========================================================
+ * الشاشات الكبيرة جداً
+ * =========================================================
+ */
+
+@media (min-width: 1440px) {
+  .tashkilat-architecture-watermark {
+    width: 360px;
+
+    opacity: 0.06;
+  }
+}
+
+/*
+ * =========================================================
+ * الوضع الليلي — الخلفية التراثية
+ * =========================================================
+ */
+
+.dark .tashkilat-brand-background {
+  background:
+    linear-gradient(
+      180deg,
+      var(--background),
+      var(--background)
+    );
+}
+
+.dark .tashkilat-brand-background::before {
+  opacity: 0.55;
+
+  background:
+    radial-gradient(
+      circle at 10% 10%,
+      color-mix(
+        in srgb,
+        var(--brand-gold) 5%,
+        transparent
+      ) 0,
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 90% 82%,
+      color-mix(
+        in srgb,
+        var(--brand-burgundy-soft) 9%,
+        transparent
+      ) 0,
+      transparent 28%
+    );
+}
+
+.dark .tashkilat-brand-background::after {
+  opacity: 0.18;
+}
+
+.dark .tashkilat-architecture-watermark {
+  color: var(--brand-gold);
+
+  opacity: 0.035;
+}
+
+.dark .tashkilat-paper-surface {
+  background:
+    linear-gradient(
+      135deg,
+      var(--card),
+      color-mix(
+        in srgb,
+        var(--card) 92%,
+        var(--brand-burgundy)
+      )
+    );
+}
+
+.dark .tashkilat-brand-frame {
+  border-color:
+    color-mix(
+      in srgb,
+      var(--brand-gold) 30%,
+      transparent
+    );
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgb(224 184 92 / 4%),
+    0 12px 35px -24px
+    rgb(0 0 0 / 55%);
+}
+
+/*
+ * =========================================================
+ * تقليل الحركة
+ * =========================================================
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  .tashkilat-marquee,
+  .animate-marquee-container {
+    animation: none !important;
+
+    transform:
+      translate3d(
+        0,
+        0,
+        0
+      ) !important;
+  }
+
+  .tashkilat-architecture-watermark {
+    display: none;
+  }
+}
+
+/*
+ * =========================================================
+ * تحسين الطباعة العربية
+ * =========================================================
+ */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family:
+    var(--font-display);
+
+  letter-spacing: -0.01em;
+}
+
+/*
+ * =========================================================
+ * تحسين الأزرار الأساسية
+ * =========================================================
+ */
+
+button,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * =========================================================
+ * تحسين صور المنتجات
+ * =========================================================
+ */
+
+.product-image,
+[data-product-image="true"] {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(
+        in srgb,
+        var(--brand-cream) 80%,
+        white
+      ),
+      var(--card)
+    );
+}
+
+/*
+ * =========================================================
+ * نهاية نظام الهوية البصرية
+ * =========================================================
+ */
