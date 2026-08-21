@@ -1,17 +1,43 @@
 {
-  "name": "تشكيلات — متجر يمني إلكتروني",
-  "short_name": "تشكيلات",
+  "name": "تشكيلات للتسوق",
+  "short_name": "تشكيلات للتسوق",
   "description": "تشكيلات — كل ما تحتاجه بتشكيلة واحدة. متجر إلكتروني يمني.",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#5b2a86",
+  "orientation": "portrait-primary",
+  "background_color": "#4A1525",
+  "theme_color": "#4A1525",
+  "categories": [
+    "shopping",
+    "business"
+  ],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
