@@ -157,7 +157,8 @@ export const Route = createRootRouteWithContext<{
       },
       {
         name: "viewport",
-        content: "width=device-width, initial-scale=1",
+        content:
+          "width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover",
       },
       {
         title: "تشكيلات | متجر يمني إلكتروني",
@@ -170,6 +171,22 @@ export const Route = createRootRouteWithContext<{
       {
         name: "theme-color",
         content: "#4a1525",
+      },
+      {
+        name: "apple-mobile-web-app-capable",
+        content: "yes",
+      },
+      {
+        name: "mobile-web-app-capable",
+        content: "yes",
+      },
+      {
+        name: "apple-mobile-web-app-status-bar-style",
+        content: "black-translucent",
+      },
+      {
+        name: "format-detection",
+        content: "telephone=no",
       },
       {
         property: "og:title",
@@ -237,7 +254,11 @@ function RootShell({
   children: ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl">
+    <html
+      lang="ar"
+      dir="rtl"
+      className="tashkilat-app"
+    >
       <head>
         <HeadContent />
 
@@ -248,8 +269,33 @@ function RootShell({
         />
       </head>
 
-      <body>
+      <body
+        className="tashkilat-brand-background"
+        onContextMenu={(event) => {
+          const target = event.target as HTMLElement | null;
+
+          if (
+            target?.closest(
+              "img, .protected-image, [data-protected-image='true']",
+            )
+          ) {
+            event.preventDefault();
+          }
+        }}
+        onDragStart={(event) => {
+          const target = event.target as HTMLElement | null;
+
+          if (
+            target?.closest(
+              "img, .protected-image, [data-protected-image='true']",
+            )
+          ) {
+            event.preventDefault();
+          }
+        }}
+      >
         {children}
+
         <Scripts />
       </body>
     </html>
@@ -280,7 +326,9 @@ function ThemeController() {
       );
 
       applyTheme(
-        mediaQuery.matches ? "dark" : "light",
+        mediaQuery.matches
+          ? "dark"
+          : "light",
       );
 
       const handleSystemThemeChange = (
@@ -296,7 +344,9 @@ function ThemeController() {
           currentStored !== "light"
         ) {
           applyTheme(
-            event.matches ? "dark" : "light",
+            event.matches
+              ? "dark"
+              : "light",
           );
         }
       };
@@ -315,6 +365,235 @@ function ThemeController() {
     } catch {
       applyTheme("light");
     }
+  }, []);
+
+  return null;
+}
+
+function ImageProtectionController() {
+  useEffect(() => {
+    const handleContextMenu = (
+      event: MouseEvent,
+    ) => {
+      const target = event.target as HTMLElement | null;
+
+      if (
+        target?.closest(
+          "img, .protected-image, [data-protected-image='true']",
+        )
+      ) {
+        event.preventDefault();
+      }
+    };
+
+    const handleDragStart = (
+      event: DragEvent,
+    ) => {
+      const target = event.target as HTMLElement | null;
+
+      if (
+        target?.closest(
+          "img, .protected-image, [data-protected-image='true']",
+        )
+      ) {
+        event.preventDefault();
+      }
+    };
+
+    const handleTouchStart = (
+      event: TouchEvent,
+    ) => {
+      const target = event.target as HTMLElement | null;
+
+      if (
+        target?.closest(
+          "img, .protected-image, [data-protected-image='true']",
+        )
+      ) {
+        target.classList.add(
+          "image-touch-protected",
+        );
+      }
+    };
+
+    const handleTouchEnd = (
+      event: TouchEvent,
+    ) => {
+      const target = event.target as HTMLElement | null;
+
+      if (
+        target?.closest(
+          "img, .protected-image, [data-protected-image='true']",
+        )
+      ) {
+        target.classList.remove(
+          "image-touch-protected",
+        );
+      }
+    };
+
+    document.addEventListener(
+      "contextmenu",
+      handleContextMenu,
+      {
+        capture: true,
+      },
+    );
+
+    document.addEventListener(
+      "dragstart",
+      handleDragStart,
+      {
+        capture: true,
+      },
+    );
+
+    document.addEventListener(
+      "touchstart",
+      handleTouchStart,
+      {
+        passive: true,
+        capture: true,
+      },
+    );
+
+    document.addEventListener(
+      "touchend",
+      handleTouchEnd,
+      {
+        passive: true,
+        capture: true,
+      },
+    );
+
+    return () => {
+      document.removeEventListener(
+        "contextmenu",
+        handleContextMenu,
+        {
+          capture: true,
+        },
+      );
+
+      document.removeEventListener(
+        "dragstart",
+        handleDragStart,
+        {
+          capture: true,
+        },
+      );
+
+      document.removeEventListener(
+        "touchstart",
+        handleTouchStart,
+        {
+          capture: true,
+        },
+      );
+
+      document.removeEventListener(
+        "touchend",
+        handleTouchEnd,
+        {
+          capture: true,
+        },
+      );
+    };
+  }, []);
+
+  return null;
+}
+
+function ViewportProtectionController() {
+  useEffect(() => {
+    const preventGesture = (
+      event: Event,
+    ) => {
+      event.preventDefault();
+    };
+
+    const preventCtrlWheelZoom = (
+      event: WheelEvent,
+    ) => {
+      if (event.ctrlKey) {
+        event.preventDefault();
+      }
+    };
+
+    const preventMultiTouchZoom = (
+      event: TouchEvent,
+    ) => {
+      if (event.touches.length > 1) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener(
+      "gesturestart",
+      preventGesture,
+      {
+        passive: false,
+      },
+    );
+
+    document.addEventListener(
+      "gesturechange",
+      preventGesture,
+      {
+        passive: false,
+      },
+    );
+
+    document.addEventListener(
+      "gestureend",
+      preventGesture,
+      {
+        passive: false,
+      },
+    );
+
+    document.addEventListener(
+      "wheel",
+      preventCtrlWheelZoom,
+      {
+        passive: false,
+      },
+    );
+
+    document.addEventListener(
+      "touchmove",
+      preventMultiTouchZoom,
+      {
+        passive: false,
+      },
+    );
+
+    return () => {
+      document.removeEventListener(
+        "gesturestart",
+        preventGesture,
+      );
+
+      document.removeEventListener(
+        "gesturechange",
+        preventGesture,
+      );
+
+      document.removeEventListener(
+        "gestureend",
+        preventGesture,
+      );
+
+      document.removeEventListener(
+        "wheel",
+        preventCtrlWheelZoom,
+      );
+
+      document.removeEventListener(
+        "touchmove",
+        preventMultiTouchZoom,
+      );
+    };
   }, []);
 
   return null;
@@ -353,6 +632,10 @@ function AppContent() {
   return (
     <>
       <ThemeController />
+
+      <ImageProtectionController />
+
+      <ViewportProtectionController />
 
       <OfflineIndicator />
 
