@@ -1,41 +1,35 @@
-import {
-  WifiOff,
-} from "lucide-react";
+import { WifiOff } from "lucide-react";
 
-import {
-  useOnlineStatus,
-} from "@/hooks/use-online-status";
-
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 /**
  * =========================================================
  * تشكيلات للتسوق
  * Offline Indicator
+ * =========================================================
  *
- * يظهر فقط عند انقطاع الاتصال الحقيقي.
- * يختفي تماماً أثناء الاتصال.
+ * يظهر فقط عندما يتم التأكد من عدم توفر الاتصال.
+ *
+ * المزايا:
+ * - متوافق مع RTL.
+ * - متوافق مع الهواتف وPWA.
+ * - يحترم Safe Area في الأجهزة الحديثة.
+ * - لا يضيف مساحة فارغة داخل الصفحة.
+ * - يستخدم هوية تشكيلات العنابية والذهبية.
+ * - لا يمنع التفاعل مع محتوى التطبيق.
  * =========================================================
  */
 
 export function OfflineIndicator() {
-  const isOnline =
-    useOnlineStatus();
+  const isOnline = useOnlineStatus();
 
-
-  /*
+  /**
    * أثناء الاتصال:
-   *
-   * لا نعرض أي عنصر إطلاقاً.
-   *
-   * هذا مهم حتى لا يترك الشريط مساحة فارغة
-   * في أسفل الشاشة.
+   * لا نعرض أي عنصر على الإطلاق.
    */
-  if (
-    isOnline
-  ) {
+  if (isOnline) {
     return null;
   }
-
 
   return (
     <div
@@ -44,58 +38,71 @@ export function OfflineIndicator() {
       aria-atomic="true"
       dir="rtl"
       className="
-        fixed
-        inset-x-0
-        bottom-0
-        z-[10000]
-        flex
-        min-h-11
-        items-center
-        justify-center
-        gap-2
-        border-t
-        border-[#E0B85C]/30
-        bg-[#4A1525]
-        px-4
-        py-2.5
-        text-center
-        text-xs
-        font-bold
-        text-white
-        shadow-[0_-4px_18px_rgba(74,21,37,0.18)]
-        transition-all
-        duration-300
+        tashkilat-offline-banner
+        select-none
       "
     >
-
-      <span
+      <div
         className="
           flex
-          h-7
-          w-7
-          shrink-0
+          w-full
+          max-w-3xl
           items-center
           justify-center
-          rounded-full
-          bg-[#C99A3B]/15
-          text-[#E0B85C]
+          gap-2.5
+          text-center
         "
       >
-        <WifiOff
-          className="h-4 w-4"
+        {/* أيقونة حالة الاتصال */}
+        <span
+          className="
+            flex
+            h-7
+            w-7
+            shrink-0
+            items-center
+            justify-center
+            rounded-full
+            bg-[#C99A3B]/15
+            text-[#E0B85C]
+            ring-1
+            ring-[#E0B85C]/10
+          "
           aria-hidden="true"
-        />
-      </span>
-
-
-      <span className="leading-5">
-        أنت غير متصل بالإنترنت
-        <span className="mx-1 text-[#E0B85C]">
-          —
+        >
+          <WifiOff
+            className="h-4 w-4"
+            strokeWidth={2.25}
+          />
         </span>
-        يتم عرض البيانات المحفوظة على جهازك
-      </span>
 
+        {/* النص */}
+        <span
+          className="
+            leading-5
+            text-xs
+            font-bold
+            text-white
+            sm:text-sm
+          "
+        >
+          أنت غير متصل بالإنترنت
+
+          <span
+            className="
+              mx-1.5
+              text-[#E0B85C]
+            "
+            aria-hidden="true"
+          >
+            —
+          </span>
+
+          <span className="font-medium text-white/90">
+            يتم عرض البيانات المحفوظة على جهازك
+          </span>
+        </span>
+      </div>
     </div>
   );
 }
