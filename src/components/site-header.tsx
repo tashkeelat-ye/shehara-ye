@@ -1,30 +1,45 @@
 import { Link } from "@tanstack/react-router";
 import {
+  Bell,
+  Menu,
+  Moon,
   Search,
-  User,
-  Heart,
+  ShoppingCart,
+  Sun,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SideMenu } from "@/components/side-menu";
 
 export function SiteHeader() {
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
-  const navItems = [
-    {
-      to: "/",
-      label: "الرئيسية",
-    },
-    {
-      to: "/products",
-      label: "المنتجات",
-    },
-    {
-      to: "/favorites",
-      label: "المفضلة",
-    },
-  ] as const;
+  useEffect(() => {
+    const isDark =
+      document.documentElement.classList.contains("dark");
+
+    setDarkMode(isDark);
+  }, []);
+
+  const toggleDarkMode = () => {
+    const nextMode = !darkMode;
+
+    document.documentElement.classList.toggle(
+      "dark",
+      nextMode,
+    );
+
+    setDarkMode(nextMode);
+
+    try {
+      localStorage.setItem(
+        "tashkilat-theme",
+        nextMode ? "dark" : "light",
+      );
+    } catch {
+      // تجاهل أخطاء localStorage
+    }
+  };
 
   return (
     <header
@@ -40,6 +55,10 @@ export function SiteHeader() {
         supports-[backdrop-filter]:bg-[color:var(--background)]/80
       "
     >
+      {/* =====================================================
+          القائمة العلوية
+          ===================================================== */}
+
       <div
         className="
           mx-auto
@@ -48,28 +67,35 @@ export function SiteHeader() {
           w-full
           max-w-7xl
           items-center
-          gap-3
-          px-4
-          sm:px-6
+          gap-2
+          px-3
+          sm:px-5
           lg:px-8
         "
       >
-        {/* =====================================================
+        {/* ===================================================
             القائمة الجانبية
-            ===================================================== */}
+            تبقى باستخدام المكوّن الحالي كما هو
+            =================================================== */}
 
         <div className="shrink-0">
           <SideMenu />
         </div>
 
-        {/* =====================================================
+        {/* ===================================================
             الشعار
-            ===================================================== */}
+            =================================================== */}
 
         <Link
           to="/"
           aria-label="تشكيلات للتسوق"
-          className="flex min-w-0 items-center gap-2"
+          className="
+            flex
+            min-w-0
+            shrink-0
+            items-center
+            gap-2
+          "
         >
           <span
             className="
@@ -96,7 +122,13 @@ export function SiteHeader() {
             </span>
           </span>
 
-          <span className="hidden leading-none sm:block">
+          <span
+            className="
+              hidden
+              leading-none
+              sm:block
+            "
+          >
             <span
               className="
                 block
@@ -122,65 +154,42 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        {/* =====================================================
-            التنقل الرئيسي — سطح المكتب
-            ===================================================== */}
+        {/* ===================================================
+            مساحة فارغة
+            =================================================== */}
 
-        <nav
-          className="
-            hidden
-            items-center
-            gap-1
-            md:flex
-          "
-          aria-label="التنقل الرئيسي"
-        >
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="
-                rounded-xl
-                px-4
-                py-2
-                text-sm
-                font-medium
-                text-[color:var(--foreground)]
-                transition
-                hover:bg-[color:var(--brand-gold)]/10
-                hover:text-[color:var(--brand-burgundy)]
-              "
-              activeProps={{
-                className:
-                  "rounded-xl bg-[color:var(--brand-burgundy)] px-4 py-2 text-sm font-semibold text-white shadow-sm",
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="flex-1" />
 
-        {/* =====================================================
-            الأدوات
-            ===================================================== */}
+        {/* ===================================================
+            أدوات القائمة العلوية
+            الوضع الداكن
+            الإشعارات
+            السلة
+            =================================================== */}
 
         <div
           className="
-            ms-auto
             flex
+            shrink-0
             items-center
             gap-1
           "
         >
-          {/* البحث */}
+          {/* الوضع الداكن */}
 
           <button
             type="button"
-            aria-label="البحث"
-            aria-expanded={searchOpen}
-            onClick={() =>
-              setSearchOpen((value) => !value)
+            aria-label={
+              darkMode
+                ? "تفعيل الوضع الفاتح"
+                : "تفعيل الوضع الداكن"
             }
+            title={
+              darkMode
+                ? "الوضع الفاتح"
+                : "الوضع الداكن"
+            }
+            onClick={toggleDarkMode}
             className="
               inline-flex
               h-10
@@ -191,42 +200,30 @@ export function SiteHeader() {
               text-[color:var(--brand-burgundy)]
               transition
               hover:bg-[color:var(--brand-gold)]/10
+              dark:text-[color:var(--brand-gold)]
             "
           >
-            <Search size={20} />
+            {darkMode ? (
+              <Sun
+                size={20}
+                strokeWidth={2}
+              />
+            ) : (
+              <Moon
+                size={20}
+                strokeWidth={2}
+              />
+            )}
           </button>
 
-          {/* المفضلة */}
+          {/* الإشعارات */}
 
-          <Link
-            to="/favorites"
-            aria-label="المفضلة"
+          <button
+            type="button"
+            aria-label="الإشعارات"
+            title="الإشعارات"
             className="
-              hidden
-              h-10
-              w-10
-              items-center
-              justify-center
-              rounded-xl
-              text-[color:var(--brand-burgundy)]
-              transition
-              hover:bg-[color:var(--brand-gold)]/10
-              sm:inline-flex
-            "
-            activeProps={{
-              className:
-                "hidden h-10 w-10 items-center justify-center rounded-xl bg-[color:var(--brand-burgundy)] text-white sm:inline-flex",
-            }}
-          >
-            <Heart size={20} />
-          </Link>
-
-          {/* الحساب */}
-
-          <Link
-            to="/account"
-            aria-label="الحساب"
-            className="
+              relative
               inline-flex
               h-10
               w-10
@@ -236,98 +233,17 @@ export function SiteHeader() {
               text-[color:var(--brand-burgundy)]
               transition
               hover:bg-[color:var(--brand-gold)]/10
-            "
-            activeProps={{
-              className:
-                "inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[color:var(--brand-burgundy)] text-white",
-            }}
-          >
-            <User size={20} />
-          </Link>
-        </div>
-      </div>
-
-      {/* =======================================================
-          شريط البحث
-          ======================================================= */}
-
-      {searchOpen && (
-        <div
-          className="
-            border-t
-            border-[color:var(--brand-gold)]/15
-            bg-[color:var(--background)]
-            px-4
-            py-3
-          "
-        >
-          <form
-            action="/products"
-            method="get"
-            className="
-              mx-auto
-              flex
-              max-w-3xl
-              items-center
-              gap-2
+              dark:text-[color:var(--brand-gold)]
             "
           >
-            <div className="relative flex-1">
-              <Search
-                size={18}
-                className="
-                  pointer-events-none
-                  absolute
-                  start-3
-                  top-1/2
-                  -translate-y-1/2
-                  text-muted-foreground
-                "
-              />
+            <Bell
+              size={20}
+              strokeWidth={2}
+            />
+          </button>
 
-              <input
-                name="search"
-                type="search"
-                autoFocus
-                placeholder="ابحث عن منتج..."
-                className="
-                  h-11
-                  w-full
-                  rounded-xl
-                  border
-                  border-[color:var(--border)]
-                  bg-[color:var(--card)]
-                  pe-4
-                  ps-10
-                  text-sm
-                  outline-none
-                  transition
-                  focus:border-[color:var(--brand-gold-deep)]
-                  focus:ring-2
-                  focus:ring-[color:var(--brand-gold)]/20
-                "
-              />
-            </div>
+          {/* السلة */}
 
-            <button
-              type="submit"
-              className="
-                h-11
-                rounded-xl
-                bg-[color:var(--brand-burgundy)]
-                px-5
-                text-sm
-                font-semibold
-                text-white
-                transition
-                hover:bg-[color:var(--brand-burgundy-deep)]
-              "
-            >
-              بحث
-            </button>
-          </form>
-        </div>
-      )}
-    </header>
-  );
-}
+          <Link
+            to="/cart"
+            aria
