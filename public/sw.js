@@ -5,35 +5,24 @@
  * تشكيلات للتسوق
  * Service Worker
  * =========================================================
- */
-
-const CACHE_VERSION = "v6";
-
-const SHELL_CACHE =
-  `tashkilat-shell-${CACHE_VERSION}`;
-
-const RUNTIME_CACHE =
-  `tashkilat-runtime-${CACHE_VERSION}`;
-
-const OFFLINE_URL =
-  "/offline.html";
-
-
-/**
- * =========================================================
- * الملفات الأساسية التي يتم تخزينها مسبقاً
+ *
+ * مسؤول عن:
+ * - تحديث PWA
+ * - التخزين المؤقت
+ * - العمل دون اتصال
+ * - الإشعارات
+ * - فتح التطبيق عند الضغط على الإشعار
+ *
+ * لا يحتوي على أي منطق خاص بتصميم الواجهة.
  * =========================================================
  */
 
-const PRECACHE_URLS = [
-  "/",
-  OFFLINE_URL,
-  "/manifest.webmanifest",
-  "/logo.png",
-  "/favicon.png",
-  "/icon-192.png",
-  "/icon-512.png",
-];
+const CACHE_VERSION = "v7";
+
+const SHELL_CACHE = `tashkilat-shell-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `tashkilat-runtime-${CACHE_VERSION}`;
+
+const OFFLINE_URL = "/offline.html";
 
 
 /**
@@ -42,33 +31,24 @@ const PRECACHE_URLS = [
  * =========================================================
  */
 
-self.addEventListener(
-  "install",
-  (event) => {
-    event.waitUntil(
-      caches
-        .open(SHELL_CACHE)
-        .then(async (cache) => {
-          for (const url of PRECACHE_URLS) {
-            try {
-              await cache.add(
-                new Request(url, {
-                  cache: "reload",
-                }),
-              );
-            } catch (error) {
-              console.warn(
-                "[Tashkilat SW] Failed to precache:",
-                url,
-                error,
-              );
-            }
-          }
-        })
-        .then(() => self.skipWaiting()),
-    );
-  },
-);
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(SHELL_CACHE)
+      .then((cache) => {
+        return cache.add("/");
+      })
+      .catch((error) => {
+        console.warn(
+          "[Tashkilat SW] Cache install failed:",
+          error,
+        );
+      })
+      .then(() => {
+        return self.skipWaiting();
+      }),
+  );
+});
 
 
 /**
@@ -77,46 +57,30 @@ self.addEventListener(
  * =========================================================
  */
 
-self.addEventListener(
-  "activate",
-  (event) => {
-    event.waitUntil(
-      caches
-        .keys()
-        .then((cacheNames) => {
-          return Promise.all(
-            cacheNames
-              .filter(
-                (cacheName) =>
-                  cacheName.startsWith(
-                    "tashkilat-",
-                  ) &&
-                  cacheName !== SHELL_CACHE &&
-                  cacheName !== RUNTIME_CACHE,
-              )
-              .map((cacheName) =>
-                caches.delete(cacheName),
-              ),
-          );
-        })
-        .then(() => self.clients.claim())
-        .then(async () => {
-          const clients =
-            await self.clients.matchAll({
-              type: "window",
-              includeUncontrolled: true,
-            });
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (
+              cacheName.startsWith("tashkilat-") &&
+              cacheName !== SHELL_CACHE &&
+              cacheName !== RUNTIME_CACHE
+            ) {
+              return caches.delete(cacheName);
+            }
 
-          for (const client of clients) {
-            client.postMessage({
-              type: "TASHKILAT_SW_UPDATED",
-              version: CACHE_VERSION,
-            });
-          }
-        }),
-    );
-  },
-);
+            return Promise.resolve(false);
+          }),
+        );
+      })
+      .then(() => {
+        return self.clients.claim();
+      }),
+  );
+});
 
 
 /**
@@ -125,59 +89,50 @@ self.addEventListener(
  * =========================================================
  */
 
-self.addEventListener(
-  "push",
-  (event) => {
-    let data = {};
+self.addEventListener("push", (event) => {
+  let data = {};
 
-    if (event.data) {
-      try {
-        data = event.data.json();
-      } catch {
-        data = {
-          title:
-            "إشعار جديد من تشكيلات",
-
-          body:
-            event.data.text(),
-        };
-      }
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch {
+      data = {
+        body: event.data.text(),
+      };
     }
+  }
 
-    const title =
-      data.title ||
-      "إشعار جديد من تشكيلات";
+  const title =
+    data.title ||
+    "إشعار جديد من تشكيلات";
 
-    const options = {
-      body:
-        data.body ||
-        "لديك تحديث جديد في المتجر",
+  const body =
+    data.body ||
+    "لديك تحديث جديد في متجر تشكيلات.";
 
-      icon:
-        "/icon-192.png",
+  const notificationUrl =
+    data.link_url ||
+    data.url ||
+    "/";
 
-      badge:
-        "/icon-192.png",
+  event.waitUntil(
+    self.registration.showNotification(
+      title,
+      {
+        body,
+        dir: "rtl",
+        lang: "ar",
 
-      dir: "rtl",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
 
-      lang: "ar",
-
-      data: {
-        url:
-          data.link_url ||
-          "/",
+        data: {
+          url: notificationUrl,
+        },
       },
-    };
-
-    event.waitUntil(
-      self.registration.showNotification(
-        title,
-        options,
-      ),
-    );
-  },
-);
+    ),
+  );
+});
 
 
 /**
@@ -192,8 +147,11 @@ self.addEventListener(
     event.notification.close();
 
     const targetUrl =
-      event.notification?.data?.url ||
-      "/";
+      event.notification &&
+      event.notification.data &&
+      event.notification.data.url
+        ? event.notification.data.url
+        : "/";
 
     event.waitUntil(
       self.clients
@@ -204,17 +162,12 @@ self.addEventListener(
         .then((clientList) => {
           for (const client of clientList) {
             if (
+              client.url &&
               "focus" in client
             ) {
-              if (
-                "navigate" in client
-              ) {
-                client.navigate(
-                  targetUrl,
-                );
-              }
-
-              return client.focus();
+              return client
+                .navigate(targetUrl)
+                .then(() => client.focus());
             }
           }
 
@@ -233,224 +186,177 @@ self.addEventListener(
  * =========================================================
  */
 
-self.addEventListener(
-  "fetch",
-  (event) => {
-    const request =
-      event.request;
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
 
-    /**
-     * نتعامل فقط مع GET.
-     */
-    if (
-      request.method !==
-      "GET"
-    ) {
-      return;
-    }
+  /**
+   * Service Worker يتعامل مع GET فقط.
+   */
+  if (request.method !== "GET") {
+    return;
+  }
 
-    const url =
-      new URL(
-        request.url,
-      );
+  const url = new URL(request.url);
 
-    /**
-     * لا نتعامل مع النطاقات الخارجية.
-     */
-    if (
-      url.origin !==
-      self.location.origin
-    ) {
-      return;
-    }
+  /**
+   * لا نتعامل مع طلبات النطاقات الخارجية.
+   */
+  if (
+    url.origin !== self.location.origin
+  ) {
+    return;
+  }
 
-    /**
-     * OAuth
-     */
-    if (
-      url.pathname.startsWith(
-        "/~oauth",
-      )
-    ) {
-      return;
-    }
+  /**
+   * لا نتدخل في OAuth.
+   */
+  if (
+    url.pathname.startsWith("/~oauth")
+  ) {
+    return;
+  }
 
-    /**
-     * =======================================================
-     * اختبار الاتصال
-     * =======================================================
-     */
+  /**
+   * =======================================================
+   * Connectivity Check
+   * =======================================================
+   */
 
-    if (
-      url.searchParams.has(
-        "connectivity",
-      )
-    ) {
-      event.respondWith(
-        fetch(
-          request,
-          {
-            cache:
-              "no-store",
-          },
-        ),
-      );
+  if (
+    url.searchParams.has("connectivity")
+  ) {
+    event.respondWith(
+      fetch(request, {
+        cache: "no-store",
+      }),
+    );
 
-      return;
-    }
+    return;
+  }
 
-    /**
-     * =======================================================
-     * HTML Navigation
-     *
-     * Network First
-     * ↓
-     * Runtime Cache
-     * ↓
-     * Shell Cache
-     * ↓
-     * Offline Page
-     * =======================================================
-     */
 
-    if (
-      request.mode ===
-      "navigate"
-    ) {
-      event.respondWith(
-        fetch(request)
-          .then((response) => {
-            if (
-              response.ok
-            ) {
-              const copy =
-                response.clone();
+  /**
+   * =======================================================
+   * صفحات التطبيق
+   *
+   * Network First
+   * ثم Cache
+   * ثم Offline
+   * =======================================================
+   */
 
-              void caches
-                .open(
-                  RUNTIME_CACHE,
-                )
-                .then((cache) =>
-                  cache.put(
-                    request,
-                    copy,
-                  ),
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const responseClone =
+              response.clone();
+
+            caches
+              .open(RUNTIME_CACHE)
+              .then((cache) => {
+                return cache.put(
+                  request,
+                  responseClone,
                 );
-            }
+              })
+              .catch(() => {
+                // تجاهل خطأ التخزين المؤقت
+              });
+          }
 
-            return response;
-          })
-          .catch(async () => {
-            const cachedPage =
-              await caches.match(
-                request,
-              );
+          return response;
+        })
+        .catch(async () => {
+          const cachedPage =
+            await caches.match(request);
 
-            if (
-              cachedPage
-            ) {
-              return cachedPage;
-            }
+          if (cachedPage) {
+            return cachedPage;
+          }
 
-            const cachedHome =
-              await caches.match(
-                "/",
-              );
+          const cachedHome =
+            await caches.match("/");
 
-            if (
-              cachedHome
-            ) {
-              return cachedHome;
-            }
+          if (cachedHome) {
+            return cachedHome;
+          }
 
-            const offlinePage =
-              await caches.match(
-                OFFLINE_URL,
-              );
-
-            return (
-              offlinePage ||
-              new Response(
-                "أنت غير متصل بالإنترنت.",
-                {
-                  status: 503,
-
-                  headers: {
-                    "Content-Type":
-                      "text/plain; charset=utf-8",
-                  },
-                },
-              )
+          const offlinePage =
+            await caches.match(
+              OFFLINE_URL,
             );
-          }),
-      );
 
-      return;
-    }
+          if (offlinePage) {
+            return offlinePage;
+          }
 
-    /**
-     * =======================================================
-     * Static Assets
-     *
-     * Cache First
-     * ↓
-     * Network
-     * ↓
-     * Runtime Cache
-     * =======================================================
-     */
+          return new Response(
+            "أنت غير متصل بالإنترنت.",
+            {
+              status: 503,
+              headers: {
+                "Content-Type":
+                  "text/plain; charset=utf-8",
+              },
+            },
+          );
+        }),
+    );
 
-    const isStaticAsset =
-      /\.(?:js|css|png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf)$/i.test(
-        url.pathname,
-      );
+    return;
+  }
 
-    if (
-      isStaticAsset
-    ) {
-      event.respondWith(
-        caches
-          .match(request)
-          .then((cachedResponse) => {
-            if (
-              cachedResponse
-            ) {
-              return cachedResponse;
-            }
 
-            return fetch(
-              request,
-            )
-              .then(
-                (response) => {
-                  if (
-                    response.ok
-                  ) {
-                    const copy =
-                      response.clone();
+  /**
+   * =======================================================
+   * الملفات الثابتة
+   *
+   * Cache First
+   * ثم Network
+   * =======================================================
+   */
 
-                    void caches
-                      .open(
-                        RUNTIME_CACHE,
-                      )
-                      .then(
-                        (cache) =>
-                          cache.put(
-                            request,
-                            copy,
-                          ),
-                      );
-                  }
+  const isStaticAsset =
+    /\.(?:js|css|png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf)$/i.test(
+      url.pathname,
+    );
 
-                  return response;
-                },
-              )
-              .catch(
-                () =>
-                  Response.error(),
-              );
-          }),
-      );
-    }
-  },
-);
+  if (isStaticAsset) {
+    event.respondWith(
+      caches
+        .match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+
+          return fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                const responseClone =
+                  response.clone();
+
+                caches
+                  .open(RUNTIME_CACHE)
+                  .then((cache) => {
+                    return cache.put(
+                      request,
+                      responseClone,
+                    );
+                  })
+                  .catch(() => {
+                    // تجاهل خطأ التخزين المؤقت
+                  });
+              }
+
+              return response;
+            });
+        })
+        .catch(() => {
+          return Response.error();
+        }),
+    );
+  }
+});
