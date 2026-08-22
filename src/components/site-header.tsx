@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
   Bell,
-  Menu,
   Moon,
   Search,
   ShoppingCart,
@@ -37,7 +36,7 @@ export function SiteHeader() {
         nextMode ? "dark" : "light",
       );
     } catch {
-      // تجاهل أخطاء localStorage
+      // تجاهل أخطاء التخزين المحلي
     }
   };
 
@@ -73,18 +72,13 @@ export function SiteHeader() {
           lg:px-8
         "
       >
-        {/* ===================================================
-            القائمة الجانبية
-            تبقى باستخدام المكوّن الحالي كما هو
-            =================================================== */}
+        {/* القائمة الجانبية الحالية */}
 
         <div className="shrink-0">
           <SideMenu />
         </div>
 
-        {/* ===================================================
-            الشعار
-            =================================================== */}
+        {/* الشعار */}
 
         <Link
           to="/"
@@ -135,6 +129,7 @@ export function SiteHeader() {
                 text-base
                 font-bold
                 text-[color:var(--brand-burgundy)]
+                dark:text-[color:var(--brand-gold)]
               "
             >
               تشكيلات
@@ -154,17 +149,10 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        {/* ===================================================
-            مساحة فارغة
-            =================================================== */}
-
         <div className="flex-1" />
 
         {/* ===================================================
             أدوات القائمة العلوية
-            الوضع الداكن
-            الإشعارات
-            السلة
             =================================================== */}
 
         <div
@@ -246,4 +234,96 @@ export function SiteHeader() {
 
           <Link
             to="/cart"
-            aria
+            aria-label="السلة"
+            title="السلة"
+            className="
+              inline-flex
+              h-10
+              w-10
+              items-center
+              justify-center
+              rounded-xl
+              text-[color:var(--brand-burgundy)]
+              transition
+              hover:bg-[color:var(--brand-gold)]/10
+              dark:text-[color:var(--brand-gold)]
+            "
+          >
+            <ShoppingCart
+              size={20}
+              strokeWidth={2}
+            />
+          </Link>
+        </div>
+      </div>
+
+      {/* =====================================================
+          نافذة البحث
+          ===================================================== */}
+
+      <div
+        className="
+          border-t
+          border-[color:var(--brand-gold)]/10
+          bg-[color:var(--background)]
+          px-3
+          py-3
+          sm:px-5
+          lg:px-8
+        "
+      >
+        <form
+          action="/products"
+          method="get"
+          role="search"
+          className="
+            mx-auto
+            w-full
+            max-w-7xl
+          "
+        >
+          <div className="relative">
+            <Search
+              size={19}
+              strokeWidth={2}
+              aria-hidden="true"
+              className="
+                pointer-events-none
+                absolute
+                start-3
+                top-1/2
+                -translate-y-1/2
+                text-[color:var(--muted-foreground)]
+              "
+            />
+
+            <input
+              name="search"
+              type="search"
+              placeholder="ابحث عن المنتجات..."
+              aria-label="البحث عن المنتجات"
+              className="
+                h-11
+                w-full
+                rounded-xl
+                border
+                border-[color:var(--border)]
+                bg-[color:var(--card)]
+                pe-4
+                ps-10
+                text-sm
+                text-[color:var(--foreground)]
+                outline-none
+                transition
+                placeholder:text-[color:var(--muted-foreground)]
+                focus:border-[color:var(--brand-gold-deep)]
+                focus:ring-2
+                focus:ring-[color:var(--brand-gold)]/20
+              "
+            />
+          </div>
+        </form>
+      </div>
+    </header>
+  );
+}
