@@ -1,1589 +1,670 @@
+import { memo, useCallback, type MouseEvent } from "react";
+import { Link } from "@tanstack/react-router";
 import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
-import {
-  Link,
-  useNavigate,
-} from "@tanstack/react-router";
-
-import {
-  Moon,
-  Search,
+  Check,
+  Plus,
   ShoppingCart,
-  Sun,
-  User,
-  X,
-  ArrowLeft,
-  Clock3,
+  Star,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { type Product } from "@/lib/db";
 import { useCart } from "@/lib/cart-context";
-import { BrandLogo } from "@/components/brand-logo";
-import {
-  STORE_TAGLINE,
-} from "@/lib/logo";
-import { SideMenu } from "@/components/side-menu";
-import { NotificationBell } from "@/components/notification-bell";
-import { CurrencySwitcher } from "@/lib/currency-context";
-import { AnnouncementBar } from "@/components/announcement-bar";
-import {
-  fetchProducts,
-  type Product,
-} from "@/lib/db";
+import { useFormatPrice } from "@/lib/currency-context";
+import { ProductImage } from "./product-image";
 
-const THEME_STORAGE_KEY =
-  "tashkilat-theme";
-
-const SEARCH_HISTORY_KEY =
-  "tashkilat-search-history";
-
-const MAX_SEARCH_HISTORY = 5;
-
-/**
- * =========================================================
- * ألوان الهوية
- * =========================================================
- */
-
-const BRAND_BURGUNDY =
-  "#4A1525";
-
-const BRAND_BURGUNDY_DARK =
-  "#35101C";
-
-const BRAND_GOLD =
-  "#E0B85C";
-
-/**
- * =========================================================
- * Helpers
- * =========================================================
- */
-
-function readSearchHistory(): string[] {
-  try {
-    const stored =
-      localStorage.getItem(
-        SEARCH_HISTORY_KEY,
-      );
-
-    if (!stored) {
-      return [];
-    }
-
-    const parsed =
-      JSON.parse(stored);
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .filter(
-        (item): item is string =>
-          typeof item === "string",
-      )
-      .map((item) =>
-        item.trim(),
-      )
-      .filter(Boolean)
-      .slice(
-        0,
-        MAX_SEARCH_HISTORY,
-      );
-  } catch {
-    return [];
-  }
-}
-
-function saveSearchTerm(
-  value: string,
-) {
-  const normalized =
-    value.trim();
-
-  if (!normalized) {
-    return;
-  }
-
-  try {
-    const current =
-      readSearchHistory();
-
-    const next = [
-      normalized,
-      ...current.filter(
-        (item) =>
-          item.toLowerCase() !==
-          normalized.toLowerCase(),
-      ),
-    ].slice(
-      0,
-      MAX_SEARCH_HISTORY,
-    );
-
-    localStorage.setItem(
-      SEARCH_HISTORY_KEY,
-      JSON.stringify(next),
-    );
-  } catch {
-    // localStorage may be unavailable.
-  }
-}
-
-function getProductImage(
-  product: Product,
-): string | null {
-  const image =
-    product.images?.find(
-      (item) =>
-        typeof item === "string" &&
-        item.trim().length > 0,
-    );
-
-  return image || null;
-}
-
-/**
- * =========================================================
- * Search Suggestion
- * =========================================================
- */
-
-function SearchSuggestionItem({
-  product,
-  onSelect,
-}: {
+type ProductCardProps = {
   product: Product;
-  onSelect: (
-    product: Product,
-  ) => void;
-}) {
-  const image =
-    getProductImage(product);
+};
 
-  return (
-    <button
-      type="button"
-      onMouseDown={(event) => {
-        /*
-         * onMouseDown يمنع اختفاء القائمة
-         * قبل تنفيذ الاختيار عندما ينتقل التركيز
-         * من حقل البحث.
-         */
-        event.preventDefault();
-      }}
-      onClick={() =>
-        onSelect(product)
-      }
-      className="
-        group
-        flex
-        w-full
-        items-center
-        gap-3
-        rounded-xl
-        px-3
-        py-2.5
-        text-right
-        transition-colors
-        hover:bg-[#4A1525]/[0.045]
-        focus-visible:bg-[#4A1525]/[0.06]
-        focus-visible:outline-none
-        dark:hover:bg-[#E0B85C]/[0.06]
-        dark:focus-visible:bg-[#E0B85C]/[0.08]
-      "
-      dir="rtl"
-    >
-      <span
-        className="
-          relative
-          h-12
-          w-12
-          shrink-0
-          overflow-hidden
-          rounded-xl
-          border
-          border-[#E0B85C]/15
-          bg-secondary
-        "
-      >
-        {image ? (
-          <img
-            src={image}
-            alt=""
-            width={48}
-            height={48}
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-            onContextMenu={(event) => {
-              event.preventDefault();
-            }}
-            className="
-              h-full
-              w-full
-              select-none
-              object-cover
-              [-webkit-user-drag:none]
-            "
-          />
-        ) : (
-          <span
-            className="
-              grid
-              h-full
-              w-full
-              place-items-center
-              bg-[#4A1525]/5
-              text-[#4A1525]/40
-              dark:bg-[#E0B85C]/5
-              dark:text-[#E0B85C]/40
-            "
-          >
-            <Search
-              className="h-4 w-4"
-              aria-hidden="true"
-            />
-          </span>
-        )}
-      </span>
-
-      <span className="min-w-0 flex-1">
-        <span
-          className="
-            block
-            truncate
-            text-[13px]
-            font-bold
-            text-foreground
-          "
-        >
-          {product.name}
-        </span>
-
-        <span
-          className="
-            mt-0.5
-            block
-            truncate
-            text-[10px]
-            text-muted-foreground
-          "
-        >
-          {product.city ||
-            "متجر تشكيلات"}
-        </span>
-      </span>
-
-      <span
-        className="
-          shrink-0
-          text-[11px]
-          font-extrabold
-          text-[#4A1525]
-          dark:text-[#E0B85C]
-        "
-      >
-        {Number(
-          product.price,
-        ).toLocaleString(
-          "ar-EG",
-        )}
-      </span>
-
-      <ArrowLeft
-        className="
-          h-4
-          w-4
-          shrink-0
-          text-muted-foreground
-          transition-transform
-          group-hover:-translate-x-0.5
-        "
-        aria-hidden="true"
-      />
-    </button>
-  );
-}
-
-/**
- * =========================================================
- * Site Header
- * =========================================================
- */
-
-export function SiteHeader() {
+export const ProductCard = memo(function ProductCard({
+  product,
+}: ProductCardProps) {
   const {
-    count,
+    addItem,
     setDrawerOpen,
+    getItemQuantity,
   } = useCart();
 
-  const [
-    term,
-    setTerm,
-  ] = useState("");
+  const formatPrice = useFormatPrice();
 
-  const [
-    isDark,
-    setIsDark,
-  ] = useState(false);
+  const stockLeft = Math.max(
+    0,
+    Number(product.stock_left) || 0,
+  );
 
-  const [
-    suggestions,
-    setSuggestions,
-  ] = useState<Product[]>([]);
+  const lowStockThreshold = Math.max(
+    1,
+    Number(product.low_stock_threshold) || 5,
+  );
 
-  const [
-    searchHistory,
-    setSearchHistory,
-  ] = useState<string[]>([]);
+  const isOutOfStock = stockLeft <= 0;
 
-  const [
-    isSearchFocused,
-    setIsSearchFocused,
-  ] = useState(false);
+  const isLowStock =
+    !isOutOfStock &&
+    stockLeft <= lowStockThreshold;
 
-  const [
-    isSearching,
-    setIsSearching,
-  ] = useState(false);
+  const cartQuantity = getItemQuantity(
+    product.id,
+  );
 
-  const navigate =
-    useNavigate();
+  const rating = Number(product.rating) || 0;
+  const reviewsCount =
+    Number(product.reviews_count) || 0;
 
-  const searchRef =
-    useRef<HTMLDivElement | null>(
-      null,
-    );
+  const hasRating =
+    rating > 0 && reviewsCount > 0;
 
-  const inputRef =
-    useRef<HTMLInputElement | null>(
-      null,
-    );
+  const oldPrice =
+    product.old_price !== null
+      ? Number(product.old_price)
+      : 0;
 
-  const searchTimer =
-    useRef<
-      ReturnType<
-        typeof setTimeout
-      > | null
-    >(null);
+  const currentPrice =
+    Number(product.price) || 0;
 
-  /**
-   * =======================================================
-   * تهيئة الوضع الليلي
-   * =======================================================
-   */
+  const hasOldPrice =
+    oldPrice > currentPrice &&
+    currentPrice > 0;
 
-  useEffect(() => {
-    const root =
-      document.documentElement;
-
-    const current =
-      root.classList.contains(
-        "dark",
-      );
-
-    setIsDark(current);
-  }, []);
-
-  /**
-   * =======================================================
-   * سجل البحث
-   * =======================================================
-   */
-
-  useEffect(() => {
-    setSearchHistory(
-      readSearchHistory(),
-    );
-  }, []);
-
-  /**
-   * =======================================================
-   * إغلاق الاقتراحات عند النقر خارجها
-   * =======================================================
-   */
-
-  useEffect(() => {
-    function handleOutsideClick(
-      event: MouseEvent,
-    ) {
-      const target =
-        event.target;
-
-      if (
-        target instanceof
-          Node &&
-        searchRef.current?.contains(
-          target,
+  const discountPercent =
+    hasOldPrice && oldPrice > 0
+      ? Math.round(
+          ((oldPrice - currentPrice) /
+            oldPrice) *
+            100,
         )
-      ) {
+      : 0;
+
+  const quickAdd = useCallback(
+    async (
+      event: MouseEvent<HTMLButtonElement>,
+    ) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (isOutOfStock) {
+        toast.error(
+          "عذراً، هذا المنتج نفد من المخزون.",
+        );
         return;
       }
 
-      setIsSearchFocused(
-        false,
-      );
-    }
+      try {
+        await addItem({
+          productId: product.id,
+          quantity: 1,
+        });
 
-    document.addEventListener(
-      "mousedown",
-      handleOutsideClick,
-    );
-
-    return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleOutsideClick,
-      );
-    };
-  }, []);
-
-  /**
-   * =======================================================
-   * تنظيف مؤقت البحث
-   * =======================================================
-   */
-
-  useEffect(() => {
-    return () => {
-      if (
-        searchTimer.current
-      ) {
-        clearTimeout(
-          searchTimer.current,
+        toast.success(
+          cartQuantity > 0
+            ? "تمت إضافة قطعة أخرى إلى السلة"
+            : "تمت إضافة المنتج إلى السلة",
+          {
+            action: {
+              label: "عرض السلة",
+              onClick: () =>
+                setDrawerOpen(true),
+            },
+          },
         );
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "تعذر إضافة المنتج إلى السلة";
+
+        toast.error(message);
       }
-    };
-  }, []);
+    },
+    [
+      addItem,
+      cartQuantity,
+      isOutOfStock,
+      product.id,
+      setDrawerOpen,
+    ],
+  );
 
-  /**
-   * =======================================================
-   * البحث الفوري
-   * =======================================================
-   *
-   * ننتظر 250ms بعد توقف الكتابة قبل الاتصال
-   * بمصدر البيانات حتى لا نرسل طلباً لكل حرف.
-   */
-
-  useEffect(() => {
-    const query =
-      term.trim();
-
-    if (
-      searchTimer.current
-    ) {
-      clearTimeout(
-        searchTimer.current,
-      );
-    }
-
-    if (
-      query.length < 2
-    ) {
-      setSuggestions([]);
-      setIsSearching(false);
-      return;
-    }
-
-    searchTimer.current =
-      setTimeout(
-        async () => {
-          setIsSearching(true);
-
-          try {
-            const products =
-              await fetchProducts({
-                sort: "best",
-                limit: 6,
-              });
-
-            const normalizedQuery =
-              query.toLocaleLowerCase(
-                "ar",
-              );
-
-            /*
-             * fetchProducts الحالية لا تحتوي على
-             * text-search parameter.
-             *
-             * لذلك نستخدم نتائج حقيقية من المتجر
-             * ونرشحها في الواجهة حسب الاسم والوصف
-             * والمدينة.
-             *
-             * لاحقاً يمكن نقل هذا إلى Supabase
-             * Full Text Search عندما نضيفه إلى قاعدة
-             * البيانات.
-             */
-
-            const filtered =
-              products.filter(
-                (product) => {
-                  const name =
-                    product.name
-                      .toLocaleLowerCase(
-                        "ar",
-                      );
-
-                  const description =
-                    product.description
-                      ?.toLocaleLowerCase(
-                        "ar",
-                      ) ?? "";
-
-                  const city =
-                    product.city
-                      ?.toLocaleLowerCase(
-                        "ar",
-                      ) ?? "";
-
-                  return (
-                    name.includes(
-                      normalizedQuery,
-                    ) ||
-                    description.includes(
-                      normalizedQuery,
-                    ) ||
-                    city.includes(
-                      normalizedQuery,
-                    )
-                  );
-                },
-              );
-
-            setSuggestions(
-              filtered.slice(
-                0,
-                5,
-              ),
-            );
-          } catch (error) {
-            console.warn(
-              "[Search] تعذر تحميل اقتراحات البحث.",
-              error,
-            );
-
-            setSuggestions([]);
-          } finally {
-            setIsSearching(
-              false,
-            );
-          }
-        },
-        250,
-      );
-
-    return () => {
-      if (
-        searchTimer.current
-      ) {
-        clearTimeout(
-          searchTimer.current,
-        );
-      }
-    };
-  }, [term]);
-
-  /**
-   * =======================================================
-   * تغيير الوضع
-   * =======================================================
-   */
-
-  function toggleTheme() {
-    const nextTheme =
-      isDark
-        ? "light"
-        : "dark";
-
-    document.documentElement.classList.toggle(
-      "dark",
-      nextTheme === "dark",
-    );
-
-    document.documentElement.style.colorScheme =
-      nextTheme;
-
-    localStorage.setItem(
-      THEME_STORAGE_KEY,
-      nextTheme,
-    );
-
-    setIsDark(
-      nextTheme === "dark",
-    );
-  }
-
-  /**
-   * =======================================================
-   * مسح البحث
-   * =======================================================
-   */
-
-  function clearSearch() {
-    setTerm("");
-    setSuggestions([]);
-
-    window.requestAnimationFrame(
-      () => {
-        inputRef.current?.focus();
-      },
-    );
-  }
-
-  /**
-   * =======================================================
-   * تنفيذ البحث
-   * =======================================================
-   */
-
-  function submitSearch(
-    value = term,
-  ) {
-    const query =
-      value.trim();
-
-    if (!query) {
-      return;
-    }
-
-    saveSearchTerm(
-      query,
-    );
-
-    setSearchHistory(
-      readSearchHistory(),
-    );
-
-    setIsSearchFocused(
-      false,
-    );
-
-    setSuggestions([]);
-
-    void navigate({
-      to: "/products",
-      search: {
-        q:
-          query ||
-          undefined,
-      },
-    });
-  }
-
-  /**
-   * =======================================================
-   * اختيار منتج من الاقتراحات
-   * =======================================================
-   */
-
-  function selectSuggestion(
-    product: Product,
-  ) {
-    saveSearchTerm(
-      product.name,
-    );
-
-    setSearchHistory(
-      readSearchHistory(),
-    );
-
-    setTerm(
-      product.name,
-    );
-
-    setIsSearchFocused(
-      false,
-    );
-
-    setSuggestions([]);
-
-    void navigate({
-      to: "/products",
-      search: {
-        q: product.name,
-      },
-    });
-  }
-
-  /**
-   * =======================================================
-   * اختيار بحث سابق
-   * =======================================================
-   */
-
-  function selectHistory(
-    value: string,
-  ) {
-    setTerm(value);
-    submitSearch(value);
-  }
-
-  const showSearchPanel =
-    isSearchFocused &&
-    (term.trim().length >=
-      2 ||
-      searchHistory.length >
-        0);
+  const openCart = useCallback(
+    (
+      event: MouseEvent<HTMLButtonElement>,
+    ) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setDrawerOpen(true);
+    },
+    [setDrawerOpen],
+  );
 
   return (
-    <header
+    <article
       className="
-        sticky
-        top-0
-        z-40
-        border-b
-        border-[#E0B85C]/15
-        bg-[#FBF7EF]/[0.96]
-        shadow-[0_4px_25px_-20px_rgba(74,21,37,0.55)]
-        backdrop-blur-xl
-        supports-[backdrop-filter]:bg-[#FBF7EF]/[0.88]
-        dark:border-[#E0B85C]/10
-        dark:bg-[#170C11]/[0.96]
-        dark:supports-[backdrop-filter]:bg-[#170C11]/[0.88]
+        group relative flex min-w-0 flex-col
+        overflow-hidden
+        rounded-[20px]
+        border
+        border-[color:var(--brand-gold)]/12
+        bg-card
+        shadow-card
+        transition-all
+        duration-300
+        hover:-translate-y-0.5
+        hover:border-[color:var(--brand-gold)]/35
+        hover:shadow-[0_14px_35px_-24px_color-mix(in_srgb,var(--brand-burgundy)_65%,transparent)]
+        active:scale-[0.985]
+        dark:border-[color:var(--brand-gold)]/10
       "
     >
-      <AnnouncementBar />
-
-      <div
+      <Link
+        to="/product/$id"
+        params={{ id: product.id }}
+        aria-label={`عرض ${product.name}`}
         className="
-          mx-auto
-          w-full
-          max-w-6xl
-          px-3
-          pb-2.5
-          pt-2
-          sm:px-4
-          sm:py-3
+          relative block min-w-0
+          overflow-hidden
+          outline-none
+          focus-visible:ring-2
+          focus-visible:ring-inset
+          focus-visible:ring-[color:var(--brand-gold)]
         "
       >
         <div
           className="
-            flex
-            min-h-10
-            items-center
-            justify-between
-            gap-2
-            sm:min-h-11
-            sm:gap-3
+            relative
+            aspect-square
+            overflow-hidden
+            bg-[color:var(--brand-paper)]
+            dark:bg-secondary
           "
         >
-          {/* =================================================
-              الشعار
-              ================================================= */}
-
-          <Link
-            to="/"
-            aria-label="العودة إلى الصفحة الرئيسية"
+          <ProductImage
+            src={product.images[0]}
+            alt={product.name}
             className="
-              group
-              flex
-              min-w-0
-              items-center
-              gap-2
-              rounded-xl
-              outline-none
-              transition-opacity
-              active:opacity-70
-              focus-visible:ring-2
-              focus-visible:ring-[#E0B85C]/50
+              h-full
+              w-full
+              transition-transform
+              duration-500
+              group-hover:scale-[1.025]
             "
-          >
-            <span
-              className="
-                relative
-                shrink-0
-                rounded-xl
-                ring-1
-                ring-[#E0B85C]/20
-              "
-            >
-              <BrandLogo
-                size={36}
-                className="
-                  h-9
-                  w-9
-                  shrink-0
-                  sm:h-10
-                  sm:w-10
-                "
-              />
-
-              <span
-                aria-hidden="true"
-                className="
-                  pointer-events-none
-                  absolute
-                  -inset-0.5
-                  rounded-[0.85rem]
-                  border
-                  border-[#E0B85C]/20
-                "
-              />
-            </span>
-
-            <div className="min-w-0">
-              <p
-                className="
-                  truncate
-                  text-[15px]
-                  font-extrabold
-                  leading-tight
-                  text-[#4A1525]
-                  transition-colors
-                  group-hover:text-[#6A263A]
-                  dark:text-[#E0B85C]
-                  sm:text-lg
-                "
-              >
-                تشكيلات
-              </p>
-
-              <p
-                className="
-                  hidden
-                  truncate
-                  text-[10px]
-                  leading-tight
-                  text-muted-foreground
-                  sm:block
-                  sm:text-[11px]
-                "
-              >
-                {STORE_TAGLINE}
-              </p>
-            </div>
-          </Link>
-
-          {/* =================================================
-              أدوات الهيدر
-              ================================================= */}
+          />
 
           <div
+            aria-hidden="true"
             className="
-              flex
-              shrink-0
-              items-center
-              gap-0.5
-              sm:gap-1
+              pointer-events-none
+              absolute
+              inset-0
+              bg-gradient-to-t
+              from-[color:var(--brand-burgundy)]/[0.08]
+              via-transparent
+              to-transparent
+              opacity-0
+              transition-opacity
+              duration-300
+              group-hover:opacity-100
+            "
+          />
+
+          {discountPercent > 0 ? (
+            <span
+              className="
+                absolute
+                start-2
+                top-2
+                rounded-full
+                bg-[color:var(--brand-burgundy)]
+                px-2
+                py-1
+                text-[9px]
+                font-extrabold
+                leading-none
+                text-[color:var(--brand-gold-soft)]
+                shadow-sm
+              "
+            >
+              -{discountPercent}%
+            </span>
+          ) : null}
+
+          {product.badge ? (
+            <span
+              className="
+                absolute
+                end-2
+                top-2
+                max-w-[58%]
+                truncate
+                rounded-full
+                border
+                border-[color:var(--brand-gold)]/20
+                bg-card/95
+                px-2
+                py-1
+                text-[9px]
+                font-bold
+                leading-none
+                text-foreground
+                shadow-sm
+                backdrop-blur-sm
+              "
+            >
+              {product.badge}
+            </span>
+          ) : null}
+
+          {isOutOfStock ? (
+            <div
+              className="
+                absolute
+                inset-0
+                flex
+                items-center
+                justify-center
+                bg-background/65
+                backdrop-blur-[1px]
+              "
+              aria-hidden="true"
+            >
+              <span
+                className="
+                  rounded-full
+                  bg-destructive
+                  px-3
+                  py-1.5
+                  text-[10px]
+                  font-bold
+                  text-destructive-foreground
+                  shadow-lg
+                "
+              >
+                نفد المخزون
+              </span>
+            </div>
+          ) : null}
+
+          <span
+            aria-hidden="true"
+            className="
+              pointer-events-none
+              absolute
+              bottom-2
+              start-2
+              h-2
+              w-2
+              rotate-45
+              border
+              border-[color:var(--brand-gold)]/30
+              opacity-0
+              transition-opacity
+              duration-300
+              group-hover:opacity-100
+            "
+          />
+        </div>
+      </Link>
+
+      <div
+        className="
+          flex
+          min-h-[132px]
+          flex-1
+          flex-col
+          px-3
+          pb-2.5
+          pt-2.5
+        "
+      >
+        <Link
+          to="/product/$id"
+          params={{ id: product.id }}
+          aria-label={`عرض ${product.name}`}
+          className="
+            rounded-md
+            outline-none
+            focus-visible:ring-2
+            focus-visible:ring-[color:var(--brand-gold)]/40
+          "
+        >
+          <h3
+            className="
+              line-clamp-2
+              min-h-[2.55rem]
+              text-[12.5px]
+              font-semibold
+              leading-[1.45]
+              text-foreground
+              transition-colors
+              group-hover:text-[color:var(--brand-burgundy)]
+              dark:group-hover:text-[color:var(--brand-gold)]
             "
           >
-            <CurrencySwitcher className="hidden sm:inline-flex" />
+            {product.name}
+          </h3>
+        </Link>
 
-            <NotificationBell />
-
-            <button
-              type="button"
-              onClick={
-                toggleTheme
-              }
-              aria-label={
-                isDark
-                  ? "تفعيل الوضع النهاري"
-                  : "تفعيل الوضع الليلي"
-              }
-              title={
-                isDark
-                  ? "الوضع النهاري"
-                  : "الوضع الليلي"
-              }
+        {hasRating ? (
+          <div
+            className="
+              mt-1.5
+              flex
+              min-h-4
+              items-center
+              gap-1
+              text-[9px]
+              text-muted-foreground
+            "
+            aria-label={`التقييم ${rating.toLocaleString(
+              "ar-EG",
+            )} من 5`}
+          >
+            <Star
               className="
-                grid
-                h-10
-                w-10
-                place-items-center
-                rounded-xl
-                text-foreground
-                transition-all
-                hover:bg-[#4A1525]/[0.055]
-                hover:text-[#4A1525]
-                active:scale-95
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-[#E0B85C]/50
-                dark:hover:bg-[#E0B85C]/[0.07]
-                dark:hover:text-[#E0B85C]
+                h-3
+                w-3
+                fill-[color:var(--brand-gold)]
+                text-[color:var(--brand-gold-deep)]
               "
-            >
-              {isDark ? (
-                <Sun
-                  aria-hidden="true"
-                  className="
-                    h-[19px]
-                    w-[19px]
-                  "
-                  strokeWidth={2}
-                />
-              ) : (
-                <Moon
-                  aria-hidden="true"
-                  className="
-                    h-[19px]
-                    w-[19px]
-                  "
-                  strokeWidth={2}
-                />
+              aria-hidden="true"
+            />
+
+            <span className="font-bold text-foreground">
+              {rating.toLocaleString(
+                "ar-EG",
+                {
+                  maximumFractionDigits: 1,
+                },
               )}
-            </button>
+            </span>
 
-            <Link
-              to="/account"
-              aria-label="حسابي"
+            <span>
+              (
+              {reviewsCount.toLocaleString(
+                "ar-EG",
+              )}
+              )
+            </span>
+          </div>
+        ) : (
+          <div className="mt-1.5 min-h-4" />
+        )}
+
+        <div className="mt-1 min-h-4">
+          {isLowStock ? (
+            <p
               className="
-                grid
-                h-10
-                w-10
-                place-items-center
-                rounded-xl
-                text-foreground
-                transition-all
-                hover:bg-[#4A1525]/[0.055]
-                hover:text-[#4A1525]
-                active:scale-95
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-[#E0B85C]/50
-                dark:hover:bg-[#E0B85C]/[0.07]
-                dark:hover:text-[#E0B85C]
+                text-[9px]
+                font-semibold
+                text-amber-600
+                dark:text-amber-400
               "
             >
-              <User
-                className="
-                  h-[19px]
-                  w-[19px]
-                "
-                strokeWidth={2}
-              />
-            </Link>
-
-            <button
-              type="button"
-              aria-label="فتح سلة التسوق"
-              onClick={() =>
-                setDrawerOpen(
-                  true,
-                )
-              }
+              متبقي{" "}
+              {stockLeft.toLocaleString(
+                "ar-EG",
+              )}{" "}
+              فقط
+            </p>
+          ) : isOutOfStock ? (
+            <p
               className="
-                relative
-                grid
-                h-10
-                w-10
-                place-items-center
-                rounded-xl
-                text-foreground
-                transition-all
-                hover:bg-[#4A1525]/[0.055]
-                hover:text-[#4A1525]
-                active:scale-95
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-[#E0B85C]/50
-                dark:hover:bg-[#E0B85C]/[0.07]
-                dark:hover:text-[#E0B85C]
+                text-[9px]
+                font-semibold
+                text-destructive
               "
             >
-              <ShoppingCart
-                className="
-                  h-[19px]
-                  w-[19px]
-                "
-                strokeWidth={2}
-              />
+              غير متوفر حالياً
+            </p>
+          ) : null}
+        </div>
 
-              {count > 0 ? (
+        <div
+          className="
+            mt-auto
+            flex
+            items-end
+            justify-between
+            gap-2
+            pt-2
+          "
+        >
+          <div className="min-w-0 flex-1">
+            <p
+              className="
+                truncate
+                text-[14px]
+                font-extrabold
+                leading-tight
+                text-[color:var(--brand-burgundy)]
+                dark:text-[color:var(--brand-gold)]
+                sm:text-[15px]
+              "
+              aria-label={`السعر ${formatPrice(
+                currentPrice,
+              )}`}
+            >
+              {formatPrice(currentPrice)}
+            </p>
+
+            {hasOldPrice ? (
+              <p
+                className="
+                  mt-0.5
+                  truncate
+                  text-[9px]
+                  leading-tight
+                  text-muted-foreground
+                  line-through
+                "
+                aria-label={`السعر السابق ${formatPrice(
+                  oldPrice,
+                )}`}
+              >
+                {formatPrice(oldPrice)}
+              </p>
+            ) : (
+              <div className="h-3" />
+            )}
+          </div>
+
+          <button
+            type="button"
+            disabled={isOutOfStock}
+            aria-label={
+              isOutOfStock
+                ? `${product.name} غير متوفر`
+                : cartQuantity > 0
+                  ? `إضافة قطعة أخرى من ${product.name} إلى السلة`
+                  : `إضافة ${product.name} إلى السلة`
+            }
+            onClick={quickAdd}
+            className="
+              relative
+              grid
+              h-10
+              w-10
+              shrink-0
+              place-items-center
+              rounded-xl
+              bg-[color:var(--brand-burgundy)]
+              text-[color:var(--brand-gold-soft)]
+              shadow-sm
+              outline-none
+              transition-all
+              duration-200
+              hover:bg-[color:var(--brand-burgundy-soft)]
+              hover:shadow-[0_8px_20px_-12px_color-mix(in_srgb,var(--brand-burgundy)_80%,transparent)]
+              active:scale-90
+              focus-visible:ring-2
+              focus-visible:ring-[color:var(--brand-gold)]
+              focus-visible:ring-offset-2
+              focus-visible:ring-offset-card
+              disabled:cursor-not-allowed
+              disabled:opacity-40
+            "
+          >
+            {cartQuantity > 0 ? (
+              <>
+                <Check
+                  className="h-4 w-4"
+                  strokeWidth={2.6}
+                  aria-hidden="true"
+                />
+
                 <span
-                  aria-label={`${count.toLocaleString(
-                    "ar-EG",
-                  )} منتجات في السلة`}
                   className="
                     absolute
-                    -right-0.5
-                    -top-0.5
+                    -end-1
+                    -top-1
                     grid
-                    h-[18px]
-                    min-w-[18px]
+                    min-h-4
+                    min-w-4
                     place-items-center
                     rounded-full
-                    bg-[#4A1525]
+                    border-2
+                    border-card
+                    bg-[color:var(--brand-gold)]
                     px-1
-                    text-[9px]
+                    text-[8px]
                     font-extrabold
                     leading-none
-                    text-white
-                    shadow-sm
-                    ring-2
-                    ring-[#FBF7EF]
-                    dark:bg-[#E0B85C]
-                    dark:text-[#35101C]
-                    dark:ring-[#170C11]
+                    text-[color:var(--brand-burgundy)]
                   "
                 >
-                  {count > 99
+                  {cartQuantity > 99
                     ? "99+"
-                    : count.toLocaleString(
+                    : cartQuantity.toLocaleString(
                         "ar-EG",
                       )}
                 </span>
-              ) : null}
-            </button>
-
-            <SideMenu />
-          </div>
-        </div>
-
-        {/* ===================================================
-            البحث
-            =================================================== */}
-
-        <div
-          ref={searchRef}
-          className="
-            relative
-            mt-2.5
-            sm:mt-3
-          "
-        >
-          <form
-            role="search"
-            onSubmit={(event) => {
-              event.preventDefault();
-
-              submitSearch();
-            }}
-          >
-            <div
-              className="
-                relative
-              "
-            >
-              <Search
+              </>
+            ) : (
+              <Plus
+                className="h-4 w-4"
+                strokeWidth={2.5}
                 aria-hidden="true"
-                className="
-                  pointer-events-none
-                  absolute
-                  start-3.5
-                  top-1/2
-                  h-[18px]
-                  w-[18px]
-                  -translate-y-1/2
-                  text-[#4A1525]/55
-                  dark:text-[#E0B85C]/65
-                "
-                strokeWidth={2}
               />
-
-              <input
-                ref={inputRef}
-                type="search"
-                inputMode="search"
-                value={term}
-                onChange={(
-                  event,
-                ) =>
-                  setTerm(
-                    event.target
-                      .value,
-                  )
-                }
-                onFocus={() =>
-                  setIsSearchFocused(
-                    true,
-                  )
-                }
-                placeholder="ابحث عن منتج أو ماركة أو فئة..."
-                aria-label="البحث في متجر تشكيلات"
-                aria-expanded={
-                  showSearchPanel
-                }
-                aria-controls="search-suggestions"
-                enterKeyHint="search"
-                autoComplete="off"
-                spellCheck={false}
-                className="
-                  h-11
-                  w-full
-                  rounded-2xl
-                  border
-                  border-[#E0B85C]/20
-                  bg-white/70
-                  ps-10
-                  pe-10
-                  text-[13px]
-                  text-foreground
-                  outline-none
-                  transition-all
-                  duration-200
-                  placeholder:text-muted-foreground/75
-                  focus:border-[#E0B85C]/55
-                  focus:bg-white
-                  focus:ring-2
-                  focus:ring-[#E0B85C]/15
-                  dark:bg-white/[0.035]
-                  dark:focus:bg-white/[0.055]
-                  sm:h-11
-                  sm:text-sm
-                "
-              />
-
-              {term.length >
-              0 ? (
-                <button
-                  type="button"
-                  onClick={
-                    clearSearch
-                  }
-                  aria-label="مسح البحث"
-                  className="
-                    absolute
-                    end-2
-                    top-1/2
-                    grid
-                    h-8
-                    w-8
-                    -translate-y-1/2
-                    place-items-center
-                    rounded-lg
-                    text-muted-foreground
-                    transition-colors
-                    hover:bg-[#4A1525]/[0.055]
-                    hover:text-[#4A1525]
-                    active:scale-95
-                    focus-visible:outline-none
-                    focus-visible:ring-2
-                    focus-visible:ring-[#E0B85C]/50
-                    dark:hover:bg-[#E0B85C]/[0.07]
-                    dark:hover:text-[#E0B85C]
-                  "
-                >
-                  <X
-                    aria-hidden="true"
-                    className="h-4 w-4"
-                    strokeWidth={2}
-                  />
-                </button>
-              ) : null}
-            </div>
-          </form>
-
-          {/* =================================================
-              لوحة الاقتراحات
-              ================================================= */}
-
-          {showSearchPanel ? (
-            <div
-              id="search-suggestions"
-              role="listbox"
-              className="
-                absolute
-                inset-x-0
-                top-[calc(100%+0.5rem)]
-                z-50
-                overflow-hidden
-                rounded-2xl
-                border
-                border-[#E0B85C]/20
-                bg-[#FBF7EF]
-                shadow-[0_18px_55px_-25px_rgba(53,16,28,0.5)]
-                dark:bg-[#211117]
-              "
-            >
-              {/* خط الهوية العلوي */}
-
-              <div
-                aria-hidden="true"
-                className="
-                  h-px
-                  w-full
-                  bg-gradient-to-r
-                  from-transparent
-                  via-[#E0B85C]/50
-                  to-transparent
-                "
-              />
-
-              {term.trim().length >=
-              2 ? (
-                <div className="p-2">
-                  <div
-                    className="
-                      flex
-                      items-center
-                      justify-between
-                      px-3
-                      pb-1.5
-                      pt-1
-                    "
-                  >
-                    <span
-                      className="
-                        text-[10px]
-                        font-bold
-                        text-muted-foreground
-                      "
-                    >
-                      اقتراحات البحث
-                    </span>
-
-                    {isSearching ? (
-                      <span
-                        className="
-                          h-3
-                          w-3
-                          animate-spin
-                          rounded-full
-                          border-2
-                          border-[#E0B85C]/25
-                          border-t-[#4A1525]
-                          dark:border-t-[#E0B85C]
-                        "
-                        aria-label="جاري البحث"
-                      />
-                    ) : null}
-                  </div>
-
-                  {suggestions.length >
-                  0 ? (
-                    <div
-                      className="
-                        max-h-[360px]
-                        overflow-y-auto
-                        overscroll-contain
-                      "
-                    >
-                      {suggestions.map(
-                        (
-                          product,
-                        ) => (
-                          <SearchSuggestionItem
-                            key={
-                              product.id
-                            }
-                            product={
-                              product
-                            }
-                            onSelect={
-                              selectSuggestion
-                            }
-                          />
-                        ),
-                      )}
-                    </div>
-                  ) : !isSearching ? (
-                    <div
-                      className="
-                        px-4
-                        py-7
-                        text-center
-                      "
-                    >
-                      <span
-                        className="
-                          mx-auto
-                          mb-2
-                          grid
-                          h-10
-                          w-10
-                          place-items-center
-                          rounded-xl
-                          bg-[#4A1525]/[0.06]
-                          text-[#4A1525]/60
-                          dark:bg-[#E0B85C]/[0.07]
-                          dark:text-[#E0B85C]/70
-                        "
-                      >
-                        <Search
-                          className="h-5 w-5"
-                          aria-hidden="true"
-                        />
-                      </span>
-
-                      <p
-                        className="
-                          text-xs
-                          font-bold
-                          text-foreground
-                        "
-                      >
-                        لا توجد اقتراحات مطابقة
-                      </p>
-
-                      <p
-                        className="
-                          mt-1
-                          text-[10px]
-                          text-muted-foreground
-                        "
-                      >
-                        اضغط Enter للبحث عن
-                        «{term.trim()}»
-                      </p>
-                    </div>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onMouseDown={(
-                      event,
-                    ) =>
-                      event.preventDefault()
-                    }
-                    onClick={() =>
-                      submitSearch()
-                    }
-                    className="
-                      mt-1
-                      flex
-                      w-full
-                      items-center
-                      justify-center
-                      gap-2
-                      rounded-xl
-                      border
-                      border-[#E0B85C]/15
-                      bg-[#4A1525]/[0.035]
-                      px-3
-                      py-2.5
-                      text-xs
-                      font-bold
-                      text-[#4A1525]
-                      transition-colors
-                      hover:bg-[#4A1525]/[0.07]
-                      dark:bg-[#E0B85C]/[0.045]
-                      dark:text-[#E0B85C]
-                      dark:hover:bg-[#E0B85C]/[0.08]
-                    "
-                  >
-                    <Search
-                      className="h-3.5 w-3.5"
-                      aria-hidden="true"
-                    />
-
-                    البحث عن «
-                    {term.trim()}
-                    »
-                  </button>
-                </div>
-              ) : (
-                <div className="p-2">
-                  <div
-                    className="
-                      flex
-                      items-center
-                      justify-between
-                      px-3
-                      pb-1.5
-                      pt-1
-                    "
-                  >
-                    <span
-                      className="
-                        flex
-                        items-center
-                        gap-1.5
-                        text-[10px]
-                        font-bold
-                        text-muted-foreground
-                      "
-                    >
-                      <Clock3
-                        className="h-3.5 w-3.5"
-                        aria-hidden="true"
-                      />
-
-                      عمليات البحث الأخيرة
-                    </span>
-
-                    {searchHistory.length >
-                    0 ? (
-                      <button
-                        type="button"
-                        onMouseDown={(
-                          event,
-                        ) =>
-                          event.preventDefault()
-                        }
-                        onClick={() => {
-                          try {
-                            localStorage.removeItem(
-                              SEARCH_HISTORY_KEY,
-                            );
-                          } catch {
-                            // Ignore storage errors.
-                          }
-
-                          setSearchHistory(
-                            [],
-                          );
-                        }}
-                        className="
-                          text-[10px]
-                          font-semibold
-                          text-[#4A1525]
-                          hover:underline
-                          dark:text-[#E0B85C]
-                        "
-                      >
-                        مسح الكل
-                      </button>
-                    ) : null}
-                  </div>
-
-                  {searchHistory.length >
-                  0 ? (
-                    <div
-                      className="
-                        max-h-[260px]
-                        overflow-y-auto
-                      "
-                    >
-                      {searchHistory.map(
-                        (
-                          item,
-                        ) => (
-                          <button
-                            key={item}
-                            type="button"
-                            onMouseDown={(
-                              event,
-                            ) =>
-                              event.preventDefault()
-                            }
-                            onClick={() =>
-                              selectHistory(
-                                item,
-                              )
-                            }
-                            className="
-                              group
-                              flex
-                              w-full
-                              items-center
-                              gap-3
-                              rounded-xl
-                              px-3
-                              py-2.5
-                              text-right
-                              transition-colors
-                              hover:bg-[#4A1525]/[0.045]
-                              focus-visible:outline-none
-                              focus-visible:ring-2
-                              focus-visible:ring-inset
-                              focus-visible:ring-[#E0B85C]/50
-                              dark:hover:bg-[#E0B85C]/[0.06]
-                            "
-                          >
-                            <span
-                              className="
-                                grid
-                                h-8
-                                w-8
-                                shrink-0
-                                place-items-center
-                                rounded-lg
-                                bg-[#4A1525]/[0.06]
-                                text-[#4A1525]/65
-                                dark:bg-[#E0B85C]/[0.07]
-                                dark:text-[#E0B85C]/70
-                              "
-                            >
-                              <Clock3
-                                className="h-4 w-4"
-                                aria-hidden="true"
-                              />
-                            </span>
-
-                            <span
-                              className="
-                                min-w-0
-                                flex-1
-                                truncate
-                                text-xs
-                                font-semibold
-                                text-foreground
-                              "
-                            >
-                              {item}
-                            </span>
-
-                            <ArrowLeft
-                              className="
-                                h-4
-                                w-4
-                                shrink-0
-                                text-muted-foreground
-                                opacity-0
-                                transition-all
-                                group-hover:-translate-x-0.5
-                                group-hover:opacity-100
-                              "
-                              aria-hidden="true"
-                            />
-                          </button>
-                        ),
-                      )}
-                    </div>
-                  ) : (
-                    <div
-                      className="
-                        px-4
-                        py-6
-                        text-center
-                        text-[11px]
-                        text-muted-foreground
-                      "
-                    >
-                      ابدأ بكتابة اسم المنتج أو الفئة.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* زخرفة الهوية */}
-
-              <span
-                aria-hidden="true"
-                className="
-                  pointer-events-none
-                  absolute
-                  -bottom-8
-                  -left-8
-                  h-20
-                  w-20
-                  rotate-45
-                  border
-                  border-[#E0B85C]/[0.055]
-                "
-              />
-            </div>
-          ) : null}
+            )}
+          </button>
         </div>
       </div>
 
-      {/* =====================================================
-          خط الهوية السفلي
-          ===================================================== */}
+      {cartQuantity > 0 &&
+      !isOutOfStock ? (
+        <button
+          type="button"
+          onClick={openCart}
+          className="
+            mx-3
+            mb-3
+            flex
+            min-h-8
+            items-center
+            justify-center
+            gap-1.5
+            rounded-xl
+            border
+            border-[color:var(--brand-gold)]/20
+            bg-[color:var(--brand-gold)]/[0.08]
+            px-2
+            py-1.5
+            text-[9px]
+            font-bold
+            text-[color:var(--brand-burgundy)]
+            outline-none
+            transition-all
+            hover:border-[color:var(--brand-gold)]/40
+            hover:bg-[color:var(--brand-gold)]/[0.16]
+            focus-visible:ring-2
+            focus-visible:ring-[color:var(--brand-gold)]/40
+            dark:text-[color:var(--brand-gold)]
+          "
+          aria-label={`فتح السلة، ${cartQuantity.toLocaleString(
+            "ar-EG",
+          )} في السلة`}
+        >
+          <ShoppingCart
+            className="h-3.5 w-3.5"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
 
+          <span>
+            {cartQuantity.toLocaleString(
+              "ar-EG",
+            )}{" "}
+            في السلة
+          </span>
+        </button>
+      ) : null}
+    </article>
+  );
+});
+
+ProductCard.displayName = "ProductCard";
+
+export function ProductCardSkeleton() {
+  return (
+    <div
+      className="
+        overflow-hidden
+        rounded-[20px]
+        border
+        border-[color:var(--brand-gold)]/10
+        bg-card
+        shadow-card
+      "
+      aria-hidden="true"
+    >
       <div
-        aria-hidden="true"
         className="
-          pointer-events-none
-          absolute
-          inset-x-0
-          bottom-0
-          h-px
-          bg-gradient-to-r
-          from-transparent
-          via-[#E0B85C]/25
-          to-transparent
+          aspect-square
+          w-full
+          animate-pulse
+          bg-muted
         "
       />
-    </header>
+
+      <div
+        className="
+          flex
+          min-h-[132px]
+          flex-col
+          p-3
+        "
+      >
+        <div className="space-y-2">
+          <div className="h-3 w-full animate-pulse rounded bg-muted" />
+          <div className="h-3 w-3/5 animate-pulse rounded bg-muted" />
+        </div>
+
+        <div
+          className="
+            mt-auto
+            flex
+            items-end
+            justify-between
+            gap-2
+            pt-5
+          "
+        >
+          <div className="space-y-1.5">
+            <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+            <div className="h-2.5 w-12 animate-pulse rounded bg-muted" />
+          </div>
+
+          <div
+            className="
+              h-10
+              w-10
+              animate-pulse
+              rounded-xl
+              bg-muted
+            "
+          />
+        </div>
+      </div>
+    </div>
   );
 }
-
-export default SiteHeader;
