@@ -17,7 +17,11 @@ import { useCart } from "@/lib/cart-context";
 
 export function SiteHeader() {
   const navigate = useNavigate();
-  const { count } = useCart();
+
+  const {
+    count,
+    setDrawerOpen,
+  } = useCart();
 
   const [darkMode, setDarkMode] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -110,6 +114,40 @@ export function SiteHeader() {
         q: query,
       },
     });
+  };
+
+  /**
+   * =========================================================
+   * فتح السلة الحقيقية
+   * =========================================================
+   *
+   * السلة في المشروع تعمل من خلال CartProvider
+   * و drawerOpen / setDrawerOpen.
+   *
+   * لذلك لا نستخدم /cart حتى لا يحدث 404.
+   */
+
+  const handleOpenCart = () => {
+    setDrawerOpen(true);
+  };
+
+  /**
+   * =========================================================
+   * الإشعارات
+   * =========================================================
+   *
+   * لا يوجد حالياً Route مؤكد باسم /notifications
+   * في التطبيق.
+   *
+   * لذلك لا نقوم بأي navigation إلى مسار غير موجود.
+   *
+   * سيتم ربط الزر لاحقاً بنظام الإشعارات الحقيقي
+   * عند إضافة مصدر الإشعارات الفعلي.
+   */
+
+  const handleNotifications = () => {
+    // لا يوجد Route للإشعارات حالياً.
+    // إبقاء الزر بدون navigation يمنع خطأ 404.
   };
 
   return (
@@ -282,11 +320,7 @@ export function SiteHeader() {
             type="button"
             aria-label="الإشعارات"
             title="الإشعارات"
-            onClick={() => {
-              void navigate({
-                to: "/notifications",
-              });
-            }}
+            onClick={handleNotifications}
             className="
               relative
               inline-flex
@@ -309,10 +343,11 @@ export function SiteHeader() {
 
           {/* السلة */}
 
-          <Link
-            to="/cart"
+          <button
+            type="button"
             aria-label="السلة"
             title="السلة"
+            onClick={handleOpenCart}
             className="
               relative
               inline-flex
@@ -362,7 +397,7 @@ export function SiteHeader() {
                   : count.toLocaleString("ar-EG")}
               </span>
             ) : null}
-          </Link>
+          </button>
         </div>
       </div>
 
