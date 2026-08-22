@@ -377,14 +377,9 @@ function Index() {
         dark:bg-[#170C11]
       "
     >
-      {/*
-       * =====================================================
-       * طبقة العلامة المائية الخلفية
-       * =====================================================
-       *
-       * زخارف هندسية خفية جداً حتى لا تنافس
-       * صور المنتجات والمحتوى التجاري.
-       */}
+      {/* =====================================================
+          طبقة العلامة المائية الخلفية
+          ===================================================== */}
 
       <div
         aria-hidden="true"
@@ -527,7 +522,6 @@ function Index() {
 
           {/* =====================================================
               الأقسام الرائجة
-              تعتمد على المبيعات الحقيقية
               ===================================================== */}
 
           <HeritageSectionFrame
@@ -753,8 +747,7 @@ function Index() {
                             {category.name}
                           </span>
 
-                          {category.productCount >
-                          0 ? (
+                          {category.productCount > 0 ? (
                             <span className="mt-0.5 text-[9px] text-muted-foreground">
                               {category.productCount.toLocaleString(
                                 "ar-EG",
@@ -841,21 +834,54 @@ function Index() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 lg:grid-cols-4">
+              <div
+                className="
+                  no-scrollbar
+                  flex
+                  snap-x
+                  snap-mandatory
+                  gap-3
+                  overflow-x-auto
+                  px-4
+                  pb-2
+                  md:grid
+                  md:grid-cols-3
+                  md:overflow-visible
+                  lg:grid-cols-4
+                "
+              >
                 {bestProductsLoading
                   ? Array.from({
                       length: 4,
                     }).map((_, index) => (
-                      <ProductCardSkeleton
+                      <div
                         key={index}
-                      />
+                        className="
+                          w-[168px]
+                          shrink-0
+                          snap-start
+                          md:w-auto
+                        "
+                      >
+                        <ProductCardSkeleton />
+                      </div>
                     ))
                   : bestSellers.map(
                       (product) => (
-                        <ProductCard
+                        <div
                           key={product.id}
-                          product={product}
-                        />
+                          className="
+                            w-[168px]
+                            shrink-0
+                            snap-start
+                            sm:w-[190px]
+                            md:w-auto
+                          "
+                        >
+                          <ProductCard
+                            product={product}
+                          />
+                        </div>
                       ),
                     )}
               </div>
@@ -895,21 +921,54 @@ function Index() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 lg:grid-cols-4">
+              <div
+                className="
+                  no-scrollbar
+                  flex
+                  snap-x
+                  snap-mandatory
+                  gap-3
+                  overflow-x-auto
+                  px-4
+                  pb-2
+                  md:grid
+                  md:grid-cols-3
+                  md:overflow-visible
+                  lg:grid-cols-4
+                "
+              >
                 {newestProductsLoading
                   ? Array.from({
                       length: 4,
                     }).map((_, index) => (
-                      <ProductCardSkeleton
+                      <div
                         key={index}
-                      />
+                        className="
+                          w-[168px]
+                          shrink-0
+                          snap-start
+                          md:w-auto
+                        "
+                      >
+                        <ProductCardSkeleton />
+                      </div>
                     ))
                   : newestProducts.map(
                       (product) => (
-                        <ProductCard
+                        <div
                           key={product.id}
-                          product={product}
-                        />
+                          className="
+                            w-[168px]
+                            shrink-0
+                            snap-start
+                            sm:w-[190px]
+                            md:w-auto
+                          "
+                        >
+                          <ProductCard
+                            product={product}
+                          />
+                        </div>
                       ),
                     )}
               </div>
@@ -940,18 +999,9 @@ function Index() {
           </HeritageSectionFrame>
         </main>
 
-        {/*
-         * تم إزالة SiteFooter من الصفحة الرئيسية عمداً.
-         *
-         * الصفحات الداخلية مثل:
-         * - من نحن
-         * - الأسئلة الشائعة
-         * - السياسات
-         *
-         * يمكنها الاحتفاظ بالتذييل عند الحاجة.
-         *
-         * أما Home فتستخدم BottomNav لتبدو كتطبيق PWA حقيقي.
-         */}
+        {/* =====================================================
+            Bottom Navigation
+            ===================================================== */}
 
         <BottomNav />
       </div>
