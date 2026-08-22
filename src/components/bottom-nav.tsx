@@ -1,81 +1,97 @@
-import { useNavigate, useLocation } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  Bell,
   Grid2x2,
-  Heart,
   Home,
-  Info,
   Package,
-  Phone,
-  ShoppingCart,
+  ShoppingBag,
   User,
-  Wallet,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { useCart } from "@/lib/cart-context";
-import { fetchNavItems } from "@/lib/nav";
 
-const ICONS: Record<string, LucideIcon> = {
-  home: Home,
-  grid: Grid2x2,
-  package: Package,
-  user: User,
-  cart: ShoppingCart,
-  wallet: Wallet,
-  heart: Heart,
-  bell: Bell,
-  phone: Phone,
-  info: Info,
+import { useCart } from "@/lib/cart-context";
+
+type BottomNavItem = {
+  id: string;
+  label: string;
+  path: string;
+  icon: typeof Home;
 };
 
-const FALLBACK = [
+const NAV_ITEMS: BottomNavItem[] = [
   {
-    id: "f1",
+    id: "home",
     label: "الرئيسية",
     path: "/",
-    icon: "home",
+    icon: Home,
   },
   {
-    id: "f2",
+    id: "products",
     label: "المنتجات",
     path: "/products",
-    icon: "grid",
+    icon: Grid2x2,
   },
   {
-    id: "f3",
-    label: "المفضلة",
-    path: "/favorites",
-    icon: "heart",
+    id: "offers",
+    label: "العروض",
+    path: "/products?offers=true",
+    icon: ShoppingBag,
   },
   {
-    id: "f4",
-    label: "السلة",
-    path: "#cart",
-    icon: "cart",
-    isCartBadge: true,
+    id: "orders",
+    label: "طلباتي",
+    path: "/orders",
+    icon: Package,
   },
   {
-    id: "f5",
+    id: "account",
     label: "حسابي",
     path: "/account",
-    icon: "user",
+    icon: User,
   },
 ];
 
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { count, setDrawerOpen } = useCart();
+  const { count } = useCart();
 
-  const { data } = useQuery({
-    queryKey: ["nav-items"],
-    queryFn: () => fetchNavItems(true),
-    staleTime: 1000 * 60 * 10,
-  });
+  const isActive = (item: BottomNavItem) => {
+    if (item.id === "home") {
+      return location.pathname === "/";
+    }
 
-  const items =
-    data && data.length > 0 ? data : FALLBACK;
+    if (item.id === "offers") {
+      return (
+        location.pathname === "/products" &&
+        new URLSearchParams(
+          location.search,
+        ).get("offers") === "true"
+      );
+    }
+
+    return (
+      location.pathname === item.path ||
+      location.pathname.startsWith(
+        `${item.path}/`,
+      )
+    );
+  };
+
+  const handleNavigation = (item: BottomNavItem) => {
+    if (item.id === "offers") {
+      void navigate({
+        to: "/products",
+        search: {
+          offers: true,
+        },
+      } as never);
+
+      return;
+    }
+
+    void navigate({
+      to: item.path as never,
+    });
+  };
 
   return (
     <nav
@@ -111,9 +127,7 @@ export function BottomNav() {
           supports-[backdrop-filter]:bg-[color:var(--card)]/82
         "
       >
-        {/* ===================================================
-            الخط الذهبي العلوي
-            =================================================== */}
+        {/* الخط الذهبي العلوي */}
 
         <div
           aria-hidden="true"
@@ -130,9 +144,7 @@ export function BottomNav() {
           "
         />
 
-        {/* ===================================================
-            زخرفة تراثية خفيفة
-            =================================================== */}
+        {/* الزخرفة التراثية */}
 
         <div
           aria-hidden="true"
@@ -167,7 +179,7 @@ export function BottomNav() {
         />
 
         {/* ===================================================
-            التنقل
+            عناصر القائمة
             =================================================== */}
 
         <ul
@@ -176,164 +188,14 @@ export function BottomNav() {
             grid
             min-h-[68px]
             w-full
+            grid-cols-5
             px-1
             pt-1
           "
-          style={{
-            gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`,
-          }}
         >
-          {items.map((item: any) => {
-            const Icon =
-              ICONS[item.icon] ?? Home;
-
-            const isCartAction =
-              item.path === "#cart" ||
-              item.icon === "cart" ||
-              item.isCartBadge;
-
-            /*
-             * =================================================
-             * السلة
-             * =================================================
-             */
-
-            if (isCartAction) {
-              return (
-                <li
-                  key={item.id}
-                  className="
-                    flex
-                    min-w-0
-                    items-stretch
-                  "
-                >
-                  <button
-                    type="button"
-                    aria-label={`${item.label}${
-                      count > 0
-                        ? `، ${count} منتجات`
-                        : ""
-                    }`}
-                    onClick={() =>
-                      setDrawerOpen(true)
-                    }
-                    className="
-                      group
-                      relative
-                      flex
-                      min-h-[64px]
-                      w-full
-                      touch-manipulation
-                      flex-col
-                      items-center
-                      justify-center
-                      gap-1
-                      rounded-xl
-                      px-1
-                      py-2
-                      text-[10px]
-                      font-medium
-                      text-muted-foreground
-                      outline-none
-                      transition-all
-                      duration-200
-                      active:scale-[0.94]
-                      focus-visible:ring-2
-                      focus-visible:ring-[color:var(--brand-gold)]
-                      focus-visible:ring-offset-1
-                      hover:text-[color:var(--brand-burgundy)]
-                      dark:hover:text-[color:var(--brand-gold)]
-                    "
-                  >
-                    <span
-                      className="
-                        relative
-                        flex
-                        h-9
-                        w-12
-                        items-center
-                        justify-center
-                        rounded-xl
-                        transition-all
-                        duration-200
-                        group-hover:bg-[color:var(--brand-gold)]/10
-                        group-active:bg-[color:var(--brand-gold)]/15
-                      "
-                    >
-                      <Icon
-                        className="
-                          h-[21px]
-                          w-[21px]
-                          shrink-0
-                          transition-transform
-                          duration-200
-                          group-hover:scale-105
-                        "
-                        strokeWidth={1.8}
-                        aria-hidden="true"
-                      />
-
-                      {count > 0 ? (
-                        <span
-                          aria-hidden="true"
-                          className="
-                            absolute
-                            -right-0.5
-                            -top-1
-                            grid
-                            min-h-[18px]
-                            min-w-[18px]
-                            place-items-center
-                            rounded-full
-                            border
-                            border-[color:var(--brand-cream)]
-                            bg-[color:var(--brand-burgundy)]
-                            px-1
-                            text-[9px]
-                            font-bold
-                            leading-none
-                            text-[color:var(--brand-gold-soft)]
-                            shadow-sm
-                            dark:border-[color:var(--brand-burgundy-deep)]
-                          "
-                        >
-                          {count.toLocaleString(
-                            "ar-EG",
-                          )}
-                        </span>
-                      ) : null}
-                    </span>
-
-                    <span
-                      className="
-                        max-w-full
-                        truncate
-                        px-0.5
-                        leading-4
-                      "
-                    >
-                      {item.label}
-                    </span>
-                  </button>
-                </li>
-              );
-            }
-
-            /*
-             * =================================================
-             * العناصر العادية
-             * =================================================
-             */
-
-            const isActive =
-              item.path === "/"
-                ? location.pathname === "/"
-                : location.pathname ===
-                    item.path ||
-                  location.pathname.startsWith(
-                    `${item.path}/`,
-                  );
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item);
 
             return (
               <li
@@ -347,15 +209,11 @@ export function BottomNav() {
                 <button
                   type="button"
                   aria-current={
-                    isActive
-                      ? "page"
-                      : undefined
+                    active ? "page" : undefined
                   }
                   aria-label={item.label}
                   onClick={() =>
-                    void navigate({
-                      to: item.path as any,
-                    })
+                    handleNavigation(item)
                   }
                   className={`
                     group
@@ -380,7 +238,7 @@ export function BottomNav() {
                     focus-visible:ring-[color:var(--brand-gold)]
                     focus-visible:ring-offset-1
                     ${
-                      isActive
+                      active
                         ? "font-bold text-[color:var(--brand-burgundy)] dark:text-[color:var(--brand-gold)]"
                         : "font-medium text-muted-foreground hover:text-[color:var(--brand-burgundy)] dark:hover:text-[color:var(--brand-gold)]"
                     }
@@ -399,7 +257,7 @@ export function BottomNav() {
                       transition-all
                       duration-200
                       ${
-                        isActive
+                        active
                           ? "bg-[color:var(--brand-gold)]/14 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-gold)_10%,transparent)]"
                           : "group-hover:bg-[color:var(--brand-gold)]/8 group-active:bg-[color:var(--brand-gold)]/12"
                       }
@@ -413,17 +271,24 @@ export function BottomNav() {
                         transition-all
                         duration-200
                         ${
-                          isActive
+                          active
                             ? "scale-105"
                             : "group-hover:scale-105"
                         }
                       `}
                       strokeWidth={
-                        isActive ? 2.2 : 1.8
+                        active ? 2.2 : 1.8
                       }
                     />
 
-                    {isActive ? (
+                    {/* عداد السلة لم يعد عنصرًا في القائمة،
+                        لكن نحافظ على عدم إظهار أي عداد
+                        على عناصر التنقل الأخرى. */}
+
+                    {item.id === "orders" &&
+                    count > 0 ? null : null}
+
+                    {active ? (
                       <>
                         <span
                           aria-hidden="true"
