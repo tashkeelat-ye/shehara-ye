@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Bell,
   Moon,
@@ -6,19 +6,60 @@ import {
   ShoppingCart,
   Sun,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+} from "react";
 
 import { SideMenu } from "@/components/side-menu";
+import { useCart } from "@/lib/cart-context";
 
 export function SiteHeader() {
+  const navigate = useNavigate();
+  const { count } = useCart();
+
   const [darkMode, setDarkMode] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+
+  /**
+   * =========================================================
+   * استعادة الوضع المحفوظ
+   * =========================================================
+   */
 
   useEffect(() => {
-    const isDark =
-      document.documentElement.classList.contains("dark");
+    try {
+      const savedTheme =
+        localStorage.getItem("tashkilat-theme");
 
-    setDarkMode(isDark);
+      if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark");
+        setDarkMode(true);
+        return;
+      }
+
+      if (savedTheme === "light") {
+        document.documentElement.classList.remove("dark");
+        setDarkMode(false);
+        return;
+      }
+    } catch {
+      // تجاهل أخطاء localStorage
+    }
+
+    setDarkMode(
+      document.documentElement.classList.contains(
+        "dark",
+      ),
+    );
   }, []);
+
+  /**
+   * =========================================================
+   * الوضع الداكن
+   * =========================================================
+   */
 
   const toggleDarkMode = () => {
     const nextMode = !darkMode;
@@ -38,6 +79,37 @@ export function SiteHeader() {
     } catch {
       // تجاهل أخطاء التخزين المحلي
     }
+  };
+
+  /**
+   * =========================================================
+   * البحث الفعلي
+   * =========================================================
+   *
+   * صفحة /products تستخدم q فعلياً.
+   */
+
+  const handleSearch = (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+
+    const query = searchValue.trim();
+
+    if (!query) {
+      void navigate({
+        to: "/products",
+      });
+
+      return;
+    }
+
+    void navigate({
+      to: "/products",
+      search: {
+        q: query,
+      },
+    });
   };
 
   return (
@@ -210,6 +282,11 @@ export function SiteHeader() {
             type="button"
             aria-label="الإشعارات"
             title="الإشعارات"
+            onClick={() => {
+              void navigate({
+                to: "/notifications",
+              });
+            }}
             className="
               relative
               inline-flex
@@ -237,6 +314,7 @@ export function SiteHeader() {
             aria-label="السلة"
             title="السلة"
             className="
+              relative
               inline-flex
               h-10
               w-10
@@ -253,6 +331,37 @@ export function SiteHeader() {
               size={20}
               strokeWidth={2}
             />
+
+            {/* العدد الحقيقي للسلة */}
+
+            {count > 0 ? (
+              <span
+                aria-label={`${count} منتج في السلة`}
+                className="
+                  absolute
+                  -end-1
+                  -top-1
+                  flex
+                  min-h-4
+                  min-w-4
+                  items-center
+                  justify-center
+                  rounded-full
+                  border-2
+                  border-[color:var(--background)]
+                  bg-[color:var(--brand-burgundy)]
+                  px-1
+                  text-[8px]
+                  font-extrabold
+                  leading-none
+                  text-[color:var(--brand-gold)]
+                "
+              >
+                {count > 99
+                  ? "99+"
+                  : count.toLocaleString("ar-EG")}
+              </span>
+            ) : null}
           </Link>
         </div>
       </div>
@@ -273,8 +382,7 @@ export function SiteHeader() {
         "
       >
         <form
-          action="/products"
-          method="get"
+          onSubmit={handleSearch}
           role="search"
           className="
             mx-auto
@@ -298,10 +406,14 @@ export function SiteHeader() {
             />
 
             <input
-              name="search"
+              value={searchValue}
+              onChange={(event) =>
+                setSearchValue(event.target.value)
+              }
               type="search"
               placeholder="ابحث عن المنتجات..."
               aria-label="البحث عن المنتجات"
+              autoComplete="off"
               className="
                 h-11
                 w-full
