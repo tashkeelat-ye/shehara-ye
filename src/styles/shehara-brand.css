@@ -1,0 +1,193 @@
+/*
+ * =========================================================
+ * SHEHARA | شهارة
+ * Brand Override Layer
+ * =========================================================
+ */
+
+:root {
+  /* الهوية */
+  --brand-burgundy: #05465f;
+  --brand-burgundy-deep: #033b50;
+  --brand-burgundy-soft: #0b5b78;
+  --brand-burgundy-light: #18718f;
+
+  --brand-gold: #cd562b;
+  --brand-gold-deep: #a94320;
+  --brand-gold-soft: #e9825c;
+  --brand-gold-pale: #f6d8cc;
+
+  --brand-cream: #fafcfd;
+  --brand-paper: #f3f7f9;
+  --brand-paper-deep: #e5eef2;
+
+  /* الأسطح */
+  --background: #fafcfd;
+  --foreground: #071b24;
+
+  --card: #ffffff;
+  --card-foreground: #071b24;
+
+  --popover: #ffffff;
+  --popover-foreground: #071b24;
+
+  /* Primary */
+  --primary: #05465f;
+  --primary-foreground: #ffffff;
+
+  /* Secondary */
+  --secondary: #eaf2f5;
+  --secondary-foreground: #05465f;
+
+  /* Muted */
+  --muted: #edf3f5;
+  --muted-foreground: #5c7079;
+
+  /* Accent */
+  --accent: #f6d8cc;
+  --accent-foreground: #05465f;
+
+  /* Destructive */
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+
+  /* Borders */
+  --border: #d9e5e9;
+  --input: #d9e5e9;
+  --ring: #cd562b;
+
+  /* Charts */
+  --chart-1: #05465f;
+  --chart-2: #cd562b;
+  --chart-3: #0b5b78;
+  --chart-4: #e9825c;
+  --chart-5: #033b50;
+
+  /* Sidebar */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #071b24;
+  --sidebar-primary: #05465f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #edf3f5;
+  --sidebar-accent-foreground: #05465f;
+  --sidebar-border: #d9e5e9;
+  --sidebar-ring: #cd562b;
+
+  --accent-solid: #cd562b;
+  --accent-solid-foreground: #ffffff;
+
+  --brand-soft: #edf3f5;
+
+  --brand-watermark-opacity: 0.035;
+  --brand-architecture-opacity: 0.025;
+  --brand-ornament-opacity: 0.06;
+  --brand-border-opacity: 0.18;
+}
+
+.dark {
+  --background: #071b24;
+  --foreground: #f4fafc;
+
+  --card: #0b2632;
+  --card-foreground: #f4fafc;
+
+  --popover: #0b2632;
+  --popover-foreground: #f4fafc;
+
+  --primary: #cd562b;
+  --primary-foreground: #ffffff;
+
+  --secondary: #103544;
+  --secondary-foreground: #f4fafc;
+
+  --muted: #103544;
+  --muted-foreground: #b6c8cf;
+
+  --accent: #154252;
+  --accent-foreground: #f4fafc;
+
+  --destructive: #ef6b63;
+  --destructive-foreground: #ffffff;
+
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #cd562b;
+
+  --chart-1: #cd562b;
+  --chart-2: #05465f;
+  --chart-3: #e9825c;
+  --chart-4: #0b5b78;
+  --chart-5: #f4fafc;
+
+  --sidebar: #0b2632;
+  --sidebar-foreground: #f4fafc;
+  --sidebar-primary: #cd562b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #154252;
+  --sidebar-accent-foreground: #f4fafc;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-ring: #cd562b;
+
+  --accent-solid: #cd562b;
+  --accent-solid-foreground: #ffffff;
+
+  --brand-soft: #103544;
+
+  --brand-watermark-opacity: 0.022;
+  --brand-architecture-opacity: 0.018;
+  --brand-ornament-opacity: 0.045;
+}
+
+/*
+ * تحسين الهوية على العناصر التي كانت تستخدم
+ * ألوان الهوية القديمة بشكل مباشر.
+ */
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: rgba(205, 86, 43, 0.22);
+  color: var(--brand-burgundy-deep);
+}
+
+.dark ::selection {
+  background: rgba(205, 86, 43, 0.32);
+  color: #ffffff;
+}
+
+/*
+ * أزرار التركيز والوصولية.
+ */
+
+:focus-visible {
+  outline-color: var(--brand-gold);
+}
+
+/*
+ * تحسين شريط التمرير.
+ */
+
+body::-webkit-scrollbar-thumb {
+  background: color-mix(
+    in srgb,
+    var(--brand-burgundy) 55%,
+    transparent
+  );
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: color-mix(
+    in srgb,
+    var(--brand-gold) 75%,
+    transparent
+  );
+}
+
+/*
+ * ألوان الروابط والأيقونات التي تعتمد على
+ * Tailwind semantic colors ستأخذ الهوية الجديدة
+ * تلقائياً من المتغيرات أعلاه.
+ */
