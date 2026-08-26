@@ -1,191 +1,153 @@
 /**
  * =========================================================
- * تشكيلات للتسوق — الهوية الرسمية
+ * شهارة | SHEHARA
+ * الهوية التجارية الرسمية
  * =========================================================
  *
- * هذا الملف هو المصدر المركزي للهوية البصرية والتجارية
- * المستخدمة داخل واجهة متجر تشكيلات.
+ * الاسم التجاري:
+ * شهارة
  *
- * القاعدة الأساسية:
+ * الاسم اللاتيني:
+ * SHEHARA
  *
- * - لا يتم تكرار ألوان الهوية داخل المكونات.
- * - لا يتم إنشاء الشعار من CSS.
- * - الشعار الرسمي موجود داخل public/logo.png.
- * - جميع المكونات الجديدة تعتمد على BRAND_COLORS
- *   و BRAND_DESIGN_TOKENS.
- * - الهوية الأساسية:
- *      عنابي + ذهبي + ورقي دافئ
- * - العناصر التراثية تستخدم كعلامات مائية منخفضة
- *   الشفافية ولا تنافس المحتوى.
+ * الشعار:
+ * تسوق بلا حدود
  *
  * =========================================================
  */
 
-/**
- * =========================================================
- * الشعار
- * =========================================================
- */
-
-/**
- * المسار الرسمي للشعار الكامل.
- *
- * يجب عدم تغييره إلا إذا تغير ملف الشعار الرسمي
- * داخل public.
- */
 export const LOGO_URL = "/logo.png";
 
-/**
- * الاسم الرسمي للعلامة.
- */
-export const BRAND_NAME = "تشكيلات";
+export const BRAND_NAME = "شهارة";
 
-/**
- * الاسم الكامل المستخدم في العناوين والوصف.
- */
-export const BRAND_FULL_NAME =
-  "تشكيلات للتسوق";
+export const BRAND_FULL_NAME = "شهارة | SHEHARA";
 
-/**
- * الشعار النصي الرسمي.
- */
-export const STORE_TAGLINE =
-  "كل ما تحتاجه... في مكان واحد";
+export const BRAND_LATIN_NAME = "SHEHARA";
 
-/**
- * الشعار النصي المختصر.
- */
-export const STORE_SHORT_TAGLINE =
-  "كل ما تحتاجه... بتشكيلة واحدة";
+export const STORE_TAGLINE = "تسوق بلا حدود";
 
-/**
- * الوصف المختصر للعلامة.
- */
+export const STORE_SHORT_TAGLINE = "تسوق بلا حدود";
+
 export const BRAND_DESCRIPTION =
-  "تشكيلات — متجر إلكتروني يمني يجمع احتياجاتك في مكان واحد.";
+  "شهارة | SHEHARA — متجر إلكتروني يمني للتسوق بسهولة وأمان، بتجربة حديثة تناسب المستخدم اليمني.";
 
-/**
- * النص البديل القياسي للشعار.
- */
 export const LOGO_ALT =
-  "شعار تشكيلات للتسوق";
+  "شعار شهارة SHEHARA - تسوق بلا حدود";
 
 /**
  * =========================================================
- * ألوان الهوية الرسمية
+ * الألوان الرسمية
  * =========================================================
  *
- * هذه هي نقطة المرجع الأساسية لكل الواجهات.
+ * تم اعتمادها من الهوية البصرية المرفقة.
  *
- * Burgundy:
- * اللون الرئيسي للعلامة.
+ * الأزرق:
+ * #05465F
  *
- * Gold:
- * اللون الثانوي والفاخر المستخدم في:
- * - الحدود
- * - الأيقونات المهمة
- * - المؤشرات
- * - التفاصيل
- *
- * Cream / Paper:
- * الأسطح الدافئة في الوضع النهاري.
+ * البرتقالي:
+ * #CD562B
  */
 
 export const BRAND_COLORS = {
-  burgundy:
-    "#4A1525",
+  blue:
+    "#05465F",
 
-  burgundyDeep:
-    "#35101C",
+  blueDeep:
+    "#033B50",
 
-  burgundySoft:
-    "#6A263A",
+  blueDark:
+    "#022F40",
 
-  burgundyLight:
-    "#7B354A",
+  blueSoft:
+    "#0B5B78",
 
-  burgundyDark:
-    "#260B14",
+  blueLight:
+    "#DDEBF0",
 
-  gold:
-    "#E0B85C",
+  orange:
+    "#CD562B",
 
-  goldDeep:
-    "#C99A3B",
+  orangeDeep:
+    "#A94320",
 
-  goldSoft:
-    "#F2D58B",
+  orangeSoft:
+    "#E9825C",
 
-  goldLight:
-    "#F7E6B3",
-
-  cream:
-    "#FBF7EF",
-
-  paper:
-    "#F8F2E7",
-
-  paperDeep:
-    "#EFE4D2",
+  orangeLight:
+    "#F6D8CC",
 
   white:
     "#FFFFFF",
 
+  cream:
+    "#FAFCFD",
+
+  paper:
+    "#F3F7F9",
+
+  paperDeep:
+    "#E5EEF2",
+
   black:
-    "#160A0F",
+    "#071B24",
 } as const;
 
 /**
  * =========================================================
- * ألوان الوضع الليلي
+ * ألوان الوضع الداكن
  * =========================================================
  */
 
 export const BRAND_DARK_COLORS = {
   background:
-    "#170C11",
+    "#071B24",
 
   surface:
-    "#211117",
+    "#0B2632",
 
   surfaceElevated:
-    "#29141B",
+    "#103544",
 
   surfaceSoft:
-    "#321923",
+    "#154252",
 
   text:
-    "#FBF7EF",
+    "#F4FAFC",
 
   textMuted:
-    "#CDBFC3",
+    "#B6C8CF",
 
   border:
-    "#E0B85C",
+    "#CD562B",
 
   borderSoft:
-    "#E0B85C",
+    "#245466",
 
   primary:
-    "#E0B85C",
+    "#CD562B",
 
   primaryDeep:
-    "#C99A3B",
+    "#A94320",
 
-  burgundy:
-    "#4A1525",
+  blue:
+    "#0B5B78",
+
+  blueDeep:
+    "#05465F",
 } as const;
 
 /**
  * =========================================================
- * أحجام الهوية
+ * إعدادات الشعار
  * =========================================================
  */
 
 export const BRAND_LOGO_CONFIG = {
-  src: LOGO_URL,
+  src:
+    LOGO_URL,
 
-  alt: LOGO_ALT,
+  alt:
+    LOGO_ALT,
 
   sizes: {
     xs: 32,
@@ -200,75 +162,48 @@ export const BRAND_LOGO_CONFIG = {
     "rounded-xl",
 
   backgroundColor:
-    BRAND_COLORS.burgundy,
+    BRAND_COLORS.blue,
 
   borderColor:
-    BRAND_COLORS.gold,
+    BRAND_COLORS.orange,
 } as const;
 
 /**
  * =========================================================
- * طبقات الهوية البصرية
+ * الشفافية
  * =========================================================
- *
- * تستخدم هذه القيم عندما نحتاج إلى بناء واجهة تحمل
- * الهوية دون تكرار قيم الشفافية في كل مكون.
  */
 
 export const BRAND_OPACITY = {
-  /**
-   * حدود ذهبية شديدة الخفة.
-   */
-  goldBorder:
-    0.15,
+  orangeBorder:
+    0.18,
 
-  /**
-   * زخرفة مرئية ولكن خافتة.
-   */
+  blueBorder:
+    0.16,
+
   ornament:
-    0.07,
-
-  /**
-   * العلامة المائية الرئيسية.
-   */
-  watermark:
-    0.045,
-
-  /**
-   * العلامة المائية المعمارية.
-   */
-  architecture:
-    0.035,
-
-  /**
-   * الخلفية الذهبية الخفيفة.
-   */
-  goldSurface:
     0.06,
 
-  /**
-   * طبقة العنابي الخفيفة.
-   */
-  burgundySurface:
+  watermark:
+    0.035,
+
+  architecture:
+    0.025,
+
+  orangeSurface:
+    0.06,
+
+  blueSurface:
     0.045,
 
-  /**
-   * خطوط التفاصيل.
-   */
   detail:
-    0.22,
+    0.2,
 } as const;
 
 /**
  * =========================================================
- * الزخارف التراثية
+ * اللغة البصرية
  * =========================================================
- *
- * القيم هنا أسماء دلالية وليست صوراً.
- *
- * الهدف:
- * أن تستطيع المكونات اختيار لغة زخرفية موحدة
- * دون إنشاء تصميم مختلف لكل صفحة.
  */
 
 export const BRAND_ORNAMENTS = {
@@ -285,150 +220,98 @@ export const BRAND_ORNAMENTS = {
     "heritage-diamond",
 
   frame:
-    "thin-gold-frame",
-
-  corner:
-    "heritage-corner",
-
-  grid:
-    "heritage-grid",
+    "thin-orange-frame",
 
   arches:
     "yemeni-architectural-arches",
 } as const;
 
-/**
- * =========================================================
- * خلفيات التطبيق
- * =========================================================
- *
- * تستخدم كطبقات خفيفة خلف المحتوى.
- *
- * مهم:
- * لا تستخدم هذه الطبقات لتغطية النصوص أو المنتجات.
- */
-
 export const BRAND_BACKGROUND_CONFIG = {
-  /**
-   * الخلفية الأساسية للوضع النهاري.
-   */
   light:
     BRAND_COLORS.cream,
 
-  /**
-   * الخلفية الأساسية للوضع الليلي.
-   */
   dark:
     BRAND_DARK_COLORS.background,
 
-  /**
-   * لون العلامة المائية.
-   */
   watermarkColor:
-    BRAND_COLORS.gold,
+    BRAND_COLORS.blue,
 
-  /**
-   * شفافية العلامة المائية.
-   */
+  accentColor:
+    BRAND_COLORS.orange,
+
   watermarkOpacity:
     BRAND_OPACITY.watermark,
 
-  /**
-   * شفافية العمارة اليمنية.
-   */
   architectureOpacity:
     BRAND_OPACITY.architecture,
 
-  /**
-   * شفافية الزخرفة.
-   */
   ornamentOpacity:
     BRAND_OPACITY.ornament,
 
-  /**
-   * موضع افتراضي للعلامة المائية.
-   */
   watermarkPosition:
     "background-center",
 
-  /**
-   * حجم الزخرفة.
-   */
   ornamentSize:
     "large",
 } as const;
 
 /**
  * =========================================================
- * الإطارات والبطاقات
+ * الأسطح
  * =========================================================
  */
 
 export const BRAND_SURFACE_CONFIG = {
-  /**
-   * بطاقة أساسية.
-   */
   card: {
     radius:
       "rounded-2xl",
 
     border:
-      "border-[#E0B85C]/15",
+      "border-[#05465F]/12",
 
     background:
-      "bg-white/70",
+      "bg-white/90",
 
     darkBackground:
       "dark:bg-white/[0.035]",
   },
 
-  /**
-   * بطاقة فاخرة.
-   */
   premium: {
     radius:
       "rounded-2xl",
 
     border:
-      "border-[#E0B85C]/25",
+      "border-[#CD562B]/25",
 
     background:
-      "bg-[#4A1525]",
+      "bg-[#05465F]",
 
     text:
       "text-white",
 
     accent:
-      "text-[#E0B85C]",
+      "text-[#CD562B]",
   },
 
-  /**
-   * الإطار الذهبي.
-   */
   frame: {
     color:
-      BRAND_COLORS.gold,
+      BRAND_COLORS.orange,
 
     opacity:
-      BRAND_OPACITY.goldBorder,
+      BRAND_OPACITY.orangeBorder,
 
     className:
-      "border border-[#E0B85C]/20",
+      "border border-[#CD562B]/20",
   },
 
-  /**
-   * الظل الرئيسي.
-   */
   shadow:
-    "shadow-[0_18px_55px_-30px_rgba(74,21,37,0.55)]",
+    "shadow-[0_18px_55px_-30px_rgba(5,70,95,0.45)]",
 } as const;
 
 /**
  * =========================================================
- * الحقيبة / أيقونة التسوق
+ * أيقونة التسوق
  * =========================================================
- *
- * تستخدم كعنصر من عناصر اللغة البصرية للمتجر.
  */
 
 export const BRAND_BAG_ICON = {
@@ -436,10 +319,10 @@ export const BRAND_BAG_ICON = {
     "shopping-bag",
 
   primary:
-    BRAND_COLORS.burgundy,
+    BRAND_COLORS.blue,
 
   accent:
-    BRAND_COLORS.gold,
+    BRAND_COLORS.orange,
 
   strokeWidth:
     1.9,
@@ -461,7 +344,7 @@ export const BRAND_BAG_ICON = {
 
 export const BRAND_VISUAL_LANGUAGE = {
   primary:
-    "burgundy-gold",
+    "blue-orange",
 
   background:
     "yemeni-heritage-watermark",
@@ -476,31 +359,28 @@ export const BRAND_VISUAL_LANGUAGE = {
     "shopping-bag",
 
   surface:
-    "warm-paper",
+    "clean-white",
 
   frame:
-    "thin-gold-frame",
+    "thin-orange-frame",
 
   direction:
     "rtl",
 
   mood:
-    "premium-yemeni-modern",
+    "modern-yemeni-premium",
 
   density:
     "clean",
 
   emphasis:
-    "burgundy-with-gold-accent",
+    "blue-with-orange-accent",
 } as const;
 
 /**
  * =========================================================
  * Responsive Design Tokens
  * =========================================================
- *
- * تساعد المكونات على الحفاظ على نفس النسب في جميع
- * أحجام الشاشات.
  */
 
 export const BRAND_RESPONSIVE = {
@@ -525,10 +405,8 @@ export const BRAND_RESPONSIVE = {
 
 /**
  * =========================================================
- * إعدادات الحركة
+ * الحركة
  * =========================================================
- *
- * الحركة يجب أن تكون ناعمة وغير مزعجة.
  */
 
 export const BRAND_MOTION = {
@@ -553,16 +431,16 @@ export const BRAND_MOTION = {
 
 /**
  * =========================================================
- * إعدادات الوصولية
+ * Accessibility
  * =========================================================
  */
 
 export const BRAND_ACCESSIBILITY = {
   focusRing:
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E0B85C]/50",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CD562B]/50",
 
   focusRingStrong:
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E0B85C]",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CD562B]",
 
   minimumTouchTarget:
     "min-h-10 min-w-10",
@@ -577,54 +455,32 @@ export const BRAND_ACCESSIBILITY = {
  * =========================================================
  */
 
-/**
- * التأكد من أن مسار الشعار يبقى ثابتاً
- * أثناء البناء والإنتاج.
- */
 export function getLogoUrl(): string {
   return LOGO_URL;
 }
 
-/**
- * إرجاع الاسم الكامل للعلامة.
- */
 export function getBrandName(): string {
   return BRAND_FULL_NAME;
 }
 
-/**
- * إرجاع الشعار النصي الرسمي.
- */
 export function getStoreTagline(): string {
   return STORE_TAGLINE;
 }
 
-/**
- * إرجاع لون من ألوان الهوية.
- */
 export function getBrandColor(
   color: keyof typeof BRAND_COLORS,
 ): string {
   return BRAND_COLORS[color];
 }
 
-/**
- * إرجاع إعدادات الخلفية.
- */
 export function getBrandBackgroundConfig() {
   return BRAND_BACKGROUND_CONFIG;
 }
 
-/**
- * إرجاع إعدادات الحقيبة.
- */
 export function getBrandBagIconConfig() {
   return BRAND_BAG_ICON;
 }
 
-/**
- * إرجاع إعدادات الهوية الكاملة.
- */
 export function getBrandDesignTokens() {
   return {
     colors:
