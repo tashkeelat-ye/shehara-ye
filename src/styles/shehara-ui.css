@@ -1,0 +1,409 @@
+/*
+ * =========================================================
+ * SHEHARA | شهارة
+ * UI / UX Enhancement Layer
+ * المرحلة الثانية
+ *
+ * الهدف:
+ * - تحسين تجربة الاستخدام
+ * - الحفاظ على البنية الحالية
+ * - عدم تغيير مسارات التطبيق
+ * - عدم تغيير منطق React
+ * - عدم تغيير وظائف السلة أو الإشعارات أو الحساب
+ * - توحيد الهوية البصرية
+ * - تحسين الهاتف والشاشات الكبيرة
+ * - تحسين الوصولية Accessibility
+ * =========================================================
+ */
+
+/* =========================================================
+   1. Root application
+   ========================================================= */
+
+.tashkilat-app {
+  --shehara-blue: #05465f;
+  --shehara-blue-deep: #033b50;
+  --shehara-blue-soft: #0b5b78;
+
+  --shehara-orange: #cd562b;
+  --shehara-orange-deep: #a94320;
+  --shehara-orange-soft: #e9825c;
+
+  --shehara-white: #ffffff;
+  --shehara-surface: #fafcfd;
+  --shehara-border: #d9e5e9;
+
+  --shehara-radius-sm: 0.625rem;
+  --shehara-radius-md: 0.875rem;
+  --shehara-radius-lg: 1.125rem;
+  --shehara-radius-xl: 1.375rem;
+
+  --shehara-shadow-soft:
+    0 8px 28px -20px rgb(5 70 95 / 35%);
+
+  --shehara-shadow-medium:
+    0 18px 45px -28px rgb(5 70 95 / 40%);
+
+  --shehara-focus:
+    0 0 0 3px rgb(205 86 43 / 18%);
+
+  color-scheme: light;
+}
+
+.dark.tashkilat-app {
+  --shehara-surface: #0b2632;
+  --shehara-border: rgb(255 255 255 / 12%);
+
+  --shehara-shadow-soft:
+    0 8px 28px -20px rgb(0 0 0 / 60%);
+
+  --shehara-shadow-medium:
+    0 18px 45px -28px rgb(0 0 0 / 65%);
+
+  --shehara-focus:
+    0 0 0 3px rgb(205 86 43 / 25%);
+
+  color-scheme: dark;
+}
+
+/* =========================================================
+   2. تحسين اللمس على الأجهزة المحمولة
+   ========================================================= */
+
+.tashkilat-app button,
+.tashkilat-app a,
+.tashkilat-app [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.tashkilat-app button:active,
+.tashkilat-app a:active,
+.tashkilat-app [role="button"]:active {
+  transform: scale(0.985);
+}
+
+/* =========================================================
+   3. Focus / Accessibility
+   ========================================================= */
+
+.tashkilat-app button:focus-visible,
+.tashkilat-app a:focus-visible,
+.tashkilat-app input:focus-visible,
+.tashkilat-app textarea:focus-visible,
+.tashkilat-app select:focus-visible {
+  outline: none;
+  box-shadow: var(--shehara-focus);
+}
+
+/* =========================================================
+   4. الحقول
+   ========================================================= */
+
+.tashkilat-app input,
+.tashkilat-app textarea,
+.tashkilat-app select {
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.tashkilat-app input::placeholder,
+.tashkilat-app textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.85;
+}
+
+/* =========================================================
+   5. شريط التطبيق العلوي
+   ========================================================= */
+
+.tashkilat-app header {
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.tashkilat-app header button {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 140ms ease;
+}
+
+/*
+ * لا نفرض لوناً على كل الأزرار حتى لا نكسر
+ * أزرار الصفحات أو النوافذ المنبثقة.
+ */
+
+.tashkilat-app header button:hover {
+  background-color: rgb(205 86 43 / 7%);
+}
+
+/* =========================================================
+   6. البحث
+   ========================================================= */
+
+.tashkilat-app header input[type="search"] {
+  border-color: var(--border);
+  background: var(--card);
+
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 50%) inset,
+    0 6px 18px -16px rgb(5 70 95 / 45%);
+}
+
+.dark.tashkilat-app header input[type="search"] {
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 4%) inset,
+    0 8px 22px -18px rgb(0 0 0 / 75%);
+}
+
+.tashkilat-app header input[type="search"]:focus {
+  border-color: var(--shehara-orange);
+  box-shadow:
+    var(--shehara-focus),
+    0 8px 22px -18px rgb(5 70 95 / 45%);
+}
+
+/* =========================================================
+   7. السلة / الإشعارات
+   ========================================================= */
+
+.tashkilat-app header button[aria-label="السلة"],
+.tashkilat-app header button[aria-label*="الإشعار"],
+.tashkilat-app header button[title="السلة"] {
+  position: relative;
+}
+
+.tashkilat-app header button[aria-label="السلة"]:hover,
+.tashkilat-app header button[aria-label*="الإشعار"]:hover,
+.tashkilat-app header button[title="السلة"]:hover {
+  color: var(--shehara-orange);
+}
+
+/* =========================================================
+   8. البطاقات
+   ========================================================= */
+
+.tashkilat-app .rounded-2xl,
+.tashkilat-app .rounded-3xl {
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/*
+ * نحافظ على التصميم الحالي ولا نضيف
+ * حركة مبالغاً فيها.
+ */
+
+.tashkilat-app .group:hover {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+/* =========================================================
+   9. صور المنتجات
+   ========================================================= */
+
+.tashkilat-app img {
+  image-rendering: auto;
+}
+
+.tashkilat-app img:not(.protected-image) {
+  transition:
+    opacity 180ms ease;
+}
+
+/* =========================================================
+   10. Bottom Navigation
+   ========================================================= */
+
+.tashkilat-app nav[aria-label="التنقل الرئيسي"] {
+  padding-left: max(
+    0.5rem,
+    env(safe-area-inset-left)
+  );
+
+  padding-right: max(
+    0.5rem,
+    env(safe-area-inset-right)
+  );
+}
+
+.tashkilat-app
+  nav[aria-label="التنقل الرئيسي"]
+  button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tashkilat-app
+  nav[aria-label="التنقل الرئيسي"]
+  button:active {
+  transform: scale(0.96);
+}
+
+.tashkilat-app
+  nav[aria-label="التنقل الرئيسي"]
+  button
+  svg {
+  transition:
+    transform 180ms ease,
+    stroke-width 180ms ease;
+}
+
+/* =========================================================
+   11. Safe area
+   ========================================================= */
+
+.tashkilat-app {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 768px) {
+  .tashkilat-app {
+    padding-bottom: 0;
+  }
+}
+
+/* =========================================================
+   12. التمرير الأفقي
+   ========================================================= */
+
+.tashkilat-app .overflow-x-auto {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tashkilat-app .overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
+/* =========================================================
+   13. أزرار الهوية
+   ========================================================= */
+
+.tashkilat-app
+  button.bg-\[\#05465F\],
+.tashkilat-app
+  a.bg-\[\#05465F\] {
+  background-color: var(--shehara-blue);
+}
+
+.tashkilat-app
+  button.bg-\[\#05465F\]:hover,
+.tashkilat-app
+  a.bg-\[\#05465F\]:hover {
+  background-color: var(--shehara-blue-deep);
+}
+
+.tashkilat-app
+  button.bg-\[\#CD562B\],
+.tashkilat-app
+  a.bg-\[\#CD562B\] {
+  background-color: var(--shehara-orange);
+}
+
+.tashkilat-app
+  button.bg-\[\#CD562B\]:hover,
+.tashkilat-app
+  a.bg-\[\#CD562B\]:hover {
+  background-color: var(--shehara-orange-deep);
+}
+
+/* =========================================================
+   14. تحسين النصوص العربية
+   ========================================================= */
+
+.tashkilat-app {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.tashkilat-app h1,
+.tashkilat-app h2,
+.tashkilat-app h3,
+.tashkilat-app h4 {
+  text-wrap: balance;
+}
+
+.tashkilat-app p {
+  text-wrap: pretty;
+}
+
+/* =========================================================
+   15. تقليل الحركة لمن يفضل ذلك
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .tashkilat-app *,
+  .tashkilat-app *::before,
+  .tashkilat-app *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================================
+   16. شاشات الهاتف الصغيرة
+   ========================================================= */
+
+@media (max-width: 374px) {
+  .tashkilat-app
+    nav[aria-label="التنقل الرئيسي"]
+    button {
+    min-width: 0;
+  }
+
+  .tashkilat-app
+    nav[aria-label="التنقل الرئيسي"]
+    button
+    span:last-child {
+    font-size: 9px;
+  }
+}
+
+/* =========================================================
+   17. الشاشات المتوسطة والكبيرة
+   ========================================================= */
+
+@media (min-width: 768px) {
+  .tashkilat-app header input[type="search"] {
+    min-height: 44px;
+  }
+}
+
+/* =========================================================
+   18. حالات التحميل
+   ========================================================= */
+
+.tashkilat-app [aria-busy="true"] {
+  cursor: progress;
+}
+
+/* =========================================================
+   19. منع الوميض أثناء تحميل الصور
+   ========================================================= */
+
+.tashkilat-app img[loading="lazy"] {
+  background-color: var(--muted);
+}
+
+/* =========================================================
+   20. دعم RTL
+   ========================================================= */
+
+.tashkilat-app[dir="rtl"] input,
+.tashkilat-app[dir="rtl"] textarea {
+  text-align: right;
+}
+
+/* =========================================================
+   نهاية طبقة UI/UX
+   ========================================================= */
