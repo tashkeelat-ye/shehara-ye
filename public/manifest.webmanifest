@@ -1,15 +1,15 @@
 {
-  "name": "تشكيلات للتسوق",
-  "short_name": "تشكيلات للتسوق",
-  "description": "تشكيلات — كل ما تحتاجه بتشكيلة واحدة. متجر إلكتروني يمني.",
+  "name": "شهارة | SHEHARA",
+  "short_name": "شهارة",
+  "description": "شهارة | SHEHARA — تسوق بلا حدود. متجر إلكتروني يمني.",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#4A1525",
-  "theme_color": "#4A1525",
+  "background_color": "#05465F",
+  "theme_color": "#05465F",
   "categories": [
     "shopping",
     "business"
