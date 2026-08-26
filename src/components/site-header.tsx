@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  Bell,
   Moon,
   Search,
   ShoppingCart,
@@ -13,43 +12,65 @@ import {
 } from "react";
 
 import { SideMenu } from "@/components/side-menu";
+import { NotificationBell } from "@/components/notification-bell";
+import { BrandLogo } from "@/components/brand-logo";
 import { useCart } from "@/lib/cart-context";
 
 export function SiteHeader() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const {
     count,
     setDrawerOpen,
   } = useCart();
 
-  const [darkMode, setDarkMode] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
+  const [
+    darkMode,
+    setDarkMode,
+  ] = useState(false);
 
-  /**
-   * =========================================================
-   * استعادة الوضع المحفوظ
-   * =========================================================
-   */
+  const [
+    searchValue,
+    setSearchValue,
+  ] = useState("");
 
   useEffect(() => {
     try {
       const savedTheme =
-        localStorage.getItem("tashkilat-theme");
+        localStorage.getItem(
+          "tashkilat-theme",
+        );
 
-      if (savedTheme === "dark") {
-        document.documentElement.classList.add("dark");
+      if (
+        savedTheme === "dark"
+      ) {
+        document.documentElement.classList.add(
+          "dark",
+        );
+
+        document.documentElement.style.colorScheme =
+          "dark";
+
         setDarkMode(true);
         return;
       }
 
-      if (savedTheme === "light") {
-        document.documentElement.classList.remove("dark");
+      if (
+        savedTheme === "light"
+      ) {
+        document.documentElement.classList.remove(
+          "dark",
+        );
+
+        document.documentElement.style.colorScheme =
+          "light";
+
         setDarkMode(false);
         return;
       }
     } catch {
-      // تجاهل أخطاء localStorage
+      // localStorage قد يكون غير متاح.
     }
 
     setDarkMode(
@@ -59,96 +80,68 @@ export function SiteHeader() {
     );
   }, []);
 
-  /**
-   * =========================================================
-   * الوضع الداكن
-   * =========================================================
-   */
+  const toggleDarkMode =
+    () => {
+      const nextMode =
+        !darkMode;
 
-  const toggleDarkMode = () => {
-    const nextMode = !darkMode;
-
-    document.documentElement.classList.toggle(
-      "dark",
-      nextMode,
-    );
-
-    setDarkMode(nextMode);
-
-    try {
-      localStorage.setItem(
-        "tashkilat-theme",
-        nextMode ? "dark" : "light",
+      document.documentElement.classList.toggle(
+        "dark",
+        nextMode,
       );
-    } catch {
-      // تجاهل أخطاء التخزين المحلي
-    }
-  };
 
-  /**
-   * =========================================================
-   * البحث الفعلي
-   * =========================================================
-   *
-   * صفحة /products تستخدم q فعلياً.
-   */
+      document.documentElement.style.colorScheme =
+        nextMode
+          ? "dark"
+          : "light";
 
-  const handleSearch = (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
+      setDarkMode(nextMode);
 
-    const query = searchValue.trim();
+      try {
+        /*
+         * نحتفظ بنفس مفتاح التخزين القديم
+         * حتى لا نخسر تفضيل المستخدم الحالي.
+         */
+        localStorage.setItem(
+          "tashkilat-theme",
+          nextMode
+            ? "dark"
+            : "light",
+        );
+      } catch {
+        // تجاهل أخطاء التخزين.
+      }
+    };
 
-    if (!query) {
+  const handleSearch =
+    (
+      event: FormEvent<HTMLFormElement>,
+    ) => {
+      event.preventDefault();
+
+      const query =
+        searchValue.trim();
+
+      if (!query) {
+        void navigate({
+          to: "/products",
+        });
+
+        return;
+      }
+
       void navigate({
         to: "/products",
+        search: {
+          q: query,
+        },
       });
+    };
 
-      return;
-    }
-
-    void navigate({
-      to: "/products",
-      search: {
-        q: query,
-      },
-    });
-  };
-
-  /**
-   * =========================================================
-   * فتح السلة الحقيقية
-   * =========================================================
-   *
-   * السلة في المشروع تعمل من خلال CartProvider
-   * و drawerOpen / setDrawerOpen.
-   *
-   * لذلك لا نستخدم /cart حتى لا يحدث 404.
-   */
-
-  const handleOpenCart = () => {
-    setDrawerOpen(true);
-  };
-
-  /**
-   * =========================================================
-   * الإشعارات
-   * =========================================================
-   *
-   * لا يوجد حالياً Route مؤكد باسم /notifications
-   * في التطبيق.
-   *
-   * لذلك لا نقوم بأي navigation إلى مسار غير موجود.
-   *
-   * سيتم ربط الزر لاحقاً بنظام الإشعارات الحقيقي
-   * عند إضافة مصدر الإشعارات الفعلي.
-   */
-
-  const handleNotifications = () => {
-    // لا يوجد Route للإشعارات حالياً.
-    // إبقاء الزر بدون navigation يمنع خطأ 404.
-  };
+  const handleOpenCart =
+    () => {
+      setDrawerOpen(true);
+    };
 
   return (
     <header
@@ -164,10 +157,6 @@ export function SiteHeader() {
         supports-[backdrop-filter]:bg-[color:var(--background)]/80
       "
     >
-      {/* =====================================================
-          القائمة العلوية
-          ===================================================== */}
-
       <div
         className="
           mx-auto
@@ -182,89 +171,37 @@ export function SiteHeader() {
           lg:px-8
         "
       >
-        {/* القائمة الجانبية الحالية */}
-
+        {/* القائمة الجانبية */}
         <div className="shrink-0">
           <SideMenu />
         </div>
 
-        {/* الشعار */}
-
+        {/* شعار شهارة */}
         <Link
           to="/"
-          aria-label="تشكيلات للتسوق"
+          aria-label="شهارة - SHEHARA"
           className="
             flex
             min-w-0
             shrink-0
             items-center
-            gap-2
           "
         >
-          <span
+          <BrandLogo
+            size={46}
             className="
-              flex
-              h-10
-              w-10
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              bg-[color:var(--brand-burgundy)]
-              text-[color:var(--brand-gold)]
-              shadow-sm
+              h-11
+              w-11
+              sm:h-12
+              sm:w-12
             "
-          >
-            <span
-              className="
-                text-lg
-                font-extrabold
-                leading-none
-              "
-            >
-              ت
-            </span>
-          </span>
-
-          <span
-            className="
-              hidden
-              leading-none
-              sm:block
-            "
-          >
-            <span
-              className="
-                block
-                text-base
-                font-bold
-                text-[color:var(--brand-burgundy)]
-                dark:text-[color:var(--brand-gold)]
-              "
-            >
-              تشكيلات
-            </span>
-
-            <span
-              className="
-                mt-1
-                block
-                text-[10px]
-                font-medium
-                text-[color:var(--brand-gold-deep)]
-              "
-            >
-              للتسوق
-            </span>
-          </span>
+            priority
+          />
         </Link>
 
         <div className="flex-1" />
 
-        {/* ===================================================
-            أدوات القائمة العلوية
-            =================================================== */}
-
+        {/* أدوات القائمة العلوية */}
         <div
           className="
             flex
@@ -274,7 +211,6 @@ export function SiteHeader() {
           "
         >
           {/* الوضع الداكن */}
-
           <button
             type="button"
             aria-label={
@@ -287,7 +223,9 @@ export function SiteHeader() {
                 ? "الوضع الفاتح"
                 : "الوضع الداكن"
             }
-            onClick={toggleDarkMode}
+            onClick={
+              toggleDarkMode
+            }
             className="
               inline-flex
               h-10
@@ -314,40 +252,17 @@ export function SiteHeader() {
             )}
           </button>
 
-          {/* الإشعارات */}
+          {/* الإشعارات الحقيقية */}
+          <NotificationBell />
 
-          <button
-            type="button"
-            aria-label="الإشعارات"
-            title="الإشعارات"
-            onClick={handleNotifications}
-            className="
-              relative
-              inline-flex
-              h-10
-              w-10
-              items-center
-              justify-center
-              rounded-xl
-              text-[color:var(--brand-burgundy)]
-              transition
-              hover:bg-[color:var(--brand-gold)]/10
-              dark:text-[color:var(--brand-gold)]
-            "
-          >
-            <Bell
-              size={20}
-              strokeWidth={2}
-            />
-          </button>
-
-          {/* السلة */}
-
+          {/* السلة الحقيقية */}
           <button
             type="button"
             aria-label="السلة"
             title="السلة"
-            onClick={handleOpenCart}
+            onClick={
+              handleOpenCart
+            }
             className="
               relative
               inline-flex
@@ -367,8 +282,6 @@ export function SiteHeader() {
               strokeWidth={2}
             />
 
-            {/* العدد الحقيقي للسلة */}
-
             {count > 0 ? (
               <span
                 aria-label={`${count} منتج في السلة`}
@@ -384,27 +297,26 @@ export function SiteHeader() {
                   rounded-full
                   border-2
                   border-[color:var(--background)]
-                  bg-[color:var(--brand-burgundy)]
+                  bg-[color:var(--brand-gold)]
                   px-1
                   text-[8px]
                   font-extrabold
                   leading-none
-                  text-[color:var(--brand-gold)]
+                  text-white
                 "
               >
                 {count > 99
                   ? "99+"
-                  : count.toLocaleString("ar-EG")}
+                  : count.toLocaleString(
+                      "ar-EG",
+                    )}
               </span>
             ) : null}
           </button>
         </div>
       </div>
 
-      {/* =====================================================
-          نافذة البحث
-          ===================================================== */}
-
+      {/* البحث */}
       <div
         className="
           border-t
@@ -417,7 +329,9 @@ export function SiteHeader() {
         "
       >
         <form
-          onSubmit={handleSearch}
+          onSubmit={
+            handleSearch
+          }
           role="search"
           className="
             mx-auto
@@ -443,7 +357,9 @@ export function SiteHeader() {
             <input
               value={searchValue}
               onChange={(event) =>
-                setSearchValue(event.target.value)
+                setSearchValue(
+                  event.target.value,
+                )
               }
               type="search"
               placeholder="ابحث عن المنتجات..."
@@ -463,7 +379,7 @@ export function SiteHeader() {
                 outline-none
                 transition
                 placeholder:text-[color:var(--muted-foreground)]
-                focus:border-[color:var(--brand-gold-deep)]
+                focus:border-[color:var(--brand-gold)]
                 focus:ring-2
                 focus:ring-[color:var(--brand-gold)]/20
               "
