@@ -16,61 +16,49 @@ import { NotificationBell } from "@/components/notification-bell";
 import { BrandLogo } from "@/components/brand-logo";
 import { useCart } from "@/lib/cart-context";
 
+const THEME_STORAGE_KEY = "tashkilat-theme";
+
 export function SiteHeader() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
   const {
     count,
     setDrawerOpen,
   } = useCart();
 
-  const [
-    darkMode,
-    setDarkMode,
-  ] = useState(false);
+  const [darkMode, setDarkMode] =
+    useState(false);
 
-  const [
-    searchValue,
-    setSearchValue,
-  ] = useState("");
+  const [searchValue, setSearchValue] =
+    useState("");
 
   useEffect(() => {
     try {
       const savedTheme =
         localStorage.getItem(
-          "tashkilat-theme",
+          THEME_STORAGE_KEY,
         );
 
       if (
-        savedTheme === "dark"
-      ) {
-        document.documentElement.classList.add(
-          "dark",
-        );
-
-        document.documentElement.style.colorScheme =
-          "dark";
-
-        setDarkMode(true);
-        return;
-      }
-
-      if (
+        savedTheme === "dark" ||
         savedTheme === "light"
       ) {
-        document.documentElement.classList.remove(
+        document.documentElement.classList.toggle(
           "dark",
+          savedTheme === "dark",
         );
 
         document.documentElement.style.colorScheme =
-          "light";
+          savedTheme;
 
-        setDarkMode(false);
+        setDarkMode(
+          savedTheme === "dark",
+        );
+
         return;
       }
     } catch {
-      // localStorage قد يكون غير متاح.
+      // التخزين غير متاح.
     }
 
     setDarkMode(
@@ -80,68 +68,55 @@ export function SiteHeader() {
     );
   }, []);
 
-  const toggleDarkMode =
-    () => {
-      const nextMode =
-        !darkMode;
+  const toggleDarkMode = () => {
+    const nextMode = !darkMode;
 
-      document.documentElement.classList.toggle(
-        "dark",
-        nextMode,
+    document.documentElement.classList.toggle(
+      "dark",
+      nextMode,
+    );
+
+    document.documentElement.style.colorScheme =
+      nextMode ? "dark" : "light";
+
+    document.documentElement.dataset.theme =
+      nextMode ? "dark" : "light";
+
+    setDarkMode(nextMode);
+
+    try {
+      localStorage.setItem(
+        THEME_STORAGE_KEY,
+        nextMode ? "dark" : "light",
       );
+    } catch {
+      // تجاهل أخطاء التخزين.
+    }
+  };
 
-      document.documentElement.style.colorScheme =
-        nextMode
-          ? "dark"
-          : "light";
+  const handleSearch = (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
 
-      setDarkMode(nextMode);
+    const query =
+      searchValue.trim();
 
-      try {
-        /*
-         * نحتفظ بنفس مفتاح التخزين القديم
-         * حتى لا نخسر تفضيل المستخدم الحالي.
-         */
-        localStorage.setItem(
-          "tashkilat-theme",
-          nextMode
-            ? "dark"
-            : "light",
-        );
-      } catch {
-        // تجاهل أخطاء التخزين.
-      }
-    };
-
-  const handleSearch =
-    (
-      event: FormEvent<HTMLFormElement>,
-    ) => {
-      event.preventDefault();
-
-      const query =
-        searchValue.trim();
-
-      if (!query) {
-        void navigate({
-          to: "/products",
-        });
-
-        return;
-      }
-
+    if (!query) {
       void navigate({
         to: "/products",
-        search: {
-          q: query,
-        },
       });
-    };
 
-  const handleOpenCart =
-    () => {
-      setDrawerOpen(true);
-    };
+      return;
+    }
+
+    void navigate({
+      to: "/products",
+      search: {
+        q: query,
+      },
+    });
+  };
 
   return (
     <header
@@ -151,44 +126,50 @@ export function SiteHeader() {
         z-50
         w-full
         border-b
-        border-[color:var(--brand-gold)]/20
+        border-[color:var(--border)]
         bg-[color:var(--background)]/95
-        backdrop-blur-md
+        shadow-[0_4px_20px_-18px_rgba(14,77,100,0.45)]
+        backdrop-blur-xl
         supports-[backdrop-filter]:bg-[color:var(--background)]/80
       "
     >
       <div
         className="
+          relative
           mx-auto
           flex
-          h-16
+          h-[68px]
           w-full
           max-w-7xl
           items-center
-          gap-2
+          justify-between
           px-3
           sm:px-5
           lg:px-8
         "
       >
-        {/* القائمة الجانبية */}
+        {/* القائمة */}
         <div className="shrink-0">
           <SideMenu />
         </div>
 
-        {/* شعار شهارة */}
+        {/* الشعار المركزي */}
         <Link
           to="/"
-          aria-label="شهارة - SHEHARA"
+          aria-label="شهارة - تسوق بلا حدود"
           className="
+            absolute
+            left-1/2
+            top-1/2
             flex
-            min-w-0
-            shrink-0
+            -translate-x-1/2
+            -translate-y-1/2
             items-center
+            justify-center
           "
         >
           <BrandLogo
-            size={46}
+            size={52}
             className="
               h-11
               w-11
@@ -199,18 +180,15 @@ export function SiteHeader() {
           />
         </Link>
 
-        <div className="flex-1" />
-
-        {/* أدوات القائمة العلوية */}
+        {/* الأدوات */}
         <div
           className="
+            ms-auto
             flex
-            shrink-0
             items-center
             gap-1
           "
         >
-          {/* الوضع الداكن */}
           <button
             type="button"
             aria-label={
@@ -223,20 +201,19 @@ export function SiteHeader() {
                 ? "الوضع الفاتح"
                 : "الوضع الداكن"
             }
-            onClick={
-              toggleDarkMode
-            }
+            onClick={toggleDarkMode}
             className="
-              inline-flex
+              grid
               h-10
               w-10
-              items-center
-              justify-center
+              place-items-center
               rounded-xl
-              text-[color:var(--brand-burgundy)]
-              transition
-              hover:bg-[color:var(--brand-gold)]/10
-              dark:text-[color:var(--brand-gold)]
+              text-primary
+              transition-all
+              duration-200
+              hover:bg-accent
+              hover:text-accent-solid
+              active:scale-90
             "
           >
             {darkMode ? (
@@ -252,29 +229,28 @@ export function SiteHeader() {
             )}
           </button>
 
-          {/* الإشعارات الحقيقية */}
           <NotificationBell />
 
-          {/* السلة الحقيقية */}
           <button
             type="button"
             aria-label="السلة"
             title="السلة"
-            onClick={
-              handleOpenCart
+            onClick={() =>
+              setDrawerOpen(true)
             }
             className="
               relative
-              inline-flex
+              grid
               h-10
               w-10
-              items-center
-              justify-center
+              place-items-center
               rounded-xl
-              text-[color:var(--brand-burgundy)]
-              transition
-              hover:bg-[color:var(--brand-gold)]/10
-              dark:text-[color:var(--brand-gold)]
+              text-primary
+              transition-all
+              duration-200
+              hover:bg-accent
+              hover:text-accent-solid
+              active:scale-90
             "
           >
             <ShoppingCart
@@ -287,22 +263,20 @@ export function SiteHeader() {
                 aria-label={`${count} منتج في السلة`}
                 className="
                   absolute
-                  -end-1
-                  -top-1
-                  flex
+                  -end-0.5
+                  -top-0.5
+                  grid
                   min-h-4
                   min-w-4
-                  items-center
-                  justify-center
+                  place-items-center
                   rounded-full
-                  border-2
-                  border-[color:var(--background)]
-                  bg-[color:var(--brand-gold)]
+                  bg-accent-solid
                   px-1
                   text-[8px]
                   font-extrabold
                   leading-none
                   text-white
+                  shadow-sm
                 "
               >
                 {count > 99
@@ -320,7 +294,7 @@ export function SiteHeader() {
       <div
         className="
           border-t
-          border-[color:var(--brand-gold)]/10
+          border-[color:var(--border)]/70
           bg-[color:var(--background)]
           px-3
           py-3
@@ -329,17 +303,31 @@ export function SiteHeader() {
         "
       >
         <form
-          onSubmit={
-            handleSearch
-          }
+          onSubmit={handleSearch}
           role="search"
           className="
             mx-auto
             w-full
-            max-w-7xl
+            max-w-4xl
           "
         >
-          <div className="relative">
+          <div
+            className="
+              relative
+              overflow-hidden
+              rounded-2xl
+              border
+              border-[color:var(--border)]
+              bg-white
+              shadow-[0_8px_24px_-20px_rgba(14,77,100,0.6)]
+              transition-all
+              duration-200
+              focus-within:border-[#0E4D64]
+              focus-within:ring-4
+              focus-within:ring-[#0E4D64]/10
+              dark:bg-[color:var(--card)]
+            "
+          >
             <Search
               size={19}
               strokeWidth={2}
@@ -347,10 +335,10 @@ export function SiteHeader() {
               className="
                 pointer-events-none
                 absolute
-                start-3
+                start-4
                 top-1/2
                 -translate-y-1/2
-                text-[color:var(--muted-foreground)]
+                text-[#0E4D64]
               "
             />
 
@@ -362,26 +350,21 @@ export function SiteHeader() {
                 )
               }
               type="search"
-              placeholder="ابحث عن المنتجات..."
+              placeholder="ابحث عن منتج، عسل، بن، عطور، إلكترونيات..."
               aria-label="البحث عن المنتجات"
               autoComplete="off"
               className="
-                h-11
+                h-12
                 w-full
-                rounded-xl
-                border
-                border-[color:var(--border)]
-                bg-[color:var(--card)]
+                border-0
+                bg-transparent
                 pe-4
-                ps-10
+                ps-12
                 text-sm
-                text-[color:var(--foreground)]
+                font-medium
+                text-foreground
                 outline-none
-                transition
-                placeholder:text-[color:var(--muted-foreground)]
-                focus:border-[color:var(--brand-gold)]
-                focus:ring-2
-                focus:ring-[color:var(--brand-gold)]/20
+                placeholder:text-muted-foreground
               "
             />
           </div>
