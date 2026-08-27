@@ -12,71 +12,83 @@
    ========================================================= */
 
 :root {
-  --brand-burgundy: #05465f;
-  --brand-burgundy-deep: #033b50;
-  --brand-burgundy-soft: #0b5b78;
-  --brand-burgundy-light: #18718f;
+  --brand-burgundy: #0e4d64 !important;
+  --brand-burgundy-deep: #0a3d50 !important;
+  --brand-burgundy-soft: #17647e !important;
+  --brand-burgundy-light: #25809b !important;
 
-  --brand-gold: #cd562b;
-  --brand-gold-deep: #a94320;
-  --brand-gold-soft: #e9825c;
-  --brand-gold-pale: #f6d8cc;
+  --brand-gold: #d65a31 !important;
+  --brand-gold-deep: #b74624 !important;
+  --brand-gold-soft: #e98261 !important;
+  --brand-gold-pale: #f8ded5 !important;
 
-  --brand-cream: #fafcfd;
-  --brand-paper: #f3f7f9;
-  --brand-paper-deep: #e5eef2;
+  --brand-cream: #faf9f6 !important;
+  --brand-paper: #f4f7f8 !important;
+  --brand-paper-deep: #e4ecef !important;
 
-  --background: #fafcfd;
-  --foreground: #071b24;
+  --background: #faf9f6 !important;
+  --foreground: #081d27 !important;
 
-  --card: #ffffff;
-  --card-foreground: #071b24;
+  --card: #ffffff !important;
+  --card-foreground: #081d27 !important;
 
-  --popover: #ffffff;
-  --popover-foreground: #071b24;
+  --popover: #ffffff !important;
+  --popover-foreground: #081d27 !important;
 
-  --primary: #05465f;
-  --primary-foreground: #ffffff;
+  --primary: #0e4d64 !important;
+  --primary-foreground: #ffffff !important;
 
-  --secondary: #eaf2f5;
-  --secondary-foreground: #05465f;
+  --secondary: #e8f1f4 !important;
+  --secondary-foreground: #0e4d64 !important;
 
-  --muted: #edf3f5;
-  --muted-foreground: #5c7079;
+  --muted: #eef3f5 !important;
+  --muted-foreground: #5c7079 !important;
 
-  --accent: #f6d8cc;
-  --accent-foreground: #05465f;
+  --accent: #f8ded5 !important;
+  --accent-foreground: #0e4d64 !important;
 
-  --destructive: #b42318;
-  --destructive-foreground: #ffffff;
+  --destructive: #b42318 !important;
+  --destructive-foreground: #ffffff !important;
 
-  --border: #d9e5e9;
-  --input: #d9e5e9;
-  --ring: #cd562b;
+  --border: #d7e3e7 !important;
+  --input: #d7e3e7 !important;
+  --ring: #d65a31 !important;
 
-  --chart-1: #05465f;
-  --chart-2: #cd562b;
-  --chart-3: #0b5b78;
-  --chart-4: #e9825c;
-  --chart-5: #033b50;
+  --chart-1: #0e4d64 !important;
+  --chart-2: #d65a31 !important;
+  --chart-3: #17647e !important;
+  --chart-4: #e98261 !important;
+  --chart-5: #0a3d50 !important;
 
-  --sidebar: #ffffff;
-  --sidebar-foreground: #071b24;
-  --sidebar-primary: #05465f;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #edf3f5;
-  --sidebar-accent-foreground: #05465f;
-  --sidebar-border: #d9e5e9;
-  --sidebar-ring: #cd562b;
+  --sidebar: #ffffff !important;
+  --sidebar-foreground: #081d27 !important;
+  --sidebar-primary: #0e4d64 !important;
+  --sidebar-primary-foreground: #ffffff !important;
+  --sidebar-accent: #eef3f5 !important;
+  --sidebar-accent-foreground: #0e4d64 !important;
+  --sidebar-border: #d7e3e7 !important;
+  --sidebar-ring: #d65a31 !important;
 
-  --accent-solid: #cd562b;
-  --accent-solid-foreground: #ffffff;
+  --accent-solid: #d65a31 !important;
+  --accent-solid-foreground: #ffffff !important;
 
-  --brand-soft: #edf3f5;
+  --brand-soft: #e8f1f4 !important;
+
+  --font-sans:
+    "Cairo",
+    "CustomFont",
+    "Tahoma",
+    sans-serif !important;
+
+  --font-display:
+    "Cairo",
+    "CustomFont",
+    "Tahoma",
+    sans-serif !important;
 
   --brand-watermark-opacity: 0.035;
   --brand-architecture-opacity: 0.025;
-  --brand-ornament-opacity: 0.06;
+  --brand-ornament-opacity: 0.055;
   --brand-border-opacity: 0.18;
 }
 
@@ -85,88 +97,154 @@
    ========================================================= */
 
 .dark {
-  --background: #071b24;
-  --foreground: #f4fafc;
+  --background: #071b24 !important;
+  --foreground: #f5fafc !important;
 
-  --card: #0b2632;
-  --card-foreground: #f4fafc;
+  --card: #0b2936 !important;
+  --card-foreground: #f5fafc !important;
 
-  --popover: #0b2632;
-  --popover-foreground: #f4fafc;
+  --popover: #0b2936 !important;
+  --popover-foreground: #f5fafc !important;
 
-  --primary: #cd562b;
-  --primary-foreground: #ffffff;
+  --primary: #17647e !important;
+  --primary-foreground: #ffffff !important;
 
-  --secondary: #103544;
-  --secondary-foreground: #f4fafc;
+  --secondary: #103847 !important;
+  --secondary-foreground: #f5fafc !important;
 
-  --muted: #103544;
-  --muted-foreground: #b6c8cf;
+  --muted: #103847 !important;
+  --muted-foreground: #b8c9cf !important;
 
-  --accent: #154252;
-  --accent-foreground: #f4fafc;
+  --accent: #3a2119 !important;
+  --accent-foreground: #f5fafc !important;
 
-  --destructive: #ef6b63;
-  --destructive-foreground: #ffffff;
+  --destructive: #ef6b63 !important;
+  --destructive-foreground: #ffffff !important;
 
-  --border: rgb(255 255 255 / 12%);
-  --input: rgb(255 255 255 / 15%);
-  --ring: #cd562b;
+  --border: rgb(255 255 255 / 12%) !important;
+  --input: rgb(255 255 255 / 15%) !important;
+  --ring: #d65a31 !important;
 
-  --chart-1: #cd562b;
-  --chart-2: #05465f;
-  --chart-3: #e9825c;
-  --chart-4: #0b5b78;
-  --chart-5: #f4fafc;
+  --chart-1: #17647e !important;
+  --chart-2: #d65a31 !important;
+  --chart-3: #25809b !important;
+  --chart-4: #e98261 !important;
+  --chart-5: #f5fafc !important;
 
-  --sidebar: #0b2632;
-  --sidebar-foreground: #f4fafc;
-  --sidebar-primary: #cd562b;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #154252;
-  --sidebar-accent-foreground: #f4fafc;
-  --sidebar-border: rgb(255 255 255 / 12%);
-  --sidebar-ring: #cd562b;
+  --sidebar: #0b2936 !important;
+  --sidebar-foreground: #f5fafc !important;
+  --sidebar-primary: #17647e !important;
+  --sidebar-primary-foreground: #ffffff !important;
+  --sidebar-accent: #154252 !important;
+  --sidebar-accent-foreground: #f5fafc !important;
+  --sidebar-border: rgb(255 255 255 / 12%) !important;
+  --sidebar-ring: #d65a31 !important;
 
-  --accent-solid: #cd562b;
-  --accent-solid-foreground: #ffffff;
+  --accent-solid: #d65a31 !important;
+  --accent-solid-foreground: #ffffff !important;
 
-  --brand-soft: #103544;
-
-  --brand-watermark-opacity: 0.022;
-  --brand-architecture-opacity: 0.018;
-  --brand-ornament-opacity: 0.045;
+  --brand-soft: #103847 !important;
 }
 
 /* =========================================================
-   الصفحة
+   توافق أسماء الهوية القديمة
    ========================================================= */
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
+.tashkilat-app {
+  --brand-primary: #0e4d64;
+  --brand-primary-deep: #0a3d50;
+  --brand-accent: #d65a31;
+  --brand-accent-deep: #b74624;
+
+  color-scheme: light;
+}
+
+.dark.tashkilat-app {
+  color-scheme: dark;
 }
 
 /* =========================================================
-   التحديد
+   النصوص
    ========================================================= */
+
+.tashkilat-app,
+.tashkilat-app * {
+  font-family:
+    "Cairo",
+    "CustomFont",
+    "Tahoma",
+    sans-serif;
+}
+
+.tashkilat-app h1,
+.tashkilat-app h2,
+.tashkilat-app h3,
+.tashkilat-app h4,
+.tashkilat-app h5,
+.tashkilat-app h6 {
+  letter-spacing: -0.01em;
+}
+
+/* =========================================================
+   Accessibility
+   ========================================================= */
+
+:focus-visible {
+  outline-color: #d65a31 !important;
+}
 
 ::selection {
-  background: rgb(205 86 43 / 22%);
-  color: var(--brand-burgundy-deep);
+  background: rgb(214 90 49 / 20%);
+  color: #0a3d50;
 }
 
 .dark ::selection {
-  background: rgb(205 86 43 / 32%);
+  background: rgb(214 90 49 / 30%);
   color: #ffffff;
 }
 
 /* =========================================================
-   التركيز
+   روابط
    ========================================================= */
 
-:focus-visible {
-  outline-color: var(--brand-gold);
+.tashkilat-app a:not([class*="underline"]) {
+  text-decoration: none;
+}
+
+/* =========================================================
+   توافق بصري مع بعض المكونات القديمة
+   ========================================================= */
+
+.tashkilat-app [class*="bg-[#4A1525]"] {
+  background-color: #0e4d64 !important;
+}
+
+.tashkilat-app [class*="bg-[#35101C]"] {
+  background-color: #0a3d50 !important;
+}
+
+.tashkilat-app [class*="bg-[#6A263A]"] {
+  background-color: #17647e !important;
+}
+
+.tashkilat-app [class*="text-[#4A1525]"] {
+  color: #0e4d64 !important;
+}
+
+.tashkilat-app [class*="text-[#35101C]"] {
+  color: #0a3d50 !important;
+}
+
+.tashkilat-app [class*="text-[#E0B85C]"] {
+  color: #d65a31 !important;
+}
+
+.tashkilat-app [class*="border-[#E0B85C]"] {
+  border-color: rgb(214 90 49 / 20%) !important;
+}
+
+.tashkilat-app [class*="border-[#4A1525]"] {
+  border-color: rgb(14 77 100 / 18%) !important;
 }
 
 /* =========================================================
@@ -174,50 +252,38 @@ body {
    ========================================================= */
 
 body::-webkit-scrollbar-thumb {
-  background: color-mix(
-    in srgb,
-    var(--brand-burgundy) 55%,
-    transparent
-  );
+  background: rgb(14 77 100 / 45%);
 }
 
 body::-webkit-scrollbar-thumb:hover {
-  background: color-mix(
-    in srgb,
-    var(--brand-gold) 75%,
-    transparent
-  );
+  background: rgb(214 90 49 / 70%);
 }
 
 /* =========================================================
-   الهوية في المكونات التي تستخدم المتغيرات
+   خلفية التطبيق
    ========================================================= */
 
-.tashkilat-app {
-  --brand-primary: #05465f;
-  --brand-primary-deep: #033b50;
-  --brand-accent: #cd562b;
-  --brand-accent-deep: #a94320;
+body {
+  background-color: #faf9f6;
+  color: #081d27;
+}
+
+.dark body {
+  background-color: #071b24;
+  color: #f5fafc;
 }
 
 /* =========================================================
-   تحسين عام للروابط
+   منع الحركة الزائدة
    ========================================================= */
 
-.tashkilat-app a {
-  text-decoration-thickness: 0.08em;
-  text-underline-offset: 0.16em;
+@media (prefers-reduced-motion: reduce) {
+  .tashkilat-app *,
+  .tashkilat-app *::before,
+  .tashkilat-app *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-
-/*
- * لا تظهر خطوط تحت الروابط العادية.
- * تظهر فقط عند وجود text underline صريح.
- */
-
-.tashkilat-app a:not([class*="underline"]) {
-  text-decoration: none;
-}
-
-/* =========================================================
-   نهاية الهوية
-   ========================================================= */
