@@ -1,15 +1,15 @@
 {
   "name": "شهارة | SHEHARA",
   "short_name": "شهارة",
-  "description": "شهارة | SHEHARA — تسوق بلا حدود. متجر إلكتروني يمني.",
+  "description": "شهارة | تسوق بلا حدود. متجر إلكتروني يمني.",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#05465F",
-  "theme_color": "#05465F",
+  "background_color": "#0E4D64",
+  "theme_color": "#0E4D64",
   "categories": [
     "shopping",
     "business"
