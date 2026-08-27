@@ -73,37 +73,14 @@ import {
   registerPushNotifications,
 } from "@/lib/push";
 
-/**
- * =========================================================
- * الهوية
- * =========================================================
- */
-
 const BRAND = {
-  burgundy:
-    "#4A1525",
-
-  burgundyDeep:
-    "#35101C",
-
-  gold:
-    "#E0B85C",
-
-  goldDeep:
-    "#C99A3B",
-
-  cream:
-    "#FBF7EF",
-
-  dark:
-    "#170C11",
+  blue: "#0E4D64",
+  blueDeep: "#0A3D50",
+  orange: "#D65A31",
+  orangeDeep: "#B74624",
+  cream: "#FAF9F6",
+  dark: "#071B24",
 };
-
-/**
- * =========================================================
- * React Query
- * =========================================================
- */
 
 export const defaultQueryClient =
   new QueryClient({
@@ -126,12 +103,6 @@ export const defaultQueryClient =
 
 const THEME_STORAGE_KEY =
   "tashkilat-theme";
-
-/**
- * =========================================================
- * Initial Theme
- * =========================================================
- */
 
 function getInitialThemeScript() {
   return `
@@ -177,302 +148,45 @@ function getInitialThemeScript() {
   `;
 }
 
-/**
- * =========================================================
- * زخارف الهوية
- * =========================================================
- */
-
-function HeritageWatermark() {
-  return (
-    <div
-      aria-hidden="true"
-      className="
-        pointer-events-none
-        fixed
-        inset-0
-        z-0
-        overflow-hidden
-        select-none
-      "
-    >
-      {/* ===================================================
-          العلامة المائية اليمنى
-          =================================================== */}
-
-      <div
-        className="
-          absolute
-          -right-28
-          top-24
-          h-80
-          w-80
-          rotate-45
-          opacity-[0.035]
-          dark:opacity-[0.025]
-        "
-      >
-        <div
-          className="
-            absolute
-            inset-0
-            rounded-[4rem]
-            border-[2px]
-            border-[#E0B85C]
-          "
-        />
-
-        <div
-          className="
-            absolute
-            inset-8
-            rotate-45
-            rounded-[2.5rem]
-            border
-            border-[#E0B85C]
-          "
-        />
-
-        <div
-          className="
-            absolute
-            inset-20
-            rounded-2xl
-            border
-            border-[#E0B85C]
-          "
-        />
-
-        <div
-          className="
-            absolute
-            left-1/2
-            top-1/2
-            h-20
-            w-20
-            -translate-x-1/2
-            -translate-y-1/2
-            rotate-45
-            border-2
-            border-[#E0B85C]
-          "
-        />
-      </div>
-
-      {/* ===================================================
-          العلامة المائية اليسرى
-          =================================================== */}
-
-      <div
-        className="
-          absolute
-          -left-36
-          top-[52%]
-          h-96
-          w-96
-          -rotate-45
-          opacity-[0.025]
-          dark:opacity-[0.018]
-        "
-      >
-        <div
-          className="
-            absolute
-            inset-0
-            rounded-[5rem]
-            border-[2px]
-            border-[#4A1525]
-            dark:border-[#E0B85C]
-          "
-        />
-
-        <div
-          className="
-            absolute
-            inset-10
-            rounded-[4rem]
-            border
-            border-[#4A1525]
-            dark:border-[#E0B85C]
-          "
-        />
-
-        <div
-          className="
-            absolute
-            inset-24
-            rounded-[3rem]
-            border
-            border-[#4A1525]
-            dark:border-[#E0B85C]
-          "
-        />
-      </div>
-
-      {/* ===================================================
-          الخطوط الهندسية
-          =================================================== */}
-
-      <div
-        className="
-          absolute
-          inset-x-0
-          top-0
-          h-32
-          opacity-[0.035]
-          dark:opacity-[0.025]
-        "
-      >
-        <div
-          className="
-            absolute
-            inset-x-0
-            top-6
-            h-px
-            bg-gradient-to-r
-            from-transparent
-            via-[#E0B85C]
-            to-transparent
-          "
-        />
-
-        <div
-          className="
-            absolute
-            inset-x-12
-            top-12
-            h-px
-            bg-gradient-to-r
-            from-transparent
-            via-[#4A1525]
-            to-transparent
-            dark:via-[#E0B85C]
-          "
-        />
-
-        <div
-          className="
-            absolute
-            inset-x-24
-            top-20
-            h-px
-            bg-gradient-to-r
-            from-transparent
-            via-[#E0B85C]
-            to-transparent
-          "
-        />
-      </div>
-
-      {/* ===================================================
-          زخارف الزوايا
-          =================================================== */}
-
-      <div
-        className="
-          absolute
-          right-5
-          top-28
-          h-10
-          w-10
-          rotate-45
-          border
-          border-[#E0B85C]/[0.08]
-        "
-      />
-
-      <div
-        className="
-          absolute
-          left-5
-          top-[45%]
-          h-8
-          w-8
-          rotate-45
-          border
-          border-[#E0B85C]/[0.06]
-        "
-      />
-
-      <div
-        className="
-          absolute
-          bottom-28
-          right-10
-          h-6
-          w-6
-          rotate-45
-          border
-          border-[#E0B85C]/[0.06]
-        "
-      />
-    </div>
-  );
-}
-
-/**
- * =========================================================
- * صفحة 404
- * =========================================================
- */
-
 function NotFoundComponent() {
   return (
     <div
       className="
-        relative
-        z-10
         flex
         min-h-screen
         items-center
         justify-center
-        bg-background
+        bg-[#FAF9F6]
         px-4
+        dark:bg-[#071B24]
       "
     >
       <div
         className="
-          relative
           w-full
           max-w-md
-          overflow-hidden
           rounded-3xl
           border
-          border-[#E0B85C]/20
-          bg-card
+          border-[#0E4D64]/10
+          bg-white
           p-8
           text-center
-          shadow-[0_25px_70px_-35px_rgba(74,21,37,0.55)]
+          shadow-[0_25px_70px_-35px_rgba(14,77,100,0.55)]
+          dark:bg-card
         "
       >
         <div
-          aria-hidden="true"
           className="
-            absolute
-            -right-12
-            -top-12
-            h-28
-            w-28
-            rotate-45
-            border
-            border-[#E0B85C]/10
-          "
-        />
-
-        <div
-          className="
-            relative
             mx-auto
             grid
             h-20
             w-20
             place-items-center
             rounded-2xl
-            bg-[#4A1525]
-            text-3xl
+            bg-[#0E4D64]
+            text-2xl
             font-extrabold
-            text-[#E0B85C]
-            shadow-lg
+            text-white
           "
         >
           404
@@ -497,47 +211,35 @@ function NotFoundComponent() {
             text-muted-foreground
           "
         >
-          الصفحة التي تبحث عنها غير موجودة
-          أو تم نقلها.
+          الصفحة التي تبحث عنها
+          غير موجودة أو تم نقلها.
         </p>
 
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="
-              inline-flex
-              min-h-11
-              items-center
-              justify-center
-              rounded-xl
-              bg-[#4A1525]
-              px-6
-              text-sm
-              font-bold
-              text-white
-              transition-all
-              hover:bg-[#6A263A]
-              active:scale-[0.98]
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-[#E0B85C]
-              dark:bg-[#E0B85C]
-              dark:text-[#35101C]
-            "
-          >
-            العودة للرئيسية
-          </Link>
-        </div>
+        <Link
+          to="/"
+          className="
+            mt-6
+            inline-flex
+            min-h-11
+            items-center
+            justify-center
+            rounded-xl
+            bg-[#D65A31]
+            px-6
+            text-sm
+            font-bold
+            text-white
+            transition-all
+            hover:bg-[#B74624]
+            active:scale-95
+          "
+        >
+          العودة للرئيسية
+        </Link>
       </div>
     </div>
   );
 }
-
-/**
- * =========================================================
- * Error Boundary
- * =========================================================
- */
 
 function ErrorComponent({
   error,
@@ -546,32 +248,25 @@ function ErrorComponent({
   error: Error;
   reset: () => void;
 }) {
-  const router =
-    useRouter();
-
-  console.error(error);
+  const router = useRouter();
 
   useEffect(() => {
-    reportLovableError(
-      error,
-      {
-        boundary:
-          "tanstack_root_error_component",
-      },
-    );
+    reportLovableError(error, {
+      boundary:
+        "tanstack_root_error_component",
+    });
   }, [error]);
 
   return (
     <div
       className="
-        relative
-        z-10
         flex
         min-h-screen
         items-center
         justify-center
-        bg-background
+        bg-[#FAF9F6]
         px-4
+        dark:bg-[#071B24]
       "
     >
       <div
@@ -580,11 +275,12 @@ function ErrorComponent({
           max-w-md
           rounded-3xl
           border
-          border-[#E0B85C]/20
-          bg-card
+          border-[#0E4D64]/10
+          bg-white
           p-7
           text-center
-          shadow-[0_25px_70px_-35px_rgba(74,21,37,0.55)]
+          shadow-[0_25px_70px_-35px_rgba(14,77,100,0.55)]
+          dark:bg-card
         "
       >
         <div
@@ -595,10 +291,9 @@ function ErrorComponent({
             w-14
             place-items-center
             rounded-2xl
-            bg-[#4A1525]/10
-            text-[#4A1525]
-            dark:bg-[#E0B85C]/10
-            dark:text-[#E0B85C]
+            bg-[#D65A31]/10
+            font-extrabold
+            text-[#D65A31]
           "
         >
           !
@@ -609,7 +304,6 @@ function ErrorComponent({
             mt-5
             text-xl
             font-extrabold
-            tracking-tight
             text-foreground
           "
         >
@@ -626,7 +320,8 @@ function ErrorComponent({
         >
           حدث خطأ غير متوقع.
           يمكنك المحاولة مرة أخرى
-          أو العودة إلى الصفحة الرئيسية.
+          أو العودة إلى الصفحة
+          الرئيسية.
         </p>
 
         <div
@@ -650,19 +345,14 @@ function ErrorComponent({
               items-center
               justify-center
               rounded-xl
-              bg-[#4A1525]
+              bg-[#0E4D64]
               px-5
               text-sm
               font-bold
               text-white
               transition-all
-              hover:bg-[#6A263A]
-              active:scale-[0.98]
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-[#E0B85C]
-              dark:bg-[#E0B85C]
-              dark:text-[#35101C]
+              hover:bg-[#0A3D50]
+              active:scale-95
             "
           >
             المحاولة مرة أخرى
@@ -677,18 +367,15 @@ function ErrorComponent({
               justify-center
               rounded-xl
               border
-              border-[#E0B85C]/20
+              border-[#0E4D64]/15
               bg-background
               px-5
               text-sm
               font-bold
-              text-foreground
+              text-[#0E4D64]
               transition-all
-              hover:bg-[#4A1525]/[0.04]
-              active:scale-[0.98]
-              focus-visible:outline-none
-              focus-visible:ring-2
-              focus-visible:ring-[#E0B85C]
+              hover:bg-[#0E4D64]/5
+              active:scale-95
             "
           >
             الرئيسية
@@ -699,12 +386,6 @@ function ErrorComponent({
   );
 }
 
-/**
- * =========================================================
- * Root Route
- * =========================================================
- */
-
 export const Route =
   createRootRouteWithContext<{
     queryClient: QueryClient;
@@ -712,88 +393,63 @@ export const Route =
     head: () => ({
       meta: [
         {
-          charSet:
-            "utf-8",
+          charSet: "utf-8",
         },
-
         {
-          name:
-            "viewport",
+          name: "viewport",
           content:
             "width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover",
         },
-
         {
           title:
-            "تشكيلات | متجر يمني إلكتروني",
+            "شهارة | تسوق بلا حدود",
         },
-
         {
-          name:
-            "description",
+          name: "description",
           content:
-            "تشكيلات — كل ما تحتاجه بتشكيلة واحدة. متجر إلكتروني يمني.",
+            "شهارة — متجر إلكتروني يمني حديث. تسوق بلا حدود.",
         },
-
         {
-          name:
-            "theme-color",
-          content:
-            BRAND.burgundy,
+          name: "theme-color",
+          content: BRAND.blue,
         },
-
         {
           name:
             "apple-mobile-web-app-capable",
-          content:
-            "yes",
+          content: "yes",
         },
-
         {
           name:
             "mobile-web-app-capable",
-          content:
-            "yes",
+          content: "yes",
         },
-
         {
           name:
             "apple-mobile-web-app-status-bar-style",
           content:
             "black-translucent",
         },
-
         {
-          name:
-            "format-detection",
-          content:
-            "telephone=no",
+          name: "format-detection",
+          content: "telephone=no",
         },
-
         {
-          property:
-            "og:title",
+          property: "og:title",
           content:
-            "تشكيلات | متجر يمني إلكتروني",
+            "شهارة | تسوق بلا حدود",
         },
-
         {
           property:
             "og:description",
           content:
-            "تشكيلات — كل ما تحتاجه بتشكيلة واحدة.",
+            "شهارة — متجرك الإلكتروني اليمني.",
         },
-
         {
-          property:
-            "og:type",
-          content:
-            "website",
+          property: "og:type",
+          content: "website",
         },
-
         {
-          name:
-            "twitter:card",
+          name: "twitter:card",
           content:
             "summary_large_image",
         },
@@ -801,65 +457,42 @@ export const Route =
 
       links: [
         {
-          rel:
-            "stylesheet",
-          href:
-            appCss,
+          rel: "stylesheet",
+          href: appCss,
         },
-
         {
-          rel:
-            "preconnect",
-          href:
-            "https://fonts.googleapis.com",
+          rel: "preconnect",
+          href: "https://fonts.googleapis.com",
         },
-
         {
-          rel:
-            "preconnect",
-          href:
-            "https://fonts.gstatic.com",
-          crossOrigin:
-            "anonymous",
+          rel: "preconnect",
+          href: "https://fonts.gstatic.com",
+          crossOrigin: "anonymous",
         },
-
         {
-          rel:
-            "stylesheet",
+          rel: "stylesheet",
           href:
-            "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap",
+            "https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap",
         },
-
         {
-          rel:
-            "icon",
-          href:
-            "/favicon.png",
-          type:
-            "image/png",
+          rel: "icon",
+          href: "/favicon.png",
+          type: "image/png",
         },
-
         {
-          rel:
-            "apple-touch-icon",
-          href:
-            "/icon-192.png",
+          rel: "apple-touch-icon",
+          href: "/icon-192.png",
         },
-
         {
-          rel:
-            "manifest",
-          href:
-            "/manifest.webmanifest",
+          rel: "manifest",
+          href: "/manifest.webmanifest",
         },
       ],
     }),
 
-    shellComponent:
-      RootShell,
+    shellComponent: RootShell,
 
-    component:
-      RootComponent,
+    component: RootComponent,
 
     notFoundComponent:
       NotFoundComponent,
@@ -867,12 +500,6 @@ export const Route =
     errorComponent:
       ErrorComponent,
   });
-
-/**
- * =========================================================
- * Root Shell
- * =========================================================
- */
 
 function RootShell({
   children,
@@ -885,8 +512,8 @@ function RootShell({
       dir="rtl"
       className="
         tashkilat-app
-        bg-[#FBF7EF]
-        dark:bg-[#170C11]
+        bg-[#FAF9F6]
+        dark:bg-[#071B24]
       "
     >
       <head>
@@ -904,65 +531,23 @@ function RootShell({
         className="
           min-h-screen
           overflow-x-hidden
-          bg-[#FBF7EF]
-          text-[#35101C]
+          bg-[#FAF9F6]
+          text-[#081D27]
           antialiased
-          selection:bg-[#E0B85C]/30
-          selection:text-[#35101C]
-          dark:bg-[#170C11]
-          dark:text-[#FBF7EF]
-          dark:selection:bg-[#E0B85C]/30
-          dark:selection:text-[#FBF7EF]
+          selection:bg-[#D65A31]/20
+          selection:text-[#0A3D50]
+          dark:bg-[#071B24]
+          dark:text-[#F5FAFC]
         "
-        onContextMenu={(event) => {
-          const target =
-            event.target as
-              | HTMLElement
-              | null;
-
-          if (
-            target?.closest(
-              "img, .protected-image, [data-protected-image='true']",
-            )
-          ) {
-            event.preventDefault();
-          }
-        }}
-        onDragStart={(event) => {
-          const target =
-            event.target as
-              | HTMLElement
-              | null;
-
-          if (
-            target?.closest(
-              "img, .protected-image, [data-protected-image='true']",
-            )
-          ) {
-            event.preventDefault();
-          }
-        }}
       >
         <div
           className="
             relative
             min-h-screen
             overflow-x-hidden
-            bg-[#FBF7EF]
-            dark:bg-[#170C11]
           "
         >
-          <HeritageWatermark />
-
-          <div
-            className="
-              relative
-              z-10
-              min-h-screen
-            "
-          >
-            {children}
-          </div>
+          {children}
         </div>
 
         <Scripts />
@@ -971,22 +556,14 @@ function RootShell({
   );
 }
 
-/**
- * =========================================================
- * Theme Controller
- * =========================================================
- */
-
 function ThemeController() {
   useEffect(() => {
     const root =
       document.documentElement;
 
-    function applyTheme(
-      theme:
-        | "dark"
-        | "light",
-    ) {
+    const applyTheme = (
+      theme: "dark" | "light",
+    ) => {
       root.classList.toggle(
         "dark",
         theme === "dark",
@@ -997,7 +574,7 @@ function ThemeController() {
 
       root.dataset.theme =
         theme;
-    }
+    };
 
     try {
       const stored =
@@ -1009,283 +586,90 @@ function ThemeController() {
         stored === "dark" ||
         stored === "light"
       ) {
-        applyTheme(
-          stored,
-        );
-
+        applyTheme(stored);
         return;
       }
 
-      const mediaQuery =
+      const media =
         window.matchMedia(
           "(prefers-color-scheme: dark)",
         );
 
       applyTheme(
-        mediaQuery.matches
+        media.matches
           ? "dark"
           : "light",
       );
 
-      const handleSystemThemeChange =
-        (
-          event: MediaQueryListEvent,
-        ) => {
-          const currentStored =
-            localStorage.getItem(
-              THEME_STORAGE_KEY,
-            );
+      const listener = (
+        event: MediaQueryListEvent,
+      ) => {
+        const current =
+          localStorage.getItem(
+            THEME_STORAGE_KEY,
+          );
 
-          if (
-            currentStored !==
-              "dark" &&
-            currentStored !==
-              "light"
-          ) {
-            applyTheme(
-              event.matches
-                ? "dark"
-                : "light",
-            );
-          }
-        };
-
-      mediaQuery.addEventListener(
-        "change",
-        handleSystemThemeChange,
-      );
-
-      return () => {
-        mediaQuery.removeEventListener(
-          "change",
-          handleSystemThemeChange,
-        );
+        if (
+          current !== "dark" &&
+          current !== "light"
+        ) {
+          applyTheme(
+            event.matches
+              ? "dark"
+              : "light",
+          );
+        }
       };
-    } catch {
-      applyTheme(
-        "light",
+
+      media.addEventListener(
+        "change",
+        listener,
       );
+
+      return () =>
+        media.removeEventListener(
+          "change",
+          listener,
+        );
+    } catch {
+      applyTheme("light");
     }
   }, []);
 
   return null;
 }
 
-/**
- * =========================================================
- * Image Protection
- * =========================================================
- */
-
-function ImageProtectionController() {
-  useEffect(() => {
-    const selector =
-      "img, .protected-image, [data-protected-image='true']";
-
-    const handleContextMenu =
-      (
-        event: MouseEvent,
-      ) => {
-        const target =
-          event.target as
-            | HTMLElement
-            | null;
-
-        if (
-          target?.closest(
-            selector,
-          )
-        ) {
-          event.preventDefault();
-        }
-      };
-
-    const handleDragStart =
-      (
-        event: DragEvent,
-      ) => {
-        const target =
-          event.target as
-            | HTMLElement
-            | null;
-
-        if (
-          target?.closest(
-            selector,
-          )
-        ) {
-          event.preventDefault();
-        }
-      };
-
-    const handleTouchStart =
-      (
-        event: TouchEvent,
-      ) => {
-        const target =
-          event.target as
-            | HTMLElement
-            | null;
-
-        const image =
-          target?.closest(
-            selector,
-          );
-
-        if (image) {
-          image.classList.add(
-            "image-touch-protected",
-          );
-        }
-      };
-
-    const handleTouchEnd =
-      (
-        event: TouchEvent,
-      ) => {
-        const target =
-          event.target as
-            | HTMLElement
-            | null;
-
-        const image =
-          target?.closest(
-            selector,
-          );
-
-        if (image) {
-          image.classList.remove(
-            "image-touch-protected",
-          );
-        }
-      };
-
-    document.addEventListener(
-      "contextmenu",
-      handleContextMenu,
-      {
-        capture:
-          true,
-      },
-    );
-
-    document.addEventListener(
-      "dragstart",
-      handleDragStart,
-      {
-        capture:
-          true,
-      },
-    );
-
-    document.addEventListener(
-      "touchstart",
-      handleTouchStart,
-      {
-        passive:
-          true,
-        capture:
-          true,
-      },
-    );
-
-    document.addEventListener(
-      "touchend",
-      handleTouchEnd,
-      {
-        passive:
-          true,
-        capture:
-          true,
-      },
-    );
-
-    return () => {
-      document.removeEventListener(
-        "contextmenu",
-        handleContextMenu,
-        {
-          capture:
-            true,
-        },
-      );
-
-      document.removeEventListener(
-        "dragstart",
-        handleDragStart,
-        {
-          capture:
-            true,
-        },
-      );
-
-      document.removeEventListener(
-        "touchstart",
-        handleTouchStart,
-        {
-          capture:
-            true,
-        },
-      );
-
-      document.removeEventListener(
-        "touchend",
-        handleTouchEnd,
-        {
-          capture:
-            true,
-        },
-      );
-    };
-  }, []);
-
-  return null;
-}
-
-/**
- * =========================================================
- * Viewport Protection
- * =========================================================
- */
-
 function ViewportProtectionController() {
   useEffect(() => {
-    const preventGesture =
-      (
-        event: Event,
-      ) => {
+    const preventGesture = (
+      event: Event,
+    ) => {
+      event.preventDefault();
+    };
+
+    const preventCtrlWheelZoom = (
+      event: WheelEvent,
+    ) => {
+      if (event.ctrlKey) {
         event.preventDefault();
-      };
+      }
+    };
 
-    const preventCtrlWheelZoom =
-      (
-        event: WheelEvent,
-      ) => {
-        if (
-          event.ctrlKey
-        ) {
-          event.preventDefault();
-        }
-      };
-
-    const preventMultiTouchZoom =
-      (
-        event: TouchEvent,
-      ) => {
-        if (
-          event.touches
-            .length > 1
-        ) {
-          event.preventDefault();
-        }
-      };
+    const preventMultiTouchZoom = (
+      event: TouchEvent,
+    ) => {
+      if (
+        event.touches.length > 1
+      ) {
+        event.preventDefault();
+      }
+    };
 
     document.addEventListener(
       "gesturestart",
       preventGesture,
       {
-        passive:
-          false,
+        passive: false,
       },
     );
 
@@ -1293,8 +677,7 @@ function ViewportProtectionController() {
       "gesturechange",
       preventGesture,
       {
-        passive:
-          false,
+        passive: false,
       },
     );
 
@@ -1302,8 +685,7 @@ function ViewportProtectionController() {
       "gestureend",
       preventGesture,
       {
-        passive:
-          false,
+        passive: false,
       },
     );
 
@@ -1311,8 +693,7 @@ function ViewportProtectionController() {
       "wheel",
       preventCtrlWheelZoom,
       {
-        passive:
-          false,
+        passive: false,
       },
     );
 
@@ -1320,8 +701,7 @@ function ViewportProtectionController() {
       "touchmove",
       preventMultiTouchZoom,
       {
-        passive:
-          false,
+        passive: false,
       },
     );
 
@@ -1356,12 +736,6 @@ function ViewportProtectionController() {
   return null;
 }
 
-/**
- * =========================================================
- * Global Fetching Loader
- * =========================================================
- */
-
 function GlobalFetchingLoader() {
   const isFetching =
     useIsFetching();
@@ -1387,7 +761,7 @@ function GlobalFetchingLoader() {
         flex
         items-center
         justify-center
-        bg-[#35101C]/[0.035]
+        bg-[#0E4D64]/[0.035]
         backdrop-blur-[1px]
       "
       aria-hidden="true"
@@ -1396,11 +770,11 @@ function GlobalFetchingLoader() {
         className="
           rounded-2xl
           border
-          border-[#E0B85C]/20
-          bg-[#FBF7EF]/95
+          border-[#D65A31]/20
+          bg-[#FAF9F6]/95
           p-3
-          shadow-[0_15px_45px_-25px_rgba(74,21,37,0.55)]
-          dark:bg-[#211117]/95
+          shadow-[0_15px_45px_-25px_rgba(14,77,100,0.55)]
+          dark:bg-[#0B2936]/95
         "
       >
         <div
@@ -1410,9 +784,9 @@ function GlobalFetchingLoader() {
             animate-spin
             rounded-full
             border-2
-            border-[#E0B85C]/20
-            border-t-[#4A1525]
-            dark:border-t-[#E0B85C]
+            border-[#D65A31]/20
+            border-t-[#0E4D64]
+            dark:border-t-[#D65A31]
           "
         />
       </div>
@@ -1420,16 +794,9 @@ function GlobalFetchingLoader() {
   );
 }
 
-/**
- * =========================================================
- * App Content
- * =========================================================
- */
-
 function AppContent() {
-  const {
-    user,
-  } = useAuth();
+  const { user } =
+    useAuth();
 
   useEffect(() => {
     void registerPushNotifications();
@@ -1439,16 +806,12 @@ function AppContent() {
     <>
       <ThemeController />
 
-      <ImageProtectionController />
-
       <ViewportProtectionController />
 
       <OfflineIndicator />
 
       <NotificationListener
-        currentUserId={
-          user?.id
-        }
+        currentUserId={user?.id}
       />
 
       <Outlet />
@@ -1468,12 +831,6 @@ function AppContent() {
   );
 }
 
-/**
- * =========================================================
- * Root Component
- * =========================================================
- */
-
 function RootComponent() {
   const context =
     Route.useRouteContext();
@@ -1482,52 +839,35 @@ function RootComponent() {
     context?.queryClient ??
     defaultQueryClient;
 
-  /**
-   * تسجيل Service Worker.
-   */
-
   useEffect(() => {
     if (
-      !(
-        "serviceWorker" in
-        navigator
-      )
+      !("serviceWorker" in navigator)
     ) {
       return;
     }
 
-    const register =
-      () => {
-        void navigator.serviceWorker
-          .register(
-            "/sw.js",
-            {
-              scope: "/",
-            },
-          )
-          .then(
-            (
-              registration,
-            ) => {
-              console.log(
-                "Tashkilat Service Worker active:",
-                registration.scope,
-              );
+    const register = () => {
+      void navigator.serviceWorker
+        .register("/sw.js", {
+          scope: "/",
+        })
+        .then(
+          (registration) => {
+            console.log(
+              "Shehara Service Worker active:",
+              registration.scope,
+            );
 
-              void registerPushNotifications();
-            },
-          )
-          .catch(
-            (
-              error,
-            ) => {
-              console.error(
-                "Tashkilat Service Worker registration failed:",
-                error,
-              );
-            },
+            void registerPushNotifications();
+          },
+        )
+        .catch((error) => {
+          console.error(
+            "Shehara Service Worker registration failed:",
+            error,
           );
-      };
+        });
+    };
 
     if (
       document.readyState ===
@@ -1539,34 +879,28 @@ function RootComponent() {
         "load",
         register,
         {
-          once:
-            true,
+          once: true,
         },
       );
     }
 
-    return () => {
+    return () =>
       window.removeEventListener(
         "load",
         register,
       );
-    };
   }, []);
 
   return (
     <QueryClientProvider
-      client={
-        queryClient
-      }
+      client={queryClient}
     >
       <AuthProvider>
         <CurrencyProvider>
           <WishlistProvider>
             <CartProvider>
               <AppSplash
-                duration={
-                  2200
-                }
+                duration={2200}
               />
 
               <AppContent />
