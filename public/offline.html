@@ -2,53 +2,177 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>لا يوجد اتصال | تشكيلات</title>
-    <link rel="icon" href="/favicon.png" type="image/png" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+
+    <meta
+      name="theme-color"
+      content="#0E4D64"
+    />
+
+    <title>
+      لا يوجد اتصال | شهارة
+    </title>
+
+    <link
+      rel="icon"
+      href="/favicon.png"
+      type="image/png"
+    />
+
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap"
     />
+
     <style>
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
         min-height: 100vh;
         display: grid;
         place-items: center;
-        background: #faf7fb;
-        color: #2b1b33;
-        font-family: "Tajawal", system-ui, sans-serif;
+
+        background: #FAF9F6;
+        color: #081D27;
+
+        font-family:
+          "Cairo",
+          Tahoma,
+          sans-serif;
+
         padding: 24px;
       }
+
       .card {
-        max-width: 26rem;
+        width: 100%;
+        max-width: 28rem;
+
         text-align: center;
-        background: #fff;
-        border: 1px solid #ece3f1;
-        border-radius: 24px;
-        padding: 28px;
-        box-shadow: 0 12px 32px rgba(91, 42, 134, 0.08);
+
+        background: #FFFFFF;
+
+        border:
+          1px solid
+          rgba(14, 77, 100, 0.12);
+
+        border-radius: 28px;
+
+        padding: 32px 26px;
+
+        box-shadow:
+          0 24px 60px -32px
+          rgba(14, 77, 100, 0.55);
       }
-      img { width: 84px; height: 84px; object-fit: contain; }
-      h1 { font-size: 20px; margin: 14px 0 6px; }
-      p { font-size: 14px; color: #6b5a74; margin: 0 0 18px; line-height: 1.7; }
+
+      img {
+        width: 96px;
+        height: 96px;
+        object-fit: contain;
+      }
+
+      h1 {
+        margin: 18px 0 8px;
+        font-size: 21px;
+        font-weight: 800;
+        color: #0E4D64;
+      }
+
+      p {
+        margin: 0 0 22px;
+
+        font-size: 14px;
+        line-height: 1.9;
+
+        color: #60737B;
+      }
+
       button {
         border: 0;
-        background: #5b2a86;
-        color: #fff;
-        border-radius: 16px;
-        padding: 12px 22px;
+
+        background: #D65A31;
+        color: #FFFFFF;
+
+        border-radius: 15px;
+
+        padding: 12px 24px;
+
         font-size: 14px;
+        font-weight: 700;
+
         font-family: inherit;
+
+        cursor: pointer;
+
+        transition:
+          transform 160ms ease,
+          background-color 160ms ease;
+      }
+
+      button:hover {
+        background: #B74624;
+      }
+
+      button:active {
+        transform: scale(0.96);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #071B24;
+          color: #F5FAFC;
+        }
+
+        .card {
+          background: #0B2936;
+          border-color:
+            rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+          color: #F5FAFC;
+        }
+
+        p {
+          color: #B8C9CF;
+        }
       }
     </style>
   </head>
+
   <body>
-    <div class="card">
-      <img src="/logo.png" alt="شعار تشكيلات" />
-      <h1>لا يوجد اتصال بالإنترنت</h1>
-      <p>تعذّر تحميل الصفحة. تحقق من اتصالك بالشبكة ثم أعد المحاولة — تشكيلات في انتظارك.</p>
-      <button onclick="location.reload()">إعادة المحاولة</button>
-    </div>
+    <main
+      class="card"
+      aria-labelledby="offline-title"
+    >
+      <img
+        src="/logo.png"
+        alt="شعار شهارة"
+      />
+
+      <h1 id="offline-title">
+        لا يوجد اتصال بالإنترنت
+      </h1>
+
+      <p>
+        تعذّر تحميل الصفحة.
+        تحقق من اتصالك بالشبكة ثم
+        أعد المحاولة.
+        شهارة في انتظارك.
+      </p>
+
+      <button
+        type="button"
+        onclick="location.reload()"
+      >
+        إعادة المحاولة
+      </button>
+    </main>
   </body>
 </html>
