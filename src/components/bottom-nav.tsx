@@ -1,13 +1,15 @@
-import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  Grid2x2,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
+
+import {
+  Grid2X2,
   Home,
   Package,
   ShoppingBag,
   User,
 } from "lucide-react";
-
-import { useCart } from "@/lib/cart-context";
 
 type BottomNavItem = {
   id: string;
@@ -25,14 +27,14 @@ const NAV_ITEMS: BottomNavItem[] = [
   },
   {
     id: "products",
-    label: "المنتجات",
+    label: "الأقسام",
     path: "/products",
-    icon: Grid2x2,
+    icon: Grid2X2,
   },
   {
     id: "offers",
     label: "العروض",
-    path: "/products?offers=true",
+    path: "/products",
     icon: ShoppingBag,
   },
   {
@@ -52,9 +54,10 @@ const NAV_ITEMS: BottomNavItem[] = [
 export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { count } = useCart();
 
-  const isActive = (item: BottomNavItem) => {
+  const isActive = (
+    item: BottomNavItem,
+  ) => {
     if (item.id === "home") {
       return location.pathname === "/";
     }
@@ -76,7 +79,9 @@ export function BottomNav() {
     );
   };
 
-  const handleNavigation = (item: BottomNavItem) => {
+  const handleNavigation = (
+    item: BottomNavItem,
+  ) => {
     if (item.id === "offers") {
       void navigate({
         to: "/products",
@@ -101,93 +106,43 @@ export function BottomNav() {
         inset-x-0
         bottom-0
         z-50
-        md:hidden
         px-2
         pb-[env(safe-area-inset-bottom)]
+        md:hidden
       "
     >
-      {/* =====================================================
-          الحاوية الرئيسية
-          ===================================================== */}
-
       <div
         className="
-          relative
           mx-auto
           w-full
           max-w-md
           overflow-hidden
-          rounded-t-[1.35rem]
+          rounded-t-[1.5rem]
           border
           border-b-0
-          border-[color:var(--brand-gold)]/20
-          bg-[color:var(--card)]/96
-          shadow-[0_-12px_35px_-24px_color-mix(in_srgb,var(--brand-burgundy)_70%,transparent)]
-          backdrop-blur-2xl
-          supports-[backdrop-filter]:bg-[color:var(--card)]/82
+          border-[#0E4D64]/12
+          bg-white/95
+          shadow-[0_-15px_40px_-25px_rgba(14,77,100,0.55)]
+          backdrop-blur-xl
+          dark:bg-[#0B2936]/95
         "
       >
-        {/* الخط الذهبي العلوي */}
-
         <div
           aria-hidden="true"
           className="
-            pointer-events-none
-            absolute
-            inset-x-0
-            top-0
-            h-px
+            h-[2px]
+            w-full
             bg-gradient-to-r
             from-transparent
-            via-[color:var(--brand-gold)]/70
+            via-[#D65A31]
             to-transparent
           "
         />
 
-        {/* الزخرفة التراثية */}
-
-        <div
-          aria-hidden="true"
-          className="
-            pointer-events-none
-            absolute
-            left-1/2
-            top-[-18px]
-            h-10
-            w-10
-            -translate-x-1/2
-            rotate-45
-            border
-            border-[color:var(--brand-gold)]/[0.07]
-          "
-        />
-
-        <div
-          aria-hidden="true"
-          className="
-            pointer-events-none
-            absolute
-            left-1/2
-            top-[-9px]
-            h-5
-            w-5
-            -translate-x-1/2
-            rotate-45
-            border
-            border-[color:var(--brand-gold)]/[0.09]
-          "
-        />
-
-        {/* ===================================================
-            عناصر القائمة
-            =================================================== */}
-
         <ul
           className="
-            relative
             grid
-            min-h-[68px]
-            w-full
+            min-h-[70px]
             grid-cols-5
             px-1
             pt-1
@@ -195,33 +150,33 @@ export function BottomNav() {
         >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item);
+            const active =
+              isActive(item);
 
             return (
               <li
                 key={item.id}
-                className="
-                  flex
-                  min-w-0
-                  items-stretch
-                "
+                className="flex"
               >
                 <button
                   type="button"
                   aria-current={
-                    active ? "page" : undefined
+                    active
+                      ? "page"
+                      : undefined
                   }
                   aria-label={item.label}
                   onClick={() =>
-                    handleNavigation(item)
+                    handleNavigation(
+                      item,
+                    )
                   }
                   className={`
                     group
                     relative
                     flex
-                    min-h-[64px]
+                    min-h-[66px]
                     w-full
-                    touch-manipulation
                     flex-col
                     items-center
                     justify-center
@@ -230,106 +185,68 @@ export function BottomNav() {
                     px-1
                     py-2
                     text-[10px]
-                    outline-none
                     transition-all
                     duration-200
-                    active:scale-[0.94]
-                    focus-visible:ring-2
-                    focus-visible:ring-[color:var(--brand-gold)]
-                    focus-visible:ring-offset-1
+                    active:scale-90
                     ${
                       active
-                        ? "font-bold text-[color:var(--brand-burgundy)] dark:text-[color:var(--brand-gold)]"
-                        : "font-medium text-muted-foreground hover:text-[color:var(--brand-burgundy)] dark:hover:text-[color:var(--brand-gold)]"
+                        ? "font-bold text-[#D65A31]"
+                        : "font-medium text-muted-foreground"
                     }
                   `}
                 >
                   <span
-                    aria-hidden="true"
                     className={`
-                      relative
-                      flex
+                      grid
                       h-9
                       w-12
-                      items-center
-                      justify-center
+                      place-items-center
                       rounded-xl
                       transition-all
                       duration-200
                       ${
                         active
-                          ? "bg-[color:var(--brand-gold)]/14 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-gold)_10%,transparent)]"
-                          : "group-hover:bg-[color:var(--brand-gold)]/8 group-active:bg-[color:var(--brand-gold)]/12"
+                          ? "bg-[#D65A31]/10"
+                          : "group-hover:bg-[#0E4D64]/5"
                       }
                     `}
                   >
                     <Icon
-                      className={`
+                      className="
                         h-[21px]
                         w-[21px]
-                        shrink-0
-                        transition-all
-                        duration-200
-                        ${
-                          active
-                            ? "scale-105"
-                            : "group-hover:scale-105"
-                        }
-                      `}
+                      "
                       strokeWidth={
-                        active ? 2.2 : 1.8
+                        active
+                          ? 2.3
+                          : 1.8
                       }
                     />
-
-                    {/* عداد السلة لم يعد عنصرًا في القائمة،
-                        لكن نحافظ على عدم إظهار أي عداد
-                        على عناصر التنقل الأخرى. */}
-
-                    {item.id === "orders" &&
-                    count > 0 ? null : null}
-
-                    {active ? (
-                      <>
-                        <span
-                          aria-hidden="true"
-                          className="
-                            absolute
-                            -bottom-1
-                            h-1
-                            w-1
-                            rounded-full
-                            bg-[color:var(--brand-gold-deep)]
-                            shadow-[0_0_8px_color-mix(in_srgb,var(--brand-gold)_60%,transparent)]
-                          "
-                        />
-
-                        <span
-                          aria-hidden="true"
-                          className="
-                            absolute
-                            inset-x-3
-                            bottom-0
-                            h-px
-                            bg-gradient-to-r
-                            from-transparent
-                            via-[color:var(--brand-gold)]/35
-                            to-transparent
-                          "
-                        />
-                      </>
-                    ) : null}
                   </span>
 
                   <span
                     className="
                       max-w-full
                       truncate
-                      px-0.5
                       leading-4
                     "
                   >
                     {item.label}
                   </span>
+
+                  {active ? (
+                    <span
+                      aria-hidden="true"
+                      className="
+                        absolute
+                        bottom-0.5
+                        h-1
+                        w-1
+                        rounded-full
+                        bg-[#D65A31]
+                      "
+                    />
+                  ) : null}
                 </button>
               </li>
             );
