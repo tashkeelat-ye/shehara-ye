@@ -10,32 +10,36 @@ import {
 } from "react";
 import { toast } from "sonner";
 import {
+  ArrowLeft,
   Bell,
+  Check,
+  CheckCircle2,
   ChevronLeft,
+  Clock3,
   Edit3,
   Home,
   LogOut,
+  Mail,
   MapPin,
+  MapPinned,
   Package,
+  Phone,
   Plus,
+  Save,
+  Settings2,
   ShieldCheck,
   Trash2,
   User,
   Wallet,
   X,
-  CheckCircle2,
-  Clock3,
-  Truck,
-  Save,
-  MapPinned,
-  Phone,
-  Mail,
-  Settings2,
+  CreditCard,
+  Sparkles,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
+import { BrandLogo } from "@/components/brand-logo";
 import { useAuth } from "@/lib/auth-context";
 import { NotificationPrefsPanel } from "@/components/notification-prefs";
 import { useFormatPrice } from "@/lib/currency-context";
@@ -277,6 +281,27 @@ function AccountPage() {
     return value.charAt(0);
   }, [profile?.full_name]);
 
+  const walletBalance =
+    Number(profile?.wallet_balance ?? 0);
+
+  const maskedCardNumber = useMemo(() => {
+    const fallback = "4567";
+
+    if (!user?.id) {
+      return `**** 4567 8912 ****`;
+    }
+
+    const clean = user.id.replace(
+      /[^a-zA-Z0-9]/g,
+      "",
+    );
+
+    const lastFour =
+      clean.slice(-4) || fallback;
+
+    return `**** 4567 8912 ${lastFour} ****`;
+  }, [user?.id]);
+
   const getOrderStatusLabel =
     useCallback(
       (status: string) =>
@@ -305,7 +330,7 @@ function AccountPage() {
         return CheckCircle2;
 
       case "shipped":
-        return Truck;
+        return ArrowLeft;
 
       case "processing":
       case "confirmed":
@@ -324,7 +349,7 @@ function AccountPage() {
         return "bg-emerald-500/10 text-emerald-600";
 
       case "cancelled":
-        return "bg-destructive/10 text-destructive";
+        return "bg-red-500/10 text-red-600";
 
       case "shipped":
         return "bg-[#0E4D64]/10 text-[#0E4D64]";
@@ -334,7 +359,7 @@ function AccountPage() {
         return "bg-[#D65A31]/10 text-[#D65A31]";
 
       default:
-        return "bg-muted text-muted-foreground";
+        return "bg-slate-100 text-slate-500";
     }
   };
 
@@ -571,147 +596,342 @@ function AccountPage() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[#FAF9F6] pb-28 text-foreground dark:bg-[#071B24] md:pb-8"
+      className="min-h-screen bg-[#FAF9F6] pb-28 text-[#0E4D64] md:pb-8"
     >
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-3xl px-3 py-4 sm:px-5 sm:py-6">
+      <main className="mx-auto w-full max-w-3xl px-3 py-4 sm:px-5 sm:py-7">
 
-        {/* =========================
-            PROFILE HERO
-        ========================== */}
+        {/* =====================================
+            PAGE INTRO
+        ====================================== */}
 
-        <section className="relative overflow-hidden rounded-[2rem] bg-[#0E4D64] p-5 text-white shadow-[0_24px_60px_-35px_rgba(14,77,100,0.8)] sm:p-7">
+        <div className="mb-4 flex items-center justify-between">
 
-          <div className="pointer-events-none absolute -end-20 -top-24 h-60 w-60 rounded-full border border-white/10" />
+          <div>
+            <p className="text-[9px] font-bold tracking-wide text-[#D65A31]">
+              SHEHARA
+            </p>
 
-          <div className="pointer-events-none absolute -start-24 -bottom-28 h-72 w-72 rounded-full border border-[#D65A31]/20" />
+            <h1 className="mt-1 text-xl font-black tracking-tight text-[#0E4D64]">
+              حسابي
+            </h1>
 
-          <div className="relative z-10">
+            <p className="mt-1 text-[9px] text-slate-500">
+              كل ما يخص حسابك في مكان واحد
+            </p>
+          </div>
 
-            <div className="flex items-start gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl border border-[#0E4D64]/10 bg-white shadow-sm">
+            <User className="h-5 w-5 text-[#0E4D64]" />
+          </div>
 
-              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-[1.4rem] bg-white text-xl font-black text-[#0E4D64] shadow-xl">
+        </div>
+
+        {/* =====================================
+            PROFILE CARD
+        ====================================== */}
+
+        <section className="relative overflow-hidden rounded-[2rem] bg-white p-4 shadow-[0_15px_45px_-30px_rgba(14,77,100,0.45)]">
+
+          <div className="pointer-events-none absolute -end-16 -top-20 h-48 w-48 rounded-full border border-[#D4AF37]/20" />
+
+          <div className="pointer-events-none absolute -start-16 -bottom-20 h-44 w-44 rounded-full border border-[#0E4D64]/10" />
+
+          <div className="relative flex items-center gap-3">
+
+            <div className="relative">
+
+              <div className="grid h-[68px] w-[68px] place-items-center rounded-[1.5rem] bg-[#0E4D64] text-xl font-black text-white shadow-lg shadow-[#0E4D64]/15">
                 {initials}
               </div>
 
-              <div className="min-w-0 flex-1">
+              <span className="absolute -bottom-1 -start-1 grid h-6 w-6 place-items-center rounded-full border-2 border-white bg-[#D4AF37] text-white">
+                <Check className="h-3 w-3" />
+              </span>
 
-                <div className="flex flex-wrap items-center gap-2">
+            </div>
 
-                  <h1 className="truncate text-lg font-black">
-                    {profile?.full_name ||
-                      "مرحباً بك"}
-                  </h1>
+            <div className="min-w-0 flex-1">
 
-                  <span className="rounded-full bg-[#D65A31] px-2.5 py-1 text-[9px] font-bold text-white">
-                    {roleLabel}
-                  </span>
+              <div className="flex items-center gap-2">
+
+                <h2 className="truncate text-sm font-black text-[#0E4D64]">
+                  {profile?.full_name ||
+                    "مرحباً بك"}
+                </h2>
+
+                <span className="shrink-0 rounded-full bg-[#D65A31]/10 px-2 py-1 text-[8px] font-black text-[#D65A31]">
+                  {roleLabel}
+                </span>
+
+              </div>
+
+              <div className="mt-1 flex items-center gap-1.5 text-[9px] text-slate-500">
+
+                <Phone className="h-3 w-3" />
+
+                <span
+                  dir="ltr"
+                  className="truncate"
+                >
+                  {profile?.phone ||
+                    "رقم الهاتف غير مضاف"}
+                </span>
+
+              </div>
+
+              <div className="mt-1 flex items-center gap-1.5 text-[9px] text-slate-400">
+
+                <Mail className="h-3 w-3" />
+
+                <span
+                  dir="ltr"
+                  className="truncate"
+                >
+                  {user?.email || "—"}
+                </span>
+
+              </div>
+
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setEditingProfile(
+                  (value) => !value,
+                )
+              }
+              aria-label="تعديل بيانات الحساب"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#0E4D64]/10 bg-[#0E4D64]/5 text-[#0E4D64] transition hover:bg-[#0E4D64]/10 active:scale-90"
+            >
+              {editingProfile ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Edit3 className="h-4 w-4" />
+              )}
+            </button>
+
+          </div>
+
+        </section>
+
+        {/* =====================================
+            DIGITAL WALLET CARD
+        ====================================== */}
+
+        <section className="mt-4">
+
+          <div className="mb-3 flex items-end justify-between">
+
+            <div>
+
+              <div className="flex items-center gap-2">
+
+                <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+
+                <h2 className="text-sm font-black text-[#0E4D64]">
+                  محفظتك الرقمية
+                </h2>
+
+              </div>
+
+              <p className="mt-1 text-[9px] text-slate-500">
+                رصيدك متاح للدفع بسهولة وأمان
+              </p>
+
+            </div>
+
+            <Link
+              to="/wallet"
+              className="text-[9px] font-black text-[#D65A31]"
+            >
+              إدارة المحفظة
+            </Link>
+
+          </div>
+
+          <div className="relative min-h-[220px] overflow-hidden rounded-[1.8rem] bg-[#D4AF37] p-5 text-[#0E4D64] shadow-[0_20px_45px_-25px_rgba(212,175,55,0.65)]">
+
+            {/* Yemen-inspired geometric pattern */}
+
+            <div className="pointer-events-none absolute inset-0 opacity-10">
+
+              <div className="absolute -end-16 -top-16 h-44 w-44 rotate-45 border-[18px] border-[#0E4D64]" />
+
+              <div className="absolute -start-14 -bottom-20 h-48 w-48 rotate-45 border-[18px] border-[#0E4D64]" />
+
+              <div className="absolute end-1/3 top-1/3 h-20 w-20 rotate-45 border-8 border-[#0E4D64]" />
+
+              <div className="absolute bottom-5 start-1/3 h-10 w-10 rotate-45 border-4 border-[#0E4D64]" />
+
+            </div>
+
+            <div className="relative z-10 flex h-full min-h-[180px] flex-col">
+
+              {/* Card top */}
+
+              <div className="flex items-start justify-between">
+
+                <div className="flex items-center gap-2">
+
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#0E4D64] p-1.5 shadow-lg">
+
+                    <BrandLogo
+                      size={28}
+                      className="h-7 w-7"
+                      priority
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs font-black">
+                      شهارة
+                    </p>
+
+                    <p className="text-[7px] font-bold opacity-60">
+                      تسوق بلا حدود
+                    </p>
+
+                  </div>
 
                 </div>
 
-                <p className="mt-1 text-[10px] text-white/60">
-                  أهلاً بك في شهارة
-                </p>
+                <CreditCard className="h-6 w-6 opacity-60" />
 
-                <div className="mt-2 flex items-center gap-1.5 text-[10px] text-white/75">
-                  <Mail className="h-3.5 w-3.5" />
+              </div>
 
-                  <span
-                    dir="ltr"
-                    className="truncate"
-                  >
-                    {user?.email || "—"}
-                  </span>
+              {/* Chip */}
+
+              <div className="mt-7">
+
+                <div className="grid h-8 w-11 place-items-center rounded-md border border-[#0E4D64]/20 bg-[#D4AF37] shadow-inner">
+
+                  <div className="grid grid-cols-2 gap-0.5 opacity-50">
+
+                    <span className="h-2.5 w-3 rounded-sm border border-[#0E4D64]" />
+                    <span className="h-2.5 w-3 rounded-sm border border-[#0E4D64]" />
+                    <span className="h-2.5 w-3 rounded-sm border border-[#0E4D64]" />
+                    <span className="h-2.5 w-3 rounded-sm border border-[#0E4D64]" />
+
+                  </div>
+
                 </div>
 
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setEditingProfile(
-                    (value) => !value,
-                  )
-                }
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 text-white backdrop-blur transition active:scale-90"
-                aria-label="تعديل الحساب"
-              >
-                {editingProfile ? (
-                  <X className="h-4 w-4" />
-                ) : (
-                  <Edit3 className="h-4 w-4" />
-                )}
-              </button>
+              {/* Card number */}
 
-            </div>
+              <div className="mt-4">
 
-            <div className="mt-5 grid grid-cols-2 gap-2">
+                <p
+                  dir="ltr"
+                  className="text-center text-sm font-black tracking-[0.18em] sm:text-base"
+                >
+                  {maskedCardNumber}
+                </p>
 
-              <Link
-                to="/orders"
-                className="flex min-h-[68px] items-center gap-3 rounded-2xl bg-white/10 px-3 transition active:scale-[0.98]"
-              >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10">
-                  <Package className="h-5 w-5" />
-                </span>
+              </div>
 
-                <span>
-                  <span className="block text-xs font-black">
-                    طلباتي
-                  </span>
+              {/* Bottom */}
 
-                  <span className="mt-1 block text-[9px] text-white/55">
-                    متابعة الطلبات
-                  </span>
-                </span>
-              </Link>
+              <div className="mt-auto flex items-end justify-between gap-4 pt-5">
 
-              <Link
-                to="/wallet"
-                className="flex min-h-[68px] items-center gap-3 rounded-2xl bg-[#D65A31] px-3 transition active:scale-[0.98]"
-              >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10">
-                  <Wallet className="h-5 w-5" />
-                </span>
+                <div className="min-w-0">
 
-                <span>
-                  <span className="block text-xs font-black">
-                    المحفظة
-                  </span>
+                  <p className="text-[7px] font-bold uppercase opacity-55">
+                    Card Holder
+                  </p>
 
-                  <span className="mt-1 block text-[9px] text-white/65">
-                    إدارة رصيدك
-                  </span>
-                </span>
-              </Link>
+                  <p className="mt-1 truncate text-[10px] font-black">
+                    {profile?.full_name ||
+                      "اسم صاحب البطاقة"}
+                  </p>
+
+                </div>
+
+                <div className="text-start">
+
+                  <p className="text-[7px] font-bold uppercase opacity-55">
+                    Available Balance
+                  </p>
+
+                  <p className="mt-1 whitespace-nowrap text-lg font-black">
+                    {formatPrice(
+                      walletBalance,
+                    )}
+                  </p>
+
+                </div>
+
+              </div>
 
             </div>
 
           </div>
+
+          <div className="mt-2 flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
+
+            <div className="flex items-center gap-2">
+
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#0E4D64]/5">
+                <ShieldCheck className="h-4 w-4 text-[#0E4D64]" />
+              </span>
+
+              <div>
+
+                <p className="text-[9px] font-black text-[#0E4D64]">
+                  استخدم رصيدك للدفع بسهولة
+                </p>
+
+                <p className="mt-0.5 text-[7px] text-slate-400">
+                  معاملاتك محمية وتحت المراجعة
+                </p>
+
+              </div>
+
+            </div>
+
+            <Link
+              to="/wallet"
+              className="grid h-8 w-8 place-items-center rounded-lg bg-[#D65A31] text-white transition active:scale-90"
+              aria-label="فتح المحفظة"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+
+          </div>
+
         </section>
 
-        {/* =========================
+        {/* =====================================
             EDIT PROFILE
-        ========================== */}
+        ====================================== */}
 
         {editingProfile ? (
-          <section className="mt-4 rounded-[1.75rem] border border-[#0E4D64]/10 bg-white p-4 shadow-sm dark:bg-card">
+          <section className="mt-4 rounded-[1.6rem] border border-[#0E4D64]/10 bg-white p-4 shadow-sm">
 
             <div className="mb-4 flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0E4D64]/5 text-[#0E4D64]">
                 <User className="h-4 w-4" />
               </span>
 
               <div>
+
                 <h2 className="text-sm font-black">
-                  البيانات الشخصية
+                  تعديل البيانات
                 </h2>
 
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[9px] text-slate-400">
                   حدّث بيانات حسابك
                 </p>
+
               </div>
+
             </div>
 
             <form
@@ -720,12 +940,14 @@ function AccountPage() {
             >
 
               <label className="block">
-                <span className="mb-1.5 block text-[10px] font-bold text-muted-foreground">
+
+                <span className="mb-1.5 block text-[9px] font-bold text-slate-500">
                   الاسم الكامل
                 </span>
 
                 <div className="relative">
-                  <User className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                  <User className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0E4D64]/50" />
 
                   <input
                     value={fullName}
@@ -734,21 +956,25 @@ function AccountPage() {
                         event.target.value,
                       )
                     }
-                    className="h-11 w-full rounded-xl border border-border bg-background pe-10 ps-3 text-xs outline-none transition focus:border-[#0E4D64] focus:ring-2 focus:ring-[#0E4D64]/10"
-                    placeholder="الاسم الكامل"
                     required
                     minLength={3}
+                    className="h-11 w-full rounded-xl border border-[#0E4D64]/10 bg-[#FAF9F6] pe-10 ps-3 text-xs text-[#0E4D64] outline-none transition focus:border-[#0E4D64] focus:ring-4 focus:ring-[#0E4D64]/5"
+                    placeholder="الاسم الكامل"
                   />
+
                 </div>
+
               </label>
 
               <label className="block">
-                <span className="mb-1.5 block text-[10px] font-bold text-muted-foreground">
+
+                <span className="mb-1.5 block text-[9px] font-bold text-slate-500">
                   رقم الهاتف
                 </span>
 
                 <div className="relative">
-                  <Phone className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                  <Phone className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0E4D64]/50" />
 
                   <input
                     value={phone}
@@ -758,10 +984,12 @@ function AccountPage() {
                       )
                     }
                     dir="ltr"
-                    className="h-11 w-full rounded-xl border border-border bg-background pe-10 ps-3 text-start text-xs outline-none transition focus:border-[#0E4D64] focus:ring-2 focus:ring-[#0E4D64]/10"
+                    className="h-11 w-full rounded-xl border border-[#0E4D64]/10 bg-[#FAF9F6] pe-10 ps-3 text-start text-xs text-[#0E4D64] outline-none transition focus:border-[#0E4D64] focus:ring-4 focus:ring-[#0E4D64]/5"
                     placeholder="7xxxxxxxx"
                   />
+
                 </div>
+
               </label>
 
               <button
@@ -769,250 +997,305 @@ function AccountPage() {
                 disabled={busy}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0E4D64] text-xs font-black text-white transition hover:brightness-105 active:scale-[0.98] disabled:opacity-50"
               >
+
                 <Save className="h-4 w-4" />
 
                 {busy
                   ? "جارٍ الحفظ..."
                   : "حفظ التغييرات"}
+
               </button>
 
             </form>
+
           </section>
         ) : null}
 
-        {/* =========================
+        {/* =====================================
             QUICK ACTIONS
-        ========================== */}
+        ====================================== */}
 
-        <section className="mt-4">
+        <section className="mt-5">
 
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-black">
-                الوصول السريع
-              </h2>
+          <div className="mb-3">
 
-              <p className="mt-0.5 text-[10px] text-muted-foreground">
-                كل ما تحتاجه في مكان واحد
-              </p>
-            </div>
+            <h2 className="text-sm font-black text-[#0E4D64]">
+              الوصول السريع
+            </h2>
+
+            <p className="mt-1 text-[9px] text-slate-500">
+              أهم الخدمات التي تحتاجها
+            </p>
+
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
 
             <Link
               to="/orders"
-              className="group flex min-h-[88px] flex-col items-center justify-center rounded-2xl border border-border/70 bg-white px-2 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-[#0E4D64]/20 active:scale-95 dark:bg-card"
+              className="group flex min-h-[88px] items-center gap-3 rounded-2xl border border-[#0E4D64]/10 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
-                <Package className="h-4.5 w-4.5" />
+
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/5 text-[#0E4D64]">
+                <Package className="h-5 w-5" />
               </span>
 
-              <span className="mt-2 text-[9px] font-bold">
-                الطلبات
+              <span className="min-w-0">
+
+                <span className="block text-[10px] font-black">
+                  طلباتي
+                </span>
+
+                <span className="mt-1 block text-[8px] text-slate-400">
+                  متابعة الطلبات
+                </span>
+
               </span>
+
+              <ChevronLeft className="ms-auto h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:-translate-x-0.5" />
+
             </Link>
 
             <Link
               to="/wallet"
-              className="group flex min-h-[88px] flex-col items-center justify-center rounded-2xl border border-border/70 bg-white px-2 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-[#D65A31]/20 active:scale-95 dark:bg-card"
+              className="group flex min-h-[88px] items-center gap-3 rounded-2xl border border-[#D4AF37]/20 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#D65A31]/10 text-[#D65A31]">
-                <Wallet className="h-4.5 w-4.5" />
+
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#D4AF37]/15 text-[#D4AF37]">
+                <Wallet className="h-5 w-5" />
               </span>
 
-              <span className="mt-2 text-[9px] font-bold">
-                المحفظة
+              <span className="min-w-0">
+
+                <span className="block text-[10px] font-black">
+                  المحفظة
+                </span>
+
+                <span className="mt-1 block text-[8px] font-bold text-[#D65A31]">
+                  {formatPrice(
+                    walletBalance,
+                  )}
+                </span>
+
               </span>
+
+              <ChevronLeft className="ms-auto h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:-translate-x-0.5" />
+
             </Link>
 
             <a
               href="#addresses"
-              className="group flex min-h-[88px] flex-col items-center justify-center rounded-2xl border border-border/70 bg-white px-2 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-[#0E4D64]/20 active:scale-95 dark:bg-card"
+              className="group flex min-h-[88px] items-center gap-3 rounded-2xl border border-[#0E4D64]/10 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
-                <MapPin className="h-4.5 w-4.5" />
+
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/5 text-[#0E4D64]">
+                <MapPin className="h-5 w-5" />
               </span>
 
-              <span className="mt-2 text-[9px] font-bold">
-                العناوين
+              <span className="min-w-0">
+
+                <span className="block text-[10px] font-black">
+                  العناوين
+                </span>
+
+                <span className="mt-1 block text-[8px] text-slate-400">
+                  عناوين التوصيل
+                </span>
+
               </span>
+
+              <ChevronLeft className="ms-auto h-4 w-4 shrink-0 text-slate-300" />
+
             </a>
 
             <a
               href="#notifications"
-              className="group flex min-h-[88px] flex-col items-center justify-center rounded-2xl border border-border/70 bg-white px-2 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-[#D65A31]/20 active:scale-95 dark:bg-card"
+              className="group flex min-h-[88px] items-center gap-3 rounded-2xl border border-[#D65A31]/10 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#D65A31]/10 text-[#D65A31]">
-                <Bell className="h-4.5 w-4.5" />
+
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#D65A31]/10 text-[#D65A31]">
+                <Bell className="h-5 w-5" />
               </span>
 
-              <span className="mt-2 text-[9px] font-bold">
-                الإشعارات
+              <span className="min-w-0">
+
+                <span className="block text-[10px] font-black">
+                  الإشعارات
+                </span>
+
+                <span className="mt-1 block text-[8px] text-slate-400">
+                  تفضيلات التنبيه
+                </span>
+
               </span>
+
+              <ChevronLeft className="ms-auto h-4 w-4 shrink-0 text-slate-300" />
+
             </a>
 
           </div>
+
         </section>
 
-        {/* =========================
+        {/* =====================================
             RECENT ORDERS
-        ========================== */}
+        ====================================== */}
 
         <section className="mt-5">
 
           <div className="mb-3 flex items-end justify-between">
-            <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
-                <Package className="h-4 w-4" />
-              </span>
 
-              <div>
-                <h2 className="text-sm font-black">
-                  آخر الطلبات
-                </h2>
+            <div>
 
-                <p className="text-[10px] text-muted-foreground">
-                  نظرة سريعة على طلباتك
-                </p>
-              </div>
+              <h2 className="text-sm font-black text-[#0E4D64]">
+                آخر الطلبات
+              </h2>
+
+              <p className="mt-1 text-[9px] text-slate-500">
+                نظرة سريعة على مشترياتك
+              </p>
+
             </div>
 
             <Link
               to="/orders"
-              className="flex items-center gap-0.5 text-[10px] font-bold text-[#0E4D64]"
+              className="flex items-center gap-0.5 text-[9px] font-black text-[#D65A31]"
             >
               عرض الكل
               <ChevronLeft className="h-3.5 w-3.5" />
             </Link>
+
           </div>
 
           <div className="space-y-2">
 
-            {loadingOrders
-              ? Array.from({
-                  length: 3,
-                }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-20 animate-pulse rounded-2xl bg-muted"
-                  />
-                ))
-              : orders.length > 0
-                ? orders.map(
-                    (order) => {
-                      const StatusIcon =
-                        getOrderStatusIcon(
-                          order.status,
-                        );
+            {loadingOrders ? (
+              Array.from({
+                length: 3,
+              }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-[78px] animate-pulse rounded-2xl bg-slate-100"
+                />
+              ))
+            ) : orders.length > 0 ? (
+              orders.map((order) => {
+                const StatusIcon =
+                  getOrderStatusIcon(
+                    order.status,
+                  );
 
-                      return (
-                        <Link
-                          key={order.id}
-                          to="/orders"
-                          className="group flex items-center gap-3 rounded-2xl border border-border/70 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] dark:bg-card"
-                        >
+                return (
+                  <Link
+                    key={order.id}
+                    to="/orders"
+                    className="group flex items-center gap-3 rounded-2xl border border-[#0E4D64]/8 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99]"
+                  >
 
-                          <span
-                            className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${getOrderStatusClass(order.status)}`}
-                          >
-                            <StatusIcon className="h-4 w-4" />
-                          </span>
-
-                          <span className="min-w-0 flex-1">
-
-                            <span className="flex items-center gap-2">
-                              <span className="truncate text-xs font-black">
-                                طلب #
-                                {order.order_number}
-                              </span>
-
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-[8px] font-bold ${getOrderStatusClass(order.status)}`}
-                              >
-                                {getOrderStatusLabel(
-                                  order.status,
-                                )}
-                              </span>
-                            </span>
-
-                            <span className="mt-1 block text-[9px] text-muted-foreground">
-                              {formatDate(
-                                order.created_at,
-                              )}
-                            </span>
-
-                          </span>
-
-                          <span className="shrink-0 text-start">
-                            <span className="block text-xs font-black text-[#0E4D64]">
-                              {formatPrice(
-                                order.total,
-                              )}
-                            </span>
-
-                            <span className="mt-1 block text-[8px] text-muted-foreground">
-                              {getPaymentStatusLabel(
-                                order.payment_status,
-                              )}
-                            </span>
-                          </span>
-
-                          <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-0.5" />
-
-                        </Link>
-                      );
-                    },
-                  )
-                : (
-                  <div className="rounded-2xl border border-dashed border-border bg-white px-5 py-10 text-center dark:bg-card">
-                    <Package className="mx-auto h-8 w-8 text-muted-foreground/40" />
-
-                    <p className="mt-3 text-xs font-bold">
-                      لا توجد طلبات حتى الآن
-                    </p>
-
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      ابدأ التسوق من شهارة الآن
-                    </p>
-
-                    <Link
-                      to="/products"
-                      className="mt-4 inline-flex rounded-xl bg-[#0E4D64] px-4 py-2.5 text-[10px] font-bold text-white"
+                    <span
+                      className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${getOrderStatusClass(order.status)}`}
                     >
-                      اكتشف المنتجات
-                    </Link>
-                  </div>
-                )}
+                      <StatusIcon className="h-5 w-5" />
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+
+                      <span className="flex items-center gap-2">
+
+                        <span className="truncate text-[10px] font-black text-[#0E4D64]">
+                          طلب #
+                          {order.order_number}
+                        </span>
+
+                        <span
+                          className={`hidden rounded-full px-2 py-1 text-[7px] font-black sm:inline-flex ${getOrderStatusClass(order.status)}`}
+                        >
+                          {getOrderStatusLabel(
+                            order.status,
+                          )}
+                        </span>
+
+                      </span>
+
+                      <span className="mt-1 block text-[8px] text-slate-400">
+                        {formatDate(
+                          order.created_at,
+                        )}
+                      </span>
+
+                    </span>
+
+                    <span className="shrink-0 text-start">
+
+                      <span className="block text-xs font-black text-[#D65A31]">
+                        {formatPrice(
+                          order.total,
+                        )}
+                      </span>
+
+                      <span className="mt-1 block text-[7px] text-slate-400">
+                        {getPaymentStatusLabel(
+                          order.payment_status,
+                        )}
+                      </span>
+
+                    </span>
+
+                    <ChevronLeft className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:-translate-x-0.5" />
+
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[#0E4D64]/10 bg-white px-5 py-10 text-center">
+
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#0E4D64]/5">
+                  <Package className="h-6 w-6 text-[#0E4D64]/40" />
+                </div>
+
+                <p className="mt-3 text-xs font-black text-[#0E4D64]">
+                  لا توجد طلبات حتى الآن
+                </p>
+
+                <p className="mt-1 text-[9px] text-slate-400">
+                  ابدأ التسوق من شهارة
+                </p>
+
+                <Link
+                  to="/products"
+                  className="mt-4 inline-flex rounded-xl bg-[#D65A31] px-4 py-2.5 text-[9px] font-black text-white"
+                >
+                  اكتشف المنتجات
+                </Link>
+
+              </div>
+            )}
 
           </div>
+
         </section>
 
-        {/* =========================
+        {/* =====================================
             ADDRESSES
-        ========================== */}
+        ====================================== */}
 
         <section
           id="addresses"
-          className="mt-5 scroll-mt-20"
+          className="mt-5 scroll-mt-24"
         >
 
           <div className="mb-3 flex items-end justify-between">
 
-            <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
-                <MapPinned className="h-4 w-4" />
-              </span>
+            <div>
 
-              <div>
-                <h2 className="text-sm font-black">
-                  عناوين التوصيل
-                </h2>
+              <h2 className="text-sm font-black text-[#0E4D64]">
+                عناوين التوصيل
+              </h2>
 
-                <p className="text-[10px] text-muted-foreground">
-                  اختر مكان استلام طلباتك
-                </p>
-              </div>
+              <p className="mt-1 text-[9px] text-slate-500">
+                اختر المكان المناسب لاستلام طلباتك
+              </p>
+
             </div>
 
             <button
@@ -1022,8 +1305,9 @@ function AccountPage() {
                   (value) => !value,
                 )
               }
-              className="flex h-9 items-center gap-1.5 rounded-xl bg-[#D65A31] px-3 text-[10px] font-black text-white transition active:scale-95"
+              className="flex h-9 items-center gap-1.5 rounded-xl bg-[#D65A31] px-3 text-[9px] font-black text-white transition active:scale-95"
             >
+
               {showAddressForm ? (
                 <X className="h-3.5 w-3.5" />
               ) : (
@@ -1033,6 +1317,7 @@ function AccountPage() {
               {showAddressForm
                 ? "إغلاق"
                 : "إضافة عنوان"}
+
             </button>
 
           </div>
@@ -1040,29 +1325,34 @@ function AccountPage() {
           {showAddressForm ? (
             <form
               onSubmit={addAddress}
-              className="mb-3 rounded-3xl border border-[#D65A31]/15 bg-white p-4 shadow-sm dark:bg-card"
+              className="mb-3 rounded-[1.6rem] border border-[#D65A31]/10 bg-white p-4 shadow-sm"
             >
 
               <div className="mb-4 flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#D65A31]/10 text-[#D65A31]">
+
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#D65A31]/10 text-[#D65A31]">
                   <Plus className="h-4 w-4" />
                 </span>
 
                 <div>
+
                   <h3 className="text-xs font-black">
-                    عنوان جديد
+                    إضافة عنوان جديد
                   </h3>
 
-                  <p className="text-[9px] text-muted-foreground">
+                  <p className="text-[8px] text-slate-400">
                     أدخل بيانات التوصيل بدقة
                   </p>
+
                 </div>
+
               </div>
 
               <div className="grid grid-cols-2 gap-2">
 
                 <label className="col-span-2">
-                  <span className="mb-1 block text-[9px] font-bold text-muted-foreground">
+
+                  <span className="mb-1 block text-[8px] font-bold text-slate-500">
                     اسم العنوان
                   </span>
 
@@ -1077,13 +1367,15 @@ function AccountPage() {
                         }),
                       )
                     }
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-[#0E4D64]"
+                    className="h-10 w-full rounded-xl border border-[#0E4D64]/10 bg-[#FAF9F6] px-3 text-xs outline-none focus:border-[#0E4D64]"
                     placeholder="المنزل"
                   />
+
                 </label>
 
                 <label>
-                  <span className="mb-1 block text-[9px] font-bold text-muted-foreground">
+
+                  <span className="mb-1 block text-[8px] font-bold text-slate-500">
                     اسم المستلم
                   </span>
 
@@ -1100,14 +1392,16 @@ function AccountPage() {
                         }),
                       )
                     }
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-[#0E4D64]"
+                    className="h-10 w-full rounded-xl border border-[#0E4D64]/10 bg-[#FAF9F6] px-3 text-xs outline-none focus:border-[#0E4D64]"
                     placeholder="الاسم الكامل"
                     required
                   />
+
                 </label>
 
                 <label>
-                  <span className="mb-1 block text-[9px] font-bold text-muted-foreground">
+
+                  <span className="mb-1 block text-[8px] font-bold text-slate-500">
                     الهاتف
                   </span>
 
@@ -1123,13 +1417,15 @@ function AccountPage() {
                       )
                     }
                     dir="ltr"
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-start text-xs outline-none focus:border-[#0E4D64]"
+                    className="h-10 w-full rounded-xl border border-[#0E4D64]/10 bg-[#FAF9F6] px-3 text-start text-xs outline-none focus:border-[#0E4D64]"
                     placeholder="7xxxxxxxx"
                   />
+
                 </label>
 
                 <label>
-                  <span className="mb-1 block text-[9px] font-bold text-muted-foreground">
+
+                  <span className="mb-1 block text-[8px] font-bold text-slate-500">
                     المحافظة / المدينة
                   </span>
 
@@ -1144,14 +1440,16 @@ function AccountPage() {
                         }),
                       )
                     }
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-[#0E4D64]"
+                    className="h-10 w-full rounded-xl border border-[#0E4D64]/10 bg-[#FAF9F6] px-3 text-xs outline-none focus:border-[#0E4D64]"
                     placeholder="إب"
                     required
                   />
+
                 </label>
 
                 <label>
-                  <span className="mb-1 block text-[9px] font-bold text-muted-foreground">
+
+                  <span className="mb-1 block text-[8px] font-bold text-slate-500">
                     المنطقة
                   </span>
 
@@ -1166,13 +1464,15 @@ function AccountPage() {
                         }),
                       )
                     }
-                    className="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs outline-none focus:border-[#0E4D64]"
+                    className="h-10 w-full rounded-xl border border-[#0E4D64]/10 bg-[#FAF9F6] px-3 text-xs outline-none focus:border-[#0E4D64]"
                     placeholder="الحي / المنطقة"
                   />
+
                 </label>
 
                 <label className="col-span-2">
-                  <span className="mb-1 block text-[9px] font-bold text-muted-foreground">
+
+                  <span className="mb-1 block text-[8px] font-bold text-slate-500">
                     تفاصيل العنوان
                   </span>
 
@@ -1188,10 +1488,11 @@ function AccountPage() {
                       )
                     }
                     rows={3}
-                    className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-[#0E4D64]"
+                    className="w-full resize-none rounded-xl border border-[#0E4D64]/10 bg-[#FAF9F6] px-3 py-2 text-xs outline-none focus:border-[#0E4D64]"
                     placeholder="اسم الشارع، جوار، معلم قريب..."
                     required
                   />
+
                 </label>
 
               </div>
@@ -1201,11 +1502,13 @@ function AccountPage() {
                 disabled={busy}
                 className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0E4D64] text-xs font-black text-white transition active:scale-[0.98] disabled:opacity-50"
               >
+
                 <Save className="h-4 w-4" />
 
                 {busy
                   ? "جارٍ الحفظ..."
                   : "حفظ العنوان"}
+
               </button>
 
             </form>
@@ -1213,259 +1516,287 @@ function AccountPage() {
 
           <div className="space-y-2">
 
-            {loadingAddresses
-              ? Array.from({
-                  length: 2,
-                }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-28 animate-pulse rounded-2xl bg-muted"
-                  />
-                ))
-              : addresses.length > 0
-                ? addresses.map(
-                    (address) => (
-                      <article
-                        key={address.id}
-                        className={`relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm dark:bg-card ${
-                          address.is_default
-                            ? "border-[#0E4D64]/25"
-                            : "border-border/70"
-                        }`}
-                      >
+            {loadingAddresses ? (
+              Array.from({
+                length: 2,
+              }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-28 animate-pulse rounded-2xl bg-slate-100"
+                />
+              ))
+            ) : addresses.length > 0 ? (
+              addresses.map((address) => (
+                <article
+                  key={address.id}
+                  className={`relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm ${
+                    address.is_default
+                      ? "border-[#D65A31]/25"
+                      : "border-[#0E4D64]/8"
+                  }`}
+                >
+
+                  {address.is_default ? (
+                    <div className="absolute inset-x-0 top-0 h-1 bg-[#D65A31]" />
+                  ) : null}
+
+                  <div className="flex items-start gap-3">
+
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/5 text-[#0E4D64]">
+
+                      {address.label
+                        .toLowerCase()
+                        .includes("عمل") ? (
+                        <Settings2 className="h-4 w-4" />
+                      ) : (
+                        <Home className="h-4 w-4" />
+                      )}
+
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+
+                      <div className="flex flex-wrap items-center gap-2">
+
+                        <h3 className="text-xs font-black">
+                          {address.label ||
+                            "العنوان"}
+                        </h3>
 
                         {address.is_default ? (
-                          <div className="absolute inset-x-0 top-0 h-1 bg-[#D65A31]" />
-                        ) : null}
-
-                        <div className="flex items-start gap-3">
-
-                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
-                            {address.label
-                              .toLowerCase()
-                              .includes(
-                                "عمل",
-                              ) ? (
-                              <Settings2 className="h-4 w-4" />
-                            ) : (
-                              <Home className="h-4 w-4" />
-                            )}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#D65A31]/10 px-2 py-0.5 text-[7px] font-black text-[#D65A31]">
+                            <CheckCircle2 className="h-3 w-3" />
+                            افتراضي
                           </span>
-
-                          <div className="min-w-0 flex-1">
-
-                            <div className="flex flex-wrap items-center gap-2">
-
-                              <h3 className="text-xs font-black">
-                                {address.label ||
-                                  "العنوان"}
-                              </h3>
-
-                              {address.is_default ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-[#D65A31]/10 px-2 py-0.5 text-[8px] font-bold text-[#D65A31]">
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  افتراضي
-                                </span>
-                              ) : null}
-
-                            </div>
-
-                            <p className="mt-1 text-[10px] font-semibold">
-                              {address.recipient_name}
-                            </p>
-
-                            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[9px] text-muted-foreground">
-
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {address.city}
-                                {address.district
-                                  ? ` - ${address.district}`
-                                  : ""}
-                              </span>
-
-                              {address.phone ? (
-                                <span
-                                  dir="ltr"
-                                  className="flex items-center gap-1"
-                                >
-                                  <Phone className="h-3 w-3" />
-                                  {address.phone}
-                                </span>
-                              ) : null}
-
-                            </div>
-
-                            <p className="mt-1.5 line-clamp-2 text-[9px] leading-5 text-muted-foreground">
-                              {address.details}
-                            </p>
-
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void removeAddress(
-                                address.id,
-                              )
-                            }
-                            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive active:scale-90"
-                            aria-label="حذف العنوان"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-
-                        </div>
-
-                        {!address.is_default ? (
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() =>
-                              void makeDefault(
-                                address.id,
-                              )
-                            }
-                            className="mt-3 flex min-h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#0E4D64]/15 bg-[#0E4D64]/5 text-[9px] font-bold text-[#0E4D64] transition active:scale-[0.99] disabled:opacity-50"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            تعيين كعنوان افتراضي
-                          </button>
                         ) : null}
 
-                      </article>
-                    ),
-                  )
-                : (
-                  <div className="rounded-2xl border border-dashed border-border bg-white px-5 py-10 text-center dark:bg-card">
-                    <MapPin className="mx-auto h-8 w-8 text-muted-foreground/40" />
+                      </div>
 
-                    <p className="mt-3 text-xs font-bold">
-                      لا توجد عناوين محفوظة
-                    </p>
+                      <p className="mt-1 text-[10px] font-bold">
+                        {address.recipient_name}
+                      </p>
 
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      أضف عنوانك لتسهيل إتمام الطلبات
-                    </p>
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[8px] text-slate-400">
+
+                        <span className="flex items-center gap-1">
+
+                          <MapPin className="h-3 w-3" />
+
+                          {address.city}
+
+                          {address.district
+                            ? ` - ${address.district}`
+                            : ""}
+
+                        </span>
+
+                        {address.phone ? (
+                          <span
+                            dir="ltr"
+                            className="flex items-center gap-1"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {address.phone}
+                          </span>
+                        ) : null}
+
+                      </div>
+
+                      <p className="mt-1.5 line-clamp-2 text-[8px] leading-5 text-slate-400">
+                        {address.details}
+                      </p>
+
+                    </div>
 
                     <button
                       type="button"
                       onClick={() =>
-                        setShowAddressForm(
-                          true,
+                        void removeAddress(
+                          address.id,
                         )
                       }
-                      className="mt-4 rounded-xl bg-[#D65A31] px-4 py-2.5 text-[10px] font-bold text-white"
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500 active:scale-90"
+                      aria-label="حذف العنوان"
                     >
-                      إضافة عنوان
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
+
                   </div>
-                )}
+
+                  {!address.is_default ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        void makeDefault(
+                          address.id,
+                        )
+                      }
+                      className="mt-3 flex min-h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#0E4D64]/10 bg-[#0E4D64]/5 text-[8px] font-bold text-[#0E4D64] transition active:scale-[0.99] disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      تعيين كعنوان افتراضي
+                    </button>
+                  ) : null}
+
+                </article>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[#0E4D64]/10 bg-white px-5 py-10 text-center">
+
+                <MapPinned className="mx-auto h-8 w-8 text-[#0E4D64]/25" />
+
+                <p className="mt-3 text-xs font-black">
+                  لا توجد عناوين محفوظة
+                </p>
+
+                <p className="mt-1 text-[9px] text-slate-400">
+                  أضف عنوانك لتسهيل إتمام الطلبات
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowAddressForm(
+                      true,
+                    )
+                  }
+                  className="mt-4 rounded-xl bg-[#D65A31] px-4 py-2.5 text-[9px] font-black text-white"
+                >
+                  إضافة عنوان
+                </button>
+
+              </div>
+            )}
 
           </div>
+
         </section>
 
-        {/* =========================
+        {/* =====================================
             NOTIFICATIONS
-        ========================== */}
+        ====================================== */}
 
         <section
           id="notifications"
-          className="mt-5 scroll-mt-20"
+          className="mt-5 scroll-mt-24"
         >
-
           <NotificationPrefsPanel />
-
         </section>
 
-        {/* =========================
-            ACCOUNT SETTINGS
-        ========================== */}
+        {/* =====================================
+            ACCOUNT SECURITY
+        ====================================== */}
 
-        <section className="mt-5 overflow-hidden rounded-[1.75rem] border border-border/70 bg-white shadow-sm dark:bg-card">
+        <section className="mt-5 overflow-hidden rounded-[1.6rem] border border-[#0E4D64]/8 bg-white shadow-sm">
 
-          <div className="flex items-center gap-3 border-b border-border/60 p-4">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+          <div className="flex items-center gap-3 border-b border-slate-100 p-4">
+
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#0E4D64]/5 text-[#0E4D64]">
               <ShieldCheck className="h-5 w-5" />
             </span>
 
             <div>
+
               <h2 className="text-sm font-black">
                 الحساب والأمان
               </h2>
 
-              <p className="text-[10px] text-muted-foreground">
-                معلومات حسابك وإعداداته
+              <p className="mt-1 text-[9px] text-slate-400">
+                معلومات حسابك الأساسية
               </p>
+
             </div>
+
           </div>
 
-          <div className="divide-y divide-border/60">
+          <div className="divide-y divide-slate-100">
 
             <div className="flex items-center gap-3 p-4">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-muted">
-                <Mail className="h-4 w-4 text-muted-foreground" />
+
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-50">
+                <Mail className="h-4 w-4 text-slate-500" />
               </span>
 
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-muted-foreground">
+
+                <p className="text-[8px] text-slate-400">
                   البريد الإلكتروني
                 </p>
 
                 <p
                   dir="ltr"
-                  className="mt-1 truncate text-start text-xs font-bold"
+                  className="mt-1 truncate text-start text-[10px] font-bold"
                 >
                   {user?.email || "—"}
                 </p>
+
               </div>
+
             </div>
 
             <div className="flex items-center gap-3 p-4">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-muted">
-                <Phone className="h-4 w-4 text-muted-foreground" />
+
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-50">
+                <Phone className="h-4 w-4 text-slate-500" />
               </span>
 
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-muted-foreground">
+
+                <p className="text-[8px] text-slate-400">
                   رقم الهاتف
                 </p>
 
                 <p
                   dir="ltr"
-                  className="mt-1 text-start text-xs font-bold"
+                  className="mt-1 text-start text-[10px] font-bold"
                 >
-                  {profile?.phone || "غير مضاف"}
+                  {profile?.phone ||
+                    "غير مضاف"}
                 </p>
+
               </div>
+
             </div>
 
           </div>
+
         </section>
 
-        {/* =========================
+        {/* =====================================
             LOGOUT
-        ========================== */}
+        ====================================== */}
 
         <button
           type="button"
           onClick={() =>
             void handleSignOut()
           }
-          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-destructive/15 bg-white text-xs font-black text-destructive shadow-sm transition hover:bg-destructive/5 active:scale-[0.99] dark:bg-card"
+          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-white text-xs font-black text-red-500 shadow-sm transition hover:bg-red-50 active:scale-[0.99]"
         >
           <LogOut className="h-4 w-4" />
           تسجيل الخروج
         </button>
 
-        <div className="pb-3 pt-2 text-center">
-          <p className="text-[9px] font-bold text-muted-foreground">
+        {/* =====================================
+            BRAND FOOTER
+        ====================================== */}
+
+        <div className="flex flex-col items-center pb-3 pt-6">
+
+          <BrandLogo
+            size={38}
+            className="h-9 w-9"
+          />
+
+          <p className="mt-2 text-[9px] font-black text-[#0E4D64]">
             شهارة
           </p>
 
-          <p className="mt-0.5 text-[8px] text-muted-foreground/70">
+          <p className="mt-0.5 text-[7px] text-slate-400">
             تسوق بلا حدود
           </p>
+
         </div>
 
       </main>
