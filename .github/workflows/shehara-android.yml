@@ -25,16 +25,18 @@ jobs:
           cache: npm
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
-          cache: gradle
 
       - name: Verify Node and Java
         run: |
+          echo "Node:"
           node --version
+          echo "npm:"
           npm --version
+          echo "Java:"
           java --version
 
       - name: Install dependencies
@@ -48,12 +50,27 @@ jobs:
 
       - name: Verify web output
         run: |
-          test -f .output/public/index.html
-          echo "Web build output verified."
+          if [ ! -f ".output/public/index.html" ]; then
+            echo "ERROR: .output/public/index.html was not generated."
+            echo "Contents of .output:"
+            find .output -maxdepth 3 -type f 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "Web build output verified successfully."
 
       - name: Install Capacitor Android
         run: |
           npx cap add android
+
+      - name: Verify Android project
+        run: |
+          if [ ! -f "android/gradlew" ]; then
+            echo "ERROR: Capacitor Android project was not created."
+            exit 1
+          fi
+
+          echo "Android project verified."
 
       - name: Sync Capacitor
         run: |
@@ -67,7 +84,12 @@ jobs:
 
       - name: Verify APK
         run: |
-          test -f android/app/build/outputs/apk/debug/app-debug.apk
+          if [ ! -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            echo "ERROR: APK was not generated."
+            find android/app/build/outputs -type f 2>/dev/null || true
+            exit 1
+          fi
+
           echo "APK generated successfully."
 
       - name: Upload APK
