@@ -8,6 +8,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type FormEvent,
 } from "react";
 
 import {
@@ -19,7 +20,12 @@ import {
 } from "sonner";
 
 import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
   MapPin,
+  PackageCheck,
+  ShieldCheck,
   Upload,
   Wallet,
 } from "lucide-react";
@@ -85,37 +91,13 @@ export const Route =
       meta: [
         {
           title:
-            "إتمام الطلب | تشكيلات",
+            "إتمام الطلب | شهارة",
         },
         {
           name:
             "description",
           content:
-            "أكمل بيانات التوصيل، حدّد موقعك على الخريطة، واختر طريقة الدفع المناسبة.",
-        },
-        {
-          property:
-            "og:title",
-          content:
-            "إتمام الطلب | تشكيلات",
-        },
-        {
-          property:
-            "og:description",
-          content:
-            "إتمام الطلب في متجر تشكيلات.",
-        },
-        {
-          property:
-            "og:type",
-          content:
-            "website",
-        },
-        {
-          name:
-            "twitter:card",
-          content:
-            "summary",
+            "أكمل بيانات التوصيل والدفع لإتمام طلبك من شهارة.",
         },
       ],
     }),
@@ -140,26 +122,26 @@ type AddressRow = {
 };
 
 
+type CheckoutResult = {
+  id?: string;
+  order_number?: string;
+  status?: string;
+  payment_status?: string;
+  existing?: boolean;
+};
+
+
 const ADDRESS_COLUMNS =
   "id,label,recipient_name,phone,city,district,details,landmark,latitude,longitude,is_default";
 
 
-/**
- * استخراج رسالة الخطأ الحقيقية من أي كائن
- * قادم من Supabase / PostgREST / PostgreSQL.
- */
-function extractErrorDetails(
+function errorMessage(
   error: unknown,
-): {
-  message: string;
-  code: string;
-  details: string;
-  hint: string;
-  raw: string;
-} {
+) {
   if (
     error &&
-    typeof error === "object"
+    typeof error ===
+      "object"
   ) {
     const value =
       error as Record<
@@ -167,49 +149,27 @@ function extractErrorDetails(
         unknown
       >;
 
-    const message =
-      typeof value.message ===
-      "string"
-        ? value.message
-        : "";
-
-    const code =
-      typeof value.code ===
-      "string"
-        ? value.code
-        : "";
-
-    const details =
-      typeof value.details ===
-      "string"
-        ? value.details
-        : "";
-
-    const hint =
-      typeof value.hint ===
-      "string"
-        ? value.hint
-        : "";
-
-    let raw = "";
-
-    try {
-      raw =
-        JSON.stringify(
-          error,
-          null,
-          2,
-        );
-    } catch {
-      raw = String(error);
-    }
-
     return {
-      message,
-      code,
-      details,
-      hint,
-      raw,
+      message:
+        typeof value.message ===
+        "string"
+          ? value.message
+          : "حدث خطأ غير متوقع.",
+      code:
+        typeof value.code ===
+        "string"
+          ? value.code
+          : "",
+      details:
+        typeof value.details ===
+        "string"
+          ? value.details
+          : "",
+      hint:
+        typeof value.hint ===
+        "string"
+          ? value.hint
+          : "",
     };
   }
 
@@ -222,74 +182,23 @@ function extractErrorDetails(
       code: "",
       details: "",
       hint: "",
-      raw:
-        error.stack ??
-        error.message,
     };
   }
 
   return {
     message:
-      typeof error ===
-      "string"
-        ? error
-        : "",
+      String(error),
     code: "",
     details: "",
     hint: "",
-    raw: String(error),
   };
 }
 
 
-/**
- * تحويل خطأ Supabase إلى نص واضح
- * حتى لا نخسر code/details/hint.
- */
-function buildErrorMessage(
-  error: unknown,
-  stage: string,
-): string {
-  const info =
-    extractErrorDetails(
-      error,
-    );
-
-  const parts = [
-    `المرحلة: ${stage}`,
-  ];
-
-  if (info.message) {
-    parts.push(
-      `الرسالة: ${info.message}`,
-    );
-  }
-
-  if (info.code) {
-    parts.push(
-      `الكود: ${info.code}`,
-    );
-  }
-
-  if (info.details) {
-    parts.push(
-      `التفاصيل: ${info.details}`,
-    );
-  }
-
-  if (info.hint) {
-    parts.push(
-      `التلميح: ${info.hint}`,
-    );
-  }
-
-  return parts.join(
-    "\n",
-  );
-}
-
-
 function CheckoutPage() {
+  const navigate =
+    useNavigate();
+
   const formatPrice =
     useFormatPrice();
 
@@ -305,8 +214,12 @@ function CheckoutPage() {
     clearCart,
   } = useCart();
 
-  const navigate =
-    useNavigate();
+
+  /*
+   * ------------------------------------------
+   * البيانات الأساسية
+   * ------------------------------------------
+   */
 
   const {
     data: settings,
@@ -318,8 +231,11 @@ function CheckoutPage() {
       fetchSettings,
   });
 
+
   const {
     data: methods = [],
+    isLoading:
+      methodsLoading,
   } = useQuery({
     queryKey: [
       "payment-methods",
@@ -330,6 +246,7 @@ function CheckoutPage() {
         true,
       ),
   });
+
 
   const {
     data: addresses = [],
@@ -353,40 +270,36 @@ function CheckoutPage() {
         const {
           data,
           error,
-        } = await supabase
-          .from(
-            "addresses",
-          )
-          .select(
-            ADDRESS_COLUMNS,
-          )
-          .eq(
-            "user_id",
-            user.id,
-          )
-          .order(
-            "is_default",
-            {
-              ascending:
-                false,
-            },
-          )
-          .order(
-            "created_at",
-            {
-              ascending:
-                false,
-            },
-          )
-          .returns<AddressRow[]>();
+        } =
+          await supabase
+            .from(
+              "addresses",
+            )
+            .select(
+              ADDRESS_COLUMNS,
+            )
+            .eq(
+              "user_id",
+              user.id,
+            )
+            .order(
+              "is_default",
+              {
+                ascending:
+                  false,
+              },
+            )
+            .order(
+              "created_at",
+              {
+                ascending:
+                  false,
+              },
+            )
+            .returns<AddressRow[]>();
 
         if (error) {
-          console.error(
-            "[Checkout] Failed to load addresses:",
-            error,
-          );
-
-          return [];
+          throw error;
         }
 
         return data ?? [];
@@ -394,13 +307,18 @@ function CheckoutPage() {
   });
 
 
+  /*
+   * ------------------------------------------
+   * حالة النموذج
+   * ------------------------------------------
+   */
+
   const [
     addressId,
     setAddressId,
   ] =
-    useState<string>(
-      "new",
-    );
+    useState("new");
+
 
   const [
     name,
@@ -408,11 +326,13 @@ function CheckoutPage() {
   ] =
     useState("");
 
+
   const [
     phone,
     setPhone,
   ] =
     useState("");
+
 
   const [
     city,
@@ -420,11 +340,13 @@ function CheckoutPage() {
   ] =
     useState("");
 
+
   const [
     district,
     setDistrict,
   ] =
     useState("");
+
 
   const [
     details,
@@ -432,17 +354,20 @@ function CheckoutPage() {
   ] =
     useState("");
 
+
   const [
     landmark,
     setLandmark,
   ] =
     useState("");
 
+
   const [
     notes,
     setNotes,
   ] =
     useState("");
+
 
   const [
     coords,
@@ -455,11 +380,13 @@ function CheckoutPage() {
       null,
     );
 
+
   const [
     showMap,
     setShowMap,
   ] =
     useState(false);
+
 
   const [
     saveAddress,
@@ -467,11 +394,13 @@ function CheckoutPage() {
   ] =
     useState(true);
 
+
   const [
     methodCode,
     setMethodCode,
   ] =
     useState("");
+
 
   const [
     senderName,
@@ -479,17 +408,20 @@ function CheckoutPage() {
   ] =
     useState("");
 
+
   const [
     senderPhone,
     setSenderPhone,
   ] =
     useState("");
 
+
   const [
     reference,
     setReference,
   ] =
     useState("");
+
 
   const [
     receipt,
@@ -499,11 +431,13 @@ function CheckoutPage() {
       null,
     );
 
+
   const [
     agree,
     setAgree,
   ] =
     useState(false);
+
 
   const [
     busy,
@@ -512,20 +446,37 @@ function CheckoutPage() {
     useState(false);
 
 
-  /**
-   * Token ثابت لمنع إنشاء طلب مكرر
-   * عند إعادة المحاولة.
+  const [
+    step,
+    setStep,
+  ] =
+    useState<1 | 2 | 3>(
+      1,
+    );
+
+
+  /*
+   * Token يمنع تكرار الطلب
+   * عند الضغط عدة مرات.
    */
+
   const [
     checkoutToken,
   ] =
-    useState<string>(() =>
-      globalThis.crypto?.randomUUID?.() ??
-      `${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2)}`,
+    useState<string>(
+      () =>
+        globalThis.crypto?.randomUUID?.() ??
+        `${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`,
     );
 
+
+  /*
+   * ------------------------------------------
+   * الأسعار
+   * ------------------------------------------
+   */
 
   const deliveryFee =
     Number(
@@ -533,9 +484,11 @@ function CheckoutPage() {
         0,
     );
 
+
   const total =
     Number(subtotal) +
     deliveryFee;
+
 
   const walletBalance =
     Number(
@@ -543,18 +496,19 @@ function CheckoutPage() {
         0,
     );
 
-  const mustAgree =
-    !Boolean(
-      profile?.accepted_order_policy,
-    );
 
+  /*
+   * ------------------------------------------
+   * طريقة الدفع المختارة
+   * ------------------------------------------
+   */
 
-  const selected =
+  const selectedMethod =
     useMemo(
       () =>
         methods.find(
-          (m) =>
-            m.code ===
+          (method) =>
+            method.code ===
             methodCode,
         ) ?? null,
       [
@@ -565,21 +519,30 @@ function CheckoutPage() {
 
 
   const isWallet =
-    selected?.kind ===
+    selectedMethod?.kind ===
       "wallet_balance" ||
-    selected?.code ===
+    selectedMethod?.code ===
       "wallet_balance";
 
 
   const needsReceipt =
     Boolean(
-      selected?.requires_receipt,
+      selectedMethod?.requires_receipt,
     );
 
 
-  /**
-   * اختيار أول طريقة دفع تلقائيًا.
+  const mustAgree =
+    !Boolean(
+      profile?.accepted_order_policy,
+    );
+
+
+  /*
+   * ------------------------------------------
+   * اختيار طريقة الدفع الافتراضية
+   * ------------------------------------------
    */
+
   useEffect(() => {
     if (
       methodCode ||
@@ -589,23 +552,21 @@ function CheckoutPage() {
       return;
     }
 
-    const first =
-      methods[0];
-
-    if (first) {
-      setMethodCode(
-        first.code,
-      );
-    }
+    setMethodCode(
+      methods[0].code,
+    );
   }, [
     methods,
     methodCode,
   ]);
 
 
-  /**
-   * اختيار العنوان الافتراضي.
+  /*
+   * ------------------------------------------
+   * اختيار العنوان الافتراضي
+   * ------------------------------------------
    */
+
   useEffect(() => {
     if (
       addresses.length ===
@@ -616,22 +577,31 @@ function CheckoutPage() {
 
     const defaultAddress =
       addresses.find(
-        (a) =>
-          a.is_default,
+        (address) =>
+          address.is_default,
       ) ??
       addresses[0];
 
-    setAddressId(
-      defaultAddress.id,
-    );
+    if (
+      addressId ===
+      "new"
+    ) {
+      setAddressId(
+        defaultAddress.id,
+      );
+    }
   }, [
     addresses,
+    addressId,
   ]);
 
 
-  /**
-   * تعبئة بيانات العنوان.
+  /*
+   * ------------------------------------------
+   * تعبئة بيانات العنوان
+   * ------------------------------------------
    */
+
   useEffect(() => {
     if (
       addressId ===
@@ -652,8 +622,8 @@ function CheckoutPage() {
 
     const address =
       addresses.find(
-        (a) =>
-          a.id ===
+        (item) =>
+          item.id ===
           addressId,
       );
 
@@ -692,14 +662,12 @@ function CheckoutPage() {
       address.longitude !==
         null
         ? {
-            lat:
-              Number(
-                address.latitude,
-              ),
-            lng:
-              Number(
-                address.longitude,
-              ),
+            lat: Number(
+              address.latitude,
+            ),
+            lng: Number(
+              address.longitude,
+            ),
           }
         : null,
     );
@@ -710,13 +678,127 @@ function CheckoutPage() {
   ]);
 
 
-  /**
-   * التحقق من الطلب.
+  /*
+   * ------------------------------------------
+   * منع Checkout بسلة فارغة
+   * ------------------------------------------
    */
-  function validateCheckout() {
+
+  useEffect(() => {
+    if (
+      items.length ===
+        0 &&
+      !busy
+    ) {
+      setStep(1);
+    }
+  }, [
+    items.length,
+    busy,
+  ]);
+
+
+  /*
+   * ------------------------------------------
+   * الانتقال للخطوة التالية
+   * ------------------------------------------
+   */
+
+  function continueToPayment() {
+    if (
+      !name.trim() ||
+      !phone.trim() ||
+      !city ||
+      !district.trim() ||
+      !details.trim()
+    ) {
+      toast.error(
+        "أكمل بيانات التوصيل المطلوبة.",
+      );
+
+      return;
+    }
+
+    if (
+      !isValidYemeniPhone(
+        phone,
+      )
+    ) {
+      toast.error(
+        "رقم الهاتف غير صحيح.",
+      );
+
+      return;
+    }
+
+    setStep(2);
+
+    window.scrollTo({
+      top: 0,
+      behavior:
+        "smooth",
+    });
+  }
+
+
+  /*
+   * ------------------------------------------
+   * الانتقال للتأكيد
+   * ------------------------------------------
+   */
+
+  function continueToConfirm() {
+    if (!methodCode) {
+      toast.error(
+        "اختر طريقة الدفع.",
+      );
+
+      return;
+    }
+
+    if (
+      isWallet &&
+      walletBalance <
+        total
+    ) {
+      toast.error(
+        "رصيد المحفظة غير كافٍ.",
+      );
+
+      return;
+    }
+
+    if (
+      needsReceipt &&
+      !receipt
+    ) {
+      toast.error(
+        "أرفق صورة إيصال التحويل.",
+      );
+
+      return;
+    }
+
+    setStep(3);
+
+    window.scrollTo({
+      top: 0,
+      behavior:
+        "smooth",
+    });
+  }
+
+
+  /*
+   * ------------------------------------------
+   * التحقق النهائي
+   * ------------------------------------------
+   */
+
+  function validateFinal() {
     if (!user?.id) {
       toast.error(
-        "انتهت جلسة الدخول. سجّل الدخول مرة أخرى.",
+        "يجب تسجيل الدخول أولاً.",
       );
 
       return false;
@@ -727,7 +809,7 @@ function CheckoutPage() {
       0
     ) {
       toast.error(
-        "سلتك فارغة.",
+        "السلة فارغة.",
       );
 
       return false;
@@ -741,8 +823,10 @@ function CheckoutPage() {
       !details.trim()
     ) {
       toast.error(
-        "أكمل بيانات التوصيل المطلوبة.",
+        "بيانات التوصيل غير مكتملة.",
       );
+
+      setStep(1);
 
       return false;
     }
@@ -753,8 +837,10 @@ function CheckoutPage() {
       )
     ) {
       toast.error(
-        "رقم الهاتف غير صحيح، مثال: 771234567",
+        "رقم الهاتف غير صحيح.",
       );
+
+      setStep(1);
 
       return false;
     }
@@ -763,6 +849,8 @@ function CheckoutPage() {
       toast.error(
         "اختر طريقة الدفع.",
       );
+
+      setStep(2);
 
       return false;
     }
@@ -773,8 +861,10 @@ function CheckoutPage() {
         total
     ) {
       toast.error(
-        "رصيد محفظتك غير كافٍ، يمكنك شحن الرصيد أولًا.",
+        "رصيد المحفظة غير كافٍ.",
       );
+
+      setStep(2);
 
       return false;
     }
@@ -784,8 +874,10 @@ function CheckoutPage() {
       !receipt
     ) {
       toast.error(
-        "أرفق صورة إيصال التحويل.",
+        "يجب إرفاق إيصال الدفع.",
       );
+
+      setStep(2);
 
       return false;
     }
@@ -795,7 +887,7 @@ function CheckoutPage() {
       !agree
     ) {
       toast.error(
-        "يجب الموافقة على الشروط وسياسة الإرجاع لإتمام الطلب.",
+        "يجب الموافقة على الشروط والسياسات.",
       );
 
       return false;
@@ -805,22 +897,22 @@ function CheckoutPage() {
   }
 
 
-  /**
-   * تنفيذ الطلب.
-   *
-   * تم هنا إضافة متغير stage
-   * لمعرفة المكان الدقيق للفشل.
+  /*
+   * ------------------------------------------
+   * تنفيذ الطلب
+   * ------------------------------------------
    */
+
   async function submit(
-    e: React.FormEvent,
+    event: FormEvent,
   ) {
-    e.preventDefault();
+    event.preventDefault();
 
     if (busy) {
       return;
     }
 
-    if (!validateCheckout()) {
+    if (!validateFinal()) {
       return;
     }
 
@@ -830,96 +922,41 @@ function CheckoutPage() {
 
     setBusy(true);
 
-    let stage =
-      "بدء تنفيذ الطلب";
-
+    let receiptPath =
+      "";
 
     try {
-      stage =
-        "تطبيع رقم الهاتف";
-
-      const normalizedPhone =
-        normalizeYemeniPhone(
-          phone,
-        );
-
-
-      /**
-       * -------------------------------------------------------
-       * 1. رفع إيصال الدفع
-       * -------------------------------------------------------
+      /*
+       * 1 — رفع الإيصال
        */
-      let receiptPath = "";
 
       if (
         needsReceipt &&
         receipt
       ) {
-        stage =
-          "رفع إيصال الدفع";
-
         toast.loading(
-          "جارٍ رفع إيصال التحويل...",
+          "جارٍ رفع إيصال الدفع...",
           {
             id:
-              "checkout-progress",
+              "checkout",
           },
         );
 
-        try {
-          receiptPath =
-            await uploadReceipt(
-              user.id,
-              receipt,
-            );
-        } catch (receiptError) {
-          console.error(
-            "[Checkout][ReceiptUpload]",
-            extractErrorDetails(
-              receiptError,
-            ),
+        receiptPath =
+          await uploadReceipt(
+            user.id,
+            receipt,
           );
 
-          throw receiptError;
-        } finally {
-          toast.dismiss(
-            "checkout-progress",
-          );
-        }
+        toast.dismiss(
+          "checkout",
+        );
       }
 
 
-      /**
-       * -------------------------------------------------------
-       * 2. تحديد الحالة
-       * -------------------------------------------------------
+      /*
+       * 2 — تجهيز عناصر الطلب
        */
-      stage =
-        "تحديد حالة الطلب والدفع";
-
-      const status = (
-        isWallet
-          ? "pending"
-          : needsReceipt
-            ? "awaiting_payment"
-            : "pending"
-      ) as
-        | "pending"
-        | "awaiting_payment";
-
-      const paymentStatus =
-        needsReceipt
-          ? "pending"
-          : "unpaid";
-
-
-      /**
-       * -------------------------------------------------------
-       * 3. تجهيز عناصر الطلب
-       * -------------------------------------------------------
-       */
-      stage =
-        "تجهيز عناصر الطلب";
 
       const orderItems =
         items.map(
@@ -937,7 +974,8 @@ function CheckoutPage() {
 
             unit_price:
               Number(
-                item.product.price,
+                item.product
+                  .price,
               ),
 
             quantity:
@@ -956,178 +994,138 @@ function CheckoutPage() {
         );
 
 
-      console.log(
-        "[Checkout] Prepared order items:",
-        orderItems,
-      );
-
-
-      /**
-       * -------------------------------------------------------
-       * 4. RPC create_checkout_order
-       * -------------------------------------------------------
+      /*
+       * 3 — حالة الدفع
        */
-      stage =
-        "استدعاء create_checkout_order";
+
+      const status =
+        isWallet
+          ? "pending"
+          : needsReceipt
+            ? "awaiting_payment"
+            : "pending";
+
+
+      const paymentStatus =
+        needsReceipt
+          ? "pending"
+          : "unpaid";
+
+
+      /*
+       * 4 — إنشاء الطلب
+       */
 
       toast.loading(
-        "جارٍ تأكيد الطلب...",
+        "جارٍ تأكيد طلبك...",
         {
           id:
-            "checkout-progress",
-        },
-      );
-
-
-      const rpcPayload = {
-        _checkout_token:
-          checkoutToken,
-
-        _items:
-          orderItems,
-
-        _subtotal:
-          Number(
-            subtotal,
-          ),
-
-        _delivery_fee:
-          deliveryFee,
-
-        _total:
-          Number(
-            total,
-          ),
-
-        _payment_method_code:
-          methodCode,
-
-        _payment_status:
-          paymentStatus,
-
-        _status:
-          status,
-
-        _shipping_name:
-          name.trim(),
-
-        _shipping_phone:
-          normalizedPhone,
-
-        _shipping_city:
-          city,
-
-        _shipping_district:
-          district.trim(),
-
-        _shipping_details:
-          details.trim(),
-
-        _shipping_landmark:
-          landmark.trim(),
-
-        _notes:
-          notes.trim(),
-
-        _latitude:
-          coords?.lat ??
-          null,
-
-        _longitude:
-          coords?.lng ??
-          null,
-
-        _needs_payment_request:
-          needsReceipt,
-
-        _sender_name:
-          senderName.trim() ||
-          name.trim(),
-
-        _sender_phone:
-          senderPhone.trim() ||
-          normalizedPhone,
-
-        _reference:
-          reference.trim(),
-
-        _receipt_path:
-          receiptPath,
-      };
-
-
-      console.log(
-        "[Checkout] Calling create_checkout_order",
-        {
-          payload:
-            rpcPayload,
+            "checkout",
         },
       );
 
 
       const {
-        data: checkoutData,
-        error:
-          checkoutError,
+        data,
+        error,
       } =
         await supabase.rpc(
           "create_checkout_order",
-          rpcPayload,
-        );
-
-
-      console.log(
-        "[Checkout] RPC response",
-        {
-          data:
-            checkoutData,
-          error:
-            checkoutError,
-        },
-      );
-
-
-      toast.dismiss(
-        "checkout-progress",
-      );
-
-
-      /**
-       * لا نخفي تفاصيل خطأ Supabase.
-       */
-      if (checkoutError) {
-        const info =
-          extractErrorDetails(
-            checkoutError,
-          );
-
-        console.error(
-          "[Checkout][RPC ERROR]",
           {
-            message:
-              info.message,
+            _checkout_token:
+              checkoutToken,
 
-            code:
-              info.code,
+            _items:
+              orderItems,
 
-            details:
-              info.details,
+            _subtotal:
+              Number(
+                subtotal,
+              ),
 
-            hint:
-              info.hint,
+            _delivery_fee:
+              deliveryFee,
 
-            raw:
-              info.raw,
+            _total:
+              Number(
+                total,
+              ),
+
+            _payment_method_code:
+              methodCode,
+
+            _payment_status:
+              paymentStatus,
+
+            _status:
+              status,
+
+            _shipping_name:
+              name.trim(),
+
+            _shipping_phone:
+              normalizeYemeniPhone(
+                phone,
+              ),
+
+            _shipping_city:
+              city,
+
+            _shipping_district:
+              district.trim(),
+
+            _shipping_details:
+              details.trim(),
+
+            _shipping_landmark:
+              landmark.trim(),
+
+            _notes:
+              notes.trim(),
+
+            _latitude:
+              coords?.lat ??
+              null,
+
+            _longitude:
+              coords?.lng ??
+              null,
+
+            _needs_payment_request:
+              needsReceipt,
+
+            _sender_name:
+              senderName.trim() ||
+              name.trim(),
+
+            _sender_phone:
+              senderPhone.trim() ||
+              normalizeYemeniPhone(
+                phone,
+              ),
+
+            _reference:
+              reference.trim(),
+
+            _receipt_path:
+              receiptPath,
           },
         );
 
-        throw checkoutError;
+
+      toast.dismiss(
+        "checkout",
+      );
+
+
+      if (error) {
+        throw error;
       }
 
 
       if (
-        !checkoutData ||
-        typeof checkoutData !==
+        !data ||
+        typeof data !==
           "object"
       ) {
         throw new Error(
@@ -1137,19 +1135,7 @@ function CheckoutPage() {
 
 
       const result =
-        checkoutData as {
-          id?: string;
-          order_number?: string;
-          status?: string;
-          payment_status?: string;
-          existing?: boolean;
-        };
-
-
-      console.log(
-        "[Checkout] RPC result:",
-        result,
-      );
+        data as CheckoutResult;
 
 
       if (
@@ -1157,23 +1143,19 @@ function CheckoutPage() {
         !result.order_number
       ) {
         throw new Error(
-          "تم تنفيذ الطلب لكن لم يتم استلام رقم الطلب.",
+          "تعذر الحصول على رقم الطلب.",
         );
       }
 
 
-      /**
-       * -------------------------------------------------------
-       * 5. الدفع من المحفظة
-       * -------------------------------------------------------
+      /*
+       * 5 — الدفع من المحفظة
        */
-      if (isWallet) {
-        stage =
-          "الدفع من المحفظة";
 
+      if (isWallet) {
         const {
           error:
-            paymentError,
+            walletError,
         } =
           await supabase.rpc(
             "pay_order_from_wallet",
@@ -1183,29 +1165,17 @@ function CheckoutPage() {
             },
           );
 
-
-        if (paymentError) {
-          console.error(
-            "[Checkout][WalletPayment]",
-            extractErrorDetails(
-              paymentError,
-            ),
-          );
-
-          throw paymentError;
+        if (walletError) {
+          throw walletError;
         }
       }
 
 
-      /**
-       * -------------------------------------------------------
-       * 6. حفظ العنوان
-       * -------------------------------------------------------
+      /*
+       * 6 — حفظ العنوان
        */
-      if (saveAddress) {
-        stage =
-          "حفظ عنوان التوصيل";
 
+      if (saveAddress) {
         const addressPayload =
           {
             user_id:
@@ -1222,7 +1192,9 @@ function CheckoutPage() {
               name.trim(),
 
             phone:
-              normalizedPhone,
+              normalizeYemeniPhone(
+                phone,
+              ),
 
             city,
 
@@ -1233,7 +1205,8 @@ function CheckoutPage() {
               details.trim(),
 
             landmark:
-              landmark.trim(),
+              landmark.trim() ||
+              null,
 
             latitude:
               coords?.lat ??
@@ -1249,168 +1222,125 @@ function CheckoutPage() {
           };
 
 
-        try {
-          if (
-            addressId ===
-            "new"
-          ) {
-            const {
-              error,
-            } =
-              await supabase
-                .from(
-                  "addresses",
-                )
-                .insert(
-                  addressPayload,
-                );
-
-            if (error) {
-              console.warn(
-                "[Checkout] Failed to save address:",
-                error,
-              );
-            }
-          } else {
-            const {
-              error,
-            } =
-              await supabase
-                .from(
-                  "addresses",
-                )
-                .update(
-                  addressPayload,
-                )
-                .eq(
-                  "id",
-                  addressId,
-                )
-                .eq(
-                  "user_id",
-                  user.id,
-                );
-
-            if (error) {
-              console.warn(
-                "[Checkout] Failed to update address:",
-                error,
-              );
-            }
-          }
-
-          await refetchAddresses();
-        } catch (
-          addressError
+        if (
+          addressId ===
+          "new"
         ) {
-          console.warn(
-            "[Checkout] Address save warning:",
-            addressError,
-          );
-        }
-      }
-
-
-      /**
-       * -------------------------------------------------------
-       * 7. حفظ موافقة الشروط
-       * -------------------------------------------------------
-       */
-      if (
-        mustAgree &&
-        agree
-      ) {
-        stage =
-          "حفظ موافقة الشروط";
-
-        try {
           const {
             error:
-              policyError,
+              addressError,
           } =
             await supabase
               .from(
-                "profiles",
+                "addresses",
               )
-              .update({
-                accepted_order_policy:
-                  true,
+              .insert(
+                addressPayload,
+              );
 
-                accepted_terms:
-                  true,
-              })
+          if (
+            addressError
+          ) {
+            console.warn(
+              "[Checkout] Address save failed:",
+              addressError,
+            );
+          }
+        } else {
+          const {
+            error:
+              addressError,
+          } =
+            await supabase
+              .from(
+                "addresses",
+              )
+              .update(
+                addressPayload,
+              )
               .eq(
                 "id",
+                addressId,
+              )
+              .eq(
+                "user_id",
                 user.id,
               );
 
           if (
-            policyError
+            addressError
           ) {
             console.warn(
-              "[Checkout] Failed to save policy acceptance:",
-              policyError,
+              "[Checkout] Address update failed:",
+              addressError,
             );
           }
-        } catch (
+        }
+
+        await refetchAddresses();
+      }
+
+
+      /*
+       * 7 — حفظ موافقة السياسات
+       */
+
+      if (
+        mustAgree &&
+        agree
+      ) {
+        const {
+          error:
+            policyError,
+        } =
+          await supabase
+            .from(
+              "profiles",
+            )
+            .update({
+              accepted_order_policy:
+                true,
+
+              accepted_terms:
+                true,
+            })
+            .eq(
+              "id",
+              user.id,
+            );
+
+        if (
           policyError
         ) {
           console.warn(
-            "[Checkout] Policy save warning:",
+            "[Checkout] Policy update failed:",
             policyError,
           );
         }
       }
 
 
-      /**
-       * -------------------------------------------------------
-       * 8. تفريغ السلة
-       * -------------------------------------------------------
+      /*
+       * 8 — تفريغ السلة
        */
-      stage =
-        "تفريغ السلة";
 
-      try {
-        await clearCart();
-      } catch (
-        cartError
-      ) {
-        console.warn(
-          "[Checkout] Cart cleanup warning:",
-          cartError,
-        );
-      }
+      await clearCart();
 
 
-      /**
-       * -------------------------------------------------------
-       * 9. تحديث الملف الشخصي
-       * -------------------------------------------------------
+      /*
+       * 9 — تحديث الملف
        */
-      stage =
-        "تحديث الملف الشخصي";
 
-      try {
-        await refreshProfile();
-      } catch (
-        profileError
-      ) {
-        console.warn(
-          "[Checkout] Profile refresh warning:",
-          profileError,
-        );
-      }
+      await refreshProfile();
 
 
-      /**
-       * -------------------------------------------------------
-       * 10. النجاح
-       * -------------------------------------------------------
+      /*
+       * 10 — النجاح
        */
+
       toast.success(
         needsReceipt
-          ? `تم إنشاء الطلب ${result.order_number} وهو بانتظار تأكيد الدفع من الإدارة.`
+          ? `تم إنشاء الطلب ${result.order_number} وهو بانتظار مراجعة الدفع.`
           : `تم إنشاء الطلب ${result.order_number} بنجاح.`,
         {
           duration:
@@ -1425,974 +1355,38 @@ function CheckoutPage() {
     } catch (
       error
     ) {
+      toast.dismiss(
+        "checkout",
+      );
+
       const info =
-        extractErrorDetails(
+        errorMessage(
           error,
         );
 
 
-      /**
-       * تسجيل كامل في Console.
-       */
       console.error(
-        "================================================",
-      );
-
-      console.error(
-        "[CHECKOUT FINAL ERROR]",
-      );
-
-      console.error(
-        "Stage:",
-        stage,
-      );
-
-      console.error(
-        "Message:",
-        info.message,
-      );
-
-      console.error(
-        "Code:",
-        info.code,
-      );
-
-      console.error(
-        "Details:",
-        info.details,
-      );
-
-      console.error(
-        "Hint:",
-        info.hint,
-      );
-
-      console.error(
-        "Raw:",
-        info.raw,
-      );
-
-      console.error(
-        "Original error:",
-        error,
-      );
-
-      console.error(
-        "================================================",
-      );
-
-
-      /**
-       * رسالة المستخدم.
-       *
-       * نعرض الخطأ الحقيقي مؤقتًا حتى نستطيع
-       * تحديد السبب النهائي.
-       */
-      let message =
-        buildErrorMessage(
-          error,
-          stage,
-        );
-
-
-      if (
-        !message ||
-        message.trim() ===
-          `المرحلة: ${stage}`
-      ) {
-        message =
-          `تعذر إتمام الطلب.\nالمرحلة: ${stage}`;
-      }
-
-
-      /**
-       * أخطاء الشبكة.
-       */
-      if (
-        /HTTP request cancelled|request cancelled|AbortError|aborted/i.test(
-          info.message,
-        )
-      ) {
-        message =
-          `انقطع الاتصال أثناء تنفيذ الطلب.\nالمرحلة: ${stage}\n\nلا تضغط عدة مرات. أعد المحاولة مرة واحدة بعد استقرار الإنترنت.`;
-      } else if (
-        /Failed to fetch|NetworkError|Load failed|fetch failed|network/i.test(
-          info.message,
-        )
-      ) {
-        message =
-          `تعذر الاتصال بالخادم.\nالمرحلة: ${stage}\n\nتحقق من الإنترنت ثم حاول مرة أخرى.`;
-      }
-
-
-      toast.error(
-        message,
+        "[Shehara Checkout]",
         {
-          duration:
-            10000,
+          message:
+            info.message,
+          code:
+            info.code,
+          details:
+            info.details,
+          hint:
+            info.hint,
+          error,
         },
       );
-    } finally {
-      toast.dismiss(
-        "checkout-progress",
-      );
 
-      setBusy(false);
-    }
-  }
 
+      let message =
+        "تعذر إتمام الطلب.";
 
-  return (
-    <div
-      dir="rtl"
-      className="min-h-screen bg-background pb-28 md:pb-8"
-    >
-      <SiteHeader />
 
-      <main className="mx-auto max-w-3xl px-4 py-6">
-
-        <h1 className="text-lg text-foreground">
-          إتمام الطلب
-        </h1>
-
-
-        <ul className="mt-4 space-y-2 rounded-2xl border border-border/70 bg-card p-4 text-xs">
-          {items.map(
-            (item) => (
-              <li
-                key={
-                  item.id
-                }
-                className="flex justify-between gap-2"
-              >
-                <span className="line-clamp-1 text-foreground">
-                  {
-                    item.product
-                      .name
-                  }{" "}
-                  ×{" "}
-                  {item.quantity.toLocaleString(
-                    "ar-EG",
-                  )}
-                </span>
-
-                <span className="shrink-0 text-primary">
-                  {formatPrice(
-                    item.product
-                      .price *
-                      item.quantity,
-                  )}
-                </span>
-              </li>
-            ),
-          )}
-
-
-          <li className="flex justify-between border-t border-border pt-2">
-            <span className="text-muted-foreground">
-              المجموع الفرعي
-            </span>
-
-            <span className="text-foreground">
-              {formatPrice(
-                subtotal,
-              )}
-            </span>
-          </li>
-
-
-          <li className="flex justify-between">
-            <span className="text-muted-foreground">
-              رسوم التوصيل
-            </span>
-
-            <span className="text-foreground">
-              {formatPrice(
-                deliveryFee,
-              )}
-            </span>
-          </li>
-
-
-          <li className="flex justify-between border-t border-border pt-2 text-sm">
-            <span className="text-muted-foreground">
-              الإجمالي
-            </span>
-
-            <span className="text-primary">
-              {formatPrice(
-                total,
-              )}
-            </span>
-          </li>
-        </ul>
-
-
-        <form
-          onSubmit={
-            submit
-          }
-          className="mt-4 space-y-4"
-        >
-
-          {addresses.length >
-          0 ? (
-            <section className="rounded-2xl border border-border/70 bg-card p-4">
-
-              <h2 className="mb-2 text-sm text-foreground">
-                عناوين محفوظة
-              </h2>
-
-              <div className="grid gap-2">
-
-                {addresses.map(
-                  (
-                    address,
-                  ) => (
-                    <label
-                      key={
-                        address.id
-                      }
-                      className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 text-xs ${
-                        addressId ===
-                        address.id
-                          ? "border-primary bg-brand-soft/60"
-                          : "border-border"
-                      }`}
-                    >
-
-                      <input
-                        type="radio"
-                        name="address"
-                        className="mt-1 accent-[var(--color-primary)]"
-                        checked={
-                          addressId ===
-                          address.id
-                        }
-                        onChange={() =>
-                          setAddressId(
-                            address.id,
-                          )
-                        }
-                      />
-
-
-                      <span className="min-w-0">
-
-                        <span className="block text-foreground">
-                          {
-                            address.label
-                          }
-                        </span>
-
-                        <span className="block text-muted-foreground">
-                          {
-                            address.recipient_name
-                          }{" "}
-                          —{" "}
-                          {
-                            address.phone
-                          }
-                        </span>
-
-                        <span className="block text-muted-foreground">
-                          {
-                            address.details
-                          }
-                        </span>
-
-                      </span>
-
-                    </label>
-                  ),
-                )}
-
-
-                <label
-                  className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-xs ${
-                    addressId ===
-                    "new"
-                      ? "border-primary bg-brand-soft/60"
-                      : "border-border"
-                  }`}
-                >
-
-                  <input
-                    type="radio"
-                    name="address"
-                    className="accent-[var(--color-primary)]"
-                    checked={
-                      addressId ===
-                      "new"
-                    }
-                    onChange={() =>
-                      setAddressId(
-                        "new",
-                      )
-                    }
-                  />
-
-                  <span className="text-foreground">
-                    إضافة عنوان جديد
-                  </span>
-
-                </label>
-
-              </div>
-
-            </section>
-          ) : null}
-
-
-          <section className="grid gap-3 rounded-2xl border border-border/70 bg-card p-4 sm:grid-cols-2">
-
-            <h2 className="text-sm text-foreground sm:col-span-2">
-              بيانات التوصيل
-            </h2>
-
-
-            <FormField
-              label="اسم المستلم"
-              required
-            >
-              <input
-                value={
-                  name
-                }
-                onChange={(
-                  e,
-                ) =>
-                  setName(
-                    e.target
-                      .value,
-                  )
-                }
-                maxLength={
-                  100
-                }
-                placeholder="الاسم الثلاثي"
-                className={
-                  fieldCls
-                }
-              />
-            </FormField>
-
-
-            <FormField
-              label="رقم الهاتف"
-              required
-              hint="مثال: 771234567"
-            >
-              <input
-                value={
-                  phone
-                }
-                onChange={(
-                  e,
-                ) =>
-                  setPhone(
-                    e.target
-                      .value,
-                  )
-                }
-                dir="ltr"
-                inputMode="tel"
-                maxLength={
-                  20
-                }
-                placeholder="7XXXXXXXX"
-                className={
-                  fieldCls
-                }
-              />
-            </FormField>
-
-
-            <FormField
-              label="المحافظة"
-              required
-            >
-              <select
-                value={
-                  city
-                }
-                onChange={(
-                  e,
-                ) =>
-                  setCity(
-                    e.target
-                      .value,
-                  )
-                }
-                className={
-                  fieldCls
-                }
-                aria-label="المحافظة"
-              >
-
-                <option value="">
-                  اختر المحافظة
-                </option>
-
-                {YEMEN_GOVERNORATES.map(
-                  (
-                    governorate,
-                  ) => (
-                    <option
-                      key={
-                        governorate
-                      }
-                      value={
-                        governorate
-                      }
-                    >
-                      {
-                        governorate
-                      }
-                    </option>
-                  ),
-                )}
-
-              </select>
-            </FormField>
-
-
-            <FormField
-              label="المديرية"
-              required
-            >
-              <input
-                value={
-                  district
-                }
-                onChange={(
-                  e,
-                ) =>
-                  setDistrict(
-                    e.target
-                      .value,
-                  )
-                }
-                maxLength={
-                  80
-                }
-                placeholder="اسم المديرية"
-                className={
-                  fieldCls
-                }
-              />
-            </FormField>
-
-
-            <FormField
-              label="تفاصيل العنوان"
-              required
-            >
-              <input
-                value={
-                  details
-                }
-                onChange={(
-                  e,
-                ) =>
-                  setDetails(
-                    e.target
-                      .value,
-                  )
-                }
-                maxLength={
-                  300
-                }
-                placeholder="الحي، الشارع، رقم المنزل"
-                className={
-                  fieldCls
-                }
-              />
-            </FormField>
-
-
-            <FormField
-              label="أقرب معلم"
-              hint="يساعد المندوب في الوصول بسرعة"
-            >
-              <input
-                value={
-                  landmark
-                }
-                onChange={(
-                  e,
-                ) =>
-                  setLandmark(
-                    e.target
-                      .value,
-                  )
-                }
-                maxLength={
-                  120
-                }
-                placeholder="مثال: أمام صيدلية النور"
-                className={
-                  fieldCls
-                }
-              />
-            </FormField>
-
-
-            <div className="sm:col-span-2">
-
-              <FormField label="ملاحظات للطلب">
-
-                <textarea
-                  value={
-                    notes
-                  }
-                  onChange={(
-                    e,
-                  ) =>
-                    setNotes(
-                      e.target
-                        .value,
-                    )
-                  }
-                  maxLength={
-                    400
-                  }
-                  placeholder="أي تفاصيل تود إخبارنا بها"
-                  className={
-                    areaCls
-                  }
-                />
-
-              </FormField>
-
-            </div>
-
-
-            <div className="sm:col-span-2">
-
-              <button
-                type="button"
-                onClick={() =>
-                  setShowMap(
-                    (
-                      value,
-                    ) =>
-                      !value,
-                  )
-                }
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 py-2.5 text-xs text-foreground"
-              >
-
-                <MapPin className="h-4 w-4 text-primary" />
-
-                {showMap
-                  ? "إخفاء الخريطة"
-                  : "تحديد موقعي على الخريطة"}
-
-              </button>
-
-
-              {coords ? (
-                <p className="mt-1.5 text-[11px] text-muted-foreground">
-
-                  تم تحديد الموقع:{" "}
-
-                  {coords.lat.toFixed(
-                    5,
-                  )}
-
-                  ,{" "}
-
-                  {coords.lng.toFixed(
-                    5,
-                  )}
-
-                </p>
-              ) : null}
-
-
-              {showMap ? (
-                <div className="mt-2">
-
-                  <LocationPicker
-                    value={
-                      coords
-                    }
-                    onChange={
-                      setCoords
-                    }
-                  />
-
-                </div>
-              ) : null}
-
-            </div>
-
-
-            <label className="flex items-center gap-2 text-xs text-foreground sm:col-span-2">
-
-              <input
-                type="checkbox"
-                checked={
-                  saveAddress
-                }
-                onChange={(
-                  e,
-                ) =>
-                  setSaveAddress(
-                    e.target
-                      .checked,
-                  )
-                }
-                className="accent-[var(--color-primary)]"
-              />
-
-              حفظ هذا العنوان لاستخدامه في طلباتي القادمة
-
-            </label>
-
-          </section>
-
-
-          <section className="rounded-2xl border border-border/70 bg-card p-4">
-
-            <h2 className="mb-2 text-sm text-foreground">
-              طريقة الدفع
-            </h2>
-
-
-            <div className="grid gap-2">
-
-              {methods.map(
-                (
-                  method,
-                ) => {
-                  const wallet =
-                    method.code ===
-                      "wallet_balance" ||
-                    method.kind ===
-                      "wallet_balance";
-
-                  return (
-                    <label
-                      key={
-                        method.id
-                      }
-                      className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 text-xs ${
-                        methodCode ===
-                        method.code
-                          ? "border-primary bg-brand-soft/60"
-                          : "border-border"
-                      }`}
-                    >
-
-                      <input
-                        type="radio"
-                        name="method"
-                        className="mt-1 accent-[var(--color-primary)]"
-                        checked={
-                          methodCode ===
-                          method.code
-                        }
-                        onChange={() =>
-                          setMethodCode(
-                            method.code,
-                          )
-                        }
-                      />
-
-
-                      <span className="min-w-0">
-
-                        <span className="flex items-center gap-1.5 text-foreground">
-
-                          {wallet ? (
-                            <Wallet className="h-3.5 w-3.5 text-primary" />
-                          ) : null}
-
-                          {
-                            method.display_name
-                          }
-
-                        </span>
-
-
-                        {wallet ? (
-                          <span className="block text-muted-foreground">
-
-                            رصيدك الحالي:{" "}
-
-                            {formatPrice(
-                              walletBalance,
-                            )}
-
-                          </span>
-                        ) : null}
-
-
-                        {method.account_number ? (
-                          <span
-                            className="block text-muted-foreground"
-                            dir="ltr"
-                          >
-                            {
-                              method.account_number
-                            }{" "}
-                            —{" "}
-                            {
-                              method.account_name
-                            }
-                          </span>
-                        ) : null}
-
-
-                        {method.instructions ? (
-                          <span className="block text-muted-foreground">
-                            {
-                              method.instructions
-                            }
-                          </span>
-                        ) : null}
-
-                      </span>
-
-                    </label>
-                  );
-                },
-              )}
-
-            </div>
-
-
-            {isWallet &&
-            walletBalance <
-              total ? (
-              <p className="mt-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-[11px] text-destructive">
-
-                رصيد المحفظة غير كافٍ.{" "}
-
-                <Link
-                  to="/wallet"
-                  className="underline"
-                >
-                  اشحن رصيدك الآن
-                </Link>
-
-              </p>
-            ) : null}
-
-
-            {needsReceipt ? (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-
-                <FormField label="اسم المُحوِّل">
-
-                  <input
-                    value={
-                      senderName
-                    }
-                    onChange={(
-                      e,
-                    ) =>
-                      setSenderName(
-                        e.target
-                          .value,
-                      )
-                    }
-                    maxLength={
-                      100
-                    }
-                    className={
-                      fieldCls
-                    }
-                  />
-
-                </FormField>
-
-
-                <FormField label="رقم المُحوِّل">
-
-                  <input
-                    value={
-                      senderPhone
-                    }
-                    onChange={(
-                      e,
-                    ) =>
-                      setSenderPhone(
-                        e.target
-                          .value,
-                      )
-                    }
-                    dir="ltr"
-                    maxLength={
-                      20
-                    }
-                    className={
-                      fieldCls
-                    }
-                  />
-
-                </FormField>
-
-
-                <FormField label="رقم عملية التحويل">
-
-                  <input
-                    value={
-                      reference
-                    }
-                    onChange={(
-                      e,
-                    ) =>
-                      setReference(
-                        e.target
-                          .value,
-                      )
-                    }
-                    maxLength={
-                      60
-                    }
-                    className={
-                      fieldCls
-                    }
-                  />
-
-                </FormField>
-
-
-                <FormField
-                  label="صورة الإيصال"
-                  required
-                >
-
-                  <label className="flex h-12 cursor-pointer items-center gap-2 rounded-2xl border border-dashed border-border bg-secondary px-3.5 text-xs text-muted-foreground">
-
-                    <Upload className="h-4 w-4 text-primary" />
-
-                    <span className="truncate">
-                      {receipt
-                        ? receipt.name
-                        : "اختر صورة الإيصال"}
-                    </span>
-
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(
-                        e,
-                      ) =>
-                        setReceipt(
-                          e.target
-                            .files?.[0] ??
-                            null,
-                        )
-                      }
-                    />
-
-                  </label>
-
-                </FormField>
-
-              </div>
-            ) : null}
-
-          </section>
-
-
-          {mustAgree ? (
-            <label className="flex items-start gap-2 rounded-2xl border border-border/70 bg-card p-4 text-xs text-foreground">
-
-              <input
-                type="checkbox"
-                checked={
-                  agree
-                }
-                onChange={(
-                  e,
-                ) =>
-                  setAgree(
-                    e.target
-                      .checked,
-                  )
-                }
-                className="mt-0.5 accent-[var(--color-primary)]"
-              />
-
-              <span>
-
-                أوافق على{" "}
-
-                <Link
-                  to="/page/$slug"
-                  params={{
-                    slug:
-                      "terms",
-                  }}
-                  className="text-primary underline"
-                >
-                  شروط الاستخدام
-                </Link>
-
-                ،{" "}
-
-                <Link
-                  to="/page/$slug"
-                  params={{
-                    slug:
-                      "privacy",
-                  }}
-                  className="text-primary underline"
-                >
-                  سياسة الخصوصية
-                </Link>{" "}
-
-                و{" "}
-
-                <Link
-                  to="/page/$slug"
-                  params={{
-                    slug:
-                      "returns",
-                  }}
-                  className="text-primary underline"
-                >
-                  سياسة الاستبدال والإرجاع
-                </Link>
-
-                .
-
-              </span>
-
-            </label>
-          ) : null}
-
-
-          <button
-            type="submit"
-            disabled={
-              busy ||
-              items.length ===
-                0
-            }
-            className="h-12 w-full rounded-2xl bg-primary text-sm text-primary-foreground disabled:opacity-60"
-          >
-
-            {busy
-              ? "جارٍ تنفيذ الطلب..."
-              : `تأكيد الطلب — ${formatPrice(
-                  total,
-                )}`}
-
-          </button>
-
-        </form>
-
-      </main>
-
-      <BottomNav />
-
-    </div>
-  );
-}
+      if (
+        /network|fetch|abort|load failed/i.test(
+          info.message,
+        )
+     
