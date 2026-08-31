@@ -8,19 +8,17 @@ import {
   useMemo,
   useRef,
   useState,
-  type FormEvent,
   type TouchEvent,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
+  Check,
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Send,
   Share2,
   ShoppingCart,
-  Sparkles,
   Star,
   Zap,
 } from "lucide-react";
@@ -81,11 +79,8 @@ function ProductDetail() {
   const [buying, setBuying] =
     useState(false);
 
-  const touchStartX =
-    useRef(0);
-
-  const touchEndX =
-    useRef(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   const {
     data: product,
@@ -115,17 +110,13 @@ function ProductDetail() {
       }
 
       const rows = await fetchProducts({
-        categoryId:
-          product.category_id,
+        categoryId: product.category_id,
         sort: "best",
         limit: 8,
       });
 
       return rows
-        .filter(
-          (item) =>
-            item.id !== id,
-        )
+        .filter((item) => item.id !== id)
         .slice(0, 6);
     },
     enabled:
@@ -138,12 +129,8 @@ function ProductDetail() {
   const {
     data: reviews = [],
     isLoading: reviewsLoading,
-    refetch: refetchReviews,
   } = useQuery({
-    queryKey: [
-      "product-reviews",
-      id,
-    ],
+    queryKey: ["product-reviews", id],
     queryFn: async (): Promise<
       ProductReviewRow[]
     > => {
@@ -153,20 +140,11 @@ function ProductDetail() {
           .select(
             "id,product_id,user_name,rating,comment,created_at",
           )
-          .eq(
-            "product_id",
-            id,
-          )
-          .eq(
-            "is_approved",
-            true,
-          )
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            },
-          )
+          .eq("product_id", id)
+          .eq("is_approved", true)
+          .order("created_at", {
+            ascending: false,
+          })
           .returns<ProductReviewRow[]>();
 
       if (error) {
@@ -210,28 +188,22 @@ function ProductDetail() {
 
   const stockLeft = Math.max(
     0,
+    Number(product?.stock_left ?? 0),
+  );
+
+  const lowStockThreshold = Math.max(
+    1,
     Number(
-      product?.stock_left ?? 0,
+      product?.low_stock_threshold ?? 5,
     ),
   );
 
-  const lowStockThreshold =
-    Math.max(
-      1,
-      Number(
-        product?.low_stock_threshold ??
-          5,
-      ),
-    );
-
   const isOutOfStock =
-    !product ||
-    stockLeft <= 0;
+    !product || stockLeft <= 0;
 
   const isLowStock =
     !isOutOfStock &&
-    stockLeft <=
-      lowStockThreshold;
+    stockLeft <= lowStockThreshold;
 
   const cartQuantity = product
     ? getItemQuantity(
@@ -244,8 +216,7 @@ function ProductDetail() {
   const hasDiscount =
     Boolean(
       product?.old_price &&
-        product.old_price >
-          product.price,
+        product.old_price > product.price,
     );
 
   const discountPercent =
@@ -257,6 +228,15 @@ function ProductDetail() {
             100,
         )
       : 0;
+
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce(
+          (sum, review) =>
+            sum + Number(review.rating),
+          0,
+        ) / reviews.length
+      : Number(product?.rating ?? 0);
 
   const validateSelection =
     useCallback(() => {
@@ -316,13 +296,10 @@ function ProductDetail() {
 
       try {
         await addItem({
-          productId:
-            product.id,
+          productId: product.id,
           quantity: 1,
-          size:
-            selectedSize,
-          color:
-            selectedColor,
+          size: selectedSize,
+          color: selectedColor,
         });
 
         toast.success(
@@ -331,9 +308,7 @@ function ProductDetail() {
             action: {
               label: "عرض السلة",
               onClick: () =>
-                setDrawerOpen(
-                  true,
-                ),
+                setDrawerOpen(true),
             },
           },
         );
@@ -369,13 +344,10 @@ function ProductDetail() {
 
       try {
         await addItem({
-          productId:
-            product.id,
+          productId: product.id,
           quantity: 1,
-          size:
-            selectedSize,
-          color:
-            selectedColor,
+          size: selectedSize,
+          color: selectedColor,
         });
 
         await navigate({
@@ -409,14 +381,10 @@ function ProductDetail() {
         window.location.href;
 
       try {
-        if (
-          navigator.share
-        ) {
+        if (navigator.share) {
           await navigator.share({
-            title:
-              product.name,
-            text:
-              `شاهد هذا المنتج في شهارة: ${product.name}`,
+            title: product.name,
+            text: `شاهد هذا المنتج في شهارة: ${product.name}`,
             url,
           });
 
@@ -431,7 +399,7 @@ function ProductDetail() {
           "تم نسخ رابط المنتج.",
         );
       } catch {
-        // إلغاء المشاركة ليس خطأ.
+        // المستخدم ألغى المشاركة.
       }
     }, [product]);
 
@@ -441,8 +409,7 @@ function ProductDetail() {
         event: TouchEvent<HTMLDivElement>,
       ) => {
         touchStartX.current =
-          event.touches[0]
-            ?.clientX ?? 0;
+          event.touches[0]?.clientX ?? 0;
 
         touchEndX.current =
           touchStartX.current;
@@ -456,8 +423,7 @@ function ProductDetail() {
         event: TouchEvent<HTMLDivElement>,
       ) => {
         touchEndX.current =
-          event.touches[0]
-            ?.clientX ??
+          event.touches[0]?.clientX ??
           touchEndX.current;
       },
       [],
@@ -473,9 +439,7 @@ function ProductDetail() {
         touchStartX.current -
         touchEndX.current;
 
-      if (
-        Math.abs(distance) < 40
-      ) {
+      if (Math.abs(distance) < 40) {
         return;
       }
 
@@ -485,8 +449,7 @@ function ProductDetail() {
           images.length - 1
       ) {
         setActiveImageIndex(
-          (value) =>
-            value + 1,
+          (value) => value + 1,
         );
       }
 
@@ -495,8 +458,7 @@ function ProductDetail() {
         activeImageIndex > 0
       ) {
         setActiveImageIndex(
-          (value) =>
-            value - 1,
+          (value) => value - 1,
         );
       }
     }, [
@@ -518,7 +480,7 @@ function ProductDetail() {
           className="
             sticky
             top-0
-            z-30
+            z-40
             flex
             h-14
             items-center
@@ -536,13 +498,13 @@ function ProductDetail() {
         </div>
 
         <main className="mx-auto max-w-3xl space-y-4 px-4 py-4">
-          <div className="aspect-square animate-pulse rounded-3xl bg-muted" />
+          <div className="aspect-square animate-pulse rounded-[1.7rem] bg-muted" />
 
-          <div className="space-y-3 rounded-3xl border border-border bg-card p-5">
+          <div className="space-y-4 rounded-[1.7rem] border border-border bg-card p-5">
             <div className="h-6 w-4/5 animate-pulse rounded bg-muted" />
-            <div className="h-8 w-1/3 animate-pulse rounded bg-muted" />
+            <div className="h-9 w-1/3 animate-pulse rounded bg-muted" />
             <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-            <div className="h-20 w-full animate-pulse rounded-2xl bg-muted" />
+            <div className="h-16 w-full animate-pulse rounded-2xl bg-muted" />
           </div>
         </main>
 
@@ -551,10 +513,7 @@ function ProductDetail() {
     );
   }
 
-  if (
-    isError ||
-    !product
-  ) {
+  if (isError || !product) {
     return (
       <div
         dir="rtl"
@@ -569,7 +528,7 @@ function ProductDetail() {
             <ShoppingCart className="h-7 w-7" />
           </div>
 
-          <h1 className="mt-4 text-base font-bold">
+          <h1 className="mt-4 text-base font-black">
             المنتج غير متوفر
           </h1>
 
@@ -584,7 +543,16 @@ function ProductDetail() {
                 to: "/",
               })
             }
-            className="mt-5 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground"
+            className="
+              mt-5
+              rounded-xl
+              bg-primary
+              px-5
+              py-2.5
+              text-xs
+              font-bold
+              text-primary-foreground
+            "
           >
             العودة للمتجر
           </button>
@@ -605,7 +573,7 @@ function ProductDetail() {
         text-foreground
       "
     >
-      {/* Header */}
+      {/* شريط التطبيق */}
       <header
         className="
           sticky
@@ -632,8 +600,7 @@ function ProductDetail() {
             type="button"
             onClick={() => {
               if (
-                window.history.length >
-                1
+                window.history.length > 1
               ) {
                 window.history.back();
               } else {
@@ -654,7 +621,6 @@ function ProductDetail() {
               text-muted-foreground
               transition-colors
               hover:bg-secondary
-              hover:text-foreground
             "
             aria-label="العودة"
           >
@@ -664,10 +630,10 @@ function ProductDetail() {
 
           <span
             className="
-              max-w-[48%]
+              max-w-[45%]
               truncate
               text-xs
-              font-bold
+              font-black
             "
           >
             {product.name}
@@ -688,8 +654,9 @@ function ProductDetail() {
                 text-muted-foreground
                 transition-colors
                 hover:bg-secondary
+                active:scale-90
               "
-              aria-label="مشاركة"
+              aria-label="مشاركة المنتج"
             >
               <Share2 className="h-4 w-4" />
             </button>
@@ -707,6 +674,7 @@ function ProductDetail() {
                 place-items-center
                 rounded-xl
                 text-muted-foreground
+                active:scale-90
               "
               aria-label="السلة"
             >
@@ -723,11 +691,11 @@ function ProductDetail() {
                     min-w-4
                     place-items-center
                     rounded-full
-                    bg-accent-solid
+                    bg-[#D65A31]
                     px-1
                     text-[8px]
                     font-black
-                    text-accent-solid-foreground
+                    text-white
                   "
                 >
                   {count > 99
@@ -747,8 +715,9 @@ function ProductDetail() {
           mx-auto
           max-w-3xl
           space-y-5
-          px-4
+          px-3
           py-4
+          sm:px-5
         "
       >
         {/* معرض الصور */}
@@ -762,7 +731,7 @@ function ProductDetail() {
               border
               border-border/70
               bg-card
-              shadow-card
+              shadow-sm
               touch-pan-y
             "
             onTouchStart={
@@ -782,10 +751,7 @@ function ProductDetail() {
                 ]
               }
               alt={product.name}
-              className="
-                h-full
-                w-full
-              "
+              className="h-full w-full"
               eager
             />
 
@@ -796,12 +762,12 @@ function ProductDetail() {
                   start-3
                   top-3
                   rounded-full
-                  bg-destructive
-                  px-2.5
+                  bg-[#D65A31]
+                  px-3
                   py-1.5
-                  text-[10px]
+                  text-[9px]
                   font-black
-                  text-destructive-foreground
+                  text-white
                 "
               >
                 خصم {discountPercent}%
@@ -814,126 +780,123 @@ function ProductDetail() {
                   absolute
                   end-3
                   top-3
-                  max-w-[55%]
+                  max-w-[50%]
                   truncate
                   rounded-full
-                  bg-accent-solid
-                  px-2.5
+                  bg-[#0E4D64]
+                  px-3
                   py-1.5
-                  text-[10px]
+                  text-[9px]
                   font-black
-                  text-accent-solid-foreground
+                  text-white
                 "
               >
                 {product.badge}
               </span>
             ) : null}
 
+            {images.length > 1 &&
+            activeImageIndex > 0 ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveImageIndex(
+                    (value) => value - 1,
+                  )
+                }
+                className="
+                  absolute
+                  end-3
+                  top-1/2
+                  grid
+                  h-9
+                  w-9
+                  -translate-y-1/2
+                  place-items-center
+                  rounded-full
+                  bg-background/90
+                  shadow-lg
+                  backdrop-blur
+                "
+                aria-label="الصورة السابقة"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            ) : null}
+
+            {images.length > 1 &&
+            activeImageIndex <
+              images.length - 1 ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveImageIndex(
+                    (value) => value + 1,
+                  )
+                }
+                className="
+                  absolute
+                  start-3
+                  top-1/2
+                  grid
+                  h-9
+                  w-9
+                  -translate-y-1/2
+                  place-items-center
+                  rounded-full
+                  bg-background/90
+                  shadow-lg
+                  backdrop-blur
+                "
+                aria-label="الصورة التالية"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            ) : null}
+
             {images.length > 1 ? (
-              <>
-                {activeImageIndex >
-                0 ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveImageIndex(
-                        (value) =>
-                          value - 1,
-                      )
-                    }
-                    className="
-                      absolute
-                      end-3
-                      top-1/2
-                      grid
-                      h-9
-                      w-9
-                      -translate-y-1/2
-                      place-items-center
-                      rounded-full
-                      bg-background/85
-                      shadow-lg
-                      backdrop-blur
-                    "
-                    aria-label="الصورة السابقة"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                ) : null}
-
-                {activeImageIndex <
-                images.length -
-                  1 ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveImageIndex(
-                        (value) =>
-                          value + 1,
-                      )
-                    }
-                    className="
-                      absolute
-                      start-3
-                      top-1/2
-                      grid
-                      h-9
-                      w-9
-                      -translate-y-1/2
-                      place-items-center
-                      rounded-full
-                      bg-background/85
-                      shadow-lg
-                      backdrop-blur
-                    "
-                    aria-label="الصورة التالية"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                ) : null}
-
-                <div
-                  className="
-                    absolute
-                    bottom-3
-                    left-1/2
-                    flex
-                    -translate-x-1/2
-                    gap-1.5
-                    rounded-full
-                    bg-black/35
-                    px-2.5
-                    py-1.5
-                    backdrop-blur-md
-                  "
-                >
-                  {images.map(
-                    (_, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() =>
-                          setActiveImageIndex(
-                            index,
-                          )
+              <div
+                className="
+                  absolute
+                  bottom-3
+                  left-1/2
+                  flex
+                  -translate-x-1/2
+                  items-center
+                  gap-1
+                  rounded-full
+                  bg-background/80
+                  px-2.5
+                  py-1.5
+                  backdrop-blur
+                "
+              >
+                {images.map(
+                  (_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() =>
+                        setActiveImageIndex(
+                          index,
+                        )
+                      }
+                      className={`
+                        h-1.5
+                        rounded-full
+                        transition-all
+                        ${
+                          index ===
+                          activeImageIndex
+                            ? "w-5 bg-[#D65A31]"
+                            : "w-1.5 bg-foreground/25"
                         }
-                        className={`
-                          h-1.5
-                          rounded-full
-                          transition-all
-                          ${
-                            activeImageIndex ===
-                            index
-                              ? "w-5 bg-white"
-                              : "w-1.5 bg-white/50"
-                          }
-                        `}
-                        aria-label={`الصورة ${index + 1}`}
-                      />
-                    ),
-                  )}
-                </div>
-              </>
+                      `}
+                      aria-label={`عرض الصورة ${index + 1}`}
+                    />
+                  ),
+                )}
+              </div>
             ) : null}
           </div>
 
@@ -948,10 +911,7 @@ function ProductDetail() {
               "
             >
               {images.map(
-                (
-                  image,
-                  index,
-                ) => (
+                (image, index) => (
                   <button
                     key={`${image}-${index}`}
                     type="button"
@@ -967,14 +927,15 @@ function ProductDetail() {
                       overflow-hidden
                       rounded-xl
                       border-2
+                      bg-card
                       ${
-                        activeImageIndex ===
-                        index
-                          ? "border-primary ring-2 ring-primary/15"
-                          : "border-border/70 opacity-70"
+                        index ===
+                        activeImageIndex
+                          ? "border-[#D65A31]"
+                          : "border-border"
                       }
                     `}
-                    aria-label={`عرض الصورة ${index + 1}`}
+                    aria-label={`الصورة ${index + 1}`}
                   >
                     <ProductImage
                       src={image}
@@ -988,187 +949,132 @@ function ProductDetail() {
           ) : null}
         </section>
 
-        {/* بيانات المنتج */}
+        {/* معلومات المنتج */}
         <section
           className="
-            space-y-5
             rounded-[1.7rem]
             border
             border-border/70
             bg-card
             p-4
-            shadow-card
+            shadow-sm
             sm:p-5
           "
         >
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              {product.is_local ? (
-                <span
-                  className="
-                    rounded-full
-                    bg-brand-soft
-                    px-2.5
-                    py-1
-                    text-[9px]
-                    font-bold
-                    text-primary
-                  "
-                >
-                  منتج يمني
-                </span>
-              ) : null}
+          <h1
+            className="
+              text-lg
+              font-black
+              leading-8
+              tracking-tight
+              sm:text-xl
+            "
+          >
+            {product.name}
+          </h1>
 
-              {product.city ? (
-                <span className="text-[10px] text-muted-foreground">
-                  {product.city}
-                </span>
-              ) : null}
+          <div
+            className="
+              mt-3
+              flex
+              flex-wrap
+              items-center
+              gap-3
+            "
+          >
+            <div className="flex items-center gap-1.5">
+              <Star
+                className="
+                  h-4
+                  w-4
+                  fill-[#D65A31]
+                  text-[#D65A31]
+                "
+              />
+
+              <span className="text-xs font-black">
+                {averageRating > 0
+                  ? averageRating.toLocaleString(
+                      "ar-EG",
+                      {
+                        maximumFractionDigits: 1,
+                      },
+                    )
+                  : "جديد"}
+              </span>
+
+              <span className="text-[10px] text-muted-foreground">
+                {reviews.length > 0
+                  ? `(${reviews.length} تقييم)`
+                  : ""}
+              </span>
             </div>
 
-            <h2
-              className="
-                mt-2
-                text-xl
-                font-black
-                leading-[1.5]
-              "
-            >
-              {product.name}
-            </h2>
-
-            <div
-              className="
-                mt-3
-                flex
-                flex-wrap
-                items-end
-                gap-2
-              "
-            >
-              <strong
+            {isLowStock ? (
+              <span
                 className="
-                  text-2xl
+                  rounded-full
+                  bg-[#D65A31]/10
+                  px-2.5
+                  py-1
+                  text-[9px]
                   font-black
-                  text-primary
+                  text-[#D65A31]
                 "
               >
-                {formatPrice(
-                  product.price,
-                )}
-              </strong>
-
-              {hasDiscount ? (
-                <>
-                  <span
-                    className="
-                      text-xs
-                      text-muted-foreground
-                      line-through
-                    "
-                  >
-                    {formatPrice(
-                      product.old_price!,
-                    )}
-                  </span>
-
-                  <span
-                    className="
-                      rounded-lg
-                      bg-destructive/10
-                      px-1.5
-                      py-1
-                      text-[9px]
-                      font-bold
-                      text-destructive
-                    "
-                  >
-                    وفر {discountPercent}%
-                  </span>
-                </>
-              ) : null}
-            </div>
-
-            {product.reviews_count >
-            0 ? (
-              <div
-                className="
-                  mt-2
-                  flex
-                  items-center
-                  gap-1.5
-                  text-xs
-                  text-muted-foreground
-                "
-              >
-                <Star
-                  className="
-                    h-3.5
-                    w-3.5
-                    fill-accent-solid
-                    text-accent-solid
-                  "
-                />
-
-                <strong className="text-foreground">
-                  {Number(
-                    product.rating,
-                  ).toLocaleString(
-                    "ar-EG",
-                  )}
-                </strong>
-
-                <span>
-                  (
-                  {Number(
-                    product.reviews_count,
-                  ).toLocaleString(
-                    "ar-EG",
-                  )}{" "}
-                  تقييم)
-                </span>
-              </div>
+                متبقي {stockLeft} فقط
+              </span>
             ) : null}
           </div>
 
-          {/* حالة المخزون */}
           <div
             className="
-              rounded-2xl
-              bg-secondary/60
-              p-3
+              mt-5
+              flex
+              flex-wrap
+              items-end
+              gap-3
             "
           >
-            {isOutOfStock ? (
-              <p className="text-xs font-bold text-destructive">
-                ● المنتج غير متوفر حالياً
-              </p>
-            ) : isLowStock ? (
-              <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                ● متبقي{" "}
-                {stockLeft.toLocaleString(
-                  "ar-EG",
-                )}{" "}
-                فقط
-              </p>
-            ) : (
-              <p className="text-xs font-bold text-primary">
-                ● متوفر للطلب
-              </p>
-            )}
+            <span
+              className="
+                text-2xl
+                font-black
+                text-[#0E4D64]
+                dark:text-[#9DD5E5]
+              "
+            >
+              {formatPrice(
+                product.price,
+              )}
+            </span>
+
+            {hasDiscount ? (
+              <span
+                className="
+                  mb-1
+                  text-xs
+                  text-muted-foreground
+                  line-through
+                "
+              >
+                {formatPrice(
+                  product.old_price!,
+                )}
+              </span>
+            ) : null}
           </div>
 
-          {/* المقاسات */}
-          {product.sizes?.length >
-          0 ? (
-            <div className="border-t border-border/60 pt-4">
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-xs font-bold">
+          {/* خيارات المقاس */}
+          {product.sizes?.length ? (
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-black">
                   المقاس / الحجم
-                </label>
+                </span>
 
                 {selectedSize ? (
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-[10px] font-bold text-[#0E4D64]">
                     {selectedSize}
                   </span>
                 ) : null}
@@ -1190,16 +1096,16 @@ function ProductDetail() {
                         rounded-xl
                         border
                         px-3
-                        py-2
-                        text-xs
-                        font-bold
+                        py-2.5
+                        text-[10px]
+                        font-black
                         transition-all
                         active:scale-95
                         ${
                           selectedSize ===
                           size
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-background"
+                            ? "border-[#0E4D64] bg-[#0E4D64] text-white"
+                            : "border-border bg-background text-foreground hover:border-[#0E4D64]/30"
                         }
                       `}
                     >
@@ -1212,16 +1118,15 @@ function ProductDetail() {
           ) : null}
 
           {/* الألوان */}
-          {product.colors?.length >
-          0 ? (
-            <div className="border-t border-border/60 pt-4">
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-xs font-bold">
+          {product.colors?.length ? (
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-black">
                   اللون
-                </label>
+                </span>
 
                 {selectedColor ? (
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-[10px] font-bold text-[#0E4D64]">
                     {selectedColor}
                   </span>
                 ) : null}
@@ -1239,22 +1144,28 @@ function ProductDetail() {
                         )
                       }
                       className={`
+                        relative
                         rounded-xl
                         border
                         px-3
-                        py-2
-                        text-xs
-                        font-bold
+                        py-2.5
+                        text-[10px]
+                        font-black
                         transition-all
                         active:scale-95
                         ${
                           selectedColor ===
                           color
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-background"
+                            ? "border-[#D65A31] bg-[#D65A31]/10 text-[#D65A31]"
+                            : "border-border bg-background text-foreground"
                         }
                       `}
                     >
+                      {selectedColor ===
+                      color ? (
+                        <Check className="absolute -end-1.5 -top-1.5 h-4 w-4 rounded-full bg-[#D65A31] p-0.5 text-white" />
+                      ) : null}
+
                       {color}
                     </button>
                   ),
@@ -1263,288 +1174,340 @@ function ProductDetail() {
             </div>
           ) : null}
 
-          {/* الوصف */}
-          {product.description ? (
-            <div
+          {/* المخزون */}
+          <div
+            className="
+              mt-6
+              flex
+              items-center
+              gap-2
+              rounded-2xl
+              bg-muted/50
+              px-3
+              py-3
+            "
+          >
+            <span
+              className={`
+                h-2
+                w-2
+                rounded-full
+                ${
+                  isOutOfStock
+                    ? "bg-destructive"
+                    : isLowStock
+                      ? "bg-[#D65A31]"
+                      : "bg-emerald-500"
+                }
+              `}
+            />
+
+            <span className="text-[10px] font-bold">
+              {isOutOfStock
+                ? "غير متوفر حالياً"
+                : isLowStock
+                  ? `متبقي ${stockLeft} قطعة`
+                  : "متوفر في المخزون"}
+            </span>
+          </div>
+
+          {/* أزرار الشراء */}
+          <div
+            className="
+              mt-6
+              grid
+              grid-cols-[1fr_1.35fr]
+              gap-2
+            "
+          >
+            <button
+              type="button"
+              disabled={
+                adding ||
+                isOutOfStock
+              }
+              onClick={() =>
+                void handleAddToCart()
+              }
               className="
-                border-t
-                border-border/60
-                pt-4
+                flex
+                min-h-12
+                items-center
+                justify-center
+                gap-2
+                rounded-2xl
+                border
+                border-[#0E4D64]
+                bg-transparent
+                px-3
+                text-[10px]
+                font-black
+                text-[#0E4D64]
+                transition-all
+                active:scale-[0.98]
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+                dark:text-[#9DD5E5]
               "
             >
-              <h3 className="text-xs font-bold">
-                تفاصيل المنتج
-              </h3>
+              {adding ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-4 w-4" />
+              )}
 
-              <p
-                className="
-                  mt-3
-                  whitespace-pre-line
-                  text-xs
-                  leading-7
-                  text-muted-foreground
-                "
-              >
-                {product.description}
-              </p>
-            </div>
-          ) : null}
+              <span>
+                {cartQuantity > 0
+                  ? "إضافة أخرى"
+                  : "أضف للسلة"}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              disabled={
+                buying ||
+                isOutOfStock
+              }
+              onClick={() =>
+                void handleBuyNow()
+              }
+              className="
+                flex
+                min-h-12
+                items-center
+                justify-center
+                gap-2
+                rounded-2xl
+                bg-[#D65A31]
+                px-3
+                text-[10px]
+                font-black
+                text-white
+                shadow-sm
+                transition-all
+                hover:bg-[#B74624]
+                active:scale-[0.98]
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              {buying ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Zap className="h-4 w-4" />
+              )}
+
+              <span>
+                شراء الآن
+              </span>
+            </button>
+          </div>
         </section>
 
-        {/* منتجات مشابهة */}
-        {similarLoading ? (
-          <section>
-            <div className="mb-3 h-5 w-36 animate-pulse rounded bg-muted" />
-
-            <div className="grid grid-cols-2 gap-3">
-              {[1, 2, 3, 4].map(
-                (item) => (
-                  <div
-                    key={item}
-                    className="overflow-hidden rounded-2xl border border-border bg-card"
-                  >
-                    <div className="aspect-square animate-pulse bg-muted" />
-                    <div className="space-y-2 p-3">
-                      <div className="h-3 animate-pulse rounded bg-muted" />
-                      <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
-                    </div>
-                  </div>
-                ),
-              )}
-            </div>
-          </section>
-        ) : similarProducts.length >
-          0 ? (
-          <section>
-            <div
-              className="
-                mb-4
-                flex
-                items-center
-                gap-2
-              "
-            >
-              <span
-                className="
-                  grid
-                  h-8
-                  w-8
-                  place-items-center
-                  rounded-xl
-                  bg-brand-soft
-                  text-primary
-                "
-              >
-                <Sparkles className="h-4 w-4" />
-              </span>
-
-              <h3 className="text-sm font-black">
-                منتجات قد تعجبك
-              </h3>
-            </div>
+        {/* الوصف */}
+        {product.description ? (
+          <section
+            className="
+              rounded-[1.7rem]
+              border
+              border-border/70
+              bg-card
+              p-4
+              shadow-sm
+              sm:p-5
+            "
+          >
+            <h2 className="text-sm font-black">
+              وصف المنتج
+            </h2>
 
             <div
               className="
-                grid
-                grid-cols-2
-                gap-3
-                sm:grid-cols-3
+                mt-3
+                whitespace-pre-line
+                text-xs
+                leading-7
+                text-muted-foreground
               "
             >
-              {similarProducts.map(
-                (item) => (
-                  <ProductCard
-                    key={item.id}
-                    product={item}
-                  />
-                ),
-              )}
+              {product.description}
             </div>
           </section>
         ) : null}
 
         {/* التقييمات */}
-        <ProductReviews
-          productId={
-            product.id
-          }
-          reviews={reviews}
-          loading={
-            reviewsLoading
-          }
-          onSubmitted={() =>
-            void refetchReviews()
-          }
-        />
-      </main>
-
-      {/* شريط الشراء */}
-      <div
-        className="
-          fixed
-          inset-x-0
-          bottom-0
-          z-40
-          border-t
-          border-border/60
-          bg-background/95
-          px-3
-          pb-[calc(env(safe-area-inset-bottom)+4.5rem)]
-          pt-2.5
-          shadow-2xl
-          backdrop-blur-xl
-          md:pb-3
-        "
-      >
-        <div
+        <section
           className="
-            mx-auto
-            flex
-            max-w-3xl
-            gap-2
+            rounded-[1.7rem]
+            border
+            border-border/70
+            bg-card
+            p-4
+            shadow-sm
+            sm:p-5
           "
         >
-          <button
-            type="button"
-            disabled={
-              adding ||
-              buying ||
-              isOutOfStock
-            }
-            onClick={() =>
-              void handleAddToCart()
-            }
-            className="
-              flex
-              min-h-12
-              flex-1
-              items-center
-              justify-center
-              gap-2
-              rounded-2xl
-              border
-              border-primary
-              bg-primary/5
-              px-3
-              text-xs
-              font-black
-              text-primary
-              transition-all
-              active:scale-[0.98]
-              disabled:opacity-40
-            "
-          >
-            {adding ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-black">
+                تقييمات العملاء
+              </h2>
+
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                آراء العملاء حول هذا المنتج
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Star className="h-4 w-4 fill-[#D65A31] text-[#D65A31]" />
+
+              <span className="text-sm font-black">
+                {averageRating > 0
+                  ? averageRating.toLocaleString(
+                      "ar-EG",
+                      {
+                        maximumFractionDigits: 1,
+                      },
+                    )
+                  : "—"}
+              </span>
+            </div>
+          </div>
+
+          {reviewsLoading ? (
+            <div className="mt-5 flex justify-center py-5">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : reviews.length > 0 ? (
+            <div className="mt-5 space-y-3">
+              {reviews
+                .slice(0, 6)
+                .map((review) => (
+                  <div
+                    key={review.id}
+                    className="
+                      rounded-2xl
+                      bg-muted/40
+                      p-3
+                    "
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black">
+                        {review.user_name}
+                      </span>
+
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({
+                          length: 5,
+                        }).map(
+                          (_, index) => (
+                            <Star
+                              key={index}
+                              className={`
+                                h-3
+                                w-3
+                                ${
+                                  index <
+                                  Number(
+                                    review.rating,
+                                  )
+                                    ? "fill-[#D65A31] text-[#D65A31]"
+                                    : "text-muted-foreground/30"
+                                }
+                              `}
+                            />
+                          ),
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="mt-2 text-[10px] leading-6 text-muted-foreground">
+                      {review.comment}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-2xl bg-muted/40 px-4 py-6 text-center">
+              <Star className="mx-auto h-5 w-5 text-muted-foreground/40" />
+
+              <p className="mt-2 text-[10px] font-bold text-muted-foreground">
+                لا توجد تقييمات لهذا المنتج بعد
+              </p>
+            </div>
+          )}
+        </section>
+
+        {/* منتجات مشابهة */}
+        {(similarLoading ||
+          similarProducts.length >
+            0) && (
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-black text-[#0E4D64] dark:text-[#D9EEF5]">
+                  منتجات قد تعجبك
+                </h2>
+
+                <div className="mt-1 h-1 w-7 rounded-full bg-[#D65A31]" />
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  void navigate({
+                    to: "/products",
+                  })
+                }
+                className="text-[10px] font-bold text-[#0E4D64] dark:text-[#9DD5E5]"
+              >
+                المزيد
+              </button>
+            </div>
+
+            {similarLoading ? (
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({
+                  length: 4,
+                }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="
+                      aspect-[0.78]
+                      animate-pulse
+                      rounded-[1.35rem]
+                      bg-muted
+                    "
+                  />
+                ))}
+              </div>
             ) : (
-              <ShoppingCart className="h-4 w-4" />
+              <div
+                className="
+                  grid
+                  grid-cols-2
+                  gap-3
+                  sm:grid-cols-3
+                "
+              >
+                {similarProducts.map(
+                  (item) => (
+                    <ProductCard
+                      key={item.id}
+                      product={item}
+                    />
+                  ),
+                )}
+              </div>
             )}
-
-            {cartQuantity > 0
-              ? `في السلة (${cartQuantity.toLocaleString(
-                  "ar-EG",
-                )})`
-              : "أضف للسلة"}
-          </button>
-
-          <button
-            type="button"
-            disabled={
-              adding ||
-              buying ||
-              isOutOfStock
-            }
-            onClick={() =>
-              void handleBuyNow()
-            }
-            className="
-              flex
-              min-h-12
-              flex-[1.15]
-              items-center
-              justify-center
-              gap-2
-              rounded-2xl
-              bg-primary
-              px-3
-              text-xs
-              font-black
-              text-primary-foreground
-              shadow-lg
-              shadow-primary/20
-              transition-all
-              active:scale-[0.98]
-              disabled:opacity-40
-            "
-          >
-            {buying ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Zap className="h-4 w-4" />
-            )}
-
-            {isOutOfStock
-              ? "غير متوفر"
-              : "شراء الآن"}
-          </button>
-        </div>
-      </div>
+          </section>
+        )}
+      </main>
 
       <BottomNav />
     </div>
   );
 }
 
-function ProductReviews({
-  productId,
-  reviews,
-  loading,
-  onSubmitted,
-}: {
-  productId: string;
-  reviews: ProductReviewRow[];
-  loading: boolean;
-  onSubmitted: () => void;
-}) {
-  const [name, setName] =
-    useState("");
-
-  const [comment, setComment] =
-    useState("");
-
-  const [rating, setRating] =
-    useState(5);
-
-  const [submitting, setSubmitting] =
-    useState(false);
-
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
-
-    if (!name.trim()) {
-      toast.error(
-        "يرجى إدخال الاسم.",
-      );
-      return;
-    }
-
-    if (!comment.trim()) {
-      toast.error(
-        "يرجى كتابة تعليقك.",
-      );
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const { error } =
-        await supabase
-          .from(
-            "product_reviews",
-          )
-          .insert({
-            product_id:
-              productId,
+export default ProductDetail;
