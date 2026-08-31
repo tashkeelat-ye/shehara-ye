@@ -1,7 +1,13 @@
-import { cn } from "@/lib/utils";
+import React from "react";
 
-function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("animate-pulse rounded-md bg-primary/10", className)} {...props} />;
+export function Skeleton({className = "", style}: {className?: string; style?: React.CSSProperties}){
+  return (
+    <div
+      aria-hidden
+      className={["animate-pulse bg-[linear-gradient(90deg,#f6f6f6, #ececec, #f6f6f6)] rounded-[8px]", className].filter(Boolean).join(" ")}
+      style={style}
+    />
+  );
 }
 
-export { Skeleton };
+export default Skeleton;

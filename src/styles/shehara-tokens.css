@@ -1,0 +1,69 @@
+/* Shehara Design Tokens
+   Centralized CSS variables for the Shehara visual identity.
+   Digital Deep Teal Blue + Terracotta Orange + Neutrals
+*/
+:root {
+  /* Colors */
+  --sh-primary: #0e4d64; /* Digital Deep Teal Blue */
+  --sh-primary-deep: #0a3d50;
+  --sh-accent: #d65a31; /* Terracotta Orange */
+  --sh-accent-deep: #b74624;
+
+  --sh-bg: #faf9f6;
+  --sh-surface: #ffffff;
+  --sh-foreground: #081d27;
+  --sh-muted: #5c7079;
+
+  --sh-success: #17a055;
+  --sh-danger: #b42318;
+
+  /* Semantic */
+  --color-background: var(--sh-bg);
+  --color-surface: var(--sh-surface);
+  --color-foreground: var(--sh-foreground);
+  --color-muted: var(--sh-muted);
+
+  --color-primary: var(--sh-primary);
+  --color-primary-foreground: #ffffff;
+  --color-accent: var(--sh-accent);
+  --color-accent-foreground: #ffffff;
+
+  /* Sizes */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 18px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+
+  /* Typography */
+  --font-family-sans: "CustomFont", "Tajawal", "Cairo", "Tahoma", sans-serif;
+  --type-scale-0: 12px;
+  --type-scale-1: 13px;
+  --type-scale-2: 14px;
+  --type-scale-3: 16px;
+  --type-scale-4: 18px;
+  --type-scale-5: 20px;
+  --type-scale-6: 24px;
+
+  /* Z */
+  --z-sticky: 60;
+  --z-drawer: 70;
+
+  /* Motion */
+  --duration-fast: 160ms;
+  --easing-default: cubic-bezier(.2,.9,.2,1);
+}
+
+/* Dark theme overrides (scoped under .dark) */
+.dark {
+  --sh-bg: #071b24;
+  --sh-surface: #0b2936;
+  --sh-foreground: #f5fafc;
+  --color-background: var(--sh-bg);
+  --color-surface: var(--sh-surface);
+  --color-foreground: var(--sh-foreground);
+}
