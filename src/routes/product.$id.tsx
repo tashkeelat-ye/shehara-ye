@@ -17,10 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Plus,
   Send,
   Share2,
-  ShoppingBag,
   ShoppingCart,
   Sparkles,
   Star,
@@ -33,7 +31,6 @@ import {
   fetchProduct,
   fetchProducts,
   type Product,
-  type Review,
 } from "@/lib/db";
 import { useCart } from "@/lib/cart-context";
 import { useFormatPrice } from "@/lib/currency-context";
@@ -90,12 +87,6 @@ function ProductDetail() {
   const touchEndX =
     useRef(0);
 
-  /*
-   * المنتج الرئيسي.
-   *
-   * fetchProduct() يستخدم الأعمدة المحددة الموجودة
-   * فعلياً في db.ts، كما يدعم Offline cache.
-   */
   const {
     data: product,
     isLoading,
@@ -108,11 +99,6 @@ function ProductDetail() {
     gcTime: 1000 * 60 * 30,
   });
 
-  /*
-   * المنتجات المشابهة تعتمد على category_id الحقيقي.
-   *
-   * لا يوجد category_slug في Product الحالي.
-   */
   const {
     data: similarProducts = [],
     isLoading: similarLoading,
@@ -149,11 +135,6 @@ function ProductDetail() {
     gcTime: 1000 * 60 * 30,
   });
 
-  /*
-   * التقييمات.
-   *
-   * نحدد الأعمدة بدلاً من select("*").
-   */
   const {
     data: reviews = [],
     isLoading: reviewsLoading,
@@ -199,9 +180,6 @@ function ProductDetail() {
     gcTime: 1000 * 60 * 15,
   });
 
-  /*
-   * إعادة ضبط المعرض والخيارات عند تغيير المنتج.
-   */
   useEffect(() => {
     if (!product) {
       return;
@@ -255,14 +233,13 @@ function ProductDetail() {
     stockLeft <=
       lowStockThreshold;
 
-  const cartQuantity =
-    product
-      ? getItemQuantity(
-          product.id,
-          selectedSize,
-          selectedColor,
-        )
-      : 0;
+  const cartQuantity = product
+    ? getItemQuantity(
+        product.id,
+        selectedSize,
+        selectedColor,
+      )
+    : 0;
 
   const hasDiscount =
     Boolean(
@@ -281,9 +258,6 @@ function ProductDetail() {
         )
       : 0;
 
-  /*
-   * التحقق من الخيارات قبل الإضافة.
-   */
   const validateSelection =
     useCallback(() => {
       if (!product) {
@@ -323,14 +297,11 @@ function ProductDetail() {
       return true;
     }, [
       product,
+      stockLeft,
       selectedSize,
       selectedColor,
-      stockLeft,
     ]);
 
-  /*
-   * إضافة للسلة — حقيقية.
-   */
   const handleAddToCart =
     useCallback(async () => {
       if (!validateSelection()) {
@@ -367,12 +338,11 @@ function ProductDetail() {
           },
         );
       } catch (error) {
-        const message =
+        toast.error(
           error instanceof Error
             ? error.message
-            : "تعذر إضافة المنتج إلى السلة.";
-
-        toast.error(message);
+            : "تعذر إضافة المنتج إلى السلة.",
+        );
       } finally {
         setAdding(false);
       }
@@ -385,10 +355,6 @@ function ProductDetail() {
       validateSelection,
     ]);
 
-  /*
-   * شراء الآن — يستخدم نفس السلة ونفس Checkout
-   * الموجود فعلياً في المشروع.
-   */
   const handleBuyNow =
     useCallback(async () => {
       if (!validateSelection()) {
@@ -416,12 +382,12 @@ function ProductDetail() {
           to: "/checkout",
         });
       } catch (error) {
-        const message =
+        toast.error(
           error instanceof Error
             ? error.message
-            : "تعذر بدء عملية الشراء.";
+            : "تعذر بدء عملية الشراء.",
+        );
 
-        toast.error(message);
         setBuying(false);
       }
     }, [
@@ -433,50 +399,39 @@ function ProductDetail() {
       validateSelection,
     ]);
 
-  /*
-   * مشاركة المنتج.
-   */
   const handleShare =
     useCallback(async () => {
       if (!product) {
         return;
       }
 
-      const shareData = {
-        title:
-          product.name,
-        text:
-          `شاهد هذا المنتج في تشكيلات: ${product.name}`,
-        url:
-          window.location.href,
-      };
+      const url =
+        window.location.href;
 
       try {
         if (
           navigator.share
         ) {
-          await navigator.share(
-            shareData,
-          );
+          await navigator.share({
+            title:
+              product.name,
+            text:
+              `شاهد هذا المنتج في شهارة: ${product.name}`,
+            url,
+          });
+
           return;
         }
 
-        if (
-          navigator.clipboard
-        ) {
-          await navigator.clipboard.writeText(
-            window.location.href,
-          );
+        await navigator.clipboard.writeText(
+          url,
+        );
 
-          toast.success(
-            "تم نسخ رابط المنتج.",
-          );
-        }
+        toast.success(
+          "تم نسخ رابط المنتج.",
+        );
       } catch {
-        /*
-         * إلغاء نافذة المشاركة
-         * ليس خطأً للمستخدم.
-         */
+        // إلغاء المشاركة ليس خطأ.
       }
     }, [product]);
 
@@ -510,9 +465,7 @@ function ProductDetail() {
 
   const handleTouchEnd =
     useCallback(() => {
-      if (
-        images.length <= 1
-      ) {
+      if (images.length <= 1) {
         return;
       }
 
@@ -521,8 +474,7 @@ function ProductDetail() {
         touchEndX.current;
 
       if (
-        Math.abs(distance) <
-        40
+        Math.abs(distance) < 40
       ) {
         return;
       }
@@ -556,15 +508,34 @@ function ProductDetail() {
     return (
       <div
         dir="rtl"
-        className="min-h-screen bg-background"
+        className="
+          min-h-screen
+          bg-background
+          pb-24
+        "
       >
-        <div className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border/60 bg-background/90 px-4 backdrop-blur">
+        <div
+          className="
+            sticky
+            top-0
+            z-30
+            flex
+            h-14
+            items-center
+            justify-between
+            border-b
+            border-border/60
+            bg-background/90
+            px-4
+            backdrop-blur-xl
+          "
+        >
           <div className="h-8 w-20 animate-pulse rounded-xl bg-muted" />
           <div className="h-5 w-32 animate-pulse rounded bg-muted" />
           <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
         </div>
 
-        <main className="mx-auto max-w-3xl space-y-4 px-4 py-4 pb-32">
+        <main className="mx-auto max-w-3xl space-y-4 px-4 py-4">
           <div className="aspect-square animate-pulse rounded-3xl bg-muted" />
 
           <div className="space-y-3 rounded-3xl border border-border bg-card p-5">
@@ -587,23 +558,24 @@ function ProductDetail() {
     return (
       <div
         dir="rtl"
-        className="min-h-screen bg-background pb-24"
+        className="
+          min-h-screen
+          bg-background
+          pb-24
+        "
       >
-        <div className="mx-auto flex min-h-[65vh] max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
+        <main className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-6 text-center">
           <div className="grid h-16 w-16 place-items-center rounded-2xl bg-destructive/10 text-destructive">
-            <ShoppingBag className="h-7 w-7" />
+            <ShoppingCart className="h-7 w-7" />
           </div>
 
-          <div>
-            <h1 className="text-base font-bold text-foreground">
-              المنتج غير متوفر
-            </h1>
+          <h1 className="mt-4 text-base font-bold">
+            المنتج غير متوفر
+          </h1>
 
-            <p className="mt-2 text-xs leading-6 text-muted-foreground">
-              ربما تم حذف المنتج أو لم يعد
-              متاحاً حالياً.
-            </p>
-          </div>
+          <p className="mt-2 text-xs leading-6 text-muted-foreground">
+            ربما تم حذف المنتج أو لم يعد متاحاً.
+          </p>
 
           <button
             type="button"
@@ -612,11 +584,11 @@ function ProductDetail() {
                 to: "/",
               })
             }
-            className="rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground"
+            className="mt-5 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground"
           >
             العودة للمتجر
           </button>
-        </div>
+        </main>
 
         <BottomNav />
       </div>
@@ -626,32 +598,80 @@ function ProductDetail() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-background pb-32 text-foreground"
+      className="
+        min-h-screen
+        bg-background
+        pb-32
+        text-foreground
+      "
     >
-      {/* =====================================================
-          الشريط العلوي
-          ===================================================== */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4">
+      {/* Header */}
+      <header
+        className="
+          sticky
+          top-0
+          z-40
+          border-b
+          border-border/60
+          bg-background/90
+          backdrop-blur-xl
+        "
+      >
+        <div
+          className="
+            mx-auto
+            flex
+            h-14
+            max-w-3xl
+            items-center
+            justify-between
+            px-4
+          "
+        >
           <button
             type="button"
-            onClick={() =>
-              window.history.length > 1
-                ? window.history.back()
-                : void navigate({
-                    to: "/",
-                  })
-            }
-            className="flex min-h-9 items-center gap-1 rounded-xl px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            onClick={() => {
+              if (
+                window.history.length >
+                1
+              ) {
+                window.history.back();
+              } else {
+                void navigate({
+                  to: "/",
+                });
+              }
+            }}
+            className="
+              flex
+              h-9
+              items-center
+              gap-1
+              rounded-xl
+              px-2
+              text-xs
+              font-bold
+              text-muted-foreground
+              transition-colors
+              hover:bg-secondary
+              hover:text-foreground
+            "
             aria-label="العودة"
           >
             <ArrowRight className="h-4 w-4" />
             العودة
           </button>
 
-          <h1 className="line-clamp-1 max-w-[48%] text-xs font-bold text-foreground">
+          <span
+            className="
+              max-w-[48%]
+              truncate
+              text-xs
+              font-bold
+            "
+          >
             {product.name}
-          </h1>
+          </span>
 
           <div className="flex items-center gap-1">
             <button
@@ -659,8 +679,17 @@ function ProductDetail() {
               onClick={() =>
                 void handleShare()
               }
-              className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              aria-label="مشاركة المنتج"
+              className="
+                grid
+                h-9
+                w-9
+                place-items-center
+                rounded-xl
+                text-muted-foreground
+                transition-colors
+                hover:bg-secondary
+              "
+              aria-label="مشاركة"
             >
               <Share2 className="h-4 w-4" />
             </button>
@@ -670,13 +699,37 @@ function ProductDetail() {
               onClick={() =>
                 setDrawerOpen(true)
               }
-              className="relative grid h-9 w-9 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              aria-label="فتح السلة"
+              className="
+                relative
+                grid
+                h-9
+                w-9
+                place-items-center
+                rounded-xl
+                text-muted-foreground
+              "
+              aria-label="السلة"
             >
               <ShoppingCart className="h-4 w-4" />
 
               {count > 0 ? (
-                <span className="absolute -end-0.5 -top-0.5 grid min-h-4 min-w-4 place-items-center rounded-full bg-accent-solid px-1 text-[8px] font-bold text-accent-solid-foreground">
+                <span
+                  className="
+                    absolute
+                    -end-0.5
+                    -top-0.5
+                    grid
+                    min-h-4
+                    min-w-4
+                    place-items-center
+                    rounded-full
+                    bg-accent-solid
+                    px-1
+                    text-[8px]
+                    font-black
+                    text-accent-solid-foreground
+                  "
+                >
                   {count > 99
                     ? "99+"
                     : count.toLocaleString(
@@ -689,16 +742,29 @@ function ProductDetail() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-5 px-4 py-4">
-        {/* =====================================================
-            معرض الصور
-            ===================================================== */}
-        <section
-          aria-label="صور المنتج"
-          className="space-y-3"
-        >
+      <main
+        className="
+          mx-auto
+          max-w-3xl
+          space-y-5
+          px-4
+          py-4
+        "
+      >
+        {/* معرض الصور */}
+        <section>
           <div
-            className="relative aspect-square overflow-hidden rounded-3xl border border-border/70 bg-card shadow-card touch-pan-y"
+            className="
+              relative
+              aspect-square
+              overflow-hidden
+              rounded-[1.7rem]
+              border
+              border-border/70
+              bg-card
+              shadow-card
+              touch-pan-y
+            "
             onTouchStart={
               handleTouchStart
             }
@@ -716,18 +782,49 @@ function ProductDetail() {
                 ]
               }
               alt={product.name}
-              className="h-full w-full"
+              className="
+                h-full
+                w-full
+              "
               eager
             />
 
             {hasDiscount ? (
-              <span className="absolute start-3 top-3 rounded-full bg-destructive px-2.5 py-1.5 text-[10px] font-bold text-destructive-foreground shadow-sm">
+              <span
+                className="
+                  absolute
+                  start-3
+                  top-3
+                  rounded-full
+                  bg-destructive
+                  px-2.5
+                  py-1.5
+                  text-[10px]
+                  font-black
+                  text-destructive-foreground
+                "
+              >
                 خصم {discountPercent}%
               </span>
             ) : null}
 
             {product.badge ? (
-              <span className="absolute end-3 top-3 max-w-[55%] truncate rounded-full bg-accent-solid px-2.5 py-1.5 text-[10px] font-bold text-accent-solid-foreground shadow-sm">
+              <span
+                className="
+                  absolute
+                  end-3
+                  top-3
+                  max-w-[55%]
+                  truncate
+                  rounded-full
+                  bg-accent-solid
+                  px-2.5
+                  py-1.5
+                  text-[10px]
+                  font-black
+                  text-accent-solid-foreground
+                "
+              >
                 {product.badge}
               </span>
             ) : null}
@@ -744,7 +841,20 @@ function ProductDetail() {
                           value - 1,
                       )
                     }
-                    className="absolute end-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background/85 text-foreground shadow-lg backdrop-blur"
+                    className="
+                      absolute
+                      end-3
+                      top-1/2
+                      grid
+                      h-9
+                      w-9
+                      -translate-y-1/2
+                      place-items-center
+                      rounded-full
+                      bg-background/85
+                      shadow-lg
+                      backdrop-blur
+                    "
                     aria-label="الصورة السابقة"
                   >
                     <ChevronRight className="h-5 w-5" />
@@ -762,14 +872,41 @@ function ProductDetail() {
                           value + 1,
                       )
                     }
-                    className="absolute start-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background/85 text-foreground shadow-lg backdrop-blur"
+                    className="
+                      absolute
+                      start-3
+                      top-1/2
+                      grid
+                      h-9
+                      w-9
+                      -translate-y-1/2
+                      place-items-center
+                      rounded-full
+                      bg-background/85
+                      shadow-lg
+                      backdrop-blur
+                    "
                     aria-label="الصورة التالية"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
                 ) : null}
 
-                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 backdrop-blur-md">
+                <div
+                  className="
+                    absolute
+                    bottom-3
+                    left-1/2
+                    flex
+                    -translate-x-1/2
+                    gap-1.5
+                    rounded-full
+                    bg-black/35
+                    px-2.5
+                    py-1.5
+                    backdrop-blur-md
+                  "
+                >
                   {images.map(
                     (_, index) => (
                       <button
@@ -780,12 +917,17 @@ function ProductDetail() {
                             index,
                           )
                         }
-                        className={`h-1.5 rounded-full transition-all ${
-                          activeImageIndex ===
-                          index
-                            ? "w-5 bg-white"
-                            : "w-1.5 bg-white/50"
-                        }`}
+                        className={`
+                          h-1.5
+                          rounded-full
+                          transition-all
+                          ${
+                            activeImageIndex ===
+                            index
+                              ? "w-5 bg-white"
+                              : "w-1.5 bg-white/50"
+                          }
+                        `}
                         aria-label={`الصورة ${index + 1}`}
                       />
                     ),
@@ -796,9 +938,20 @@ function ProductDetail() {
           </div>
 
           {images.length > 1 ? (
-            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+            <div
+              className="
+                mt-3
+                flex
+                gap-2
+                overflow-x-auto
+                pb-1
+              "
+            >
               {images.map(
-                (image, index) => (
+                (
+                  image,
+                  index,
+                ) => (
                   <button
                     key={`${image}-${index}`}
                     type="button"
@@ -807,12 +960,20 @@ function ProductDetail() {
                         index,
                       )
                     }
-                    className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
-                      activeImageIndex ===
-                      index
-                        ? "border-primary ring-2 ring-primary/15"
-                        : "border-border/70 opacity-70"
-                    }`}
+                    className={`
+                      h-16
+                      w-16
+                      shrink-0
+                      overflow-hidden
+                      rounded-xl
+                      border-2
+                      ${
+                        activeImageIndex ===
+                        index
+                          ? "border-primary ring-2 ring-primary/15"
+                          : "border-border/70 opacity-70"
+                      }
+                    `}
                     aria-label={`عرض الصورة ${index + 1}`}
                   >
                     <ProductImage
@@ -827,14 +988,33 @@ function ProductDetail() {
           ) : null}
         </section>
 
-        {/* =====================================================
-            معلومات المنتج
-            ===================================================== */}
-        <section className="space-y-5 rounded-3xl border border-border/70 bg-card p-4 shadow-card sm:p-5">
-          <div className="space-y-2">
+        {/* بيانات المنتج */}
+        <section
+          className="
+            space-y-5
+            rounded-[1.7rem]
+            border
+            border-border/70
+            bg-card
+            p-4
+            shadow-card
+            sm:p-5
+          "
+        >
+          <div>
             <div className="flex flex-wrap items-center gap-2">
               {product.is_local ? (
-                <span className="rounded-full bg-brand-soft px-2.5 py-1 text-[9px] font-bold text-primary">
+                <span
+                  className="
+                    rounded-full
+                    bg-brand-soft
+                    px-2.5
+                    py-1
+                    text-[9px]
+                    font-bold
+                    text-primary
+                  "
+                >
                   منتج يمني
                 </span>
               ) : null}
@@ -846,26 +1026,63 @@ function ProductDetail() {
               ) : null}
             </div>
 
-            <h2 className="text-xl font-bold leading-[1.5] text-foreground">
+            <h2
+              className="
+                mt-2
+                text-xl
+                font-black
+                leading-[1.5]
+              "
+            >
               {product.name}
             </h2>
 
-            <div className="flex flex-wrap items-end gap-2">
-              <span className="text-2xl font-extrabold text-primary">
+            <div
+              className="
+                mt-3
+                flex
+                flex-wrap
+                items-end
+                gap-2
+              "
+            >
+              <strong
+                className="
+                  text-2xl
+                  font-black
+                  text-primary
+                "
+              >
                 {formatPrice(
                   product.price,
                 )}
-              </span>
+              </strong>
 
               {hasDiscount ? (
                 <>
-                  <span className="text-xs text-muted-foreground line-through">
+                  <span
+                    className="
+                      text-xs
+                      text-muted-foreground
+                      line-through
+                    "
+                  >
                     {formatPrice(
                       product.old_price!,
                     )}
                   </span>
 
-                  <span className="rounded-lg bg-destructive/10 px-1.5 py-1 text-[9px] font-bold text-destructive">
+                  <span
+                    className="
+                      rounded-lg
+                      bg-destructive/10
+                      px-1.5
+                      py-1
+                      text-[9px]
+                      font-bold
+                      text-destructive
+                    "
+                  >
                     وفر {discountPercent}%
                   </span>
                 </>
@@ -874,16 +1091,32 @@ function ProductDetail() {
 
             {product.reviews_count >
             0 ? (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Star className="h-3.5 w-3.5 fill-accent-solid text-accent-solid" />
+              <div
+                className="
+                  mt-2
+                  flex
+                  items-center
+                  gap-1.5
+                  text-xs
+                  text-muted-foreground
+                "
+              >
+                <Star
+                  className="
+                    h-3.5
+                    w-3.5
+                    fill-accent-solid
+                    text-accent-solid
+                  "
+                />
 
-                <span className="font-bold text-foreground">
+                <strong className="text-foreground">
                   {Number(
                     product.rating,
                   ).toLocaleString(
                     "ar-EG",
                   )}
-                </span>
+                </strong>
 
                 <span>
                   (
@@ -898,40 +1131,39 @@ function ProductDetail() {
             ) : null}
           </div>
 
-          {/* =================================================
-              المخزون
-              ================================================= */}
-          <div className="rounded-2xl bg-secondary/60 p-3">
+          {/* حالة المخزون */}
+          <div
+            className="
+              rounded-2xl
+              bg-secondary/60
+              p-3
+            "
+          >
             {isOutOfStock ? (
-              <div className="flex items-center gap-2 text-xs font-bold text-destructive">
-                <span className="h-2 w-2 rounded-full bg-destructive" />
-                المنتج غير متوفر حالياً
-              </div>
+              <p className="text-xs font-bold text-destructive">
+                ● المنتج غير متوفر حالياً
+              </p>
             ) : isLowStock ? (
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                <span className="h-2 w-2 rounded-full bg-current" />
-                متبقي{" "}
+              <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                ● متبقي{" "}
                 {stockLeft.toLocaleString(
                   "ar-EG",
                 )}{" "}
                 فقط
-              </div>
+              </p>
             ) : (
-              <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-                <span className="h-2 w-2 rounded-full bg-primary" />
-                متوفر للطلب
-              </div>
+              <p className="text-xs font-bold text-primary">
+                ● متوفر للطلب
+              </p>
             )}
           </div>
 
-          {/* =================================================
-              المقاسات
-              ================================================= */}
+          {/* المقاسات */}
           {product.sizes?.length >
           0 ? (
-            <div className="space-y-2 border-t border-border/60 pt-4">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-foreground">
+            <div className="border-t border-border/60 pt-4">
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-xs font-bold">
                   المقاس / الحجم
                 </label>
 
@@ -953,12 +1185,23 @@ function ProductDetail() {
                           size,
                         )
                       }
-                      className={`min-w-12 rounded-xl border px-3 py-2 text-xs font-bold transition-all active:scale-95 ${
-                        selectedSize ===
-                        size
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-background text-foreground hover:border-primary/40"
-                      }`}
+                      className={`
+                        min-w-12
+                        rounded-xl
+                        border
+                        px-3
+                        py-2
+                        text-xs
+                        font-bold
+                        transition-all
+                        active:scale-95
+                        ${
+                          selectedSize ===
+                          size
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background"
+                        }
+                      `}
                     >
                       {size}
                     </button>
@@ -968,14 +1211,12 @@ function ProductDetail() {
             </div>
           ) : null}
 
-          {/* =================================================
-              الألوان
-              ================================================= */}
+          {/* الألوان */}
           {product.colors?.length >
           0 ? (
-            <div className="space-y-2 border-t border-border/60 pt-4">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-foreground">
+            <div className="border-t border-border/60 pt-4">
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-xs font-bold">
                   اللون
                 </label>
 
@@ -997,12 +1238,22 @@ function ProductDetail() {
                           color,
                         )
                       }
-                      className={`rounded-xl border px-3 py-2 text-xs font-bold transition-all active:scale-95 ${
-                        selectedColor ===
-                        color
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-background text-foreground hover:border-primary/40"
-                      }`}
+                      className={`
+                        rounded-xl
+                        border
+                        px-3
+                        py-2
+                        text-xs
+                        font-bold
+                        transition-all
+                        active:scale-95
+                        ${
+                          selectedColor ===
+                          color
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background"
+                        }
+                      `}
                     >
                       {color}
                     </button>
@@ -1012,63 +1263,94 @@ function ProductDetail() {
             </div>
           ) : null}
 
-          {/* =================================================
-              الوصف
-              ================================================= */}
+          {/* الوصف */}
           {product.description ? (
-            <details
-              open
-              className="border-t border-border/60 pt-4"
+            <div
+              className="
+                border-t
+                border-border/60
+                pt-4
+              "
             >
-              <summary className="cursor-pointer list-none text-xs font-bold text-foreground">
+              <h3 className="text-xs font-bold">
                 تفاصيل المنتج
-              </summary>
+              </h3>
 
-              <p className="mt-3 whitespace-pre-line text-xs leading-7 text-muted-foreground">
+              <p
+                className="
+                  mt-3
+                  whitespace-pre-line
+                  text-xs
+                  leading-7
+                  text-muted-foreground
+                "
+              >
                 {product.description}
               </p>
-            </details>
+            </div>
           ) : null}
         </section>
 
-        {/* =====================================================
-            المنتجات المشابهة
-            ===================================================== */}
+        {/* منتجات مشابهة */}
         {similarLoading ? (
-          <section className="space-y-3">
-            <div className="h-5 w-36 animate-pulse rounded bg-muted" />
+          <section>
+            <div className="mb-3 h-5 w-36 animate-pulse rounded bg-muted" />
 
             <div className="grid grid-cols-2 gap-3">
-              {Array.from({
-                length: 4,
-              }).map((_, index) => (
-                <div
-                  key={index}
-                  className="overflow-hidden rounded-2xl border border-border bg-card"
-                >
-                  <div className="aspect-square animate-pulse bg-muted" />
-                  <div className="space-y-2 p-3">
-                    <div className="h-3 animate-pulse rounded bg-muted" />
-                    <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+              {[1, 2, 3, 4].map(
+                (item) => (
+                  <div
+                    key={item}
+                    className="overflow-hidden rounded-2xl border border-border bg-card"
+                  >
+                    <div className="aspect-square animate-pulse bg-muted" />
+                    <div className="space-y-2 p-3">
+                      <div className="h-3 animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </section>
         ) : similarProducts.length >
           0 ? (
-          <section className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-xl bg-brand-soft text-primary">
+          <section>
+            <div
+              className="
+                mb-4
+                flex
+                items-center
+                gap-2
+              "
+            >
+              <span
+                className="
+                  grid
+                  h-8
+                  w-8
+                  place-items-center
+                  rounded-xl
+                  bg-brand-soft
+                  text-primary
+                "
+              >
                 <Sparkles className="h-4 w-4" />
               </span>
 
-              <h3 className="text-sm font-bold text-foreground">
+              <h3 className="text-sm font-black">
                 منتجات قد تعجبك
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div
+              className="
+                grid
+                grid-cols-2
+                gap-3
+                sm:grid-cols-3
+              "
+            >
               {similarProducts.map(
                 (item) => (
                   <ProductCard
@@ -1081,24 +1363,47 @@ function ProductDetail() {
           </section>
         ) : null}
 
-        {/* =====================================================
-            التقييمات
-            ===================================================== */}
-        <ProductReviewsSection
-          productId={product.id}
+        {/* التقييمات */}
+        <ProductReviews
+          productId={
+            product.id
+          }
           reviews={reviews}
-          loading={reviewsLoading}
+          loading={
+            reviewsLoading
+          }
           onSubmitted={() =>
             void refetchReviews()
           }
         />
       </main>
 
-      {/* =======================================================
-          شريط الشراء
-          ======================================================= */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 px-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] pt-2.5 shadow-2xl backdrop-blur-xl md:pb-3">
-        <div className="mx-auto flex max-w-3xl gap-2">
+      {/* شريط الشراء */}
+      <div
+        className="
+          fixed
+          inset-x-0
+          bottom-0
+          z-40
+          border-t
+          border-border/60
+          bg-background/95
+          px-3
+          pb-[calc(env(safe-area-inset-bottom)+4.5rem)]
+          pt-2.5
+          shadow-2xl
+          backdrop-blur-xl
+          md:pb-3
+        "
+      >
+        <div
+          className="
+            mx-auto
+            flex
+            max-w-3xl
+            gap-2
+          "
+        >
           <button
             type="button"
             disabled={
@@ -1109,7 +1414,25 @@ function ProductDetail() {
             onClick={() =>
               void handleAddToCart()
             }
-            className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-primary bg-primary/5 px-3 text-xs font-bold text-primary transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            className="
+              flex
+              min-h-12
+              flex-1
+              items-center
+              justify-center
+              gap-2
+              rounded-2xl
+              border
+              border-primary
+              bg-primary/5
+              px-3
+              text-xs
+              font-black
+              text-primary
+              transition-all
+              active:scale-[0.98]
+              disabled:opacity-40
+            "
           >
             {adding ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -1117,13 +1440,11 @@ function ProductDetail() {
               <ShoppingCart className="h-4 w-4" />
             )}
 
-            <span>
-              {cartQuantity > 0
-                ? `في السلة (${cartQuantity.toLocaleString(
-                    "ar-EG",
-                  )})`
-                : "أضف للسلة"}
-            </span>
+            {cartQuantity > 0
+              ? `في السلة (${cartQuantity.toLocaleString(
+                  "ar-EG",
+                )})`
+              : "أضف للسلة"}
           </button>
 
           <button
@@ -1136,7 +1457,25 @@ function ProductDetail() {
             onClick={() =>
               void handleBuyNow()
             }
-            className="flex min-h-12 flex-[1.15] items-center justify-center gap-2 rounded-2xl bg-primary px-3 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            className="
+              flex
+              min-h-12
+              flex-[1.15]
+              items-center
+              justify-center
+              gap-2
+              rounded-2xl
+              bg-primary
+              px-3
+              text-xs
+              font-black
+              text-primary-foreground
+              shadow-lg
+              shadow-primary/20
+              transition-all
+              active:scale-[0.98]
+              disabled:opacity-40
+            "
           >
             {buying ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -1144,11 +1483,9 @@ function ProductDetail() {
               <Zap className="h-4 w-4" />
             )}
 
-            <span>
-              {isOutOfStock
-                ? "غير متوفر"
-                : "شراء الآن"}
-            </span>
+            {isOutOfStock
+              ? "غير متوفر"
+              : "شراء الآن"}
           </button>
         </div>
       </div>
@@ -1158,19 +1495,17 @@ function ProductDetail() {
   );
 }
 
-type ProductReviewsSectionProps = {
-  productId: string;
-  reviews: ProductReviewRow[];
-  loading: boolean;
-  onSubmitted: () => void;
-};
-
-function ProductReviewsSection({
+function ProductReviews({
   productId,
   reviews,
   loading,
   onSubmitted,
-}: ProductReviewsSectionProps) {
+}: {
+  productId: string;
+  reviews: ProductReviewRow[];
+  loading: boolean;
+  onSubmitted: () => void;
+}) {
   const [name, setName] =
     useState("");
 
@@ -1202,15 +1537,6 @@ function ProductReviewsSection({
       return;
     }
 
-    if (
-      comment.trim().length < 3
-    ) {
-      toast.error(
-        "التعليق قصير جداً.",
-      );
-      return;
-    }
-
     setSubmitting(true);
 
     try {
@@ -1222,253 +1548,3 @@ function ProductReviewsSection({
           .insert({
             product_id:
               productId,
-            user_name:
-              name.trim(),
-            rating,
-            comment:
-              comment.trim(),
-            is_approved:
-              true,
-          });
-
-      if (error) {
-        throw error;
-      }
-
-      setName("");
-      setComment("");
-      setRating(5);
-
-      toast.success(
-        "تم إرسال تقييمك بنجاح.",
-      );
-
-      onSubmitted();
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "تعذر إرسال التقييم.";
-
-      toast.error(
-        `تعذر إرسال التقييم: ${message}`,
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <section
-      className="space-y-4 border-t border-border/60 pt-5"
-      aria-labelledby="reviews-title"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h3
-            id="reviews-title"
-            className="text-sm font-bold text-foreground"
-          >
-            آراء العملاء
-          </h3>
-
-          <p className="mt-1 text-[10px] text-muted-foreground">
-            تجارب المتسوقين مع هذا المنتج
-          </p>
-        </div>
-
-        <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] text-muted-foreground">
-          {reviews.length.toLocaleString(
-            "ar-EG",
-          )}{" "}
-          تقييم
-        </span>
-      </div>
-
-      <form
-        onSubmit={
-          handleSubmit
-        }
-        className="space-y-3 rounded-3xl border border-border/70 bg-card p-4"
-      >
-        <h4 className="text-xs font-bold text-foreground">
-          شاركنا تجربتك
-        </h4>
-
-        <div
-          className="flex items-center gap-1"
-          aria-label="اختيار التقييم"
-        >
-          {[
-            1,
-            2,
-            3,
-            4,
-            5,
-          ].map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() =>
-                setRating(
-                  value,
-                )
-              }
-              aria-label={`تقييم ${value} من 5`}
-              aria-pressed={
-                rating ===
-                value
-              }
-              className="rounded-lg p-1 transition-transform active:scale-90"
-            >
-              <Star
-                className={`h-5 w-5 ${
-                  value <= rating
-                    ? "fill-accent-solid text-accent-solid"
-                    : "text-muted-foreground/25"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-
-        <input
-          type="text"
-          value={name}
-          maxLength={80}
-          onChange={(event) =>
-            setName(
-              event.target
-                .value,
-            )
-          }
-          placeholder="اسمك"
-          className="h-11 w-full rounded-xl border border-border bg-background px-3 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary"
-        />
-
-        <textarea
-          value={comment}
-          maxLength={1000}
-          onChange={(event) =>
-            setComment(
-              event.target
-                .value,
-            )
-          }
-          rows={4}
-          placeholder="اكتب تجربتك مع المنتج..."
-          className="w-full resize-none rounded-xl border border-border bg-background p-3 text-xs leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary"
-        />
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
-          {submitting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-
-          إرسال التقييم
-        </button>
-      </form>
-
-      {loading ? (
-        <div className="space-y-2">
-          {Array.from({
-            length: 2,
-          }).map((_, index) => (
-            <div
-              key={index}
-              className="space-y-3 rounded-2xl border border-border bg-card p-4"
-            >
-              <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
-              <div className="h-3 w-full animate-pulse rounded bg-muted" />
-              <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
-            </div>
-          ))}
-        </div>
-      ) : reviews.length ===
-        0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card px-4 py-7 text-center">
-          <Star className="mx-auto h-6 w-6 text-muted-foreground/40" />
-
-          <p className="mt-2 text-xs font-semibold text-foreground">
-            لا توجد تقييمات بعد
-          </p>
-
-          <p className="mt-1 text-[10px] text-muted-foreground">
-            كن أول من يشارك تجربته.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {reviews.map(
-            (review) => (
-              <article
-                key={review.id}
-                className="space-y-2 rounded-2xl border border-border/70 bg-card p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-bold text-foreground">
-                      {review.user_name}
-                    </p>
-
-                    <time
-                      dateTime={
-                        review.created_at
-                      }
-                      className="mt-1 block text-[9px] text-muted-foreground"
-                    >
-                      {new Date(
-                        review.created_at,
-                      ).toLocaleDateString(
-                        "ar-YE",
-                        {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        },
-                      )}
-                    </time>
-                  </div>
-
-                  <div className="flex shrink-0 gap-0.5">
-                    {[
-                      1,
-                      2,
-                      3,
-                      4,
-                      5,
-                    ].map(
-                      (star) => (
-                        <Star
-                          key={star}
-                          className={`h-3.5 w-3.5 ${
-                            star <=
-                            Number(
-                              review.rating,
-                            )
-                              ? "fill-accent-solid text-accent-solid"
-                              : "text-muted-foreground/20"
-                          }`}
-                        />
-                      ),
-                    )}
-                  </div>
-                </div>
-
-                <p className="whitespace-pre-line text-xs leading-6 text-muted-foreground">
-                  {review.comment}
-                </p>
-              </article>
-            ),
-          )}
-        </div>
-      )}
-    </section>
-  );
-}
