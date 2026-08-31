@@ -8,8 +8,7 @@ import { Link } from "@tanstack/react-router";
 
 import {
   Check,
-  Heart,
-  Plus,
+  ShoppingCart,
   Star,
 } from "lucide-react";
 
@@ -68,7 +67,8 @@ export const ProductCard = memo(
       ) || 0;
 
     const hasRating =
-      rating > 0 && reviews > 0;
+      rating > 0 &&
+      reviews > 0;
 
     const currentPrice =
       Number(product.price) || 0;
@@ -122,9 +122,7 @@ export const ProductCard = memo(
                 action: {
                   label: "عرض السلة",
                   onClick: () =>
-                    setDrawerOpen(
-                      true,
-                    ),
+                    setDrawerOpen(true),
                 },
               },
             );
@@ -167,20 +165,22 @@ export const ProductCard = memo(
           min-w-0
           flex-col
           overflow-hidden
-          rounded-2xl
+          rounded-[1.25rem]
           border
-          border-[#0E4D64]/8
+          border-[#0E4D64]/[0.07]
           bg-white
-          shadow-[0_8px_25px_-20px_rgba(14,77,100,0.55)]
+          shadow-[0_8px_28px_-22px_rgba(14,77,100,0.6)]
           transition-all
           duration-200
           hover:-translate-y-0.5
-          hover:border-[#0E4D64]/18
-          hover:shadow-[0_18px_35px_-25px_rgba(14,77,100,0.65)]
+          hover:border-[#0E4D64]/15
+          hover:shadow-[0_18px_38px_-24px_rgba(14,77,100,0.65)]
           active:scale-[0.985]
-          dark:bg-card
+          dark:border-white/[0.07]
+          dark:bg-[#0B2936]
         "
       >
+        {/* صورة المنتج */}
         <Link
           to="/product/$id"
           params={{
@@ -214,12 +214,14 @@ export const ProductCard = memo(
               className="
                 h-full
                 w-full
+                object-cover
                 transition-transform
                 duration-500
                 group-hover:scale-[1.035]
               "
             />
 
+            {/* الخصم */}
             {discount > 0 ? (
               <span
                 className="
@@ -231,23 +233,23 @@ export const ProductCard = memo(
                   px-2
                   py-1
                   text-[9px]
-                  font-extrabold
+                  font-black
                   leading-none
                   text-white
-                  shadow-sm
                 "
               >
-                -{discount}%
+                خصم {discount}%
               </span>
             ) : null}
 
+            {/* الشارة */}
             {product.badge ? (
               <span
                 className="
                   absolute
                   end-2
                   top-2
-                  max-w-[62%]
+                  max-w-[60%]
                   truncate
                   rounded-full
                   border
@@ -260,12 +262,16 @@ export const ProductCard = memo(
                   text-[#0E4D64]
                   shadow-sm
                   backdrop-blur-sm
+                  dark:border-white/10
+                  dark:bg-[#0B2936]/95
+                  dark:text-[#D9EEF5]
                 "
               >
                 {product.badge}
               </span>
             ) : null}
 
+            {/* نفد المخزون */}
             {outOfStock ? (
               <div
                 className="
@@ -274,19 +280,20 @@ export const ProductCard = memo(
                   flex
                   items-center
                   justify-center
-                  bg-white/65
+                  bg-[#071B24]/35
                   backdrop-blur-[2px]
                 "
               >
                 <span
                   className="
                     rounded-full
-                    bg-[#0E4D64]
+                    bg-white
                     px-3
                     py-1.5
                     text-[10px]
-                    font-bold
-                    text-white
+                    font-black
+                    text-[#0E4D64]
+                    shadow-lg
                   "
                 >
                   نفد المخزون
@@ -296,10 +303,11 @@ export const ProductCard = memo(
           </div>
         </Link>
 
+        {/* معلومات المنتج */}
         <div
           className="
             flex
-            min-h-[150px]
+            min-h-[158px]
             flex-1
             flex-col
             p-3
@@ -310,23 +318,30 @@ export const ProductCard = memo(
             params={{
               id: product.id,
             }}
+            className="
+              block
+              outline-none
+              focus-visible:text-[#D65A31]
+            "
           >
             <h3
               className="
                 line-clamp-2
-                min-h-[2.7rem]
-                text-[12.5px]
-                font-bold
-                leading-[1.5]
+                min-h-[2.8rem]
+                text-[12px]
+                font-extrabold
+                leading-[1.55]
                 text-foreground
                 transition-colors
                 group-hover:text-[#0E4D64]
+                dark:group-hover:text-[#D9EEF5]
               "
             >
               {product.name}
             </h3>
           </Link>
 
+          {/* التقييم */}
           {hasRating ? (
             <div
               className="
@@ -334,7 +349,7 @@ export const ProductCard = memo(
                 flex
                 items-center
                 gap-1
-                text-[10px]
+                text-[9px]
                 text-muted-foreground
               "
             >
@@ -350,7 +365,7 @@ export const ProductCard = memo(
 
               <span
                 className="
-                  font-bold
+                  font-black
                   text-foreground
                 "
               >
@@ -374,12 +389,13 @@ export const ProductCard = memo(
             <div className="mt-2 h-4" />
           )}
 
+          {/* المخزون */}
           <div className="mt-1 min-h-4">
             {lowStock ? (
               <p
                 className="
                   text-[9px]
-                  font-bold
+                  font-extrabold
                   text-[#D65A31]
                 "
               >
@@ -392,6 +408,7 @@ export const ProductCard = memo(
             ) : null}
           </div>
 
+          {/* السعر + السلة */}
           <div
             className="
               mt-auto
@@ -402,14 +419,20 @@ export const ProductCard = memo(
               pt-2
             "
           >
-            <div className="min-w-0">
+            <div
+              className="
+                min-w-0
+                flex-1
+              "
+            >
               <p
                 className="
                   truncate
                   text-[14px]
-                  font-extrabold
+                  font-black
                   leading-tight
                   text-[#0E4D64]
+                  dark:text-[#9DD5E5]
                   sm:text-[15px]
                 "
               >
@@ -435,13 +458,16 @@ export const ProductCard = memo(
               ) : null}
             </div>
 
+            {/* زر الإضافة */}
             <button
               type="button"
               disabled={outOfStock}
               aria-label={
                 outOfStock
                   ? `${product.name} غير متوفر`
-                  : `إضافة ${product.name} إلى السلة`
+                  : cartQuantity > 0
+                    ? `إضافة قطعة أخرى من ${product.name}`
+                    : `إضافة ${product.name} إلى السلة`
               }
               onClick={quickAdd}
               className="
@@ -467,7 +493,7 @@ export const ProductCard = memo(
                 <>
                   <Check
                     className="h-4 w-4"
-                    strokeWidth={2.7}
+                    strokeWidth={2.8}
                   />
 
                   <span
@@ -476,15 +502,19 @@ export const ProductCard = memo(
                       -end-1
                       -top-1
                       grid
-                      min-h-4
-                      min-w-4
+                      min-h-[17px]
+                      min-w-[17px]
                       place-items-center
                       rounded-full
+                      border-2
+                      border-white
                       bg-[#0E4D64]
                       px-1
                       text-[8px]
-                      font-extrabold
+                      font-black
+                      leading-none
                       text-white
+                      dark:border-[#0B2936]
                     "
                   >
                     {cartQuantity > 99
@@ -495,15 +525,16 @@ export const ProductCard = memo(
                   </span>
                 </>
               ) : (
-                <Plus
-                  className="h-4 w-4"
-                  strokeWidth={2.6}
+                <ShoppingCart
+                  className="h-[17px] w-[17px]"
+                  strokeWidth={2.2}
                 />
               )}
             </button>
           </div>
         </div>
 
+        {/* حالة المنتج داخل السلة */}
         {cartQuantity > 0 &&
         !outOfStock ? (
           <button
@@ -516,25 +547,43 @@ export const ProductCard = memo(
               min-h-8
               items-center
               justify-center
+              gap-1.5
               rounded-xl
-              bg-[#0E4D64]/6
+              bg-[#0E4D64]/[0.06]
               px-2
               py-1.5
               text-[9px]
-              font-bold
+              font-extrabold
               text-[#0E4D64]
-              transition-colors
-              hover:bg-[#0E4D64]/10
+              transition-all
+              hover:bg-[#0E4D64]/[0.10]
+              active:scale-[0.98]
+              dark:bg-white/[0.05]
+              dark:text-[#9DD5E5]
+              dark:hover:bg-white/[0.08]
             "
           >
-            <Heart
-              className="me-1 h-3 w-3"
-              fill="currentColor"
+            <ShoppingCart
+              className="h-3 w-3"
+              strokeWidth={2.3}
             />
-            في السلة ·{" "}
-            {cartQuantity.toLocaleString(
-              "ar-EG",
-            )}
+
+            <span>
+              في السلة
+            </span>
+
+            <span
+              className="
+                rounded-md
+                bg-[#D65A31]/10
+                px-1
+                text-[#D65A31]
+              "
+            >
+              {cartQuantity.toLocaleString(
+                "ar-EG",
+              )}
+            </span>
           </button>
         ) : null}
       </article>
