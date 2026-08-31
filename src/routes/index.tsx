@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -20,7 +20,6 @@ import {
 
 import { SiteHeader } from "@/components/site-header";
 import { PromoSlider } from "@/components/promo-slider";
-import { CategoryStrip } from "@/components/category-strip";
 import { FlashSaleSection } from "@/components/home/FlashSaleSection";
 import { OffersSection } from "@/components/offers-section";
 import { BrandsSection } from "@/components/brands-section";
@@ -52,8 +51,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content:
-          "شهارة | تسوق بلا حدود",
+        content: "شهارة | تسوق بلا حدود",
       },
       {
         property: "og:description",
@@ -208,8 +206,8 @@ function QuickAction({
   href: string;
 }) {
   return (
-    <a
-      href={href}
+    <Link
+      to={href}
       className="
         group
         flex
@@ -266,7 +264,7 @@ function QuickAction({
       >
         {label}
       </span>
-    </a>
+    </Link>
   );
 }
 
@@ -290,9 +288,7 @@ function PopularCategories({
 
   for (const product of bestProducts) {
     const current =
-      scores.get(
-        product.category_id,
-      ) ?? {
+      scores.get(product.category_id) ?? {
         productCount: 0,
         popularityScore: 0,
       };
@@ -300,9 +296,7 @@ function PopularCategories({
     current.productCount += 1;
 
     current.popularityScore +=
-      Number(
-        product.sales_count,
-      ) || 0;
+      Number(product.sales_count) || 0;
 
     scores.set(
       product.category_id,
@@ -338,7 +332,7 @@ function PopularCategories({
   return (
     <SectionCard className="p-4">
       <SectionHeading
-        title="تسوق حسب القسم"
+        title="الأقسام الرائجة"
         action="كل الأقسام"
         to="/products"
       />
@@ -364,9 +358,12 @@ function PopularCategories({
               index % 3 === 1;
 
             return (
-              <a
+              <Link
                 key={category.id}
-                href={`/category/${category.slug}`}
+                to="/category/$slug"
+                params={{
+                  slug: category.slug,
+                }}
                 className="
                   group
                   flex
@@ -430,7 +427,7 @@ function PopularCategories({
                     منتج
                   </span>
                 ) : null}
-              </a>
+              </Link>
             );
           },
         )}
@@ -487,8 +484,8 @@ function ProductSection({
           />
         </div>
 
-        <a
-          href="/products"
+        <Link
+          to="/products"
           className="
             inline-flex
             items-center
@@ -510,7 +507,7 @@ function ProductSection({
             className="h-3.5 w-3.5"
             strokeWidth={2.2}
           />
-        </a>
+        </Link>
       </div>
 
       {loading ? (
@@ -663,11 +660,7 @@ function TrustItem({
         dark:border-white/[0.06]
       "
     >
-      <span
-        className="
-          text-[#D65A31]
-        "
-      >
+      <span className="text-[#D65A31]">
         <span className="block h-4 w-4">
           {icon}
         </span>
@@ -775,8 +768,8 @@ function FinalBrandCard() {
           مكان واحد.
         </p>
 
-        <a
-          href="/products"
+        <Link
+          to="/products"
           className="
             mt-5
             inline-flex
@@ -796,10 +789,8 @@ function FinalBrandCard() {
         >
           ابدأ التسوق
 
-          <ArrowLeft
-            className="h-4 w-4"
-          />
-        </a>
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
       </div>
     </section>
   );
@@ -893,61 +884,55 @@ function HomePage() {
             lg:px-6
           "
         >
-          {/* Hero */}
+          {/* العرض الرئيسي */}
           <section className="mb-4">
             <PromoSlider />
           </section>
 
-          {/* Quick actions */}
+          {/* الوصول السريع */}
           <section className="mb-5">
             <QuickActions />
           </section>
 
-          {/* Categories */}
+          {/* الأقسام الرائجة */}
           <section className="mb-6">
             <PopularCategories
               categories={categories}
-              bestProducts={
-                bestProducts
-              }
+              bestProducts={bestProducts}
             />
           </section>
 
-          {/* Trust */}
+          {/* عناصر الثقة */}
           <section className="mb-7">
             <HomeTrustBar />
           </section>
 
-          {/* Best sellers */}
+          {/* الأكثر مبيعاً */}
           <section className="mb-8">
             <ProductSection
               title="الأكثر مبيعاً"
-              products={
-                bestProducts
-              }
+              products={bestProducts}
               loading={
                 bestProductsLoading
               }
             />
           </section>
 
-          {/* Flash sale */}
+          {/* التخفيضات السريعة */}
           <section className="mb-8">
             <FlashSaleSection />
           </section>
 
-          {/* Offers */}
+          {/* العروض */}
           <section className="mb-8">
             <OffersSection />
           </section>
 
-          {/* New products */}
+          {/* وصل حديثاً */}
           <section className="mb-8">
             <ProductSection
               title="وصل حديثاً"
-              products={
-                latestProducts
-              }
+              products={latestProducts}
               loading={
                 latestProductsLoading
               }
@@ -955,17 +940,17 @@ function HomePage() {
             />
           </section>
 
-          {/* Local products */}
+          {/* المنتجات المحلية */}
           <section className="mb-8">
             <LocalProducts />
           </section>
 
-          {/* Brands */}
+          {/* العلامات التجارية */}
           <section className="mb-8">
             <BrandsSection />
           </section>
 
-          {/* Final brand CTA */}
+          {/* دعوة التسوق */}
           <FinalBrandCard />
         </main>
 
