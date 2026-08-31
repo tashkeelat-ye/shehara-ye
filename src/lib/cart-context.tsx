@@ -1283,4 +1283,96 @@ export function CartProvider({
     );
 
   /* ------------------------------------------------ */
- 
+  /* القيمة النهائية للسياق                          */
+  /* ------------------------------------------------ */
+
+  const value =
+    useMemo<CartContextValue>(
+      () => ({
+        items,
+
+        count:
+          lines.reduce(
+            (
+              sum,
+              line,
+            ) =>
+              sum +
+              line.quantity,
+            0,
+          ),
+
+        total:
+          items.reduce(
+            (
+              sum,
+              item,
+            ) =>
+              sum +
+              Number(
+                item.product.price ??
+                  0,
+              ) *
+                item.quantity,
+            0,
+          ),
+
+        loading,
+
+        drawerOpen,
+
+        setDrawerOpen,
+
+        addItem,
+
+        updateQuantity,
+
+        removeItem,
+
+        clearCart,
+
+        refresh,
+
+        getItemQuantity,
+      }),
+      [
+        items,
+        lines,
+        loading,
+        drawerOpen,
+        addItem,
+        updateQuantity,
+        removeItem,
+        clearCart,
+        refresh,
+        getItemQuantity,
+      ],
+    );
+
+  return (
+    <CartContext.Provider
+      value={value}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+/* -------------------------------------------------- */
+/* Hook                                               */
+/* -------------------------------------------------- */
+
+export function useCart(): CartContextValue {
+  const context =
+    useContext(
+      CartContext,
+    );
+
+  if (!context) {
+    throw new Error(
+      "useCart must be used inside CartProvider",
+    );
+  }
+
+  return context;
+}
