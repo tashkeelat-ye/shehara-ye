@@ -203,7 +203,7 @@ function QuickAction({
       <span
         className="grid h-10 w-10 place-items-center rounded-xl transition-all"
         style={{
-          backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)',
+          backgroundColor: 'rgba(14,77,100,0.07)',
           color: 'var(--color-primary)'
         }}
       >
@@ -286,7 +286,7 @@ function PopularCategories({
                 className="grid h-[68px] w-[68px] place-items-center rounded-[1.35rem] transition-all duration-200 group-hover:-translate-y-0.5"
                 style={{
                   border: '1px solid var(--border)',
-                  backgroundColor: 'color-mix(in srgb, var(--color-primary) 7%, transparent)',
+                  backgroundColor: 'rgba(14,77,100,0.06)',
                   color: 'var(--color-primary)'
                 }}
               >
@@ -353,7 +353,7 @@ function ProductSection({
         </div>
       ) : (
         <div className="rounded-2xl px-5 py-10 text-center" style={{ border: '1px dashed var(--border)', backgroundColor: 'var(--color-surface)'}}>
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary) 6%, transparent)', color: 'var(--color-primary)'}}>
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl" style={{ backgroundColor: 'rgba(14,77,100,0.06)', color: 'var(--color-primary)'}}>
             <Package className="h-5 w-5" />
           </div>
 
@@ -401,7 +401,7 @@ function FinalBrandCard() {
     <section className="relative overflow-hidden rounded-[1.7rem] px-5 py-7 text-white" style={{ backgroundColor: 'var(--color-primary)', boxShadow: '0 22px 55px -32px rgba(14,77,100,0.45)'}}>
       <div aria-hidden className="pointer-events-none absolute -end-16 -top-20 h-48 w-48 rounded-full" style={{ border: '1px solid rgba(255,255,255,0.08)'}} />
 
-      <div aria-hidden className="pointer-events-none absolute -end-8 -top-12 h-32 w-32 rounded-full" style={{ border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)'}} />
+      <div aria-hidden className="pointer-events-none absolute -end-8 -top-12 h-32 w-32 rounded-full" style={{ border: '1px solid rgba(214,90,49,0.2)'}} />
 
       <div className="relative z-10">
         <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[9px] font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)'}}>
