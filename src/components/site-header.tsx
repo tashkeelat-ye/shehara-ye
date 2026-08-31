@@ -1,7 +1,8 @@
-import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  Bell,
-  Menu,
+  Link,
+  useNavigate,
+} from "@tanstack/react-router";
+import {
   Moon,
   Search,
   ShoppingCart,
@@ -19,7 +20,8 @@ import { NotificationBell } from "@/components/notification-bell";
 import { BrandLogo } from "@/components/brand-logo";
 import { useCart } from "@/lib/cart-context";
 
-const THEME_STORAGE_KEY = "shehara-theme";
+const THEME_STORAGE_KEY =
+  "shehara-theme";
 
 export function SiteHeader() {
   const navigate = useNavigate();
@@ -49,9 +51,12 @@ export function SiteHeader() {
         savedTheme === "dark" ||
         savedTheme === "light"
       ) {
+        const isDark =
+          savedTheme === "dark";
+
         document.documentElement.classList.toggle(
           "dark",
-          savedTheme === "dark",
+          isDark,
         );
 
         document.documentElement.style.colorScheme =
@@ -60,9 +65,7 @@ export function SiteHeader() {
         document.documentElement.dataset.theme =
           savedTheme;
 
-        setDarkMode(
-          savedTheme === "dark",
-        );
+        setDarkMode(isDark);
 
         return;
       }
@@ -70,12 +73,17 @@ export function SiteHeader() {
       // التخزين غير متاح.
     }
 
-    const initialDarkMode =
+    const systemDark =
+      window.matchMedia?.(
+        "(prefers-color-scheme: dark)",
+      ).matches ?? false;
+
+    const initialDark =
       document.documentElement.classList.contains(
         "dark",
-      );
+      ) || systemDark;
 
-    setDarkMode(initialDarkMode);
+    setDarkMode(initialDark);
   }, []);
 
   const toggleDarkMode = () => {
@@ -123,6 +131,8 @@ export function SiteHeader() {
         to: "/products",
       });
 
+      setSearchFocused(false);
+
       return;
     }
 
@@ -148,23 +158,23 @@ export function SiteHeader() {
         z-50
         w-full
         border-b
-        border-[#0E4D64]/8
-        bg-[#FAF9F6]/95
-        backdrop-blur-2xl
+        border-[#0E4D64]/10
+        bg-[#FAF9F6]/96
         supports-[backdrop-filter]:bg-[#FAF9F6]/82
-        dark:border-white/8
-        dark:bg-[#071B24]/95
+        backdrop-blur-2xl
+        dark:border-white/10
+        dark:bg-[#071B24]/96
         dark:supports-[backdrop-filter]:bg-[#071B24]/82
       "
     >
-      {/* منطقة شريط الحالة */}
+      {/* Safe Area أعلى الشاشة */}
       <div
+        aria-hidden="true"
         className="
           h-[env(safe-area-inset-top)]
           min-h-0
           bg-[#0E4D64]
         "
-        aria-hidden="true"
       />
 
       {/* الشريط الرئيسي */}
@@ -173,11 +183,10 @@ export function SiteHeader() {
           relative
           mx-auto
           flex
-          h-[64px]
+          h-16
           w-full
           max-w-7xl
           items-center
-          justify-between
           px-3
           sm:h-[68px]
           sm:px-5
@@ -188,16 +197,17 @@ export function SiteHeader() {
         <div
           className="
             flex
+            h-10
             w-10
             shrink-0
             items-center
-            justify-start
+            justify-center
           "
         >
           <SideMenu />
         </div>
 
-        {/* الشعار */}
+        {/* الشعار المركزي */}
         <Link
           to="/"
           aria-label="شهارة - الصفحة الرئيسية"
@@ -205,6 +215,7 @@ export function SiteHeader() {
             absolute
             left-1/2
             top-1/2
+            z-10
             flex
             -translate-x-1/2
             -translate-y-1/2
@@ -218,14 +229,14 @@ export function SiteHeader() {
           "
         >
           <BrandLogo
-            size={48}
+            size={46}
+            priority
             className="
               h-11
               w-11
               sm:h-12
               sm:w-12
             "
-            priority
           />
         </Link>
 
@@ -317,7 +328,7 @@ export function SiteHeader() {
             "
           >
             <ShoppingCart
-              className="h-[20px] w-[20px]"
+              className="h-5 w-5"
               strokeWidth={2}
             />
 
@@ -329,8 +340,8 @@ export function SiteHeader() {
                   -end-0.5
                   -top-0.5
                   grid
-                  min-h-[17px]
-                  min-w-[17px]
+                  min-h-[18px]
+                  min-w-[18px]
                   place-items-center
                   rounded-full
                   border-2
@@ -355,7 +366,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* البحث */}
+      {/* شريط البحث */}
       <div
         className="
           px-3
@@ -388,15 +399,15 @@ export function SiteHeader() {
               dark:bg-[#0B2936]
               ${
                 searchFocused
-                  ? "border-[#0E4D64] shadow-[0_8px_28px_-18px_rgba(14,77,100,0.55)] ring-4 ring-[#0E4D64]/8 dark:border-[#D65A31]/60"
-                  : "border-[#0E4D64]/10 dark:border-white/8"
+                  ? "border-[#0E4D64] ring-4 ring-[#0E4D64]/8 dark:border-[#D65A31]/60 dark:ring-[#D65A31]/10"
+                  : "border-[#0E4D64]/10 dark:border-white/10"
               }
             `}
           >
             {/* أيقونة البحث */}
-            <div
+            <span
+              aria-hidden="true"
               className="
-                pointer-events-none
                 grid
                 h-full
                 w-11
@@ -413,9 +424,9 @@ export function SiteHeader() {
                 "
                 strokeWidth={2.1}
               />
-            </div>
+            </span>
 
-            {/* حقل البحث */}
+            {/* الحقل */}
             <input
               value={searchValue}
               onChange={(event) =>
@@ -432,7 +443,7 @@ export function SiteHeader() {
               type="search"
               inputMode="search"
               enterKeyHint="search"
-              placeholder="ابحث في شهارة..."
+              placeholder="ابحث في شهارة عن منتج أو قسم..."
               aria-label="البحث في شهارة"
               autoComplete="off"
               spellCheck={false}
@@ -447,17 +458,18 @@ export function SiteHeader() {
                 font-medium
                 text-[#081D27]
                 outline-none
-                placeholder:text-[#6F8189]
+                placeholder:text-[#71858E]
                 dark:text-white
                 dark:placeholder:text-[#8EA4AE]
               "
             />
 
-            {/* زر مسح البحث */}
+            {/* مسح البحث */}
             {searchValue ? (
               <button
                 type="button"
                 aria-label="مسح البحث"
+                title="مسح البحث"
                 onMouseDown={(event) =>
                   event.preventDefault()
                 }
@@ -483,6 +495,33 @@ export function SiteHeader() {
                 />
               </button>
             ) : null}
+
+            {/* زر البحث */}
+            <button
+              type="submit"
+              aria-label="تنفيذ البحث"
+              title="بحث"
+              className="
+                me-1
+                hidden
+                h-9
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-[#0E4D64]
+                px-3
+                text-[10px]
+                font-black
+                text-white
+                transition-all
+                hover:bg-[#0E4D64]/90
+                active:scale-95
+                sm:flex
+              "
+            >
+              بحث
+            </button>
           </div>
         </form>
       </div>
