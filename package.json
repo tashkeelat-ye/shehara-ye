@@ -12,11 +12,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-
     "cap:sync": "npx cap sync",
     "cap:copy": "npx cap copy",
     "cap:update": "npx cap update",
-
     "android:build": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",
     "android:run": "npx cap run android",
@@ -25,10 +23,8 @@
   "dependencies": {
     "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
-
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
-
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
@@ -55,16 +51,12 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.19",
     "@radix-ui/react-tooltip": "^1.2.8",
-
     "@supabase/supabase-js": "^2.111.0",
-
     "@tailwindcss/vite": "^4.2.1",
-
     "@tanstack/react-query": "^5.101.1",
     "@tanstack/react-router": "^1.170.18",
     "@tanstack/react-start": "^1.168.32",
     "@tanstack/router-plugin": "^1.168.23",
-
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -92,9 +84,8 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",
-
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "2.9.0",
+    "@lovable.dev/vite-tanstack-config": "2.13.1",
     "@types/leaflet": "^1.9.22",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
