@@ -20,8 +20,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import { BrandLogo } from "@/components/brand-logo";
 import { useCart } from "@/lib/cart-context";
 
-const THEME_STORAGE_KEY =
-  "shehara-theme";
+const THEME_STORAGE_KEY = "shehara-theme";
 
 export function SiteHeader() {
   const navigate = useNavigate();
@@ -167,7 +166,7 @@ export function SiteHeader() {
         dark:supports-[backdrop-filter]:bg-[#071B24]/82
       "
     >
-      {/* Safe Area أعلى الشاشة */}
+      {/* Safe Area */}
       <div
         aria-hidden="true"
         className="
@@ -177,7 +176,10 @@ export function SiteHeader() {
         "
       />
 
-      {/* الشريط الرئيسي */}
+      {/* =====================================================
+          TOP BAR
+         ===================================================== */}
+
       <div
         className="
           relative
@@ -194,6 +196,7 @@ export function SiteHeader() {
         "
       >
         {/* القائمة */}
+
         <div
           className="
             flex
@@ -207,7 +210,10 @@ export function SiteHeader() {
           <SideMenu />
         </div>
 
-        {/* الشعار المركزي */}
+        {/* =================================================
+            LOGO
+           ================================================= */}
+
         <Link
           to="/"
           aria-label="شهارة - الصفحة الرئيسية"
@@ -240,7 +246,10 @@ export function SiteHeader() {
           />
         </Link>
 
-        {/* أدوات التطبيق */}
+        {/* =================================================
+            ACTIONS
+           ================================================= */}
+
         <div
           className="
             ms-auto
@@ -249,7 +258,8 @@ export function SiteHeader() {
             gap-0.5
           "
         >
-          {/* الوضع الليلي */}
+          {/* Dark Mode */}
+
           <button
             type="button"
             aria-label={
@@ -291,7 +301,8 @@ export function SiteHeader() {
             )}
           </button>
 
-          {/* الإشعارات */}
+          {/* Notifications */}
+
           <div
             className="
               grid
@@ -303,7 +314,8 @@ export function SiteHeader() {
             <NotificationBell />
           </div>
 
-          {/* السلة */}
+          {/* Cart */}
+
           <button
             type="button"
             aria-label="فتح السلة"
@@ -366,7 +378,10 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* شريط البحث */}
+      {/* =====================================================
+          SEARCH
+         ===================================================== */}
+
       <div
         className="
           px-3
@@ -404,7 +419,8 @@ export function SiteHeader() {
               }
             `}
           >
-            {/* أيقونة البحث */}
+            {/* Search Icon */}
+
             <span
               aria-hidden="true"
               className="
@@ -426,7 +442,8 @@ export function SiteHeader() {
               />
             </span>
 
-            {/* الحقل */}
+            {/* Input */}
+
             <input
               value={searchValue}
               onChange={(event) =>
@@ -464,7 +481,8 @@ export function SiteHeader() {
               "
             />
 
-            {/* مسح البحث */}
+            {/* Clear */}
+
             {searchValue ? (
               <button
                 type="button"
@@ -496,7 +514,8 @@ export function SiteHeader() {
               </button>
             ) : null}
 
-            {/* زر البحث */}
+            {/* Desktop Search Button */}
+
             <button
               type="submit"
               aria-label="تنفيذ البحث"
