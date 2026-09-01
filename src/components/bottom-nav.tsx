@@ -75,6 +75,12 @@ export function BottomNav() {
     );
   };
 
+  const goTo = (path: string) => {
+    void navigate({
+      to: path as never,
+    });
+  };
+
   const openCart = () => {
     setDrawerOpen(true);
   };
@@ -87,186 +93,206 @@ export function BottomNav() {
         inset-x-0
         bottom-0
         z-[60]
-        px-2
-        pb-[env(safe-area-inset-bottom)]
         md:hidden
       "
     >
+      {/* Safe area */}
       <div
         className="
-          mx-auto
-          w-full
-          max-w-md
-          overflow-visible
-          rounded-t-[1.65rem]
-          border
-          border-b-0
-          border-[#0E4D64]/10
-          bg-white/96
-          shadow-[0_-18px_55px_-28px_rgba(14,77,100,0.65)]
-          backdrop-blur-2xl
-          dark:border-white/10
-          dark:bg-[#0B2936]/96
+          bg-transparent
+          pb-[env(safe-area-inset-bottom)]
         "
       >
         <div
-          aria-hidden="true"
           className="
-            h-[2px]
+            mx-auto
             w-full
-            bg-gradient-to-r
-            from-transparent
-            via-[#D65A31]
-            to-transparent
-          "
-        />
-
-        <div
-          className="
-            relative
-            grid
-            min-h-[72px]
-            grid-cols-5
-            items-stretch
-            px-1
-            pt-1
+            max-w-lg
+            border-t
+            border-[#0E4D64]/10
+            bg-[#FAF9F6]/96
+            shadow-[0_-12px_40px_-25px_rgba(14,77,100,0.55)]
+            backdrop-blur-2xl
+            dark:border-white/10
+            dark:bg-[#071B24]/96
           "
         >
-          {/* الرئيسية */}
-          <NavButton
-            item={NAV_ITEMS[0]}
-            active={isActive(
-              NAV_ITEMS[0],
-            )}
-            onClick={() =>
-              void navigate({
-                to: NAV_ITEMS[0].path as never,
-              })
-            }
+          {/* Brand accent */}
+          <div
+            aria-hidden="true"
+            className="
+              h-[2px]
+              w-full
+              bg-gradient-to-r
+              from-transparent
+              via-[#D65A31]
+              to-transparent
+            "
           />
 
-          {/* الأقسام */}
-          <NavButton
-            item={NAV_ITEMS[1]}
-            active={isActive(
-              NAV_ITEMS[1],
-            )}
-            onClick={() =>
-              void navigate({
-                to: NAV_ITEMS[1].path as never,
-              })
-            }
-          />
-
-          {/* السلة المركزية */}
           <div
             className="
               relative
-              flex
-              items-center
-              justify-center
+              grid
+              h-[70px]
+              grid-cols-5
+              items-stretch
+              px-1
             "
           >
-            <button
-              type="button"
-              aria-label="السلة"
-              onClick={openCart}
+            {/* ===============================
+                HOME
+               =============================== */}
+
+            <NavButton
+              item={NAV_ITEMS[0]}
+              active={isActive(
+                NAV_ITEMS[0],
+              )}
+              onClick={() =>
+                goTo(
+                  NAV_ITEMS[0].path,
+                )
+              }
+            />
+
+            {/* ===============================
+                CATEGORIES
+               =============================== */}
+
+            <NavButton
+              item={NAV_ITEMS[1]}
+              active={isActive(
+                NAV_ITEMS[1],
+              )}
+              onClick={() =>
+                goTo(
+                  NAV_ITEMS[1].path,
+                )
+              }
+            />
+
+            {/* ===============================
+                CART
+               =============================== */}
+
+            <div
               className="
-                absolute
-                -top-5
+                relative
                 flex
-                h-[58px]
-                w-[58px]
                 items-center
                 justify-center
-                rounded-full
-                border-[5px]
-                border-[#FAF9F6]
-                bg-[#0E4D64]
-                text-white
-                shadow-[0_14px_30px_-12px_rgba(14,77,100,0.75)]
-                transition-all
-                duration-200
-                hover:-translate-y-0.5
-                hover:bg-[#0A3D50]
-                active:scale-90
-                dark:border-[#071B24]
               "
             >
-              <ShoppingCart
-                className="h-6 w-6"
-                strokeWidth={2.1}
-              />
+              <button
+                type="button"
+                aria-label="فتح السلة"
+                onClick={openCart}
+                className="
+                  absolute
+                  -top-5
+                  flex
+                  h-[58px]
+                  w-[58px]
+                  items-center
+                  justify-center
+                  rounded-full
+                  border-[4px]
+                  border-[#FAF9F6]
+                  bg-[#0E4D64]
+                  text-white
+                  shadow-[0_12px_28px_-10px_rgba(14,77,100,0.8)]
+                  transition-all
+                  duration-200
+                  hover:-translate-y-0.5
+                  hover:bg-[#0A3D50]
+                  active:scale-[0.88]
+                  dark:border-[#071B24]
+                "
+              >
+                <ShoppingCart
+                  className="h-6 w-6"
+                  strokeWidth={2}
+                />
 
-              {count > 0 ? (
-                <span
-                  aria-label={`${count} منتج في السلة`}
-                  className="
-                    absolute
-                    -end-1
-                    -top-1
-                    grid
-                    min-h-5
-                    min-w-5
-                    place-items-center
-                    rounded-full
-                    border-2
-                    border-white
-                    bg-[#D65A31]
-                    px-1
-                    text-[9px]
-                    font-black
-                    leading-none
-                    text-white
-                    dark:border-[#0B2936]
-                  "
-                >
-                  {count > 99
-                    ? "99+"
-                    : count.toLocaleString(
-                        "ar-EG",
-                      )}
-                </span>
-              ) : null}
-            </button>
+                {count > 0 && (
+                  <span
+                    aria-label={`${count} منتج في السلة`}
+                    className="
+                      absolute
+                      -end-1
+                      -top-1
+                      grid
+                      min-h-5
+                      min-w-5
+                      place-items-center
+                      rounded-full
+                      border-2
+                      border-white
+                      bg-[#D65A31]
+                      px-1
+                      text-[9px]
+                      font-black
+                      leading-none
+                      text-white
+                      dark:border-[#0B2936]
+                    "
+                  >
+                    {count > 99
+                      ? "99+"
+                      : count.toLocaleString(
+                          "ar-EG",
+                        )}
+                  </span>
+                )}
+              </button>
 
-            <span
-              className="
-                mt-9
-                text-[10px]
-                font-bold
-                text-muted-foreground
-              "
-            >
-              السلة
-            </span>
+              <span
+                className="
+                  mt-9
+                  text-[10px]
+                  font-bold
+                  leading-4
+                  text-[#5D7078]
+                  dark:text-[#9EB1B9]
+                "
+              >
+                السلة
+              </span>
+            </div>
+
+            {/* ===============================
+                ORDERS
+               =============================== */}
+
+            <NavButton
+              item={NAV_ITEMS[2]}
+              active={isActive(
+                NAV_ITEMS[2],
+              )}
+              onClick={() =>
+                goTo(
+                  NAV_ITEMS[2].path,
+                )
+              }
+            />
+
+            {/* ===============================
+                ACCOUNT
+               =============================== */}
+
+            <NavButton
+              item={NAV_ITEMS[3]}
+              active={isActive(
+                NAV_ITEMS[3],
+              )}
+              onClick={() =>
+                goTo(
+                  NAV_ITEMS[3].path,
+                )
+              }
+            />
           </div>
-
-          {/* طلباتي */}
-          <NavButton
-            item={NAV_ITEMS[2]}
-            active={isActive(
-              NAV_ITEMS[2],
-            )}
-            onClick={() =>
-              void navigate({
-                to: NAV_ITEMS[2].path as never,
-              })
-            }
-          />
-
-          {/* حسابي */}
-          <NavButton
-            item={NAV_ITEMS[3]}
-            active={isActive(
-              NAV_ITEMS[3],
-            )}
-            onClick={() =>
-              void navigate({
-                to: NAV_ITEMS[3].path as never,
-              })
-            }
-          />
         </div>
       </div>
     </nav>
@@ -288,7 +314,9 @@ function NavButton({
     <button
       type="button"
       aria-current={
-        active ? "page" : undefined
+        active
+          ? "page"
+          : undefined
       }
       aria-label={item.label}
       onClick={onClick}
@@ -301,20 +329,22 @@ function NavButton({
         flex-col
         items-center
         justify-center
-        gap-1
+        gap-0.5
         rounded-2xl
         px-1
         py-2
         transition-all
         duration-200
-        active:scale-90
+        active:scale-[0.90]
         ${
           active
             ? "font-black text-[#D65A31]"
-            : "font-medium text-muted-foreground"
+            : "font-medium text-[#657A83] dark:text-[#91A7B0]"
         }
       `}
     >
+      {/* Icon container */}
+
       <span
         className={`
           grid
@@ -327,17 +357,24 @@ function NavButton({
           ${
             active
               ? "bg-[#D65A31]/10"
-              : "group-hover:bg-[#0E4D64]/5"
+              : "group-hover:bg-[#0E4D64]/5 dark:group-hover:bg-white/5"
           }
         `}
       >
         <Icon
-          className="h-[21px] w-[21px]"
+          className="
+            h-[21px]
+            w-[21px]
+          "
           strokeWidth={
-            active ? 2.3 : 1.8
+            active
+              ? 2.35
+              : 1.85
           }
         />
       </span>
+
+      {/* Label */}
 
       <span
         className="
@@ -350,7 +387,9 @@ function NavButton({
         {item.label}
       </span>
 
-      {active ? (
+      {/* Active indicator */}
+
+      {active && (
         <span
           aria-hidden="true"
           className="
@@ -362,7 +401,7 @@ function NavButton({
             bg-[#D65A31]
           "
         />
-      ) : null}
+      )}
     </button>
   );
 }
