@@ -1,963 +1,2249 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  ChevronLeft,
-  CookingPot,
-  Grid2X2,
-  Landmark,
-  Lamp,
-  Package,
-  Shirt,
-  ShoppingBasket,
-  Smartphone,
-  Sparkles,
-  Star,
-  Tag,
-  TrendingUp,
-  Watch,
-} from "lucide-react";
+@import "./styles/shehara-app.css";
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+@import "./styles/shehara-brand.css";
 
-import { SiteHeader } from "@/components/site-header";
-import { PromoSlider } from "@/components/promo-slider";
-import { FlashSaleSection } from "@/components/home/FlashSaleSection";
-import { OffersSection } from "@/components/offers-section";
-import { BrandsSection } from "@/components/brands-section";
-import { SectionHeading } from "@/components/section-heading";
-import {
-  ProductCard,
-  ProductCardSkeleton,
-} from "@/components/product-card";
-import { LocalProducts } from "@/components/local-products";
-import { BottomNav } from "@/components/bottom-nav";
+@custom-variant dark (&:is(.dark *));
 
-import {
-  fetchCategories,
-  fetchProducts,
-} from "@/lib/db";
-
-import type { Category } from "@/lib/db";
-
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      {
-        title: "شهارة | تسوق بلا حدود",
-      },
-      {
-        name: "description",
-        content:
-          "شهارة — متجر إلكتروني يمني حديث للتسوق من المنتجات المحلية والعالمية.",
-      },
-      {
-        property: "og:title",
-        content: "شهارة | تسوق بلا حدود",
-      },
-      {
-        property: "og:description",
-        content:
-          "تسوّق بسهولة من شهارة، متجرك الإلكتروني اليمني.",
-      },
-    ],
-    component: HomePage,
-  }),
-});
-
-const CATEGORY_ICONS = {
-  Shirt,
-  Smartphone,
-  CookingPot,
-  Sparkles,
-  ShoppingBasket,
-  Watch,
-  Lamp,
-  Landmark,
-};
-
-type PopularCategory = Category & {
-  productCount: number;
-  popularityScore: number;
-};
-
-function HomeBackground() {
-  return (
-    <div
-      aria-hidden="true"
-      className="
-        pointer-events-none
-        fixed
-        inset-0
-        z-0
-        overflow-hidden
-      "
-    >
-      <div
-        className="
-          absolute
-          -end-40
-          top-24
-          h-80
-          w-80
-          rounded-full
-          bg-[#0E4D64]/[0.035]
-          blur-3xl
-        "
-      />
-
-      <div
-        className="
-          absolute
-          -start-40
-          top-[42rem]
-          h-96
-          w-96
-          rounded-full
-          bg-[#D65A31]/[0.025]
-          blur-3xl
-        "
-      />
-
-      <div
-        className="
-          absolute
-          end-[20%]
-          top-[75rem]
-          h-64
-          w-64
-          rounded-full
-          bg-[#0E4D64]/[0.02]
-          blur-3xl
-        "
-      />
-    </div>
-  );
+@font-face {
+  font-family: "CustomFont";
+  src: url("/custom-font.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
 }
 
-function SectionCard({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section
-      className={`
-        relative
-        overflow-hidden
-        rounded-[1.6rem]
-        border
-        border-[#0E4D64]/[0.075]
-        bg-white
-        shadow-[0_14px_45px_-35px_rgba(14,77,100,0.5)]
-        dark:border-white/[0.07]
-        dark:bg-[#0B2936]
-        ${className}
-      `}
-    >
-      {children}
-    </section>
-  );
-}
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
 
-function QuickActions() {
-  return (
-    <div
-      className="
-        grid
-        grid-cols-4
-        gap-2
-      "
-    >
-      <QuickAction
-        icon={<Grid2X2 />}
-        label="الأقسام"
-        href="/products"
-      />
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-      <QuickAction
-        icon={<Tag />}
-        label="العروض"
-        href="/products"
-      />
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
-      <QuickAction
-        icon={<Package />}
-        label="طلباتي"
-        href="/orders"
-      />
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 
-      <QuickAction
-        icon={<Star />}
-        label="الأعلى تقييماً"
-        href="/products"
-      />
-    </div>
-  );
-}
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
 
-function QuickAction({
-  icon,
-  label,
-  href,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  href: string;
-}) {
-  return (
-    <Link
-      to={href}
-      className="
-        group
-        flex
-        min-h-[82px]
-        flex-col
-        items-center
-        justify-center
-        gap-2
-        rounded-2xl
-        border
-        border-[#0E4D64]/[0.07]
-        bg-white
-        px-2
-        py-3
-        text-center
-        transition-all
-        duration-200
-        active:scale-95
-        hover:-translate-y-0.5
-        hover:border-[#0E4D64]/15
-        hover:shadow-[0_12px_30px_-24px_rgba(14,77,100,0.7)]
-        dark:border-white/[0.07]
-        dark:bg-[#0B2936]
-      "
-    >
-      <span
-        className="
-          grid
-          h-10
-          w-10
-          place-items-center
-          rounded-xl
-          bg-[#0E4D64]/[0.07]
-          text-[#0E4D64]
-          transition-all
-          group-hover:bg-[#D65A31]/10
-          group-hover:text-[#D65A31]
-          dark:bg-white/[0.05]
-          dark:text-[#D9EEF5]
-        "
-      >
-        <span className="h-5 w-5">
-          {icon}
-        </span>
-      </span>
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
 
-      <span
-        className="
-          text-[10px]
-          font-bold
-          leading-4
-          text-foreground
-        "
-      >
-        {label}
-      </span>
-    </Link>
-  );
-}
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
-function PopularCategories({
-  categories,
-  bestProducts,
-}: {
-  categories: Category[];
-  bestProducts: Awaited<
-    ReturnType<typeof fetchProducts>
-  >;
-}) {
-  const scores =
-    new Map<
-      string,
-      {
-        productCount: number;
-        popularityScore: number;
-      }
-    >();
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
 
-  for (const product of bestProducts) {
-    const current =
-      scores.get(product.category_id) ?? {
-        productCount: 0,
-        popularityScore: 0,
-      };
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 
-    current.productCount += 1;
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-    current.popularityScore +=
-      Number(product.sales_count) || 0;
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 
-    scores.set(
-      product.category_id,
-      current,
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-accent-solid: var(--accent-solid);
+  --color-accent-solid-foreground: var(--accent-solid-foreground);
+  --color-brand-soft: var(--brand-soft);
+
+  --font-display: "CustomFont", "Tajawal", "Tahoma", sans-serif;
+  --font-sans: "CustomFont", "Tajawal", "Tahoma", sans-serif;
+
+  --shadow-brand:
+    0 8px 24px -12px color-mix(
+      in oklab,
+      var(--primary) 55%,
+      transparent
     );
+
+  --shadow-card:
+    0 2px 10px -6px oklch(0 0 0 / 18%);
+
+  --shadow-brand-gold:
+    0 8px 24px -14px
+    color-mix(
+      in srgb,
+      var(--brand-gold) 45%,
+      transparent
+    );
+}
+
+:root {
+  /*
+   * =========================================================
+   * تشكيلات — الهوية البصرية الرسمية
+   * =========================================================
+   */
+
+  --brand-burgundy: #4a1525;
+  --brand-burgundy-deep: #35101c;
+  --brand-burgundy-soft: #6a263a;
+  --brand-burgundy-light: #8a3a50;
+
+  --brand-gold: #e0b85c;
+  --brand-gold-deep: #c99a3b;
+  --brand-gold-soft: #f2d58b;
+  --brand-gold-pale: #f6e7bb;
+
+  --brand-cream: #fbf7ef;
+  --brand-paper: #f8f2e7;
+  --brand-paper-deep: #eee3d0;
+
+  /*
+   * درجات العلامة المائية.
+   */
+
+  --heritage-burgundy:
+    color-mix(
+      in srgb,
+      var(--brand-burgundy) 5%,
+      transparent
+    );
+
+  --heritage-gold:
+    color-mix(
+      in srgb,
+      var(--brand-gold-deep) 9%,
+      transparent
+    );
+
+  --heritage-gold-soft:
+    color-mix(
+      in srgb,
+      var(--brand-gold) 5%,
+      transparent
+    );
+
+  /*
+   * توكنات الهوية الجديدة.
+   */
+
+  --brand-watermark-opacity: 0.045;
+  --brand-architecture-opacity: 0.035;
+  --brand-ornament-opacity: 0.065;
+  --brand-border-opacity: 0.18;
+
+  --brand-shadow:
+    0 18px 55px -30px rgb(74 21 37 / 55%);
+
+  --brand-gold-shadow:
+    0 12px 35px -20px rgb(201 154 59 / 40%);
+
+  --radius: 1rem;
+
+  --background: oklch(0.985 0.005 60);
+  --foreground: oklch(0.20 0.08 15);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.08 15);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.08 15);
+
+  --primary: oklch(0.25 0.11 15);
+  --primary-foreground: oklch(0.98 0.01 60);
+
+  --secondary: oklch(0.95 0.015 60);
+  --secondary-foreground: oklch(0.25 0.11 15);
+
+  --muted: oklch(0.96 0.01 60);
+  --muted-foreground: oklch(0.48 0.03 20);
+
+  --accent: oklch(0.94 0.02 75);
+  --accent-foreground: oklch(0.25 0.11 15);
+
+  --accent-solid: oklch(0.72 0.11 75);
+  --accent-solid-foreground: oklch(0.18 0.06 15);
+
+  --brand-soft: oklch(0.94 0.02 15);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+
+  --border: oklch(0.91 0.015 60);
+  --input: oklch(0.91 0.015 60);
+  --ring: oklch(0.25 0.11 15);
+
+  --chart-1: oklch(0.25 0.11 15);
+  --chart-2: oklch(0.72 0.11 75);
+  --chart-3: oklch(0.40 0.09 15);
+  --chart-4: oklch(0.80 0.08 75);
+  --chart-5: oklch(0.30 0.08 15);
+
+  --sidebar: oklch(0.985 0.005 60);
+  --sidebar-foreground: oklch(0.20 0.08 15);
+  --sidebar-primary: oklch(0.25 0.11 15);
+  --sidebar-primary-foreground: oklch(0.98 0.01 60);
+  --sidebar-accent: oklch(0.94 0.02 75);
+  --sidebar-accent-foreground: oklch(0.25 0.11 15);
+  --sidebar-border: oklch(0.91 0.015 60);
+  --sidebar-ring: oklch(0.25 0.11 15);
+
+  --gradient-brand:
+    linear-gradient(
+      135deg,
+      oklch(0.22 0.10 15),
+      oklch(0.32 0.12 20)
+    );
+
+  --gradient-brand-gold:
+    linear-gradient(
+      135deg,
+      var(--brand-gold-deep),
+      var(--brand-gold),
+      var(--brand-gold-soft)
+    );
+}
+
+.dark {
+  /*
+   * =========================================================
+   * تشكيلات — الوضع الليلي
+   * =========================================================
+   */
+
+  --background: oklch(0.14 0.03 15);
+  --foreground: oklch(0.96 0.01 60);
+
+  --card: oklch(0.18 0.04 15);
+  --card-foreground: oklch(0.96 0.01 60);
+
+  --popover: oklch(0.18 0.04 15);
+  --popover-foreground: oklch(0.96 0.01 60);
+
+  --primary: oklch(0.72 0.11 75);
+  --primary-foreground: oklch(0.14 0.03 15);
+
+  --secondary: oklch(0.22 0.04 15);
+  --secondary-foreground: oklch(0.96 0.01 60);
+
+  --muted: oklch(0.22 0.04 15);
+  --muted-foreground: oklch(0.68 0.03 60);
+
+  --accent: oklch(0.25 0.05 15);
+  --accent-foreground: oklch(0.96 0.01 60);
+
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.72 0.11 75);
+
+  --chart-1: oklch(0.72 0.11 75);
+  --chart-2: oklch(0.40 0.09 15);
+  --chart-3: oklch(0.80 0.08 75);
+  --chart-4: oklch(0.30 0.08 15);
+  --chart-5: oklch(0.60 0.08 75);
+
+  --sidebar: oklch(0.18 0.04 15);
+  --sidebar-foreground: oklch(0.96 0.01 60);
+  --sidebar-primary: oklch(0.72 0.11 75);
+  --sidebar-primary-foreground: oklch(0.14 0.03 15);
+  --sidebar-accent: oklch(0.25 0.05 15);
+  --sidebar-accent-foreground: oklch(0.96 0.01 60);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.72 0.11 75);
+
+  --gradient-brand:
+    linear-gradient(
+      135deg,
+      oklch(0.16 0.04 15),
+      oklch(0.24 0.06 15)
+    );
+
+  --gradient-brand-gold:
+    linear-gradient(
+      135deg,
+      var(--brand-gold-deep),
+      var(--brand-gold)
+    );
+
+  --brand-watermark-opacity: 0.025;
+  --brand-architecture-opacity: 0.022;
+  --brand-ornament-opacity: 0.045;
+}
+
+/*
+ * =========================================================
+ * الطبقة العامة
+ * =========================================================
+ */
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+    font-family: var(--font-sans) !important;
   }
 
-  const popular =
-    categories
-      .map((category) => {
-        const score =
-          scores.get(category.id);
+  html {
+    min-height: 100%;
 
-        return {
-          ...category,
-          productCount:
-            score?.productCount ?? 0,
-          popularityScore:
-            score?.popularityScore ?? 0,
-        };
-      })
-      .sort(
-        (a, b) =>
-          b.popularityScore -
-          a.popularityScore,
+    background-color:
+      var(--color-background);
+
+    touch-action:
+      manipulation;
+
+    -webkit-tap-highlight-color:
+      transparent;
+
+    overscroll-behavior-x:
+      none;
+
+    /*
+     * منع تحديد الصفحة بالكامل عند الضغط المطول،
+     * مع السماح للنصوص وحقول الإدخال.
+     */
+    -webkit-user-select:
+      none;
+
+    user-select:
+      none;
+  }
+
+  body {
+    min-height: 100vh;
+
+    background-color:
+      var(--color-background);
+
+    color:
+      var(--color-foreground);
+
+    font-family:
+      var(--font-sans);
+
+    -webkit-tap-highlight-color:
+      transparent;
+
+    overflow-x:
+      hidden;
+
+    touch-action:
+      manipulation;
+
+    text-rendering:
+      optimizeLegibility;
+
+    -webkit-font-smoothing:
+      antialiased;
+
+    -moz-osx-font-smoothing:
+      grayscale;
+
+    background-image:
+      linear-gradient(
+        180deg,
+        color-mix(
+          in srgb,
+          var(--brand-cream) 35%,
+          transparent
+        ),
+        transparent 34rem
+      );
+  }
+
+  input,
+  textarea,
+  select,
+  button,
+  [contenteditable="true"] {
+    -webkit-user-select:
+      text;
+
+    user-select:
+      text;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color:
+      transparent;
+  }
+
+  img {
+    -webkit-user-drag:
+      none;
+
+    user-drag:
+      none;
+  }
+
+  img[data-protected-image="true"],
+  img.protected-image,
+  .protected-image img {
+    user-select:
+      none;
+
+    -webkit-user-select:
+      none;
+
+    -webkit-user-drag:
+      none;
+
+    user-drag:
+      none;
+
+    pointer-events:
+      none;
+  }
+
+  a img {
+    -webkit-user-drag:
+      none;
+
+    user-drag:
+      none;
+  }
+
+  html,
+  body {
+    scroll-behavior:
+      smooth;
+  }
+
+  body::-webkit-scrollbar {
+    width:
+      8px;
+  }
+
+  body::-webkit-scrollbar-track {
+    background:
+      var(--color-background);
+  }
+
+  body::-webkit-scrollbar-thumb {
+    background:
+      color-mix(
+        in oklab,
+        var(--primary) 45%,
+        transparent
+      );
+
+    border-radius:
+      999px;
+  }
+
+  body::-webkit-scrollbar-thumb:hover {
+    background:
+      color-mix(
+        in oklab,
+        var(--primary) 65%,
+        transparent
+      );
+  }
+
+  :focus-visible {
+    outline:
+      2px solid
+      var(--brand-gold);
+
+    outline-offset:
+      2px;
+  }
+
+  ::selection {
+    background:
+      color-mix(
+        in srgb,
+        var(--brand-gold) 30%,
+        transparent
+      );
+
+    color:
+      var(--brand-burgundy-deep);
+  }
+
+  .dark ::selection {
+    color:
+      var(--brand-cream);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior:
+        auto !important;
+
+      animation-duration:
+        0.01ms !important;
+
+      animation-iteration-count:
+        1 !important;
+
+      transition-duration:
+        0.01ms !important;
+    }
+  }
+}
+
+/*
+ * =========================================================
+ * خلفية تشكيلات — الهوية التراثية اليمنية
+ * =========================================================
+ */
+
+@layer components {
+  .tashkilat-brand-background {
+    position:
+      relative;
+
+    isolation:
+      isolate;
+
+    min-height:
+      100vh;
+
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(
+          in srgb,
+          var(--brand-cream) 94%,
+          white
+        ),
+        var(--brand-cream)
+      );
+  }
+
+  .dark .tashkilat-brand-background {
+    background:
+      linear-gradient(
+        180deg,
+        oklch(0.15 0.035 15),
+        oklch(0.13 0.03 15)
+      );
+  }
+
+  .tashkilat-brand-background::before {
+    content:
+      "";
+
+    position:
+      fixed;
+
+    inset:
+      0;
+
+    z-index:
+      -3;
+
+    pointer-events:
+      none;
+
+    background:
+      radial-gradient(
+        circle at 10% 10%,
+        color-mix(
+          in srgb,
+          var(--brand-gold) 7%,
+          transparent
+        ) 0,
+        transparent 24%
+      ),
+      radial-gradient(
+        circle at 90% 82%,
+        color-mix(
+          in srgb,
+          var(--brand-burgundy) 5%,
+          transparent
+        ) 0,
+        transparent 27%
+      ),
+      radial-gradient(
+        circle at 50% 48%,
+        color-mix(
+          in srgb,
+          var(--brand-gold) 2.5%,
+          transparent
+        ) 0,
+        transparent 38%
+      );
+
+    opacity:
+      0.9;
+  }
+
+  .tashkilat-brand-background::after {
+    content:
+      "";
+
+    position:
+      fixed;
+
+    inset:
+      0;
+
+    z-index:
+      -2;
+
+    pointer-events:
+      none;
+
+    background-image:
+      linear-gradient(
+        45deg,
+        transparent 46%,
+        color-mix(
+          in srgb,
+          var(--brand-gold) 2.4%,
+          transparent
+        ) 47%,
+        color-mix(
+          in srgb,
+          var(--brand-gold) 2.4%,
+          transparent
+        ) 53%,
+        transparent 54%
+      ),
+      linear-gradient(
+        -45deg,
+        transparent 46%,
+        color-mix(
+          in srgb,
+          var(--brand-burgundy) 1.8%,
+          transparent
+        ) 47%,
+        color-mix(
+          in srgb,
+          var(--brand-burgundy) 1.8%,
+          transparent
+        ) 53%,
+        transparent 54%
+      );
+
+    background-size:
+      72px 72px;
+
+    opacity:
+      0.42;
+  }
+
+  .dark .tashkilat-brand-background::before {
+    opacity:
+      0.45;
+  }
+
+  .dark .tashkilat-brand-background::after {
+    opacity:
+      0.22;
+  }
+
+  /*
+   * العلامة المعمارية.
+   */
+
+  .tashkilat-architecture-watermark {
+    position:
+      absolute;
+
+    top:
+      0;
+
+    bottom:
+      0;
+
+    width:
+      min(31vw, 360px);
+
+    pointer-events:
+      none;
+
+    opacity:
+      var(--brand-architecture-opacity);
+
+    color:
+      var(--brand-burgundy);
+
+    z-index:
+      -1;
+
+    overflow:
+      hidden;
+  }
+
+  .dark .tashkilat-architecture-watermark {
+    color:
+      var(--brand-gold);
+  }
+
+  .tashkilat-architecture-watermark::before {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    inset-inline:
+      0;
+
+    bottom:
+      0;
+
+    height:
+      78%;
+
+    background:
+      linear-gradient(
+        90deg,
+        transparent 0 5%,
+        currentColor 5% 7%,
+        transparent 7% 17%,
+        currentColor 17% 19%,
+        transparent 19% 31%,
+        currentColor 31% 33%,
+        transparent 33% 45%,
+        currentColor 45% 47%,
+        transparent 47% 59%,
+        currentColor 59% 61%,
+        transparent 61% 73%,
+        currentColor 73% 75%,
+        transparent 75% 87%,
+        currentColor 87% 89%,
+        transparent 89% 100%
+      );
+
+    border-top:
+      2px solid currentColor;
+
+    clip-path:
+      polygon(
+        0 13%,
+        8% 8%,
+        15% 13%,
+        23% 7%,
+        31% 13%,
+        39% 7%,
+        47% 13%,
+        55% 7%,
+        63% 13%,
+        71% 7%,
+        79% 13%,
+        87% 7%,
+        100% 13%,
+        100% 100%,
+        0 100%
+      );
+  }
+
+  .tashkilat-architecture-watermark::after {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    inset-inline:
+      8%;
+
+    bottom:
+      10%;
+
+    height:
+      42%;
+
+    background:
+      radial-gradient(
+        ellipse 17% 34% at 12% 100%,
+        transparent 48%,
+        currentColor 49% 52%,
+        transparent 53%
+      ),
+      radial-gradient(
+        ellipse 17% 34% at 37% 100%,
+        transparent 48%,
+        currentColor 49% 52%,
+        transparent 53%
+      ),
+      radial-gradient(
+        ellipse 17% 34% at 62% 100%,
+        transparent 48%,
+        currentColor 49% 52%,
+        transparent 53%
+      ),
+      radial-gradient(
+        ellipse 17% 34% at 87% 100%,
+        transparent 48%,
+        currentColor 49% 52%,
+        transparent 53%
+      );
+
+    opacity:
+      0.75;
+  }
+
+  .tashkilat-architecture-watermark.is-right {
+    inset-inline-end:
+      0;
+  }
+
+  .tashkilat-architecture-watermark.is-left {
+    inset-inline-start:
+      0;
+
+    transform:
+      scaleX(-1);
+  }
+
+  /*
+   * الشعار الزخرفي.
+   */
+
+  .tashkilat-heritage-emblem {
+    position:
+      relative;
+
+    display:
+      inline-flex;
+
+    align-items:
+      center;
+
+    justify-content:
+      center;
+
+    width:
+      2.5rem;
+
+    height:
+      2.5rem;
+
+    color:
+      var(--brand-gold-deep);
+
+    opacity:
+      0.7;
+  }
+
+  .tashkilat-heritage-emblem::before {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    width:
+      1.1rem;
+
+    height:
+      1.1rem;
+
+    border:
+      1px solid currentColor;
+
+    transform:
+      rotate(45deg);
+
+    box-shadow:
+      0 0 0 3px
+      color-mix(
+        in srgb,
+        currentColor 10%,
+        transparent
+      );
+  }
+
+  .tashkilat-heritage-emblem::after {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    width:
+      0.42rem;
+
+    height:
+      0.42rem;
+
+    border:
+      1px solid currentColor;
+
+    transform:
+      rotate(45deg);
+
+    background:
+      var(--brand-cream);
+  }
+
+  .tashkilat-gold-divider {
+    position:
+      relative;
+
+    display:
+      flex;
+
+    align-items:
+      center;
+
+    justify-content:
+      center;
+
+    gap:
+      0.75rem;
+  }
+
+  .tashkilat-gold-divider::before,
+  .tashkilat-gold-divider::after {
+    content:
+      "";
+
+    height:
+      1px;
+
+    flex:
+      1;
+
+    max-width:
+      96px;
+
+    background:
+      linear-gradient(
+        90deg,
+        transparent,
+        color-mix(
+          in srgb,
+          var(--brand-gold) 60%,
+          transparent
+        ),
+        transparent
+      );
+  }
+
+  .tashkilat-heritage-mark {
+    position:
+      relative;
+
+    display:
+      inline-flex;
+
+    align-items:
+      center;
+
+    justify-content:
+      center;
+
+    width:
+      2rem;
+
+    height:
+      2rem;
+
+    color:
+      var(--brand-gold);
+
+    opacity:
+      0.55;
+  }
+
+  .tashkilat-heritage-mark::before,
+  .tashkilat-heritage-mark::after {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    inset:
+      5px;
+
+    border:
+      1px solid currentColor;
+
+    transform:
+      rotate(45deg);
+  }
+
+  .tashkilat-heritage-mark::after {
+    inset:
+      9px;
+
+    opacity:
+      0.65;
+  }
+
+  /*
+   * الإطار الفاخر.
+   */
+
+  .tashkilat-brand-frame {
+    position:
+      relative;
+
+    border:
+      1px solid
+      color-mix(
+        in srgb,
+        var(--brand-gold-deep) 42%,
+        transparent
+      );
+
+    border-radius:
+      1.25rem;
+
+    box-shadow:
+      inset 0 0 0 1px
+      color-mix(
+        in srgb,
+        var(--brand-gold) 7%,
+        transparent
+      ),
+      var(--brand-shadow);
+
+    background:
+      color-mix(
+        in srgb,
+        var(--card) 96%,
+        var(--brand-cream)
+      );
+  }
+
+  .tashkilat-paper-surface {
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(
+          in srgb,
+          var(--brand-cream) 92%,
+          white
+        ),
+        var(--card)
+      );
+  }
+
+  .dark .tashkilat-paper-surface {
+    background:
+      linear-gradient(
+        135deg,
+        oklch(0.19 0.04 15),
+        oklch(0.16 0.03 15)
+      );
+  }
+
+  .tashkilat-burgundy-surface {
+    background:
+      linear-gradient(
+        135deg,
+        var(--brand-burgundy-deep),
+        var(--brand-burgundy),
+        var(--brand-burgundy-soft)
+      );
+
+    color:
+      white;
+  }
+
+  .tashkilat-section-accent {
+    position:
+      relative;
+
+    padding-inline-start:
+      0.875rem;
+  }
+
+  .tashkilat-section-accent::before {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    inset-inline-start:
+      0;
+
+    top:
+      50%;
+
+    width:
+      3px;
+
+    height:
+      70%;
+
+    transform:
+      translateY(-50%);
+
+    border-radius:
+      999px;
+
+    background:
+      linear-gradient(
+        180deg,
+        var(--brand-gold-soft),
+        var(--brand-gold-deep)
+      );
+  }
+
+  /*
+   * Hero.
+   */
+
+  .tashkilat-hero-surface {
+    position:
+      relative;
+
+    overflow:
+      hidden;
+
+    background:
+      radial-gradient(
+        circle at 15% 20%,
+        rgb(224 184 92 / 12%),
+        transparent 26%
+      ),
+      radial-gradient(
+        circle at 85% 80%,
+        rgb(224 184 92 / 8%),
+        transparent 30%
+      ),
+      linear-gradient(
+        135deg,
+        var(--brand-burgundy-deep),
+        var(--brand-burgundy)
+      );
+
+    color:
+      white;
+  }
+
+  .tashkilat-hero-surface::after {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    inset:
+      0;
+
+    pointer-events:
+      none;
+
+    opacity:
+      0.16;
+
+    background-image:
+      linear-gradient(
+        45deg,
+        transparent 44%,
+        var(--brand-gold) 45%,
+        var(--brand-gold) 47%,
+        transparent 48%
+      ),
+      linear-gradient(
+        -45deg,
+        transparent 44%,
+        var(--brand-gold) 45%,
+        var(--brand-gold) 47%,
+        transparent 48%
+      );
+
+    background-size:
+      54px 54px;
+  }
+
+  .tashkilat-watermark {
+    position:
+      absolute;
+
+    pointer-events:
+      none;
+
+    user-select:
+      none;
+
+    color:
+      var(--brand-gold);
+
+    opacity:
+      var(--brand-watermark-opacity);
+
+    z-index:
+      0;
+  }
+
+  .tashkilat-content-layer {
+    position:
+      relative;
+
+    z-index:
+      1;
+  }
+
+  /*
+   * =======================================================
+   * بطاقات المنتجات
+   * =======================================================
+   */
+
+  .tashkilat-product-card {
+    position:
+      relative;
+
+    overflow:
+      hidden;
+
+    border:
+      1px solid
+      color-mix(
+        in srgb,
+        var(--brand-gold-deep) 12%,
+        var(--border)
+      );
+
+    border-radius:
+      1.25rem;
+
+    background:
+      var(--card);
+
+    box-shadow:
+      0 8px 30px -24px
+      rgb(74 21 37 / 40%);
+
+    transition:
+      transform 200ms ease,
+      box-shadow 200ms ease,
+      border-color 200ms ease;
+  }
+
+  .tashkilat-product-card:hover {
+    transform:
+      translateY(-2px);
+
+    border-color:
+      color-mix(
+        in srgb,
+        var(--brand-gold) 28%,
+        var(--border)
+      );
+
+    box-shadow:
+      0 18px 42px -26px
+      rgb(74 21 37 / 48%);
+  }
+
+  .dark .tashkilat-product-card {
+    box-shadow:
+      0 16px 40px -28px
+      rgb(0 0 0 / 65%);
+  }
+
+  /*
+   * صور المنتجات.
+   */
+
+  .tashkilat-product-image {
+    position:
+      relative;
+
+    overflow:
+      hidden;
+
+    background:
+      linear-gradient(
+        135deg,
+        var(--brand-paper),
+        var(--card)
+      );
+  }
+
+  .dark .tashkilat-product-image {
+    background:
+      linear-gradient(
+        135deg,
+        oklch(0.21 0.04 15),
+        oklch(0.17 0.03 15)
+      );
+  }
+
+  .tashkilat-product-image img {
+    display:
+      block;
+
+    width:
+      100%;
+
+    height:
+      100%;
+
+    object-fit:
+      cover;
+
+    user-select:
+      none;
+
+    -webkit-user-select:
+      none;
+
+    -webkit-user-drag:
+      none;
+
+    transition:
+      transform 350ms ease;
+  }
+
+  .tashkilat-product-card:hover
+  .tashkilat-product-image img {
+    transform:
+      scale(1.025);
+  }
+
+  /*
+   * =======================================================
+   * شريط الهوية
+   * =======================================================
+   */
+
+  .tashkilat-brand-strip {
+    position:
+      relative;
+
+    overflow:
+      hidden;
+
+    background:
+      var(--gradient-brand);
+
+    color:
+      white;
+  }
+
+  .tashkilat-brand-strip::before {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    inset:
+      0;
+
+    pointer-events:
+      none;
+
+    opacity:
+      0.08;
+
+    background:
+      repeating-linear-gradient(
+        45deg,
+        transparent 0 12px,
+        var(--brand-gold) 12px 13px
+      );
+  }
+
+  .tashkilat-brand-strip > * {
+    position:
+      relative;
+
+    z-index:
+      1;
+  }
+
+  /*
+   * =======================================================
+   * أزرار الهوية
+   * =======================================================
+   */
+
+  .tashkilat-primary-button {
+    display:
+      inline-flex;
+
+    min-height:
+      2.75rem;
+
+    align-items:
+      center;
+
+    justify-content:
+      center;
+
+    gap:
+      0.5rem;
+
+    border-radius:
+      0.875rem;
+
+    background:
+      var(--brand-burgundy);
+
+    color:
+      white;
+
+    font-weight:
+      700;
+
+    box-shadow:
+      0 10px 25px -18px
+      rgb(74 21 37 / 65%);
+
+    transition:
+      all 180ms ease;
+  }
+
+  .tashkilat-primary-button:hover {
+    background:
+      var(--brand-burgundy-soft);
+
+    transform:
+      translateY(-1px);
+  }
+
+  .tashkilat-primary-button:active {
+    transform:
+      translateY(0) scale(0.98);
+  }
+
+  .dark .tashkilat-primary-button {
+    background:
+      var(--brand-gold);
+
+    color:
+      var(--brand-burgundy-deep);
+  }
+
+  .dark .tashkilat-primary-button:hover {
+    background:
+      var(--brand-gold-soft);
+  }
+
+  .tashkilat-gold-button {
+    display:
+      inline-flex;
+
+    min-height:
+      2.75rem;
+
+    align-items:
+      center;
+
+    justify-content:
+      center;
+
+    gap:
+      0.5rem;
+
+    border-radius:
+      0.875rem;
+
+    background:
+      var(--brand-gold);
+
+    color:
+      var(--brand-burgundy-deep);
+
+    font-weight:
+      800;
+
+    box-shadow:
+      var(--brand-gold-shadow);
+
+    transition:
+      all 180ms ease;
+  }
+
+  .tashkilat-gold-button:hover {
+    background:
+      var(--brand-gold-soft);
+
+    transform:
+      translateY(-1px);
+  }
+
+  .tashkilat-gold-button:active {
+    transform:
+      translateY(0) scale(0.98);
+  }
+
+  /*
+   * =======================================================
+   * شارة الهوية
+   * =======================================================
+   */
+
+  .tashkilat-brand-badge {
+    display:
+      inline-flex;
+
+    align-items:
+      center;
+
+    gap:
+      0.375rem;
+
+    border:
+      1px solid
+      color-mix(
+        in srgb,
+        var(--brand-gold) 30%,
+        transparent
+      );
+
+    border-radius:
+      999px;
+
+    background:
+      color-mix(
+        in srgb,
+        var(--brand-gold) 8%,
+        transparent
+      );
+
+    padding:
+      0.35rem 0.65rem;
+
+    color:
+      var(--brand-burgundy);
+
+    font-size:
+      0.75rem;
+
+    font-weight:
+      700;
+  }
+
+  .dark .tashkilat-brand-badge {
+    color:
+      var(--brand-gold);
+  }
+
+  /*
+   * =======================================================
+   * شريط التمرير الأفقي
+   * =======================================================
+   */
+
+  .tashkilat-horizontal-scroll {
+    display:
+      flex;
+
+    width:
+      100%;
+
+    gap:
+      0.75rem;
+
+    overflow-x:
+      auto;
+
+    overflow-y:
+      hidden;
+
+    padding:
+      0.25rem 0.125rem 0.75rem;
+
+    scroll-snap-type:
+      x proximity;
+
+    scrollbar-width:
+      thin;
+
+    scrollbar-color:
+      color-mix(
+        in srgb,
+        var(--brand-gold-deep) 50%,
+        transparent
       )
-      .slice(0, 8) as PopularCategory[];
+      transparent;
 
-  if (popular.length === 0) {
-    return null;
+    overscroll-behavior-x:
+      contain;
+
+    -webkit-overflow-scrolling:
+      touch;
   }
 
-  return (
-    <SectionCard className="p-4">
-      <SectionHeading
-        title="الأقسام الرائجة"
-        action="كل الأقسام"
-        to="/products"
-      />
+  .tashkilat-horizontal-scroll > * {
+    flex:
+      0 0 auto;
 
-      <div
-        className="
-          mt-4
-          flex
-          gap-3
-          overflow-x-auto
-          pb-1
-          scrollbar-none
-        "
-      >
-        {popular.map(
-          (category, index) => {
-            const Icon =
-              CATEGORY_ICONS[
-                category.icon as keyof typeof CATEGORY_ICONS
-              ] ?? Shirt;
+    scroll-snap-align:
+      start;
+  }
 
-            const useOrange =
-              index % 3 === 1;
+  .tashkilat-horizontal-scroll::-webkit-scrollbar {
+    height:
+      5px;
+  }
 
-            return (
-              <Link
-                key={category.id}
-                to="/category/$slug"
-                params={{
-                  slug: category.slug,
-                }}
-                className="
-                  group
-                  flex
-                  w-[88px]
-                  shrink-0
-                  flex-col
-                  items-center
-                  text-center
-                  active:scale-95
-                "
-              >
-                <span
-                  className={`
-                    grid
-                    h-[68px]
-                    w-[68px]
-                    place-items-center
-                    rounded-[1.35rem]
-                    border
-                    transition-all
-                    duration-200
-                    group-hover:-translate-y-0.5
-                    ${
-                      useOrange
-                        ? "border-[#D65A31]/10 bg-[#D65A31]/[0.07] text-[#D65A31]"
-                        : "border-[#0E4D64]/10 bg-[#0E4D64]/[0.07] text-[#0E4D64] dark:text-[#9DD5E5]"
-                    }
-                  `}
-                >
-                  <Icon
-                    className="h-7 w-7"
-                    strokeWidth={1.65}
-                  />
-                </span>
+  .tashkilat-horizontal-scroll::-webkit-scrollbar-track {
+    background:
+      transparent;
+  }
 
-                <span
-                  className="
-                    mt-2
-                    line-clamp-1
-                    w-full
-                    text-[10px]
-                    font-bold
-                    text-foreground
-                  "
-                >
-                  {category.name}
-                </span>
+  .tashkilat-horizontal-scroll::-webkit-scrollbar-thumb {
+    background:
+      color-mix(
+        in srgb,
+        var(--brand-gold-deep) 45%,
+        transparent
+      );
 
-                {category.productCount >
-                0 ? (
-                  <span
-                    className="
-                      mt-0.5
-                      text-[8px]
-                      text-muted-foreground
-                    "
-                  >
-                    {category.productCount.toLocaleString(
-                      "ar-EG",
-                    )}{" "}
-                    منتج
-                  </span>
-                ) : null}
-              </Link>
-            );
-          },
-        )}
-      </div>
-    </SectionCard>
-  );
+    border-radius:
+      999px;
+  }
+
+  /*
+   * =======================================================
+   * شريط البحث
+   * =======================================================
+   */
+
+  .tashkilat-sticky-search {
+    position:
+      sticky;
+
+    top:
+      0;
+
+    z-index:
+      40;
+
+    width:
+      100%;
+
+    padding:
+      0.5rem;
+
+    background:
+      color-mix(
+        in srgb,
+        var(--brand-cream) 88%,
+        transparent
+      );
+
+    border-bottom:
+      1px solid
+      color-mix(
+        in srgb,
+        var(--brand-gold) 12%,
+        transparent
+      );
+
+    backdrop-filter:
+      blur(16px);
+
+    -webkit-backdrop-filter:
+      blur(16px);
+  }
+
+  .dark .tashkilat-sticky-search {
+    background:
+      color-mix(
+        in srgb,
+        var(--brand-burgundy-deep) 88%,
+        transparent
+      );
+  }
+
+  /*
+   * =======================================================
+   * شريط التنقل السفلي
+   * =======================================================
+   */
+
+  .tashkilat-bottom-navigation {
+    position:
+      fixed;
+
+    inset-inline:
+      0;
+
+    bottom:
+      0;
+
+    z-index:
+      60;
+
+    display:
+      flex;
+
+    min-height:
+      4rem;
+
+    align-items:
+      center;
+
+    justify-content:
+      space-around;
+
+    padding:
+      0.35rem 0.5rem;
+
+    padding-bottom:
+      max(
+        0.35rem,
+        env(safe-area-inset-bottom)
+      );
+
+    border-top:
+      1px solid
+      color-mix(
+        in srgb,
+        var(--brand-gold) 15%,
+        var(--border)
+      );
+
+    background:
+      color-mix(
+        in srgb,
+        var(--card) 92%,
+        transparent
+      );
+
+    box-shadow:
+      0 -12px 35px -25px
+      rgb(74 21 37 / 45%);
+
+    backdrop-filter:
+      blur(18px);
+
+    -webkit-backdrop-filter:
+      blur(18px);
+  }
+
+  .dark .tashkilat-bottom-navigation {
+    background:
+      color-mix(
+        in srgb,
+        var(--brand-burgundy-deep) 93%,
+        transparent
+      );
+
+    box-shadow:
+      0 -15px 40px -25px
+      rgb(0 0 0 / 75%);
+  }
+
+  .tashkilat-bottom-navigation-item {
+    position:
+      relative;
+
+    display:
+      inline-flex;
+
+    min-width:
+      3.25rem;
+
+    min-height:
+      3rem;
+
+    flex:
+      1;
+
+    flex-direction:
+      column;
+
+    align-items:
+      center;
+
+    justify-content:
+      center;
+
+    gap:
+      0.125rem;
+
+    border-radius:
+      0.875rem;
+
+    color:
+      var(--muted-foreground);
+
+    font-size:
+      0.68rem;
+
+    font-weight:
+      700;
+
+    transition:
+      all 180ms ease;
+  }
+
+  .tashkilat-bottom-navigation-item:hover,
+  .tashkilat-bottom-navigation-item.is-active {
+    color:
+      var(--brand-burgundy);
+
+    background:
+      color-mix(
+        in srgb,
+        var(--brand-gold) 8%,
+        transparent
+      );
+  }
+
+  .dark .tashkilat-bottom-navigation-item:hover,
+  .dark .tashkilat-bottom-navigation-item.is-active {
+    color:
+      var(--brand-gold);
+  }
+
+  .tashkilat-bottom-navigation-item.is-active::before {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    top:
+      0.125rem;
+
+    left:
+      50%;
+
+    width:
+      1.5rem;
+
+    height:
+      2px;
+
+    transform:
+      translateX(-50%);
+
+    border-radius:
+      999px;
+
+    background:
+      var(--brand-gold);
+  }
+
+  /*
+   * =======================================================
+   * حماية إضافية للصور
+   * =======================================================
+   */
+
+  .tashkilat-protected-image {
+    position:
+      relative;
+
+    overflow:
+      hidden;
+
+    user-select:
+      none;
+
+    -webkit-user-select:
+      none;
+
+    -webkit-touch-callout:
+      none;
+
+    -webkit-user-drag:
+      none;
+  }
+
+  .tashkilat-protected-image img {
+    user-select:
+      none;
+
+    -webkit-user-select:
+      none;
+
+    -webkit-touch-callout:
+      none;
+
+    -webkit-user-drag:
+      none;
+
+    pointer-events:
+      none;
+  }
+
+  /*
+   * =======================================================
+   * زخارف الأقسام
+   * =======================================================
+   */
+
+  .tashkilat-section-pattern {
+    position:
+      relative;
+
+    isolation:
+      isolate;
+  }
+
+  .tashkilat-section-pattern::before {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    inset:
+      0;
+
+    z-index:
+      -1;
+
+    pointer-events:
+      none;
+
+    opacity:
+      var(--brand-ornament-opacity);
+
+    background-image:
+      radial-gradient(
+        circle,
+        var(--brand-gold-deep) 1px,
+        transparent 1px
+      );
+
+    background-size:
+      18px 18px;
+
+    mask-image:
+      linear-gradient(
+        to bottom,
+        transparent,
+        black 18%,
+        black 82%,
+        transparent
+      );
+
+    -webkit-mask-image:
+      linear-gradient(
+        to bottom,
+        transparent,
+        black 18%,
+        black 82%,
+        transparent
+      );
+  }
+
+  /*
+   * =======================================================
+   * الفاصل التراثي
+   * =======================================================
+   */
+
+  .tashkilat-heritage-divider {
+    display:
+      flex;
+
+    align-items:
+      center;
+
+    justify-content:
+      center;
+
+    gap:
+      0.5rem;
+
+    width:
+      100%;
+  }
+
+  .tashkilat-heritage-divider::before,
+  .tashkilat-heritage-divider::after {
+    content:
+      "";
+
+    height:
+      1px;
+
+    flex:
+      1;
+
+    max-width:
+      7rem;
+
+    background:
+      linear-gradient(
+        90deg,
+        transparent,
+        color-mix(
+          in srgb,
+          var(--brand-gold) 35%,
+          transparent
+        ),
+        transparent
+      );
+  }
+
+  .tashkilat-heritage-divider span {
+    width:
+      0.55rem;
+
+    height:
+      0.55rem;
+
+    transform:
+      rotate(45deg);
+
+    border:
+      1px solid
+      var(--brand-gold);
+
+    opacity:
+      0.75;
+  }
+
+  /*
+   * =======================================================
+   * تجاوب الهوية
+   * =======================================================
+   */
+
+  @media (max-width: 640px) {
+    .tashkilat-architecture-watermark {
+      width:
+        46vw;
+
+      opacity:
+        calc(
+          var(--brand-architecture-opacity) * 0.8
+        );
+    }
+
+    .tashkilat-brand-frame {
+      border-radius:
+        1rem;
+    }
+
+    .tashkilat-product-card {
+      border-radius:
+        1rem;
+    }
+
+    .tashkilat-horizontal-scroll {
+      gap:
+        0.625rem;
+
+      padding-inline:
+        0.125rem;
+    }
+
+    .tashkilat-bottom-navigation {
+      min-height:
+        3.8rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .tashkilat-bottom-navigation {
+      display:
+        none;
+    }
+  }
+
+  /*
+   * =======================================================
+   * Safe Area
+   * =======================================================
+   */
+
+  .tashkilat-safe-bottom {
+    padding-bottom:
+      max(
+        1rem,
+        env(safe-area-inset-bottom)
+      );
+  }
+
+  .tashkilat-safe-top {
+    padding-top:
+      max(
+        1rem,
+        env(safe-area-inset-top)
+      );
+  }
+
+  /*
+   * =======================================================
+   * تأثير اللمس
+   * =======================================================
+   */
+
+  .tashkilat-touch-feedback {
+    transition:
+      transform 120ms ease,
+      opacity 120ms ease;
+  }
+
+  .tashkilat-touch-feedback:active {
+    transform:
+      scale(0.98);
+
+    opacity:
+      0.9;
+  }
+
+  /*
+   * =======================================================
+   * Skeleton
+   * =======================================================
+   */
+
+  .tashkilat-skeleton {
+    position:
+      relative;
+
+    overflow:
+      hidden;
+
+    background:
+      color-mix(
+        in srgb,
+        var(--brand-burgundy) 5%,
+        var(--muted)
+      );
+  }
+
+  .tashkilat-skeleton::after {
+    content:
+      "";
+
+    position:
+      absolute;
+
+    inset:
+      0;
+
+    transform:
+      translateX(-100%);
+
+    background:
+      linear-gradient(
+        90deg,
+        transparent,
+        color-mix(
+          in srgb,
+          var(--brand-gold) 12%,
+          transparent
+        ),
+        transparent
+      );
+
+    animation:
+      tashkilat-skeleton-loading
+      1.5s infinite;
+  }
+
+  @keyframes tashkilat-skeleton-loading {
+    100% {
+      transform:
+        translateX(100%);
+    }
+  }
 }
 
-function ProductSection({
-  title,
-  products,
-  loading,
-  action = "عرض الكل",
-}: {
-  title: string;
-  products: Awaited<
-    ReturnType<typeof fetchProducts>
-  >;
-  loading: boolean;
-  action?: string;
-}) {
-  return (
-    <section>
-      <div
-        className="
-          mb-4
-          flex
-          items-center
-          justify-between
-        "
-      >
-        <div>
-          <h2
-            className="
-              text-base
-              font-extrabold
-              tracking-tight
-              text-[#0E4D64]
-              dark:text-[#D9EEF5]
-              sm:text-lg
-            "
-          >
-            {title}
-          </h2>
+/*
+ * =========================================================
+ * أدوات عامة للهوية
+ * =========================================================
+ */
 
-          <div
-            className="
-              mt-1
-              h-1
-              w-7
-              rounded-full
-              bg-[#D65A31]
-            "
-          />
-        </div>
+@layer utilities {
+  .text-brand-burgundy {
+    color:
+      var(--brand-burgundy);
+  }
 
-        <Link
-          to="/products"
-          className="
-            inline-flex
-            items-center
-            gap-1
-            rounded-xl
-            px-2
-            py-1.5
-            text-[10px]
-            font-bold
-            text-[#0E4D64]
-            transition-colors
-            hover:bg-[#0E4D64]/5
-            dark:text-[#9DD5E5]
-          "
-        >
-          {action}
+  .text-brand-gold {
+    color:
+      var(--brand-gold);
+  }
 
-          <ChevronLeft
-            className="h-3.5 w-3.5"
-            strokeWidth={2.2}
-          />
-        </Link>
-      </div>
+  .bg-brand-burgundy {
+    background-color:
+      var(--brand-burgundy);
+  }
 
-      {loading ? (
-        <div
-          className="
-            grid
-            grid-cols-2
-            gap-3
-            sm:grid-cols-3
-            md:grid-cols-4
-          "
-        >
-          {Array.from({
-            length: 8,
-          }).map((_, index) => (
-            <ProductCardSkeleton
-              key={index}
-            />
-          ))}
-        </div>
-      ) : products.length > 0 ? (
-        <div
-          className="
-            grid
-            grid-cols-2
-            gap-3
-            sm:grid-cols-3
-            md:grid-cols-4
-          "
-        >
-          {products
-            .slice(0, 8)
-            .map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-              />
-            ))}
-        </div>
-      ) : (
-        <div
-          className="
-            rounded-2xl
-            border
-            border-dashed
-            border-[#0E4D64]/10
-            bg-white
-            px-5
-            py-10
-            text-center
-            dark:bg-[#0B2936]
-          "
-        >
-          <div
-            className="
-              mx-auto
-              grid
-              h-12
-              w-12
-              place-items-center
-              rounded-2xl
-              bg-[#0E4D64]/[0.06]
-              text-[#0E4D64]
-              dark:text-[#9DD5E5]
-            "
-          >
-            <Package className="h-5 w-5" />
-          </div>
+  .bg-brand-gold {
+    background-color:
+      var(--brand-gold);
+  }
 
-          <p
-            className="
-              mt-3
-              text-xs
-              font-bold
-              text-foreground
-            "
-          >
-            لا توجد منتجات متاحة حالياً
-          </p>
+  .border-brand-gold {
+    border-color:
+      var(--brand-gold);
+  }
 
-          <p
-            className="
-              mt-1
-              text-[10px]
-              text-muted-foreground
-            "
-          >
-            سنضيف منتجات جديدة قريباً.
-          </p>
-        </div>
-      )}
-    </section>
-  );
+  .border-brand-gold-soft {
+    border-color:
+      color-mix(
+        in srgb,
+        var(--brand-gold) 25%,
+        transparent
+      );
+  }
+
+  .shadow-brand {
+    box-shadow:
+      var(--brand-shadow);
+  }
+
+  .shadow-brand-gold {
+    box-shadow:
+      var(--brand-gold-shadow);
+  }
+
+  .bg-brand-gradient {
+    background:
+      var(--gradient-brand);
+  }
+
+  .bg-brand-gold-gradient {
+    background:
+      var(--gradient-brand-gold);
+  }
+
+  .no-image-drag {
+    user-select:
+      none;
+
+    -webkit-user-select:
+      none;
+
+    -webkit-user-drag:
+      none;
+
+    user-drag:
+      none;
+  }
+
+  .no-touch-zoom {
+    touch-action:
+      manipulation;
+  }
+
+  .content-auto {
+    content-visibility:
+      auto;
+
+    contain-intrinsic-size:
+      500px;
+    }
 }
-
-function HomeTrustBar() {
-  return (
-    <div
-      className="
-        grid
-        grid-cols-3
-        overflow-hidden
-        rounded-2xl
-        border
-        border-[#0E4D64]/[0.07]
-        bg-white
-        dark:border-white/[0.07]
-        dark:bg-[#0B2936]
-      "
-    >
-      <TrustItem
-        icon={<Package />}
-        title="توصيل موثوق"
-      />
-
-      <TrustItem
-        icon={<ShoppingBasket />}
-        title="تسوق بسهولة"
-      />
-
-      <TrustItem
-        icon={<Sparkles />}
-        title="تجربة شهارة"
-      />
-    </div>
-  );
-}
-
-function TrustItem({
-  icon,
-  title,
-}: {
-  icon: React.ReactNode;
-  title: string;
-}) {
-  return (
-    <div
-      className="
-        flex
-        min-h-[72px]
-        flex-col
-        items-center
-        justify-center
-        gap-1.5
-        border-s
-        border-[#0E4D64]/[0.06]
-        px-2
-        text-center
-        first:border-s-0
-        dark:border-white/[0.06]
-      "
-    >
-      <span className="text-[#D65A31]">
-        <span className="block h-4 w-4">
-          {icon}
-        </span>
-      </span>
-
-      <span
-        className="
-          text-[9px]
-          font-bold
-          text-foreground
-        "
-      >
-        {title}
-      </span>
-    </div>
-  );
-}
-
-function FinalBrandCard() {
-  return (
-    <section
-      className="
-        relative
-        overflow-hidden
-        rounded-[1.7rem]
-        bg-[#0E4D64]
-        px-5
-        py-7
-        text-white
-        shadow-[0_22px_55px_-32px_rgba(14,77,100,0.8)]
-      "
-    >
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          -end-16
-          -top-20
-          h-48
-          w-48
-          rounded-full
-          border
-          border-white/10
-        "
-      />
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          -end-8
-          -top-12
-          h-32
-          w-32
-          rounded-full
-          border
-          border-[#D65A31]/30
-        "
-      />
-
-      <div className="relative z-10">
-        <div
-          className="
-            inline-flex
-            items-center
-            gap-1.5
-            rounded-full
-            bg-white/10
-            px-3
-            py-1.5
-            text-[9px]
-            font-bold
-            text-white/85
-          "
-        >
-          <TrendingUp className="h-3 w-3" />
-          شهارة
-        </div>
-
-        <h2
-          className="
-            mt-4
-            text-2xl
-            font-black
-            tracking-tight
-          "
-        >
-          تسوق بلا حدود
-        </h2>
-
-        <p
-          className="
-            mt-2
-            max-w-md
-            text-xs
-            leading-6
-            text-white/70
-          "
-        >
-          تجربة تسوق إلكترونية
-          يمنية حديثة تجمع لك
-          المنتجات والعروض في
-          مكان واحد.
-        </p>
-
-        <Link
-          to="/products"
-          className="
-            mt-5
-            inline-flex
-            min-h-10
-            items-center
-            gap-2
-            rounded-xl
-            bg-[#D65A31]
-            px-4
-            text-xs
-            font-extrabold
-            text-white
-            transition-all
-            hover:bg-[#B74624]
-            active:scale-95
-          "
-        >
-          ابدأ التسوق
-
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-      </div>
-    </section>
-  );
-}
-
-function HomePage() {
-  const {
-    data: bestProducts = [],
-    isLoading:
-      bestProductsLoading,
-  } = useQuery({
-    queryKey: [
-      "products",
-      "best",
-      24,
-    ],
-    queryFn: () =>
-      fetchProducts({
-        sort: "best",
-        limit: 24,
-      }),
-    staleTime:
-      1000 * 60 * 5,
-    gcTime:
-      1000 * 60 * 30,
-  });
-
-  const {
-    data: latestProducts = [],
-    isLoading:
-      latestProductsLoading,
-  } = useQuery({
-    queryKey: [
-      "products",
-      "latest",
-      24,
-    ],
-    queryFn: () =>
-      fetchProducts({
-        sort: "newest",
-        limit: 24,
-      }),
-    staleTime:
-      1000 * 60 * 5,
-    gcTime:
-      1000 * 60 * 30,
-  });
-
-  const {
-    data: categories = [],
-  } = useQuery({
-    queryKey: [
-      "categories",
-    ],
-    queryFn:
-      fetchCategories,
-    staleTime:
-      1000 * 60 * 10,
-    gcTime:
-      1000 * 60 * 60,
-  });
-
-  return (
-    <div
-      dir="rtl"
-      className="
-        relative
-        min-h-screen
-        overflow-x-hidden
-        bg-[#FAF9F6]
-        pb-24
-        text-foreground
-        dark:bg-[#071B24]
-      "
-    >
-      <HomeBackground />
-
-      <div className="relative z-10">
-        <SiteHeader />
-
-        <main
-          className="
-            mx-auto
-            w-full
-            max-w-6xl
-            px-3
-            pb-8
-            pt-3
-            sm:px-5
-            sm:pt-5
-            lg:px-6
-          "
-        >
-          {/* العرض الرئيسي */}
-          <section className="mb-4">
-            <PromoSlider />
-          </section>
-
-          {/* الوصول السريع */}
-          <section className="mb-5">
-            <QuickActions />
-          </section>
-
-          {/* الأقسام الرائجة */}
-          <section className="mb-6">
-            <PopularCategories
-              categories={categories}
-              bestProducts={bestProducts}
-            />
-          </section>
-
-          {/* عناصر الثقة */}
-          <section className="mb-7">
-            <HomeTrustBar />
-          </section>
-
-          {/* الأكثر مبيعاً */}
-          <section className="mb-8">
-            <ProductSection
-              title="الأكثر مبيعاً"
-              products={bestProducts}
-              loading={
-                bestProductsLoading
-              }
-            />
-          </section>
-
-          {/* التخفيضات السريعة */}
-          <section className="mb-8">
-            <FlashSaleSection />
-          </section>
-
-          {/* العروض */}
-          <section className="mb-8">
-            <OffersSection />
-          </section>
-
-          {/* وصل حديثاً */}
-          <section className="mb-8">
-            <ProductSection
-              title="وصل حديثاً"
-              products={latestProducts}
-              loading={
-                latestProductsLoading
-              }
-              action="كل المنتجات"
-            />
-          </section>
-
-          {/* المنتجات المحلية */}
-          <section className="mb-8">
-            <LocalProducts />
-          </section>
-
-          {/* العلامات التجارية */}
-          <section className="mb-8">
-            <BrandsSection />
-          </section>
-
-          {/* دعوة التسوق */}
-          <FinalBrandCard />
-        </main>
-
-        <BottomNav />
-      </div>
-    </div>
-  );
-}
-
-export default HomePage;
