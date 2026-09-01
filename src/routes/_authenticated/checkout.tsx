@@ -1,6 +1,5 @@
 import {
   createFileRoute,
-  Link,
   useNavigate,
 } from "@tanstack/react-router";
 
@@ -9,105 +8,44 @@ import {
   useMemo,
   useState,
   type FormEvent,
+  type ReactNode,
 } from "react";
 
-import {
-  useQuery,
-} from "@tanstack/react-query";
-
-import {
-  toast,
-} from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import {
   Check,
-  ChevronLeft,
-  ChevronRight,
+  Loader2,
   MapPin,
-  PackageCheck,
   ShieldCheck,
   Upload,
   Wallet,
 } from "lucide-react";
 
-import {
-  supabase,
-} from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { SiteHeader } from "@/components/site-header";
+import { BottomNav } from "@/components/bottom-nav";
 
-import {
-  SiteHeader,
-} from "@/components/site-header";
-
-import {
-  BottomNav,
-} from "@/components/bottom-nav";
-
-import {
-  LocationPicker,
-} from "@/components/location-picker";
-
-import {
-  FormField,
-  areaCls,
-  fieldCls,
-} from "@/components/form-ui";
-
-import {
-  useAuth,
-} from "@/lib/auth-context";
-
-import {
-  useCart,
-} from "@/lib/cart-context";
-
-import {
-  useFormatPrice,
-} from "@/lib/currency-context";
+import { useAuth } from "@/lib/auth-context";
+import { useCart } from "@/lib/cart-context";
+import { useFormatPrice } from "@/lib/currency-context";
 
 import {
   fetchPaymentMethods,
   fetchSettings,
 } from "@/lib/store";
 
-import {
-  YEMEN_GOVERNORATES,
-} from "@/lib/yemen";
+import { YEMEN_GOVERNORATES } from "@/lib/yemen";
+
+import { uploadReceipt } from "@/lib/media";
 
 import {
-  uploadReceipt,
-} from "@/lib/media";
-
-import {
-  normalizeYemeniPhone,
   isValidYemeniPhone,
+  normalizeYemeniPhone,
 } from "@/lib/phone";
 
-
-export const Route =
-  createFileRoute(
-    "/_authenticated/checkout",
-  )({
-    head: () => ({
-      meta: [
-        {
-          title:
-            "إتمام الطلب | شهارة",
-        },
-        {
-          name:
-            "description",
-          content:
-            "أكمل بيانات التوصيل والدفع لإتمام طلبك من شهارة.",
-        },
-      ],
-    }),
-
-    component:
-      CheckoutPage,
-  });
-
-
-type AddressRow = {
+type Address = {
   id: string;
   label: string;
   recipient_name: string;
@@ -121,27 +59,24 @@ type AddressRow = {
   is_default: boolean;
 };
 
-
 type CheckoutResult = {
   id?: string;
   order_number?: string;
-  status?: string;
-  payment_status?: string;
-  existing?: boolean;
 };
 
-
-const ADDRESS_COLUMNS =
+const COLS =
   "id,label,recipient_name,phone,city,district,details,landmark,latitude,longitude,is_default";
 
-
-function errorMessage(
+const getErrorText = (
   error: unknown,
-) {
+): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
   if (
     error &&
-    typeof error ===
-      "object"
+    typeof error === "object"
   ) {
     const value =
       error as Record<
@@ -149,56 +84,46 @@ function errorMessage(
         unknown
       >;
 
-    return {
-      message:
-        typeof value.message ===
-        "string"
-          ? value.message
-          : "حدث خطأ غير متوقع.",
-      code:
-        typeof value.code ===
-        "string"
-          ? value.code
-          : "",
-      details:
-        typeof value.details ===
-        "string"
-          ? value.details
-          : "",
-      hint:
-        typeof value.hint ===
-        "string"
-          ? value.hint
-          : "",
-    };
+    if (
+      typeof value.message ===
+      "string"
+    ) {
+      return value.message;
+    }
+
+    if (
+      typeof value.details ===
+      "string"
+    ) {
+      return value.details;
+    }
   }
 
-  if (
-    error instanceof Error
-  ) {
-    return {
-      message:
-        error.message,
-      code: "",
-      details: "",
-      hint: "",
-    };
-  }
+  return "تعذر إتمام الطلب.";
+};
 
-  return {
-    message:
-      String(error),
-    code: "",
-    details: "",
-    hint: "",
-  };
-}
-
+export const Route =
+  createFileRoute(
+    "/_authenticated/checkout",
+  )({
+    head: () => ({
+      meta: [
+        {
+          title:
+            "إتمام الطلب | شهارة",
+        },
+        {
+          name: "description",
+          content:
+            "أكمل بيانات التوصيل والدفع لإتمام طلبك من شهارة.",
+        },
+      ],
+    }),
+    component: CheckoutPage,
+  });
 
 function CheckoutPage() {
-  const navigate =
-    useNavigate();
-
+  const navigate = useNavigate();
   const formatPrice =
     useFormatPrice();
 
@@ -214,378 +139,235 @@ function CheckoutPage() {
     clearCart,
   } = useCart();
 
-
-  /*
-   * ------------------------------------------
-   * البيانات الأساسية
-   * ------------------------------------------
-   */
-
   const {
     data: settings,
   } = useQuery({
-    queryKey: [
-      "settings",
-    ],
-    queryFn:
-      fetchSettings,
+    queryKey: ["settings"],
+    queryFn: fetchSettings,
   });
-
 
   const {
     data: methods = [],
-    isLoading:
-      methodsLoading,
+    isLoading: methodsLoading,
   } = useQuery({
     queryKey: [
       "payment-methods",
       "active",
     ],
     queryFn: () =>
-      fetchPaymentMethods(
-        true,
-      ),
+      fetchPaymentMethods(true),
   });
-
 
   const {
     data: addresses = [],
-    refetch:
-      refetchAddresses,
+    refetch: refetchAddresses,
   } = useQuery({
     queryKey: [
       "addresses",
       user?.id ?? "",
     ],
+    enabled: Boolean(user?.id),
+    queryFn: async () => {
+      if (!user?.id) {
+        return [] as Address[];
+      }
 
-    enabled:
-      Boolean(user?.id),
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("addresses")
+        .select(COLS)
+        .eq(
+          "user_id",
+          user.id,
+        )
+        .order(
+          "is_default",
+          {
+            ascending: false,
+          },
+        )
+        .returns<Address[]>();
 
-    queryFn:
-      async () => {
-        if (!user?.id) {
-          return [];
-        }
+      if (error) {
+        throw error;
+      }
 
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "addresses",
-            )
-            .select(
-              ADDRESS_COLUMNS,
-            )
-            .eq(
-              "user_id",
-              user.id,
-            )
-            .order(
-              "is_default",
-              {
-                ascending:
-                  false,
-              },
-            )
-            .order(
-              "created_at",
-              {
-                ascending:
-                  false,
-              },
-            )
-            .returns<AddressRow[]>();
-
-        if (error) {
-          throw error;
-        }
-
-        return data ?? [];
-      },
+      return data ?? [];
+    },
   });
-
-
-  /*
-   * ------------------------------------------
-   * حالة النموذج
-   * ------------------------------------------
-   */
 
   const [
     addressId,
     setAddressId,
-  ] =
-    useState("new");
-
+  ] = useState("new");
 
   const [
     name,
     setName,
-  ] =
-    useState("");
-
+  ] = useState(
+    profile?.full_name ?? "",
+  );
 
   const [
     phone,
     setPhone,
-  ] =
-    useState("");
-
+  ] = useState(
+    profile?.phone ?? "",
+  );
 
   const [
     city,
     setCity,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   const [
     district,
     setDistrict,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   const [
     details,
     setDetails,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   const [
     landmark,
     setLandmark,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   const [
     notes,
     setNotes,
-  ] =
-    useState("");
-
-
-  const [
-    coords,
-    setCoords,
-  ] =
-    useState<{
-      lat: number;
-      lng: number;
-    } | null>(
-      null,
-    );
-
-
-  const [
-    showMap,
-    setShowMap,
-  ] =
-    useState(false);
-
-
-  const [
-    saveAddress,
-    setSaveAddress,
-  ] =
-    useState(true);
-
+  ] = useState("");
 
   const [
     methodCode,
     setMethodCode,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   const [
     senderName,
     setSenderName,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   const [
     senderPhone,
     setSenderPhone,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   const [
     reference,
     setReference,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   const [
     receipt,
     setReceipt,
-  ] =
-    useState<File | null>(
-      null,
-    );
+  ] = useState<File | null>(
+    null,
+  );
 
+  const [
+    saveAddress,
+    setSaveAddress,
+  ] = useState(true);
 
   const [
     agree,
     setAgree,
-  ] =
-    useState(false);
-
+  ] = useState(false);
 
   const [
     busy,
     setBusy,
-  ] =
-    useState(false);
-
+  ] = useState(false);
 
   const [
-    step,
-    setStep,
-  ] =
-    useState<1 | 2 | 3>(
-      1,
-    );
-
-
-  /*
-   * Token يمنع تكرار الطلب
-   * عند الضغط عدة مرات.
-   */
+    lat,
+    setLat,
+  ] = useState<number | null>(
+    null,
+  );
 
   const [
-    checkoutToken,
-  ] =
-    useState<string>(
-      () =>
-        globalThis.crypto?.randomUUID?.() ??
-        `${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2)}`,
-    );
+    lng,
+    setLng,
+  ] = useState<number | null>(
+    null,
+  );
 
+  const [
+    token,
+  ] = useState(() =>
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now()}-${Math.random()}`,
+  );
 
-  /*
-   * ------------------------------------------
-   * الأسعار
-   * ------------------------------------------
-   */
-
-  const deliveryFee =
+  const fee =
     Number(
-      settings?.delivery_fee ??
-        0,
+      settings?.delivery_fee ?? 0,
     );
-
 
   const total =
-    Number(subtotal) +
-    deliveryFee;
+    Number(subtotal) + fee;
 
-
-  const walletBalance =
+  const balance =
     Number(
-      profile?.wallet_balance ??
-        0,
+      profile?.wallet_balance ?? 0,
     );
 
+  const method = useMemo(
+    () =>
+      methods.find(
+        (item) =>
+          item.code ===
+          methodCode,
+      ) ?? null,
+    [methods, methodCode],
+  );
 
-  /*
-   * ------------------------------------------
-   * طريقة الدفع المختارة
-   * ------------------------------------------
-   */
-
-  const selectedMethod =
-    useMemo(
-      () =>
-        methods.find(
-          (method) =>
-            method.code ===
-            methodCode,
-        ) ?? null,
-      [
-        methods,
-        methodCode,
-      ],
-    );
-
-
-  const isWallet =
-    selectedMethod?.kind ===
+  const wallet =
+    method?.kind ===
       "wallet_balance" ||
-    selectedMethod?.code ===
+    method?.code ===
       "wallet_balance";
 
-
-  const needsReceipt =
+  const receiptNeeded =
     Boolean(
-      selectedMethod?.requires_receipt,
+      method?.requires_receipt,
     );
 
-
-  const mustAgree =
-    !Boolean(
-      profile?.accepted_order_policy,
-    );
-
-
-  /*
-   * ------------------------------------------
-   * اختيار طريقة الدفع الافتراضية
-   * ------------------------------------------
-   */
+  const needAgree =
+    !profile?.accepted_order_policy;
 
   useEffect(() => {
     if (
-      methodCode ||
-      methods.length ===
-        0
+      !methodCode &&
+      methods[0]
     ) {
-      return;
+      setMethodCode(
+        methods[0].code,
+      );
     }
-
-    setMethodCode(
-      methods[0].code,
-    );
   }, [
     methods,
     methodCode,
   ]);
 
-
-  /*
-   * ------------------------------------------
-   * اختيار العنوان الافتراضي
-   * ------------------------------------------
-   */
-
   useEffect(() => {
     if (
-      addresses.length ===
-      0
+      addresses.length > 0 &&
+      addressId === "new"
     ) {
-      return;
-    }
+      const defaultAddress =
+        addresses.find(
+          (address) =>
+            address.is_default,
+        ) ??
+        addresses[0];
 
-    const defaultAddress =
-      addresses.find(
-        (address) =>
-          address.is_default,
-      ) ??
-      addresses[0];
-
-    if (
-      addressId ===
-      "new"
-    ) {
       setAddressId(
         defaultAddress.id,
       );
@@ -595,26 +377,16 @@ function CheckoutPage() {
     addressId,
   ]);
 
-
-  /*
-   * ------------------------------------------
-   * تعبئة بيانات العنوان
-   * ------------------------------------------
-   */
-
   useEffect(() => {
     if (
-      addressId ===
-      "new"
+      addressId === "new"
     ) {
       setName(
-        profile?.full_name ??
-          "",
+        profile?.full_name ?? "",
       );
 
       setPhone(
-        profile?.phone ??
-          "",
+        profile?.phone ?? "",
       );
 
       return;
@@ -652,24 +424,15 @@ function CheckoutPage() {
     );
 
     setLandmark(
-      address.landmark ??
-        "",
+      address.landmark ?? "",
     );
 
-    setCoords(
-      address.latitude !==
-        null &&
-      address.longitude !==
-        null
-        ? {
-            lat: Number(
-              address.latitude,
-            ),
-            lng: Number(
-              address.longitude,
-            ),
-          }
-        : null,
+    setLat(
+      address.latitude,
+    );
+
+    setLng(
+      address.longitude,
     );
   }, [
     addressId,
@@ -677,34 +440,7 @@ function CheckoutPage() {
     profile,
   ]);
 
-
-  /*
-   * ------------------------------------------
-   * منع Checkout بسلة فارغة
-   * ------------------------------------------
-   */
-
-  useEffect(() => {
-    if (
-      items.length ===
-        0 &&
-      !busy
-    ) {
-      setStep(1);
-    }
-  }, [
-    items.length,
-    busy,
-  ]);
-
-
-  /*
-   * ------------------------------------------
-   * الانتقال للخطوة التالية
-   * ------------------------------------------
-   */
-
-  function continueToPayment() {
+  function validateDelivery() {
     if (
       !name.trim() ||
       !phone.trim() ||
@@ -716,178 +452,14 @@ function CheckoutPage() {
         "أكمل بيانات التوصيل المطلوبة.",
       );
 
-      return;
+      return false;
     }
 
     if (
-      !isValidYemeniPhone(
-        phone,
-      )
+      !isValidYemeniPhone(phone)
     ) {
       toast.error(
         "رقم الهاتف غير صحيح.",
-      );
-
-      return;
-    }
-
-    setStep(2);
-
-    window.scrollTo({
-      top: 0,
-      behavior:
-        "smooth",
-    });
-  }
-
-
-  /*
-   * ------------------------------------------
-   * الانتقال للتأكيد
-   * ------------------------------------------
-   */
-
-  function continueToConfirm() {
-    if (!methodCode) {
-      toast.error(
-        "اختر طريقة الدفع.",
-      );
-
-      return;
-    }
-
-    if (
-      isWallet &&
-      walletBalance <
-        total
-    ) {
-      toast.error(
-        "رصيد المحفظة غير كافٍ.",
-      );
-
-      return;
-    }
-
-    if (
-      needsReceipt &&
-      !receipt
-    ) {
-      toast.error(
-        "أرفق صورة إيصال التحويل.",
-      );
-
-      return;
-    }
-
-    setStep(3);
-
-    window.scrollTo({
-      top: 0,
-      behavior:
-        "smooth",
-    });
-  }
-
-
-  /*
-   * ------------------------------------------
-   * التحقق النهائي
-   * ------------------------------------------
-   */
-
-  function validateFinal() {
-    if (!user?.id) {
-      toast.error(
-        "يجب تسجيل الدخول أولاً.",
-      );
-
-      return false;
-    }
-
-    if (
-      items.length ===
-      0
-    ) {
-      toast.error(
-        "السلة فارغة.",
-      );
-
-      return false;
-    }
-
-    if (
-      !name.trim() ||
-      !phone.trim() ||
-      !city ||
-      !district.trim() ||
-      !details.trim()
-    ) {
-      toast.error(
-        "بيانات التوصيل غير مكتملة.",
-      );
-
-      setStep(1);
-
-      return false;
-    }
-
-    if (
-      !isValidYemeniPhone(
-        phone,
-      )
-    ) {
-      toast.error(
-        "رقم الهاتف غير صحيح.",
-      );
-
-      setStep(1);
-
-      return false;
-    }
-
-    if (!methodCode) {
-      toast.error(
-        "اختر طريقة الدفع.",
-      );
-
-      setStep(2);
-
-      return false;
-    }
-
-    if (
-      isWallet &&
-      walletBalance <
-        total
-    ) {
-      toast.error(
-        "رصيد المحفظة غير كافٍ.",
-      );
-
-      setStep(2);
-
-      return false;
-    }
-
-    if (
-      needsReceipt &&
-      !receipt
-    ) {
-      toast.error(
-        "يجب إرفاق إيصال الدفع.",
-      );
-
-      setStep(2);
-
-      return false;
-    }
-
-    if (
-      mustAgree &&
-      !agree
-    ) {
-      toast.error(
-        "يجب الموافقة على الشروط والسياسات.",
       );
 
       return false;
@@ -896,49 +468,70 @@ function CheckoutPage() {
     return true;
   }
 
-
-  /*
-   * ------------------------------------------
-   * تنفيذ الطلب
-   * ------------------------------------------
-   */
-
   async function submit(
-    event: FormEvent,
+    event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
-    if (busy) {
+    if (
+      busy ||
+      !user?.id ||
+      !items.length ||
+      !validateDelivery()
+    ) {
       return;
     }
 
-    if (!validateFinal()) {
+    if (!methodCode) {
+      toast.error(
+        "اختر طريقة الدفع.",
+      );
       return;
     }
 
-    if (!user?.id) {
+    if (
+      wallet &&
+      balance < total
+    ) {
+      toast.error(
+        "رصيد المحفظة غير كافٍ.",
+      );
+      return;
+    }
+
+    if (
+      receiptNeeded &&
+      !receipt
+    ) {
+      toast.error(
+        "أرفق صورة إيصال التحويل.",
+      );
+      return;
+    }
+
+    if (
+      needAgree &&
+      !agree
+    ) {
+      toast.error(
+        "يجب الموافقة على الشروط والسياسات.",
+      );
       return;
     }
 
     setBusy(true);
 
-    let receiptPath =
-      "";
+    let receiptPath = "";
 
     try {
-      /*
-       * 1 — رفع الإيصال
-       */
-
       if (
-        needsReceipt &&
+        receiptNeeded &&
         receipt
       ) {
         toast.loading(
-          "جارٍ رفع إيصال الدفع...",
+          "جارٍ رفع الإيصال...",
           {
-            id:
-              "checkout",
+            id: "checkout",
           },
         );
 
@@ -947,199 +540,126 @@ function CheckoutPage() {
             user.id,
             receipt,
           );
-
-        toast.dismiss(
-          "checkout",
-        );
       }
 
-
-      /*
-       * 2 — تجهيز عناصر الطلب
-       */
-
       const orderItems =
-        items.map(
-          (item) => ({
-            product_id:
-              item.product_id,
-
-            product_name:
-              item.product.name,
-
-            product_image:
-              item.product
-                .images?.[0] ??
-              "",
-
-            unit_price:
-              Number(
-                item.product
-                  .price,
-              ),
-
-            quantity:
-              Number(
-                item.quantity,
-              ),
-
-            size:
-              item.size ??
-              null,
-
-            color:
-              item.color ??
-              null,
-          }),
-        );
-
-
-      /*
-       * 3 — حالة الدفع
-       */
-
-      const status =
-        isWallet
-          ? "pending"
-          : needsReceipt
-            ? "awaiting_payment"
-            : "pending";
-
-
-      const paymentStatus =
-        needsReceipt
-          ? "pending"
-          : "unpaid";
-
-
-      /*
-       * 4 — إنشاء الطلب
-       */
-
-      toast.loading(
-        "جارٍ تأكيد طلبك...",
-        {
-          id:
-            "checkout",
-        },
-      );
-
+        items.map((item) => ({
+          product_id:
+            item.product_id,
+          product_name:
+            item.product.name,
+          product_image:
+            item.product.images?.[0] ??
+            "",
+          unit_price:
+            Number(
+              item.product.price,
+            ),
+          quantity:
+            Number(
+              item.quantity,
+            ),
+          size:
+            item.size ?? null,
+          color:
+            item.color ?? null,
+        }));
 
       const {
         data,
         error,
-      } =
-        await supabase.rpc(
-          "create_checkout_order",
-          {
-            _checkout_token:
-              checkoutToken,
+      } = await supabase.rpc(
+        "create_checkout_order",
+        {
+          _checkout_token:
+            token,
 
-            _items:
-              orderItems,
+          _items:
+            orderItems,
 
-            _subtotal:
-              Number(
-                subtotal,
-              ),
+          _subtotal:
+            Number(subtotal),
 
-            _delivery_fee:
-              deliveryFee,
+          _delivery_fee:
+            fee,
 
-            _total:
-              Number(
-                total,
-              ),
+          _total:
+            total,
 
-            _payment_method_code:
-              methodCode,
+          _payment_method_code:
+            methodCode,
 
-            _payment_status:
-              paymentStatus,
+          _payment_status:
+            receiptNeeded
+              ? "pending"
+              : "unpaid",
 
-            _status:
-              status,
+          _status:
+            wallet
+              ? "pending"
+              : receiptNeeded
+                ? "awaiting_payment"
+                : "pending",
 
-            _shipping_name:
-              name.trim(),
+          _shipping_name:
+            name.trim(),
 
-            _shipping_phone:
-              normalizeYemeniPhone(
-                phone,
-              ),
+          _shipping_phone:
+            normalizeYemeniPhone(
+              phone,
+            ),
 
-            _shipping_city:
-              city,
+          _shipping_city:
+            city,
 
-            _shipping_district:
-              district.trim(),
+          _shipping_district:
+            district.trim(),
 
-            _shipping_details:
-              details.trim(),
+          _shipping_details:
+            details.trim(),
 
-            _shipping_landmark:
-              landmark.trim(),
+          _shipping_landmark:
+            landmark.trim(),
 
-            _notes:
-              notes.trim(),
+          _notes:
+            notes.trim(),
 
-            _latitude:
-              coords?.lat ??
-              null,
+          _latitude:
+            lat,
 
-            _longitude:
-              coords?.lng ??
-              null,
+          _longitude:
+            lng,
 
-            _needs_payment_request:
-              needsReceipt,
+          _needs_payment_request:
+            receiptNeeded,
 
-            _sender_name:
-              senderName.trim() ||
-              name.trim(),
+          _sender_name:
+            senderName.trim() ||
+            name.trim(),
 
-            _sender_phone:
-              senderPhone.trim() ||
-              normalizeYemeniPhone(
-                phone,
-              ),
+          _sender_phone:
+            senderPhone.trim() ||
+            normalizeYemeniPhone(
+              phone,
+            ),
 
-            _reference:
-              reference.trim(),
+          _reference:
+            reference.trim(),
 
-            _receipt_path:
-              receiptPath,
-          },
-        );
-
-
-      toast.dismiss(
-        "checkout",
+          _receipt_path:
+            receiptPath,
+        },
       );
-
 
       if (error) {
         throw error;
       }
 
-
-      if (
-        !data ||
-        typeof data !==
-          "object"
-      ) {
-        throw new Error(
-          "لم يستلم التطبيق نتيجة صحيحة من الخادم.",
-        );
-      }
-
-
       const result =
         data as CheckoutResult;
 
-
       if (
-        !result.id ||
+        !result?.id ||
         !result.order_number
       ) {
         throw new Error(
@@ -1147,15 +667,9 @@ function CheckoutPage() {
         );
       }
 
-
-      /*
-       * 5 — الدفع من المحفظة
-       */
-
-      if (isWallet) {
+      if (wallet) {
         const {
-          error:
-            walletError,
+          error: walletError,
         } =
           await supabase.rpc(
             "pay_order_from_wallet",
@@ -1170,223 +684,828 @@ function CheckoutPage() {
         }
       }
 
-
-      /*
-       * 6 — حفظ العنوان
-       */
-
       if (saveAddress) {
-        const addressPayload =
-          {
-            user_id:
-              user.id,
+        const payload = {
+          user_id:
+            user.id,
 
-            label:
-              `${city} - ${district.trim()}`
-                .slice(
-                  0,
-                  60,
-                ),
-
-            recipient_name:
-              name.trim(),
-
-            phone:
-              normalizeYemeniPhone(
-                phone,
-              ),
-
-            city,
-
-            district:
-              district.trim(),
-
-            details:
-              details.trim(),
-
-            landmark:
-              landmark.trim() ||
-              null,
-
-            latitude:
-              coords?.lat ??
-              null,
-
-            longitude:
-              coords?.lng ??
-              null,
-
-            is_default:
-              addresses.length ===
+          label:
+            `${city} - ${district.trim()}`.slice(
               0,
-          };
+              60,
+            ),
 
+          recipient_name:
+            name.trim(),
 
-        if (
-          addressId ===
-          "new"
-        ) {
-          const {
-            error:
-              addressError,
-          } =
-            await supabase
-              .from(
-                "addresses",
-              )
-              .insert(
-                addressPayload,
-              );
+          phone:
+            normalizeYemeniPhone(
+              phone,
+            ),
 
-          if (
-            addressError
-          ) {
-            console.warn(
-              "[Checkout] Address save failed:",
-              addressError,
-            );
-          }
-        } else {
-          const {
-            error:
-              addressError,
-          } =
-            await supabase
-              .from(
-                "addresses",
-              )
-              .update(
-                addressPayload,
-              )
-              .eq(
-                "id",
-                addressId,
-              )
-              .eq(
-                "user_id",
-                user.id,
-              );
+          city,
 
-          if (
-            addressError
-          ) {
-            console.warn(
-              "[Checkout] Address update failed:",
-              addressError,
-            );
-          }
+          district:
+            district.trim(),
+
+          details:
+            details.trim(),
+
+          landmark:
+            landmark.trim() ||
+            null,
+
+          latitude: lat,
+          longitude: lng,
+
+          is_default:
+            addresses.length === 0,
+        };
+
+        const query =
+          addressId === "new"
+            ? supabase
+                .from("addresses")
+                .insert(
+                  payload,
+                )
+            : supabase
+                .from("addresses")
+                .update(
+                  payload,
+                )
+                .eq(
+                  "id",
+                  addressId,
+                )
+                .eq(
+                  "user_id",
+                  user.id,
+                );
+
+        const {
+          error: addressError,
+        } = await query;
+
+        if (addressError) {
+          console.warn(
+            "[Checkout] address save failed",
+            addressError,
+          );
         }
 
         await refetchAddresses();
       }
 
-
-      /*
-       * 7 — حفظ موافقة السياسات
-       */
-
       if (
-        mustAgree &&
+        needAgree &&
         agree
       ) {
         const {
-          error:
-            policyError,
-        } =
-          await supabase
-            .from(
-              "profiles",
-            )
-            .update({
-              accepted_order_policy:
-                true,
+          error: policyError,
+        } = await supabase
+          .from("profiles")
+          .update({
+            accepted_order_policy:
+              true,
+            accepted_terms:
+              true,
+          })
+          .eq(
+            "id",
+            user.id,
+          );
 
-              accepted_terms:
-                true,
-            })
-            .eq(
-              "id",
-              user.id,
-            );
-
-        if (
-          policyError
-        ) {
+        if (policyError) {
           console.warn(
-            "[Checkout] Policy update failed:",
+            "[Checkout] policy update failed",
             policyError,
           );
         }
       }
 
-
-      /*
-       * 8 — تفريغ السلة
-       */
-
       await clearCart();
-
-
-      /*
-       * 9 — تحديث الملف
-       */
-
       await refreshProfile();
 
-
-      /*
-       * 10 — النجاح
-       */
-
-      toast.success(
-        needsReceipt
-          ? `تم إنشاء الطلب ${result.order_number} وهو بانتظار مراجعة الدفع.`
-          : `تم إنشاء الطلب ${result.order_number} بنجاح.`,
-        {
-          duration:
-            5000,
-        },
-      );
-
-
-      await navigate({
-        to: "/orders",
-      });
-    } catch (
-      error
-    ) {
       toast.dismiss(
         "checkout",
       );
 
-      const info =
-        errorMessage(
-          error,
-        );
+      toast.success(
+        `تم إنشاء الطلب ${result.order_number}${
+          receiptNeeded
+            ? " وهو بانتظار مراجعة الدفع"
+            : " بنجاح"
+        }.`,
+      );
 
+      await navigate({
+        to: "/orders",
+      });
+    } catch (error) {
+      toast.dismiss(
+        "checkout",
+      );
 
       console.error(
         "[Shehara Checkout]",
-        {
-          message:
-            info.message,
-          code:
-            info.code,
-          details:
-            info.details,
-          hint:
-            info.hint,
-          error,
-        },
+        error,
       );
 
+      const message =
+        getErrorText(error);
 
-      let message =
-        "تعذر إتمام الطلب.";
-
-
-      if (
+      toast.error(
         /network|fetch|abort|load failed/i.test(
-          info.message,
+          message,
         )
-     
+          ? "تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى."
+          : message,
+        {
+          duration: 6000,
+        },
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!items.length) {
+    return (
+      <Shell>
+        <div
+          className="
+            mx-auto
+            max-w-xl
+            rounded-3xl
+            border
+            bg-card
+            p-8
+            text-center
+          "
+        >
+          <Check
+            className="
+              mx-auto
+              h-12
+              w-12
+              text-primary
+            "
+          />
+
+          <h1
+            className="
+              mt-3
+              text-xl
+              font-bold
+            "
+          >
+            السلة فارغة
+          </h1>
+
+          <button
+            type="button"
+            onClick={() =>
+              void navigate({
+                to: "/",
+              })
+            }
+            className="
+              mt-5
+              h-12
+              rounded-xl
+              bg-primary
+              px-6
+              font-bold
+              text-primary-foreground
+            "
+          >
+            العودة للتسوق
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
+  return (
+    <Shell>
+      <form
+        onSubmit={submit}
+        className="
+          mx-auto
+          max-w-3xl
+          space-y-4
+        "
+      >
+        <div
+          className="
+            rounded-3xl
+            border
+            bg-card
+            p-5
+          "
+        >
+          <h1
+            className="
+              text-2xl
+              font-bold
+            "
+          >
+            إتمام الطلب
+          </h1>
+
+          <p
+            className="
+              mt-1
+              text-sm
+              text-muted-foreground
+            "
+          >
+            أكمل بيانات التوصيل
+            والدفع ثم أكد الطلب.
+          </p>
+        </div>
+
+        <section
+          className="
+            rounded-3xl
+            border
+            bg-card
+            p-5
+          "
+        >
+          <Title
+            icon={<MapPin />}
+            title="بيانات التوصيل"
+          />
+
+          <div
+            className="
+              grid
+              gap-4
+              sm:grid-cols-2
+            "
+          >
+            {addresses.length >
+            0 ? (
+              <label
+                className="
+                  text-sm
+                  font-medium
+                  sm:col-span-2
+                "
+              >
+                العنوان المحفوظ
+
+                <select
+                  value={addressId}
+                  onChange={(event) =>
+                    setAddressId(
+                      event.target
+                        .value,
+                    )
+                  }
+                  className="field"
+                >
+                  <option value="new">
+                    عنوان جديد
+                  </option>
+
+                  {addresses.map(
+                    (address) => (
+                      <option
+                        key={
+                          address.id
+                        }
+                        value={
+                          address.id
+                        }
+                      >
+                        {address.label ||
+                          `${address.city} - ${address.district}`}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+            ) : null}
+
+            <Input
+              label="اسم المستلم"
+              value={name}
+              set={setName}
+              required
+            />
+
+            <Input
+              label="رقم الهاتف"
+              value={phone}
+              set={setPhone}
+              required
+            />
+
+            <label className="text-sm font-medium">
+              المحافظة
+
+              <select
+                value={city}
+                onChange={(event) =>
+                  setCity(
+                    event.target
+                      .value,
+                  )
+                }
+                className="field"
+                required
+              >
+                <option value="">
+                  اختر المحافظة
+                </option>
+
+                {YEMEN_GOVERNORATES.map(
+                  (governorate) => (
+                    <option
+                      key={
+                        governorate
+                      }
+                      value={
+                        governorate
+                      }
+                    >
+                      {governorate}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+
+            <Input
+              label="المديرية / المنطقة"
+              value={district}
+              set={setDistrict}
+              required
+            />
+
+            <div className="sm:col-span-2">
+              <Input
+                label="تفاصيل العنوان"
+                value={details}
+                set={setDetails}
+                required
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <Input
+                label="معلم قريب"
+                value={landmark}
+                set={setLandmark}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <Input
+                label="ملاحظات الطلب"
+                value={notes}
+                set={setNotes}
+              />
+            </div>
+          </div>
+
+          <label
+            className="
+              mt-4
+              flex
+              gap-2
+              text-sm
+            "
+          >
+            <input
+              type="checkbox"
+              checked={saveAddress}
+              onChange={(event) =>
+                setSaveAddress(
+                  event.target.checked,
+                )
+              }
+            />
+
+            حفظ العنوان
+            لاستخدامه لاحقاً
+          </label>
+        </section>
+
+        <section
+          className="
+            rounded-3xl
+            border
+            bg-card
+            p-5
+          "
+        >
+          <Title
+            icon={<Wallet />}
+            title="الدفع"
+          />
+
+          {methodsLoading ? (
+            <Loader2
+              className="
+                mx-auto
+                h-6
+                w-6
+                animate-spin
+              "
+            />
+          ) : methods.length ? (
+            <div className="space-y-2">
+              {methods.map(
+                (paymentMethod) => (
+                  <label
+                    key={
+                      paymentMethod.code
+                    }
+                    className={`
+                      block
+                      rounded-2xl
+                      border
+                      p-4
+                      ${
+                        methodCode ===
+                        paymentMethod.code
+                          ? "border-primary bg-primary/5"
+                          : ""
+                      }
+                    `}
+                  >
+                    <input
+                      type="radio"
+                      className="sr-only"
+                      checked={
+                        methodCode ===
+                        paymentMethod.code
+                      }
+                      onChange={() =>
+                        setMethodCode(
+                          paymentMethod.code,
+                        )
+                      }
+                    />
+
+                    <b>
+                      {
+                        paymentMethod.display_name
+                      }
+                    </b>
+
+                    {paymentMethod.instructions ? (
+                      <p
+                        className="
+                          mt-1
+                          text-xs
+                          text-muted-foreground
+                        "
+                      >
+                        {
+                          paymentMethod.instructions
+                        }
+                      </p>
+                    ) : null}
+                  </label>
+                ),
+              )}
+            </div>
+          ) : (
+            <p className="text-sm">
+              لا توجد طرق دفع متاحة.
+            </p>
+          )}
+
+          {wallet ? (
+            <p
+              className="
+                mt-3
+                rounded-xl
+                bg-primary/5
+                p-3
+                text-sm
+              "
+            >
+              رصيد المحفظة:{" "}
+              <b>
+                {formatPrice(
+                  balance,
+                )}
+              </b>
+            </p>
+          ) : null}
+
+          {receiptNeeded ? (
+            <div
+              className="
+                mt-3
+                rounded-2xl
+                border
+                border-dashed
+                p-4
+              "
+            >
+              <label
+                className="
+                  flex
+                  cursor-pointer
+                  gap-2
+                  font-semibold
+                "
+              >
+                <Upload
+                  className="h-5 w-5"
+                />
+
+                إرفاق الإيصال
+
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={(event) =>
+                    setReceipt(
+                      event.target
+                        .files?.[0] ??
+                        null,
+                    )
+                  }
+                />
+              </label>
+
+              {receipt ? (
+                <p
+                  className="
+                    mt-2
+                    text-xs
+                  "
+                >
+                  {receipt.name}
+                </p>
+              ) : null}
+
+              <div
+                className="
+                  mt-3
+                  grid
+                  gap-3
+                  sm:grid-cols-2
+                "
+              >
+                <Input
+                  label="اسم المحول"
+                  value={senderName}
+                  set={setSenderName}
+                />
+
+                <Input
+                  label="رقم المحول"
+                  value={senderPhone}
+                  set={setSenderPhone}
+                />
+              </div>
+
+              <Input
+                label="رقم المرجع"
+                value={reference}
+                set={setReference}
+              />
+            </div>
+          ) : null}
+        </section>
+
+        <section
+          className="
+            rounded-3xl
+            border
+            bg-card
+            p-5
+          "
+        >
+          <Title
+            icon={<ShieldCheck />}
+            title="المراجعة والتأكيد"
+          />
+
+          <div className="space-y-2 text-sm">
+            <Row
+              a="المنتجات"
+              b={formatPrice(
+                Number(subtotal),
+              )}
+            />
+
+            <Row
+              a="التوصيل"
+              b={formatPrice(fee)}
+            />
+
+            <Row
+              a="طريقة الدفع"
+              b={
+                method?.display_name ??
+                "—"
+              }
+            />
+
+            <div
+              className="
+                flex
+                justify-between
+                border-t
+                pt-3
+                font-bold
+              "
+            >
+              <span>
+                الإجمالي
+              </span>
+
+              <span className="text-primary">
+                {formatPrice(total)}
+              </span>
+            </div>
+          </div>
+
+          {needAgree ? (
+            <label
+              className="
+                mt-4
+                flex
+                gap-2
+                text-sm
+              "
+            >
+              <input
+                type="checkbox"
+                checked={agree}
+                onChange={(event) =>
+                  setAgree(
+                    event.target
+                      .checked,
+                  )
+                }
+              />
+
+              أوافق على شروط
+              الطلب وسياسات شهارة.
+            </label>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="
+              mt-5
+              h-12
+              w-full
+              rounded-xl
+              bg-primary
+              font-bold
+              text-primary-foreground
+              disabled:opacity-60
+            "
+          >
+            {busy ? (
+              <Loader2
+                className="
+                  mx-auto
+                  h-5
+                  w-5
+                  animate-spin
+                "
+              />
+            ) : (
+              "تأكيد الطلب"
+            )}
+          </button>
+        </section>
+      </form>
+    </Shell>
+  );
+}
+
+function Shell({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <div
+      dir="rtl"
+      className="
+        min-h-screen
+        bg-background
+        text-foreground
+      "
+    >
+      <SiteHeader />
+
+      <main
+        className="
+          px-4
+          py-5
+          pb-28
+        "
+      >
+        {children}
+      </main>
+
+      <BottomNav />
+    </div>
+  );
+}
+
+function Title({
+  icon,
+  title,
+}: {
+  icon: ReactNode;
+  title: string;
+}) {
+  return (
+    <div
+      className="
+        mb-4
+        flex
+        items-center
+        gap-3
+      "
+    >
+      <div
+        className="
+          flex
+          h-10
+          w-10
+          items-center
+          justify-center
+          rounded-xl
+          bg-primary/10
+          text-primary
+        "
+      >
+        {icon}
+      </div>
+
+      <h2 className="font-bold">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function Input({
+  label,
+  value,
+  set,
+  required = false,
+}: {
+  label: string;
+  value: string;
+  set: (value: string) => void;
+  required?: boolean;
+}) {
+  return (
+    <label className="block text-sm font-medium">
+      {label}
+
+      <input
+        value={value}
+        onChange={(event) =>
+          set(event.target.value)
+        }
+        required={required}
+        className="field"
+      />
+    </label>
+  );
+}
+
+function Row({
+  a,
+  b,
+}: {
+  a: string;
+  b: string;
+}) {
+  return (
+    <div
+      className="
+        flex
+        justify-between
+        gap-4
+      "
+    >
+      <span className="text-muted-foreground">
+        {a}
+      </span>
+
+      <b>{b}</b>
+    </div>
+  );
+}
