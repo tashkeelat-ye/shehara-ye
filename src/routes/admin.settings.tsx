@@ -72,7 +72,7 @@ function AdminSettings() {
       <div className="mb-4 flex items-center gap-3">
         <BrandLogo size={64} />
         <p className="text-[11px] text-muted-foreground">
-          الشعار الرسمي المعتمد لتشكيلات. يمكنك وضع رابط شعار بديل بالأسفل.
+          الشعار الرسمي المعتمد لشهارة. يمكنك وضع رابط شعار بديل بالأسفل.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">

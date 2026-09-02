@@ -48,10 +48,10 @@ const statusLabels: Record<string, string> = {
 export const Route = createFileRoute("/_authenticated/orders")({
   head: () => ({
     meta: [
-      { title: "طلباتي | تشكيلات" },
-      { name: "description", content: "تابع حالة طلباتك ومشترياتك من متجر تشكيلات." },
-      { property: "og:title", content: "طلباتي | تشكيلات" },
-      { property: "og:description", content: "متابعة الطلبات في متجر تشكيلات." },
+      { title: "طلباتي | شهارة" },
+      { name: "description", content: "تابع حالة طلباتك ومشترياتك من متجر شهارة." },
+      { property: "og:title", content: "طلباتي | شهارة" },
+      { property: "og:description", content: "متابعة الطلبات في متجر شهارة." },
     ],
   }),
   component: OrdersPage,

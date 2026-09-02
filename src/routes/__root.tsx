@@ -125,7 +125,7 @@ export const defaultQueryClient =
   });
 
 const THEME_STORAGE_KEY =
-  "tashkilat-theme";
+  "shehara-theme";
 
 /**
  * =========================================================
@@ -725,14 +725,14 @@ export const Route =
 
         {
           title:
-            "تشكيلات | متجر يمني إلكتروني",
+            "شهارة | متجر يمني إلكتروني",
         },
 
         {
           name:
             "description",
           content:
-            "تشكيلات — كل ما تحتاجه بتشكيلة واحدة. متجر إلكتروني يمني.",
+            "شهارة — كل ما تحتاجه بتشكيلة واحدة. متجر إلكتروني يمني.",
         },
 
         {
@@ -774,14 +774,14 @@ export const Route =
           property:
             "og:title",
           content:
-            "تشكيلات | متجر يمني إلكتروني",
+            "شهارة | متجر يمني إلكتروني",
         },
 
         {
           property:
             "og:description",
           content:
-            "تشكيلات — كل ما تحتاجه بتشكيلة واحدة.",
+            "شهارة — كل ما تحتاجه بتشكيلة واحدة.",
         },
 
         {
@@ -884,7 +884,7 @@ function RootShell({
       lang="ar"
       dir="rtl"
       className="
-        tashkilat-app
+        shehara-app
         bg-[#FBF7EF]
         dark:bg-[#170C11]
       "
@@ -1512,7 +1512,7 @@ function RootComponent() {
               registration,
             ) => {
               console.log(
-                "Tashkilat Service Worker active:",
+                "Shehara Service Worker active:",
                 registration.scope,
               );
 
@@ -1524,7 +1524,7 @@ function RootComponent() {
               error,
             ) => {
               console.error(
-                "Tashkilat Service Worker registration failed:",
+                "Shehara Service Worker registration failed:",
                 error,
               );
             },

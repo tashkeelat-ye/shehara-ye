@@ -150,7 +150,7 @@
    توافق أسماء الهوية القديمة
    ========================================================= */
 
-.tashkilat-app {
+.shehara-app {
   --brand-primary: #0e4d64;
   --brand-primary-deep: #0a3d50;
   --brand-accent: #d65a31;
@@ -159,7 +159,7 @@
   color-scheme: light;
 }
 
-.dark.tashkilat-app {
+.dark.shehara-app {
   color-scheme: dark;
 }
 
@@ -167,8 +167,8 @@
    النصوص
    ========================================================= */
 
-.tashkilat-app,
-.tashkilat-app * {
+.shehara-app,
+.shehara-app * {
   font-family:
     "Cairo",
     "CustomFont",
@@ -176,12 +176,12 @@
     sans-serif;
 }
 
-.tashkilat-app h1,
-.tashkilat-app h2,
-.tashkilat-app h3,
-.tashkilat-app h4,
-.tashkilat-app h5,
-.tashkilat-app h6 {
+.shehara-app h1,
+.shehara-app h2,
+.shehara-app h3,
+.shehara-app h4,
+.shehara-app h5,
+.shehara-app h6 {
   letter-spacing: -0.01em;
 }
 
@@ -207,7 +207,7 @@
    روابط
    ========================================================= */
 
-.tashkilat-app a:not([class*="underline"]) {
+.shehara-app a:not([class*="underline"]) {
   text-decoration: none;
 }
 
@@ -215,35 +215,35 @@
    توافق بصري مع بعض المكونات القديمة
    ========================================================= */
 
-.tashkilat-app [class*="bg-[#4A1525]"] {
+.shehara-app [class*="bg-[#4A1525]"] {
   background-color: #0e4d64 !important;
 }
 
-.tashkilat-app [class*="bg-[#35101C]"] {
+.shehara-app [class*="bg-[#35101C]"] {
   background-color: #0a3d50 !important;
 }
 
-.tashkilat-app [class*="bg-[#6A263A]"] {
+.shehara-app [class*="bg-[#6A263A]"] {
   background-color: #17647e !important;
 }
 
-.tashkilat-app [class*="text-[#4A1525]"] {
+.shehara-app [class*="text-[#4A1525]"] {
   color: #0e4d64 !important;
 }
 
-.tashkilat-app [class*="text-[#35101C]"] {
+.shehara-app [class*="text-[#35101C]"] {
   color: #0a3d50 !important;
 }
 
-.tashkilat-app [class*="text-[#E0B85C]"] {
+.shehara-app [class*="text-[#E0B85C]"] {
   color: #d65a31 !important;
 }
 
-.tashkilat-app [class*="border-[#E0B85C]"] {
+.shehara-app [class*="border-[#E0B85C]"] {
   border-color: rgb(214 90 49 / 20%) !important;
 }
 
-.tashkilat-app [class*="border-[#4A1525]"] {
+.shehara-app [class*="border-[#4A1525]"] {
   border-color: rgb(14 77 100 / 18%) !important;
 }
 
@@ -278,9 +278,9 @@ body {
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
-  .tashkilat-app *,
-  .tashkilat-app *::before,
-  .tashkilat-app *::after {
+  .shehara-app *,
+  .shehara-app *::before,
+  .shehara-app *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

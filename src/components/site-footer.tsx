@@ -30,7 +30,7 @@ export function SiteFooter() {
         <div className="flex items-center gap-2">
           <BrandLogo size={40} />
           <div>
-            <p className="text-base text-foreground">{s?.store_name ?? "تشكيلات"}</p>
+            <p className="text-base text-foreground">{s?.store_name ?? "شهارة"}</p>
             <p className="text-[11px] text-muted-foreground">
               {s?.tagline ?? "كل ما تحتاجه... بتشكيلة واحدة"}
             </p>
@@ -87,7 +87,7 @@ export function SiteFooter() {
                 href={url!}
                 target="_blank"
                 rel="noreferrer"
-                aria-label={`تشكيلات على ${label}`}
+                aria-label={`شهارة على ${label}`}
                 className="grid h-9 w-9 place-items-center rounded-full bg-brand-soft text-primary"
               >
                 <Icon className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function SiteFooter() {
         ) : null}
 
         <p className="mt-6 text-center text-[11px] text-muted-foreground">
-          {s?.footer_copyright || "© ٢٠٢٦ تشكيلات — جميع الحقوق محفوظة"}
+          {s?.footer_copyright || "© ٢٠٢٦ شهارة — جميع الحقوق محفوظة"}
         </p>
       </div>
     </footer>

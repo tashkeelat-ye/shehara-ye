@@ -446,7 +446,7 @@ function ProductDetail() {
         title:
           product.name,
         text:
-          `شاهد هذا المنتج في تشكيلات: ${product.name}`,
+          `شاهد هذا المنتج في شهارة: ${product.name}`,
         url:
           window.location.href,
       };

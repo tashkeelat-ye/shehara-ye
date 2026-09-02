@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchProductsByIds, type Product } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 
-const STORAGE_KEY = "tashkilat_cart_v1";
+const STORAGE_KEY = "shehara_cart_v1";
 
 export type CartLine = {
   id: string;

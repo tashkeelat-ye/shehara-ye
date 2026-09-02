@@ -85,7 +85,7 @@ export const Route =
       meta: [
         {
           title:
-            "إتمام الطلب | تشكيلات",
+            "إتمام الطلب | شهارة",
         },
         {
           name:
@@ -97,13 +97,13 @@ export const Route =
           property:
             "og:title",
           content:
-            "إتمام الطلب | تشكيلات",
+            "إتمام الطلب | شهارة",
         },
         {
           property:
             "og:description",
           content:
-            "إتمام الطلب في متجر تشكيلات.",
+            "إتمام الطلب في متجر شهارة.",
         },
         {
           property:

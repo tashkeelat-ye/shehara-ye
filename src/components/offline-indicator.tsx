@@ -4,7 +4,7 @@ import { useOnlineStatus } from "@/hooks/use-online-status";
 
 /**
  * =========================================================
- * تشكيلات للتسوق
+ * شهارة للتسوق
  * Offline Indicator
  * =========================================================
  *
@@ -15,7 +15,7 @@ import { useOnlineStatus } from "@/hooks/use-online-status";
  * - متوافق مع الهواتف وPWA.
  * - يحترم Safe Area في الأجهزة الحديثة.
  * - لا يضيف مساحة فارغة داخل الصفحة.
- * - يستخدم هوية تشكيلات العنابية والذهبية.
+ * - يستخدم هوية شهارة العنابية والذهبية.
  * - لا يمنع التفاعل مع محتوى التطبيق.
  * =========================================================
  */
@@ -38,7 +38,7 @@ export function OfflineIndicator() {
       aria-atomic="true"
       dir="rtl"
       className="
-        tashkilat-offline-banner
+        shehara-offline-banner
         select-none
       "
     >

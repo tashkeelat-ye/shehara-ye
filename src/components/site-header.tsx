@@ -16,7 +16,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import { BrandLogo } from "@/components/brand-logo";
 import { useCart } from "@/lib/cart-context";
 
-const THEME_STORAGE_KEY = "tashkilat-theme";
+const THEME_STORAGE_KEY = "shehara-theme";
 
 export function SiteHeader() {
   const navigate = useNavigate();

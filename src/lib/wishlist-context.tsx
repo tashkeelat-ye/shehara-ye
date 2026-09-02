@@ -10,7 +10,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
-const WISHLIST_STORAGE_KEY = "tashkilat_wishlist_v1";
+const WISHLIST_STORAGE_KEY = "shehara_wishlist_v1";
 
 type WishlistContextValue = {
   wishlistIds: string[];

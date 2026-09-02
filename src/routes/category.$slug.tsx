@@ -175,7 +175,7 @@ function CategoryPage() {
     return (
       <div
         dir="rtl"
-        className="tashkilat-app min-h-screen bg-background pb-24"
+        className="shehara-app min-h-screen bg-background pb-24"
       >
         <SiteHeader />
 
@@ -209,7 +209,7 @@ function CategoryPage() {
     return (
       <div
         dir="rtl"
-        className="tashkilat-app min-h-screen bg-background pb-24"
+        className="shehara-app min-h-screen bg-background pb-24"
       >
         <SiteHeader />
 
@@ -243,7 +243,7 @@ function CategoryPage() {
   return (
     <div
       dir="rtl"
-      className="tashkilat-app min-h-screen bg-background pb-24 md:pb-8"
+      className="shehara-app min-h-screen bg-background pb-24 md:pb-8"
     >
       <SiteHeader />
 

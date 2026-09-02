@@ -58,7 +58,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
     invoiceDate: order?.invoiceDate || new Date().toLocaleDateString("ar-YE") + " - " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     orderNumber: order?.orderNumber || "TSK-1015",
     storeDetails: {
-      name: order?.storeDetails?.name || "تشكيلات للتسوق",
+      name: order?.storeDetails?.name || "شهارة للتسوق",
       crNumber: order?.storeDetails?.crNumber || "123456-7",
       taxNumber: order?.storeDetails?.taxNumber || "777888999",
       address: order?.storeDetails?.address || "إب - اليمن",
@@ -68,7 +68,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
       name: order?.customerDetails?.name || "عميل المتجر",
       phone: order?.customerDetails?.phone || "770000000",
       address: order?.customerDetails?.address || "إب - اليمن",
-      paymentMethod: order?.customerDetails?.paymentMethod || "محفظة تشكيلات",
+      paymentMethod: order?.customerDetails?.paymentMethod || "محفظة شهارة",
       currency: order?.customerDetails?.currency || "ريال يمني (YER)",
     },
     items: order?.items && order.items.length > 0 ? order.items : [
@@ -113,10 +113,10 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b pb-6 border-gray-100">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 md:w-20 md:h-20 bg-[#3e0b1b] rounded-2xl flex items-center justify-center p-2 shadow-md shrink-0">
-            <img src="/logo.png" alt="تشكيلات" className="max-h-full object-contain" />
+            <img src="/logo.png" alt="شهارة" className="max-h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-[#3e0b1b] tracking-tight">تشكيلات</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-[#3e0b1b] tracking-tight">شهارة</h1>
             <p className="text-xs text-[#c49a37] font-bold tracking-widest mt-0.5">للتسوق</p>
             <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#c49a37] inline-block"></span>
@@ -306,8 +306,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
           <div className="text-[11px] space-y-0.5">
             <p className="font-bold text-white">تواصل معنا</p>
             <p className="text-gray-300 font-mono dir-ltr text-right">{data.storeDetails.phone}</p>
-            <p className="text-gray-300">tashkeelat.com</p>
-            <p className="text-gray-400 text-[10px]">@tashkeelat.shop</p>
+            <p className="text-gray-300">shehara.lovable.app</p>
+            <p className="text-gray-400 text-[10px]">@shehara.lovable.app</p>
           </div>
         </div>
 
@@ -321,7 +321,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
 
         <div className="text-center md:text-left z-10 max-w-xs">
           <h3 className="text-sm md:text-base font-bold text-[#c49a37]">شكراً لثقتكم بنا</h3>
-          <p className="text-[10px] text-gray-300 mt-0.5">تشكيلات للتسوق... كل ما تحتاجه في مكان واحد</p>
+          <p className="text-[10px] text-gray-300 mt-0.5">شهارة للتسوق... كل ما تحتاجه في مكان واحد</p>
         </div>
       </div>
 

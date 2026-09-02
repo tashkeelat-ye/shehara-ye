@@ -93,7 +93,7 @@
 :root {
   /*
    * =========================================================
-   * تشكيلات — الهوية البصرية الرسمية
+   * شهارة — الهوية البصرية الرسمية
    * =========================================================
    */
 
@@ -220,7 +220,7 @@
 .dark {
   /*
    * =========================================================
-   * تشكيلات — الوضع الليلي
+   * شهارة — الوضع الليلي
    * =========================================================
    */
 
@@ -506,12 +506,12 @@
 
 /*
  * =========================================================
- * خلفية تشكيلات — الهوية التراثية اليمنية
+ * خلفية شهارة — الهوية التراثية اليمنية
  * =========================================================
  */
 
 @layer components {
-  .tashkilat-brand-background {
+  .shehara-brand-background {
     position:
       relative;
 
@@ -533,7 +533,7 @@
       );
   }
 
-  .dark .tashkilat-brand-background {
+  .dark .shehara-brand-background {
     background:
       linear-gradient(
         180deg,
@@ -542,7 +542,7 @@
       );
   }
 
-  .tashkilat-brand-background::before {
+  .shehara-brand-background::before {
     content:
       "";
 
@@ -591,7 +591,7 @@
       0.9;
   }
 
-  .tashkilat-brand-background::after {
+  .shehara-brand-background::after {
     content:
       "";
 
@@ -646,12 +646,12 @@
       0.42;
   }
 
-  .dark .tashkilat-brand-background::before {
+  .dark .shehara-brand-background::before {
     opacity:
       0.45;
   }
 
-  .dark .tashkilat-brand-background::after {
+  .dark .shehara-brand-background::after {
     opacity:
       0.22;
   }
@@ -660,7 +660,7 @@
    * العلامة المعمارية.
    */
 
-  .tashkilat-architecture-watermark {
+  .shehara-architecture-watermark {
     position:
       absolute;
 
@@ -689,12 +689,12 @@
       hidden;
   }
 
-  .dark .tashkilat-architecture-watermark {
+  .dark .shehara-architecture-watermark {
     color:
       var(--brand-gold);
   }
 
-  .tashkilat-architecture-watermark::before {
+  .shehara-architecture-watermark::before {
     content:
       "";
 
@@ -753,7 +753,7 @@
       );
   }
 
-  .tashkilat-architecture-watermark::after {
+  .shehara-architecture-watermark::after {
     content:
       "";
 
@@ -799,12 +799,12 @@
       0.75;
   }
 
-  .tashkilat-architecture-watermark.is-right {
+  .shehara-architecture-watermark.is-right {
     inset-inline-end:
       0;
   }
 
-  .tashkilat-architecture-watermark.is-left {
+  .shehara-architecture-watermark.is-left {
     inset-inline-start:
       0;
 
@@ -816,7 +816,7 @@
    * الشعار الزخرفي.
    */
 
-  .tashkilat-heritage-emblem {
+  .shehara-heritage-emblem {
     position:
       relative;
 
@@ -842,7 +842,7 @@
       0.7;
   }
 
-  .tashkilat-heritage-emblem::before {
+  .shehara-heritage-emblem::before {
     content:
       "";
 
@@ -870,7 +870,7 @@
       );
   }
 
-  .tashkilat-heritage-emblem::after {
+  .shehara-heritage-emblem::after {
     content:
       "";
 
@@ -893,7 +893,7 @@
       var(--brand-cream);
   }
 
-  .tashkilat-gold-divider {
+  .shehara-gold-divider {
     position:
       relative;
 
@@ -910,8 +910,8 @@
       0.75rem;
   }
 
-  .tashkilat-gold-divider::before,
-  .tashkilat-gold-divider::after {
+  .shehara-gold-divider::before,
+  .shehara-gold-divider::after {
     content:
       "";
 
@@ -937,7 +937,7 @@
       );
   }
 
-  .tashkilat-heritage-mark {
+  .shehara-heritage-mark {
     position:
       relative;
 
@@ -963,8 +963,8 @@
       0.55;
   }
 
-  .tashkilat-heritage-mark::before,
-  .tashkilat-heritage-mark::after {
+  .shehara-heritage-mark::before,
+  .shehara-heritage-mark::after {
     content:
       "";
 
@@ -981,7 +981,7 @@
       rotate(45deg);
   }
 
-  .tashkilat-heritage-mark::after {
+  .shehara-heritage-mark::after {
     inset:
       9px;
 
@@ -993,7 +993,7 @@
    * الإطار الفاخر.
    */
 
-  .tashkilat-brand-frame {
+  .shehara-brand-frame {
     position:
       relative;
 
@@ -1025,7 +1025,7 @@
       );
   }
 
-  .tashkilat-paper-surface {
+  .shehara-paper-surface {
     background:
       linear-gradient(
         135deg,
@@ -1038,7 +1038,7 @@
       );
   }
 
-  .dark .tashkilat-paper-surface {
+  .dark .shehara-paper-surface {
     background:
       linear-gradient(
         135deg,
@@ -1047,7 +1047,7 @@
       );
   }
 
-  .tashkilat-burgundy-surface {
+  .shehara-burgundy-surface {
     background:
       linear-gradient(
         135deg,
@@ -1060,7 +1060,7 @@
       white;
   }
 
-  .tashkilat-section-accent {
+  .shehara-section-accent {
     position:
       relative;
 
@@ -1068,7 +1068,7 @@
       0.875rem;
   }
 
-  .tashkilat-section-accent::before {
+  .shehara-section-accent::before {
     content:
       "";
 
@@ -1105,7 +1105,7 @@
    * Hero.
    */
 
-  .tashkilat-hero-surface {
+  .shehara-hero-surface {
     position:
       relative;
 
@@ -1133,7 +1133,7 @@
       white;
   }
 
-  .tashkilat-hero-surface::after {
+  .shehara-hero-surface::after {
     content:
       "";
 
@@ -1169,7 +1169,7 @@
       54px 54px;
   }
 
-  .tashkilat-watermark {
+  .shehara-watermark {
     position:
       absolute;
 
@@ -1189,7 +1189,7 @@
       0;
   }
 
-  .tashkilat-content-layer {
+  .shehara-content-layer {
     position:
       relative;
 
@@ -1203,7 +1203,7 @@
    * =======================================================
    */
 
-  .tashkilat-product-card {
+  .shehara-product-card {
     position:
       relative;
 
@@ -1234,7 +1234,7 @@
       border-color 200ms ease;
   }
 
-  .tashkilat-product-card:hover {
+  .shehara-product-card:hover {
     transform:
       translateY(-2px);
 
@@ -1250,7 +1250,7 @@
       rgb(74 21 37 / 48%);
   }
 
-  .dark .tashkilat-product-card {
+  .dark .shehara-product-card {
     box-shadow:
       0 16px 40px -28px
       rgb(0 0 0 / 65%);
@@ -1260,7 +1260,7 @@
    * صور المنتجات.
    */
 
-  .tashkilat-product-image {
+  .shehara-product-image {
     position:
       relative;
 
@@ -1275,7 +1275,7 @@
       );
   }
 
-  .dark .tashkilat-product-image {
+  .dark .shehara-product-image {
     background:
       linear-gradient(
         135deg,
@@ -1284,7 +1284,7 @@
       );
   }
 
-  .tashkilat-product-image img {
+  .shehara-product-image img {
     display:
       block;
 
@@ -1310,8 +1310,8 @@
       transform 350ms ease;
   }
 
-  .tashkilat-product-card:hover
-  .tashkilat-product-image img {
+  .shehara-product-card:hover
+  .shehara-product-image img {
     transform:
       scale(1.025);
   }
@@ -1322,7 +1322,7 @@
    * =======================================================
    */
 
-  .tashkilat-brand-strip {
+  .shehara-brand-strip {
     position:
       relative;
 
@@ -1336,7 +1336,7 @@
       white;
   }
 
-  .tashkilat-brand-strip::before {
+  .shehara-brand-strip::before {
     content:
       "";
 
@@ -1360,7 +1360,7 @@
       );
   }
 
-  .tashkilat-brand-strip > * {
+  .shehara-brand-strip > * {
     position:
       relative;
 
@@ -1374,7 +1374,7 @@
    * =======================================================
    */
 
-  .tashkilat-primary-button {
+  .shehara-primary-button {
     display:
       inline-flex;
 
@@ -1410,7 +1410,7 @@
       all 180ms ease;
   }
 
-  .tashkilat-primary-button:hover {
+  .shehara-primary-button:hover {
     background:
       var(--brand-burgundy-soft);
 
@@ -1418,12 +1418,12 @@
       translateY(-1px);
   }
 
-  .tashkilat-primary-button:active {
+  .shehara-primary-button:active {
     transform:
       translateY(0) scale(0.98);
   }
 
-  .dark .tashkilat-primary-button {
+  .dark .shehara-primary-button {
     background:
       var(--brand-gold);
 
@@ -1431,12 +1431,12 @@
       var(--brand-burgundy-deep);
   }
 
-  .dark .tashkilat-primary-button:hover {
+  .dark .shehara-primary-button:hover {
     background:
       var(--brand-gold-soft);
   }
 
-  .tashkilat-gold-button {
+  .shehara-gold-button {
     display:
       inline-flex;
 
@@ -1471,7 +1471,7 @@
       all 180ms ease;
   }
 
-  .tashkilat-gold-button:hover {
+  .shehara-gold-button:hover {
     background:
       var(--brand-gold-soft);
 
@@ -1479,7 +1479,7 @@
       translateY(-1px);
   }
 
-  .tashkilat-gold-button:active {
+  .shehara-gold-button:active {
     transform:
       translateY(0) scale(0.98);
   }
@@ -1490,7 +1490,7 @@
    * =======================================================
    */
 
-  .tashkilat-brand-badge {
+  .shehara-brand-badge {
     display:
       inline-flex;
 
@@ -1531,7 +1531,7 @@
       700;
   }
 
-  .dark .tashkilat-brand-badge {
+  .dark .shehara-brand-badge {
     color:
       var(--brand-gold);
   }
@@ -1542,7 +1542,7 @@
    * =======================================================
    */
 
-  .tashkilat-horizontal-scroll {
+  .shehara-horizontal-scroll {
     display:
       flex;
 
@@ -1582,7 +1582,7 @@
       touch;
   }
 
-  .tashkilat-horizontal-scroll > * {
+  .shehara-horizontal-scroll > * {
     flex:
       0 0 auto;
 
@@ -1590,17 +1590,17 @@
       start;
   }
 
-  .tashkilat-horizontal-scroll::-webkit-scrollbar {
+  .shehara-horizontal-scroll::-webkit-scrollbar {
     height:
       5px;
   }
 
-  .tashkilat-horizontal-scroll::-webkit-scrollbar-track {
+  .shehara-horizontal-scroll::-webkit-scrollbar-track {
     background:
       transparent;
   }
 
-  .tashkilat-horizontal-scroll::-webkit-scrollbar-thumb {
+  .shehara-horizontal-scroll::-webkit-scrollbar-thumb {
     background:
       color-mix(
         in srgb,
@@ -1618,7 +1618,7 @@
    * =======================================================
    */
 
-  .tashkilat-sticky-search {
+  .shehara-sticky-search {
     position:
       sticky;
 
@@ -1656,7 +1656,7 @@
       blur(16px);
   }
 
-  .dark .tashkilat-sticky-search {
+  .dark .shehara-sticky-search {
     background:
       color-mix(
         in srgb,
@@ -1671,7 +1671,7 @@
    * =======================================================
    */
 
-  .tashkilat-bottom-navigation {
+  .shehara-bottom-navigation {
     position:
       fixed;
 
@@ -1731,7 +1731,7 @@
       blur(18px);
   }
 
-  .dark .tashkilat-bottom-navigation {
+  .dark .shehara-bottom-navigation {
     background:
       color-mix(
         in srgb,
@@ -1744,7 +1744,7 @@
       rgb(0 0 0 / 75%);
   }
 
-  .tashkilat-bottom-navigation-item {
+  .shehara-bottom-navigation-item {
     position:
       relative;
 
@@ -1788,8 +1788,8 @@
       all 180ms ease;
   }
 
-  .tashkilat-bottom-navigation-item:hover,
-  .tashkilat-bottom-navigation-item.is-active {
+  .shehara-bottom-navigation-item:hover,
+  .shehara-bottom-navigation-item.is-active {
     color:
       var(--brand-burgundy);
 
@@ -1801,13 +1801,13 @@
       );
   }
 
-  .dark .tashkilat-bottom-navigation-item:hover,
-  .dark .tashkilat-bottom-navigation-item.is-active {
+  .dark .shehara-bottom-navigation-item:hover,
+  .dark .shehara-bottom-navigation-item.is-active {
     color:
       var(--brand-gold);
   }
 
-  .tashkilat-bottom-navigation-item.is-active::before {
+  .shehara-bottom-navigation-item.is-active::before {
     content:
       "";
 
@@ -1842,7 +1842,7 @@
    * =======================================================
    */
 
-  .tashkilat-protected-image {
+  .shehara-protected-image {
     position:
       relative;
 
@@ -1862,7 +1862,7 @@
       none;
   }
 
-  .tashkilat-protected-image img {
+  .shehara-protected-image img {
     user-select:
       none;
 
@@ -1885,7 +1885,7 @@
    * =======================================================
    */
 
-  .tashkilat-section-pattern {
+  .shehara-section-pattern {
     position:
       relative;
 
@@ -1893,7 +1893,7 @@
       isolate;
   }
 
-  .tashkilat-section-pattern::before {
+  .shehara-section-pattern::before {
     content:
       "";
 
@@ -1947,7 +1947,7 @@
    * =======================================================
    */
 
-  .tashkilat-heritage-divider {
+  .shehara-heritage-divider {
     display:
       flex;
 
@@ -1964,8 +1964,8 @@
       100%;
   }
 
-  .tashkilat-heritage-divider::before,
-  .tashkilat-heritage-divider::after {
+  .shehara-heritage-divider::before,
+  .shehara-heritage-divider::after {
     content:
       "";
 
@@ -1991,7 +1991,7 @@
       );
   }
 
-  .tashkilat-heritage-divider span {
+  .shehara-heritage-divider span {
     width:
       0.55rem;
 
@@ -2016,7 +2016,7 @@
    */
 
   @media (max-width: 640px) {
-    .tashkilat-architecture-watermark {
+    .shehara-architecture-watermark {
       width:
         46vw;
 
@@ -2026,17 +2026,17 @@
         );
     }
 
-    .tashkilat-brand-frame {
+    .shehara-brand-frame {
       border-radius:
         1rem;
     }
 
-    .tashkilat-product-card {
+    .shehara-product-card {
       border-radius:
         1rem;
     }
 
-    .tashkilat-horizontal-scroll {
+    .shehara-horizontal-scroll {
       gap:
         0.625rem;
 
@@ -2044,14 +2044,14 @@
         0.125rem;
     }
 
-    .tashkilat-bottom-navigation {
+    .shehara-bottom-navigation {
       min-height:
         3.8rem;
     }
   }
 
   @media (min-width: 768px) {
-    .tashkilat-bottom-navigation {
+    .shehara-bottom-navigation {
       display:
         none;
     }
@@ -2063,7 +2063,7 @@
    * =======================================================
    */
 
-  .tashkilat-safe-bottom {
+  .shehara-safe-bottom {
     padding-bottom:
       max(
         1rem,
@@ -2071,7 +2071,7 @@
       );
   }
 
-  .tashkilat-safe-top {
+  .shehara-safe-top {
     padding-top:
       max(
         1rem,
@@ -2085,13 +2085,13 @@
    * =======================================================
    */
 
-  .tashkilat-touch-feedback {
+  .shehara-touch-feedback {
     transition:
       transform 120ms ease,
       opacity 120ms ease;
   }
 
-  .tashkilat-touch-feedback:active {
+  .shehara-touch-feedback:active {
     transform:
       scale(0.98);
 
@@ -2105,7 +2105,7 @@
    * =======================================================
    */
 
-  .tashkilat-skeleton {
+  .shehara-skeleton {
     position:
       relative;
 
@@ -2120,7 +2120,7 @@
       );
   }
 
-  .tashkilat-skeleton::after {
+  .shehara-skeleton::after {
     content:
       "";
 
@@ -2146,11 +2146,11 @@
       );
 
     animation:
-      tashkilat-skeleton-loading
+      shehara-skeleton-loading
       1.5s infinite;
   }
 
-  @keyframes tashkilat-skeleton-loading {
+  @keyframes shehara-skeleton-loading {
     100% {
       transform:
         translateX(100%);

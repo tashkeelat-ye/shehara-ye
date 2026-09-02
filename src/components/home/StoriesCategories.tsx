@@ -19,7 +19,7 @@ import {
 
 /**
  * =========================================================
- * تشكيلات للتسوق
+ * شهارة للتسوق
  * نظام القصص Stories
  * =========================================================
  *
@@ -650,7 +650,7 @@ export function StoriesCategories() {
 
       <section
         dir="rtl"
-        aria-label="قصص تشكيلات"
+        aria-label="قصص شهارة"
         className="
           border-b
           border-[#4A1525]/5
@@ -693,7 +693,7 @@ export function StoriesCategories() {
                   gap-1.5
                   outline-none
                 "
-                aria-label={`فتح قصة ${story.title || "تشكيلات"}`}
+                aria-label={`فتح قصة ${story.title || "شهارة"}`}
               >
                 {/* =========================================
                     الحلقة الخارجية
@@ -738,7 +738,7 @@ export function StoriesCategories() {
                       }
                       alt={
                         story.title ||
-                        "قصة من تشكيلات"
+                        "قصة من شهارة"
                       }
                       loading={
                         index <
@@ -801,7 +801,7 @@ export function StoriesCategories() {
                   "
                 >
                   {story.title ||
-                    "تشكيلات"}
+                    "شهارة"}
                 </span>
               </button>
             ),
@@ -833,7 +833,7 @@ export function StoriesCategories() {
           aria-modal="true"
           aria-label={
             currentStory.title ||
-            "قصة تشكيلات"
+            "قصة شهارة"
           }
           onClick={(
             event,
@@ -985,7 +985,7 @@ export function StoriesCategories() {
                 "
               >
                 {currentStory.title ||
-                  "تشكيلات للتسوق"}
+                  "شهارة للتسوق"}
               </p>
             </div>
 
@@ -1000,7 +1000,7 @@ export function StoriesCategories() {
               }
               alt={
                 currentStory.title ||
-                "قصة تشكيلات"
+                "قصة شهارة"
               }
               className="
                 absolute

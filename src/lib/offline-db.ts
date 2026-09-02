@@ -1,4 +1,4 @@
-const DB_NAME = "tashkilat-offline";
+const DB_NAME = "shehara-offline";
 const DB_VERSION = 1;
 
 export type OfflineStoreName =
@@ -73,7 +73,7 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onerror = () => {
       reject(
         request.error ??
-          new Error("Failed to open Tashkilat IndexedDB database."),
+          new Error("Failed to open Shehara IndexedDB database."),
       );
     };
   });

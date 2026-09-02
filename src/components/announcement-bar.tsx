@@ -22,7 +22,7 @@ import {
 
 /**
  * =========================================================
- * تشكيلات للتسوق
+ * شهارة للتسوق
  * Announcement Bar
  * =========================================================
  *
@@ -220,7 +220,7 @@ export function AnnouncementBar() {
               icon: Tag,
             },
             {
-              text: "أهلاً بكم في تشكيلات - تسوق ممتع ✨",
+              text: "أهلاً بكم في شهارة - تسوق ممتع ✨",
               icon: Sparkles,
             },
           ];
@@ -426,7 +426,7 @@ export function AnnouncementBar() {
 
       <div
         className="
-          tashkilat-marquee
+          shehara-marquee
           flex
           w-max
           min-w-max

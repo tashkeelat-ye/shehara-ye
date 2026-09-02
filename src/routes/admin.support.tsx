@@ -15,11 +15,11 @@ import { formatDate } from "@/lib/store";
 export const Route = createFileRoute("/admin/support")({
   head: () => ({
     meta: [
-      { title: "محادثات خدمة العملاء | تشكيلات" },
-      { name: "description", content: "الرد على رسائل العملاء داخل متجر تشكيلات." },
+      { title: "محادثات خدمة العملاء | شهارة" },
+      { name: "description", content: "الرد على رسائل العملاء داخل متجر شهارة." },
       { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "محادثات خدمة العملاء | تشكيلات" },
-      { property: "og:description", content: "إدارة محادثات الدعم في تشكيلات." },
+      { property: "og:title", content: "محادثات خدمة العملاء | شهارة" },
+      { property: "og:description", content: "إدارة محادثات الدعم في شهارة." },
     ],
   }),
   component: AdminSupportPage,

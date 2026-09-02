@@ -10,13 +10,13 @@ import { fetchFaqs } from "@/lib/store";
 export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
-      { title: "الأسئلة الشائعة | تشكيلات" },
+      { title: "الأسئلة الشائعة | شهارة" },
       {
         name: "description",
-        content: "أجوبة أسئلة عملاء تشكيلات حول الشراء والدفع والتوصيل والإرجاع في اليمن.",
+        content: "أجوبة أسئلة عملاء شهارة حول الشراء والدفع والتوصيل والإرجاع في اليمن.",
       },
-      { property: "og:title", content: "الأسئلة الشائعة | تشكيلات" },
-      { property: "og:description", content: "كل ما تريد معرفته عن التسوق من متجر تشكيلات." },
+      { property: "og:title", content: "الأسئلة الشائعة | شهارة" },
+      { property: "og:description", content: "كل ما تريد معرفته عن التسوق من متجر شهارة." },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
