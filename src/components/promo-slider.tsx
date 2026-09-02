@@ -6,45 +6,195 @@ import {
 
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
   fetchBanners,
   type Banner,
 } from "@/lib/store";
 
+import {
+  BRAND_COLORS,
+} from "@/lib/logo";
+
+/**
+ * =========================================================
+ * تشكيلات للتسوق
+ * Promo Slider
+ * =========================================================
+ *
+ * المسؤوليات:
+ *
+ * - عرض البنرات الفعالة من قاعدة البيانات.
+ * - التبديل التلقائي.
+ * - السحب على الهاتف.
+ * - دعم الروابط الداخلية والخارجية.
+ * - دعم RTL.
+ * - الحفاظ على صور الإعلانات الحالية.
+ * - تطبيق إطار الهوية البصرية.
+ * =========================================================
+ */
+
+function HeritageCorner({
+  position,
+}: {
+  position:
+    | "top-right"
+    | "top-left"
+    | "bottom-right"
+    | "bottom-left";
+}) {
+  const positionClass = {
+    "top-right":
+      "right-3 top-3",
+    "top-left":
+      "left-3 top-3",
+    "bottom-right":
+      "bottom-3 right-3",
+    "bottom-left":
+      "bottom-3 left-3",
+  }[position];
+
+  return (
+    <span
+      aria-hidden="true"
+      className={`
+        pointer-events-none
+        absolute
+        z-20
+        hidden
+        h-5
+        w-5
+        opacity-75
+        sm:block
+        ${positionClass}
+      `}
+    >
+      <span
+        className="
+          absolute
+          inset-1
+          rotate-45
+          border
+          border-[#E0B85C]/70
+        "
+      />
+
+      <span
+        className="
+          absolute
+          left-1/2
+          top-1/2
+          h-1
+          w-1
+          -translate-x-1/2
+          -translate-y-1/2
+          rotate-45
+          bg-[#E0B85C]
+        "
+      />
+    </span>
+  );
+}
+
+/**
+ * =========================================================
+ * صورة البنر
+ * =========================================================
+ */
+
 function BannerImage({
-  banner,
+  b,
   eager,
 }: {
-  banner: Banner;
+  b: Banner;
   eager: boolean;
 }) {
   return (
-    <img
-      src={banner.image_url}
-      alt={
-        banner.title ||
-        "عرض من شهارة"
-      }
-      width={1200}
-      height={560}
-      loading={
-        eager ? "eager" : "lazy"
-      }
-      decoding="async"
-      draggable={false}
+    <div
       className="
-        h-full
+        relative
+        h-44
         w-full
-        select-none
-        object-cover
-        transition-transform
-        duration-700
+        overflow-hidden
+        bg-[#4A1525]
+        sm:h-60
+        md:h-72
       "
-    />
+    >
+      <img
+        src={b.image_url}
+        alt={
+          b.title ||
+          "عرض من تشكيلات"
+        }
+        width={1200}
+        height={700}
+        loading={
+          eager
+            ? "eager"
+            : "lazy"
+        }
+        decoding="async"
+        draggable={false}
+        onContextMenu={(event) => {
+          event.preventDefault();
+        }}
+        onDragStart={(event) => {
+          event.preventDefault();
+        }}
+        className="
+          h-full
+          w-full
+          select-none
+          object-cover
+          [-webkit-user-drag:none]
+        "
+      />
+
+      {/*
+       * طبقة حماية بصرية خفيفة.
+       *
+       * لا تحجب الإعلان ولا تقلل وضوحه،
+       * وإنما تضيف لمسة من الهوية.
+       */}
+
+      <span
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          inset-0
+          bg-gradient-to-t
+          from-[#35101C]/10
+          via-transparent
+          to-[#35101C]/5
+        "
+      />
+
+      {/*
+       * إطار داخلي ذهبي شديد الخفة.
+       */}
+
+      <span
+        aria-hidden="true"
+        className="
+          pointer-events-none
+          absolute
+          inset-1
+          rounded-[1.35rem]
+          border
+          border-[#E0B85C]/15
+        "
+      />
+    </div>
   );
 }
+
+/**
+ * =========================================================
+ * Promo Slider
+ * =========================================================
+ */
 
 export function PromoSlider() {
   const {
@@ -62,14 +212,24 @@ export function PromoSlider() {
       1000 * 60 * 30,
   });
 
-  const [index, setIndex] =
-    useState(0);
+  const [
+    index,
+    setIndex,
+  ] = useState(0);
 
   const startX =
-    useRef<number | null>(null);
+    useRef<number | null>(
+      null,
+    );
 
   const paused =
     useRef(false);
+
+  /**
+   * =======================================================
+   * التبديل التلقائي
+   * =======================================================
+   */
 
   useEffect(() => {
     if (banners.length < 2) {
@@ -77,15 +237,20 @@ export function PromoSlider() {
     }
 
     const timer =
-      window.setInterval(() => {
-        if (!paused.current) {
-          setIndex(
-            (current) =>
-              (current + 1) %
-              banners.length,
-          );
-        }
-      }, 5000);
+      window.setInterval(
+        () => {
+          if (
+            !paused.current
+          ) {
+            setIndex(
+              (current) =>
+                (current + 1) %
+                banners.length,
+            );
+          }
+        },
+        5000,
+      );
 
     return () =>
       window.clearInterval(
@@ -93,10 +258,22 @@ export function PromoSlider() {
       );
   }, [banners.length]);
 
+  /**
+   * =======================================================
+   * الحالة الانتقالية
+   * =======================================================
+   */
+
   useEffect(() => {
     if (
-      index >= banners.length &&
-      banners.length > 0
+      banners.length === 0
+    ) {
+      return;
+    }
+
+    if (
+      index >=
+      banners.length
     ) {
       setIndex(0);
     }
@@ -105,64 +282,112 @@ export function PromoSlider() {
     index,
   ]);
 
-  if (banners.length === 0) {
+  /**
+   * =======================================================
+   * Skeleton
+   * =======================================================
+   */
+
+  if (
+    banners.length === 0
+  ) {
     return (
-      <section
-        className="
-          overflow-hidden
-          rounded-[1.5rem]
-          border
-          border-[#0E4D64]/8
-          bg-[#E8F1F4]
-        "
-      >
+      <section className="px-4 pt-4">
         <div
           className="
-            h-48
-            animate-pulse
-            bg-[#0E4D64]/5
-            sm:h-64
-            md:h-80
+            relative
+            h-44
+            w-full
+            overflow-hidden
+            rounded-[1.75rem]
+            border
+            border-[#E0B85C]/15
+            bg-[#4A1525]/5
+            shadow-[0_15px_45px_-30px_rgba(74,21,37,0.55)]
+            sm:h-60
+            md:h-72
           "
           aria-label="جاري تحميل العروض"
           role="status"
-        />
+        >
+          <div
+            className="
+              absolute
+              inset-0
+              animate-pulse
+              bg-muted
+            "
+          />
+
+          <span
+            aria-hidden="true"
+            className="
+              pointer-events-none
+              absolute
+              inset-3
+              rounded-[1.35rem]
+              border
+              border-[#E0B85C]/20
+            "
+          />
+
+          <HeritageCorner
+            position="top-right"
+          />
+
+          <HeritageCorner
+            position="top-left"
+          />
+
+          <HeritageCorner
+            position="bottom-right"
+          />
+
+          <HeritageCorner
+            position="bottom-left"
+          />
+        </div>
       </section>
     );
   }
 
-  const active =
-    banners[
-      Math.min(
-        index,
-        banners.length - 1,
-      )
-    ];
+  const active = Math.min(
+    index,
+    banners.length - 1,
+  );
 
-  const go = (
-    delta: number,
-  ) => {
+  /**
+   * =======================================================
+   * التنقل
+   * =======================================================
+   */
+
+  function go(delta: number) {
     setIndex(
       (current) =>
-        (current +
-          delta +
-          banners.length) %
+        (current + delta + banners.length) %
         banners.length,
     );
-  };
+  }
 
-  const handlePointerDown = (
+  /**
+   * =======================================================
+   * Pointer handlers
+   * =======================================================
+   */
+
+  function handlePointerDown(
     event: React.PointerEvent<HTMLDivElement>,
-  ) => {
+  ) {
     startX.current =
       event.clientX;
 
     paused.current = true;
-  };
+  }
 
-  const handlePointerUp = (
+  function handlePointerUp(
     event: React.PointerEvent<HTMLDivElement>,
-  ) => {
+  ) {
     const from =
       startX.current;
 
@@ -173,37 +398,62 @@ export function PromoSlider() {
       return;
     }
 
-    const distance =
+    const dx =
       event.clientX - from;
 
     if (
-      Math.abs(distance) < 40
+      Math.abs(dx) < 40
     ) {
       return;
     }
 
+    /*
+     * RTL:
+     *
+     * السحب لليسار:
+     * الشريحة التالية.
+     *
+     * السحب لليمين:
+     * الشريحة السابقة.
+     */
     go(
-      distance > 0
+      dx > 0
         ? -1
         : 1,
     );
-  };
+  }
+
+  function handlePointerCancel() {
+    startX.current = null;
+    paused.current = false;
+  }
+
+  /**
+   * =======================================================
+   * Render
+   * =======================================================
+   */
 
   return (
     <section
-      aria-label="العروض من شهارة"
       className="
-        overflow-hidden
-        rounded-[1.5rem]
+        px-4
+        pt-4
       "
+      aria-label="العروض والإعلانات"
     >
       <div
         className="
           relative
           overflow-hidden
-          rounded-[1.5rem]
-          bg-[#0E4D64]
-          shadow-[0_18px_40px_-28px_rgba(14,77,100,0.7)]
+          rounded-[1.75rem]
+          border
+          border-[#E0B85C]/25
+          bg-[#4A1525]
+          p-[3px]
+          shadow-[0_18px_55px_-30px_rgba(74,21,37,0.65)]
+          dark:border-[#E0B85C]/20
+          dark:bg-[#35101C]
         "
         onPointerDown={
           handlePointerDown
@@ -211,209 +461,282 @@ export function PromoSlider() {
         onPointerUp={
           handlePointerUp
         }
-        onPointerCancel={() => {
-          startX.current = null;
-          paused.current = false;
+        onPointerCancel={
+          handlePointerCancel
+        }
+        onPointerLeave={() => {
+          if (
+            startX.current !==
+            null
+          ) {
+            startX.current = null;
+            paused.current = false;
+          }
         }}
       >
+        {/*
+         * ===================================================
+         * الإطار الداخلي
+         * ===================================================
+         */}
+
         <div
           className="
             relative
-            h-48
             overflow-hidden
-            sm:h-64
-            md:h-80
+            rounded-[1.55rem]
           "
+          style={{
+            background:
+              `linear-gradient(
+                135deg,
+                ${BRAND_COLORS.burgundyDeep},
+                ${BRAND_COLORS.burgundy}
+              )`,
+          }}
         >
-          <BannerImage
-            banner={active}
-            eager
+          {/*
+           * زخارف الزوايا.
+           */}
+
+          <HeritageCorner
+            position="top-right"
           />
 
-          <div
+          <HeritageCorner
+            position="top-left"
+          />
+
+          <HeritageCorner
+            position="bottom-right"
+          />
+
+          <HeritageCorner
+            position="bottom-left"
+          />
+
+          {/*
+           * العلامة المائية الهندسية.
+           */}
+
+          <span
+            aria-hidden="true"
             className="
               pointer-events-none
               absolute
-              inset-0
-              bg-gradient-to-t
-              from-[#0E4D64]/65
-              via-[#0E4D64]/10
-              to-transparent
+              -right-16
+              top-1/2
+              z-10
+              h-40
+              w-40
+              -translate-y-1/2
+              rotate-45
+              rounded-[2rem]
+              border
+              border-[#E0B85C]/[0.055]
             "
           />
 
+          <span
+            aria-hidden="true"
+            className="
+              pointer-events-none
+              absolute
+              -left-16
+              top-1/2
+              z-10
+              h-32
+              w-32
+              -translate-y-1/2
+              rotate-45
+              rounded-[1.5rem]
+              border
+              border-[#E0B85C]/[0.04]
+            "
+          />
+
+          {/*
+           * =================================================
+           * الشرائح
+           * =================================================
+           */}
+
           <div
             className="
-              absolute
-              inset-x-0
-              bottom-0
-              z-10
-              p-5
-              text-white
-              sm:p-7
+              flex
+              touch-pan-y
+              select-none
+              transition-transform
+              duration-500
+              ease-out
             "
+            style={{
+              transform:
+                `translateX(${active * 100}%)`,
+            }}
           >
-            {active.title ? (
-              <h2
-                className="
-                  max-w-xl
-                  text-lg
-                  font-extrabold
-                  sm:text-2xl
-                "
-              >
-                {active.title}
-              </h2>
-            ) : null}
-
-            {active.subtitle ? (
-              <p
-                className="
-                  mt-1
-                  max-w-lg
-                  text-xs
-                  leading-6
-                  text-white/80
-                  sm:text-sm
-                "
-              >
-                {active.subtitle}
-              </p>
-            ) : null}
-
-            {active.cta_label &&
-            active.link_url ? (
-              <Link
-                to={
-                  active.link_url.startsWith(
+            {banners.map(
+              (banner, i) => {
+                const internal =
+                  banner.link_url.startsWith(
                     "/",
-                  )
-                    ? active.link_url
-                    : "/"
-                }
-                className="
-                  mt-3
-                  inline-flex
-                  min-h-10
-                  items-center
-                  rounded-xl
-                  bg-[#D65A31]
-                  px-4
-                  text-xs
-                  font-extrabold
-                  text-white
-                  shadow-lg
-                  transition-all
-                  duration-200
-                  hover:bg-[#B74624]
-                  active:scale-95
-                "
-              >
-                {active.cta_label}
-              </Link>
-            ) : null}
+                  );
+
+                const body = (
+                  <BannerImage
+                    b={banner}
+                    eager={i === 0}
+                  />
+                );
+
+                return (
+                  <div
+                    key={banner.id}
+                    className="
+                      w-full
+                      shrink-0
+                    "
+                    aria-hidden={
+                      i !== active
+                    }
+                  >
+                    {banner.link_url ? (
+                      internal ? (
+                        <Link
+                          to={
+                            banner.link_url
+                          }
+                          className="
+                            block
+                            focus-visible:outline-none
+                            focus-visible:ring-2
+                            focus-visible:ring-inset
+                            focus-visible:ring-[#E0B85C]
+                          "
+                        >
+                          {body}
+                        </Link>
+                      ) : (
+                        <a
+                          href={
+                            banner.link_url
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                          className="
+                            block
+                            focus-visible:outline-none
+                            focus-visible:ring-2
+                            focus-visible:ring-inset
+                            focus-visible:ring-[#E0B85C]
+                          "
+                        >
+                          {body}
+                        </a>
+                      )
+                    ) : (
+                      body
+                    )}
+                  </div>
+                );
+              },
+            )}
           </div>
 
-          {banners.length > 1 ? (
-            <>
-              <button
-                type="button"
-                aria-label="العرض السابق"
-                onClick={() => go(-1)}
-                className="
-                  absolute
-                  start-3
-                  top-1/2
-                  z-20
-                  grid
-                  h-9
-                  w-9
-                  -translate-y-1/2
-                  place-items-center
-                  rounded-full
-                  bg-white/90
-                  text-[#0E4D64]
-                  shadow-lg
-                  transition-all
-                  hover:bg-white
-                  active:scale-90
-                "
-              >
-                <ChevronRight
-                  className="h-4 w-4"
-                />
-              </button>
+          {/*
+           * =================================================
+           * مؤشرات الشرائح
+           * =================================================
+           */}
 
-              <button
-                type="button"
-                aria-label="العرض التالي"
-                onClick={() => go(1)}
-                className="
-                  absolute
-                  end-3
-                  top-1/2
-                  z-20
-                  grid
-                  h-9
-                  w-9
-                  -translate-y-1/2
-                  place-items-center
-                  rounded-full
-                  bg-white/90
-                  text-[#0E4D64]
-                  shadow-lg
-                  transition-all
-                  hover:bg-white
-                  active:scale-90
-                "
-              >
-                <ChevronLeft
-                  className="h-4 w-4"
-                />
-              </button>
-
-              <div
-                className="
-                  absolute
-                  bottom-3
-                  left-1/2
-                  z-20
-                  flex
-                  -translate-x-1/2
-                  gap-1.5
-                "
-              >
-                {banners.map(
-                  (_, dotIndex) => (
-                    <button
-                      key={dotIndex}
-                      type="button"
-                      aria-label={`العرض ${dotIndex + 1}`}
-                      onClick={() =>
-                        setIndex(
-                          dotIndex,
-                        )
+          {banners.length >
+          1 ? (
+            <div
+              className="
+                absolute
+                bottom-3
+                start-1/2
+                z-30
+                flex
+                -translate-x-1/2
+                items-center
+                gap-1.5
+                rounded-full
+                border
+                border-white/10
+                bg-[#35101C]/55
+                px-2.5
+                py-1.5
+                shadow-lg
+                backdrop-blur-sm
+              "
+              role="tablist"
+              aria-label="شرائح العروض"
+            >
+              {banners.map(
+                (
+                  banner,
+                  i,
+                ) => (
+                  <button
+                    key={
+                      banner.id
+                    }
+                    type="button"
+                    role="tab"
+                    aria-selected={
+                      i === active
+                    }
+                    aria-label={`الانتقال إلى الشريحة ${
+                      i + 1
+                    }`}
+                    onClick={() =>
+                      setIndex(i)
+                    }
+                    className={`
+                      h-1.5
+                      rounded-full
+                      transition-all
+                      duration-300
+                      focus-visible:outline-none
+                      focus-visible:ring-2
+                      focus-visible:ring-[#E0B85C]
+                      ${
+                        i ===
+                        active
+                          ? "w-6 bg-[#E0B85C]"
+                          : "w-1.5 bg-white/70 hover:bg-[#E0B85C]/70"
                       }
-                      className={`
-                        h-1.5
-                        rounded-full
-                        transition-all
-                        duration-200
-                        ${
-                          dotIndex ===
-                          index
-                            ? "w-6 bg-[#D65A31]"
-                            : "w-1.5 bg-white/60"
-                        }
-                      `}
-                    />
-                  ),
-                )}
-              </div>
-            </>
+                    `}
+                  />
+                ),
+              )}
+            </div>
           ) : null}
+
+          {/*
+           * خط ذهبي سفلي خفيف.
+           */}
+
+          <span
+            aria-hidden="true"
+            className="
+              pointer-events-none
+              absolute
+              inset-x-8
+              bottom-0
+              z-30
+              h-px
+              bg-gradient-to-r
+              from-transparent
+              via-[#E0B85C]/40
+              to-transparent
+            "
+          />
         </div>
       </div>
     </section>
   );
 }
+
+export default PromoSlider;

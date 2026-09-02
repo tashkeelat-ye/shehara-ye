@@ -1,963 +1,546 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft,
-  ChevronLeft,
-  CookingPot,
-  Grid2X2,
-  Landmark,
-  Lamp,
-  Package,
-  Shirt,
-  ShoppingBasket,
-  Smartphone,
-  Sparkles,
+  memo,
+  useCallback,
+  type MouseEvent,
+} from "react";
+
+import { Link } from "@tanstack/react-router";
+
+import {
+  Check,
+  Heart,
+  Plus,
   Star,
-  Tag,
-  TrendingUp,
-  Watch,
 } from "lucide-react";
 
-import { SiteHeader } from "@/components/site-header";
-import { PromoSlider } from "@/components/promo-slider";
-import { FlashSaleSection } from "@/components/home/FlashSaleSection";
-import { OffersSection } from "@/components/offers-section";
-import { BrandsSection } from "@/components/brands-section";
-import { SectionHeading } from "@/components/section-heading";
-import {
-  ProductCard,
-  ProductCardSkeleton,
-} from "@/components/product-card";
-import { LocalProducts } from "@/components/local-products";
-import { BottomNav } from "@/components/bottom-nav";
+import { toast } from "sonner";
 
-import {
-  fetchCategories,
-  fetchProducts,
-} from "@/lib/db";
+import { type Product } from "@/lib/db";
+import { useCart } from "@/lib/cart-context";
+import { useFormatPrice } from "@/lib/currency-context";
+import { ProductImage } from "./product-image";
 
-import type { Category } from "@/lib/db";
-
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      {
-        title: "شهارة | تسوق بلا حدود",
-      },
-      {
-        name: "description",
-        content:
-          "شهارة — متجر إلكتروني يمني حديث للتسوق من المنتجات المحلية والعالمية.",
-      },
-      {
-        property: "og:title",
-        content: "شهارة | تسوق بلا حدود",
-      },
-      {
-        property: "og:description",
-        content:
-          "تسوّق بسهولة من شهارة، متجرك الإلكتروني اليمني.",
-      },
-    ],
-    component: HomePage,
-  }),
-});
-
-const CATEGORY_ICONS = {
-  Shirt,
-  Smartphone,
-  CookingPot,
-  Sparkles,
-  ShoppingBasket,
-  Watch,
-  Lamp,
-  Landmark,
+type ProductCardProps = {
+  product: Product;
 };
 
-type PopularCategory = Category & {
-  productCount: number;
-  popularityScore: number;
-};
+export const ProductCard = memo(
+  function ProductCard({
+    product,
+  }: ProductCardProps) {
+    const {
+      addItem,
+      setDrawerOpen,
+      getItemQuantity,
+    } = useCart();
 
-function HomeBackground() {
-  return (
-    <div
-      aria-hidden="true"
-      className="
-        pointer-events-none
-        fixed
-        inset-0
-        z-0
-        overflow-hidden
-      "
-    >
-      <div
-        className="
-          absolute
-          -end-40
-          top-24
-          h-80
-          w-80
-          rounded-full
-          bg-[#0E4D64]/[0.035]
-          blur-3xl
-        "
-      />
+    const formatPrice =
+      useFormatPrice();
 
-      <div
-        className="
-          absolute
-          -start-40
-          top-[42rem]
-          h-96
-          w-96
-          rounded-full
-          bg-[#D65A31]/[0.025]
-          blur-3xl
-        "
-      />
-
-      <div
-        className="
-          absolute
-          end-[20%]
-          top-[75rem]
-          h-64
-          w-64
-          rounded-full
-          bg-[#0E4D64]/[0.02]
-          blur-3xl
-        "
-      />
-    </div>
-  );
-}
-
-function SectionCard({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section
-      className={`
-        relative
-        overflow-hidden
-        rounded-[1.6rem]
-        border
-        border-[#0E4D64]/[0.075]
-        bg-white
-        shadow-[0_14px_45px_-35px_rgba(14,77,100,0.5)]
-        dark:border-white/[0.07]
-        dark:bg-[#0B2936]
-        ${className}
-      `}
-    >
-      {children}
-    </section>
-  );
-}
-
-function QuickActions() {
-  return (
-    <div
-      className="
-        grid
-        grid-cols-4
-        gap-2
-      "
-    >
-      <QuickAction
-        icon={<Grid2X2 />}
-        label="الأقسام"
-        href="/products"
-      />
-
-      <QuickAction
-        icon={<Tag />}
-        label="العروض"
-        href="/products"
-      />
-
-      <QuickAction
-        icon={<Package />}
-        label="طلباتي"
-        href="/orders"
-      />
-
-      <QuickAction
-        icon={<Star />}
-        label="الأعلى تقييماً"
-        href="/products"
-      />
-    </div>
-  );
-}
-
-function QuickAction({
-  icon,
-  label,
-  href,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  href: string;
-}) {
-  return (
-    <Link
-      to={href}
-      className="
-        group
-        flex
-        min-h-[82px]
-        flex-col
-        items-center
-        justify-center
-        gap-2
-        rounded-2xl
-        border
-        border-[#0E4D64]/[0.07]
-        bg-white
-        px-2
-        py-3
-        text-center
-        transition-all
-        duration-200
-        active:scale-95
-        hover:-translate-y-0.5
-        hover:border-[#0E4D64]/15
-        hover:shadow-[0_12px_30px_-24px_rgba(14,77,100,0.7)]
-        dark:border-white/[0.07]
-        dark:bg-[#0B2936]
-      "
-    >
-      <span
-        className="
-          grid
-          h-10
-          w-10
-          place-items-center
-          rounded-xl
-          bg-[#0E4D64]/[0.07]
-          text-[#0E4D64]
-          transition-all
-          group-hover:bg-[#D65A31]/10
-          group-hover:text-[#D65A31]
-          dark:bg-white/[0.05]
-          dark:text-[#D9EEF5]
-        "
-      >
-        <span className="h-5 w-5">
-          {icon}
-        </span>
-      </span>
-
-      <span
-        className="
-          text-[10px]
-          font-bold
-          leading-4
-          text-foreground
-        "
-      >
-        {label}
-      </span>
-    </Link>
-  );
-}
-
-function PopularCategories({
-  categories,
-  bestProducts,
-}: {
-  categories: Category[];
-  bestProducts: Awaited<
-    ReturnType<typeof fetchProducts>
-  >;
-}) {
-  const scores =
-    new Map<
-      string,
-      {
-        productCount: number;
-        popularityScore: number;
-      }
-    >();
-
-  for (const product of bestProducts) {
-    const current =
-      scores.get(product.category_id) ?? {
-        productCount: 0,
-        popularityScore: 0,
-      };
-
-    current.productCount += 1;
-
-    current.popularityScore +=
-      Number(product.sales_count) || 0;
-
-    scores.set(
-      product.category_id,
-      current,
+    const stockLeft = Math.max(
+      0,
+      Number(product.stock_left) || 0,
     );
-  }
 
-  const popular =
-    categories
-      .map((category) => {
-        const score =
-          scores.get(category.id);
+    const threshold = Math.max(
+      1,
+      Number(
+        product.low_stock_threshold,
+      ) || 5,
+    );
 
-        return {
-          ...category,
-          productCount:
-            score?.productCount ?? 0,
-          popularityScore:
-            score?.popularityScore ?? 0,
-        };
-      })
-      .sort(
-        (a, b) =>
-          b.popularityScore -
-          a.popularityScore,
-      )
-      .slice(0, 8) as PopularCategory[];
+    const outOfStock =
+      stockLeft <= 0;
 
-  if (popular.length === 0) {
-    return null;
-  }
+    const lowStock =
+      !outOfStock &&
+      stockLeft <= threshold;
 
-  return (
-    <SectionCard className="p-4">
-      <SectionHeading
-        title="الأقسام الرائجة"
-        action="كل الأقسام"
-        to="/products"
-      />
+    const cartQuantity =
+      getItemQuantity(product.id);
 
-      <div
+    const rating =
+      Number(product.rating) || 0;
+
+    const reviews =
+      Number(
+        product.reviews_count,
+      ) || 0;
+
+    const hasRating =
+      rating > 0 && reviews > 0;
+
+    const currentPrice =
+      Number(product.price) || 0;
+
+    const oldPrice =
+      product.old_price !== null
+        ? Number(product.old_price)
+        : 0;
+
+    const hasDiscount =
+      oldPrice > currentPrice &&
+      currentPrice > 0;
+
+    const discount =
+      hasDiscount
+        ? Math.round(
+            ((oldPrice -
+              currentPrice) /
+              oldPrice) *
+              100,
+          )
+        : 0;
+
+    const quickAdd =
+      useCallback(
+        async (
+          event: MouseEvent<HTMLButtonElement>,
+        ) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (outOfStock) {
+            toast.error(
+              "عذراً، هذا المنتج نفد من المخزون.",
+            );
+
+            return;
+          }
+
+          try {
+            await addItem({
+              productId: product.id,
+              quantity: 1,
+            });
+
+            toast.success(
+              cartQuantity > 0
+                ? "تمت إضافة قطعة أخرى إلى السلة"
+                : "تمت إضافة المنتج إلى السلة",
+              {
+                action: {
+                  label: "عرض السلة",
+                  onClick: () =>
+                    setDrawerOpen(
+                      true,
+                    ),
+                },
+              },
+            );
+          } catch (error) {
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "تعذر إضافة المنتج إلى السلة",
+            );
+          }
+        },
+        [
+          addItem,
+          cartQuantity,
+          outOfStock,
+          product.id,
+          setDrawerOpen,
+        ],
+      );
+
+    const openCart =
+      useCallback(
+        (
+          event: MouseEvent<HTMLButtonElement>,
+        ) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          setDrawerOpen(true);
+        },
+        [setDrawerOpen],
+      );
+
+    return (
+      <article
         className="
-          mt-4
+          group
+          relative
           flex
-          gap-3
-          overflow-x-auto
-          pb-1
-          scrollbar-none
+          min-w-0
+          flex-col
+          overflow-hidden
+          rounded-2xl
+          border
+          border-[#0E4D64]/8
+          bg-white
+          shadow-[0_8px_25px_-20px_rgba(14,77,100,0.55)]
+          transition-all
+          duration-200
+          hover:-translate-y-0.5
+          hover:border-[#0E4D64]/18
+          hover:shadow-[0_18px_35px_-25px_rgba(14,77,100,0.65)]
+          active:scale-[0.985]
+          dark:bg-card
         "
       >
-        {popular.map(
-          (category, index) => {
-            const Icon =
-              CATEGORY_ICONS[
-                category.icon as keyof typeof CATEGORY_ICONS
-              ] ?? Shirt;
+        <Link
+          to="/product/$id"
+          params={{
+            id: product.id,
+          }}
+          aria-label={`عرض ${product.name}`}
+          className="
+            relative
+            block
+            overflow-hidden
+            outline-none
+            focus-visible:ring-2
+            focus-visible:ring-inset
+            focus-visible:ring-[#D65A31]
+          "
+        >
+          <div
+            className="
+              relative
+              aspect-square
+              overflow-hidden
+              bg-[#F4F7F8]
+              dark:bg-[#103847]
+            "
+          >
+            <ProductImage
+              src={
+                product.images[0]
+              }
+              alt={product.name}
+              className="
+                h-full
+                w-full
+                transition-transform
+                duration-500
+                group-hover:scale-[1.035]
+              "
+            />
 
-            const useOrange =
-              index % 3 === 1;
-
-            return (
-              <Link
-                key={category.id}
-                to="/category/$slug"
-                params={{
-                  slug: category.slug,
-                }}
+            {discount > 0 ? (
+              <span
                 className="
-                  group
+                  absolute
+                  start-2
+                  top-2
+                  rounded-full
+                  bg-[#D65A31]
+                  px-2
+                  py-1
+                  text-[9px]
+                  font-extrabold
+                  leading-none
+                  text-white
+                  shadow-sm
+                "
+              >
+                -{discount}%
+              </span>
+            ) : null}
+
+            {product.badge ? (
+              <span
+                className="
+                  absolute
+                  end-2
+                  top-2
+                  max-w-[62%]
+                  truncate
+                  rounded-full
+                  border
+                  border-white/70
+                  bg-white/95
+                  px-2
+                  py-1
+                  text-[9px]
+                  font-bold
+                  text-[#0E4D64]
+                  shadow-sm
+                  backdrop-blur-sm
+                "
+              >
+                {product.badge}
+              </span>
+            ) : null}
+
+            {outOfStock ? (
+              <div
+                className="
+                  absolute
+                  inset-0
                   flex
-                  w-[88px]
-                  shrink-0
-                  flex-col
                   items-center
-                  text-center
-                  active:scale-95
+                  justify-center
+                  bg-white/65
+                  backdrop-blur-[2px]
                 "
               >
                 <span
-                  className={`
-                    grid
-                    h-[68px]
-                    w-[68px]
-                    place-items-center
-                    rounded-[1.35rem]
-                    border
-                    transition-all
-                    duration-200
-                    group-hover:-translate-y-0.5
-                    ${
-                      useOrange
-                        ? "border-[#D65A31]/10 bg-[#D65A31]/[0.07] text-[#D65A31]"
-                        : "border-[#0E4D64]/10 bg-[#0E4D64]/[0.07] text-[#0E4D64] dark:text-[#9DD5E5]"
-                    }
-                  `}
-                >
-                  <Icon
-                    className="h-7 w-7"
-                    strokeWidth={1.65}
-                  />
-                </span>
-
-                <span
                   className="
-                    mt-2
-                    line-clamp-1
-                    w-full
+                    rounded-full
+                    bg-[#0E4D64]
+                    px-3
+                    py-1.5
                     text-[10px]
                     font-bold
-                    text-foreground
+                    text-white
                   "
                 >
-                  {category.name}
+                  نفد المخزون
                 </span>
-
-                {category.productCount >
-                0 ? (
-                  <span
-                    className="
-                      mt-0.5
-                      text-[8px]
-                      text-muted-foreground
-                    "
-                  >
-                    {category.productCount.toLocaleString(
-                      "ar-EG",
-                    )}{" "}
-                    منتج
-                  </span>
-                ) : null}
-              </Link>
-            );
-          },
-        )}
-      </div>
-    </SectionCard>
-  );
-}
-
-function ProductSection({
-  title,
-  products,
-  loading,
-  action = "عرض الكل",
-}: {
-  title: string;
-  products: Awaited<
-    ReturnType<typeof fetchProducts>
-  >;
-  loading: boolean;
-  action?: string;
-}) {
-  return (
-    <section>
-      <div
-        className="
-          mb-4
-          flex
-          items-center
-          justify-between
-        "
-      >
-        <div>
-          <h2
-            className="
-              text-base
-              font-extrabold
-              tracking-tight
-              text-[#0E4D64]
-              dark:text-[#D9EEF5]
-              sm:text-lg
-            "
-          >
-            {title}
-          </h2>
-
-          <div
-            className="
-              mt-1
-              h-1
-              w-7
-              rounded-full
-              bg-[#D65A31]
-            "
-          />
-        </div>
-
-        <Link
-          to="/products"
-          className="
-            inline-flex
-            items-center
-            gap-1
-            rounded-xl
-            px-2
-            py-1.5
-            text-[10px]
-            font-bold
-            text-[#0E4D64]
-            transition-colors
-            hover:bg-[#0E4D64]/5
-            dark:text-[#9DD5E5]
-          "
-        >
-          {action}
-
-          <ChevronLeft
-            className="h-3.5 w-3.5"
-            strokeWidth={2.2}
-          />
+              </div>
+            ) : null}
+          </div>
         </Link>
-      </div>
 
-      {loading ? (
         <div
           className="
-            grid
-            grid-cols-2
-            gap-3
-            sm:grid-cols-3
-            md:grid-cols-4
+            flex
+            min-h-[150px]
+            flex-1
+            flex-col
+            p-3
           "
         >
-          {Array.from({
-            length: 8,
-          }).map((_, index) => (
-            <ProductCardSkeleton
-              key={index}
-            />
-          ))}
-        </div>
-      ) : products.length > 0 ? (
-        <div
-          className="
-            grid
-            grid-cols-2
-            gap-3
-            sm:grid-cols-3
-            md:grid-cols-4
-          "
-        >
-          {products
-            .slice(0, 8)
-            .map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-              />
-            ))}
-        </div>
-      ) : (
-        <div
-          className="
-            rounded-2xl
-            border
-            border-dashed
-            border-[#0E4D64]/10
-            bg-white
-            px-5
-            py-10
-            text-center
-            dark:bg-[#0B2936]
-          "
-        >
-          <div
-            className="
-              mx-auto
-              grid
-              h-12
-              w-12
-              place-items-center
-              rounded-2xl
-              bg-[#0E4D64]/[0.06]
-              text-[#0E4D64]
-              dark:text-[#9DD5E5]
-            "
+          <Link
+            to="/product/$id"
+            params={{
+              id: product.id,
+            }}
           >
-            <Package className="h-5 w-5" />
+            <h3
+              className="
+                line-clamp-2
+                min-h-[2.7rem]
+                text-[12.5px]
+                font-bold
+                leading-[1.5]
+                text-foreground
+                transition-colors
+                group-hover:text-[#0E4D64]
+              "
+            >
+              {product.name}
+            </h3>
+          </Link>
+
+          {hasRating ? (
+            <div
+              className="
+                mt-2
+                flex
+                items-center
+                gap-1
+                text-[10px]
+                text-muted-foreground
+              "
+            >
+              <Star
+                className="
+                  h-3.5
+                  w-3.5
+                  fill-[#D65A31]
+                  text-[#D65A31]
+                "
+                aria-hidden="true"
+              />
+
+              <span
+                className="
+                  font-bold
+                  text-foreground
+                "
+              >
+                {rating.toLocaleString(
+                  "ar-EG",
+                  {
+                    maximumFractionDigits: 1,
+                  },
+                )}
+              </span>
+
+              <span>
+                (
+                {reviews.toLocaleString(
+                  "ar-EG",
+                )}
+                )
+              </span>
+            </div>
+          ) : (
+            <div className="mt-2 h-4" />
+          )}
+
+          <div className="mt-1 min-h-4">
+            {lowStock ? (
+              <p
+                className="
+                  text-[9px]
+                  font-bold
+                  text-[#D65A31]
+                "
+              >
+                متبقي{" "}
+                {stockLeft.toLocaleString(
+                  "ar-EG",
+                )}{" "}
+                فقط
+              </p>
+            ) : null}
           </div>
 
-          <p
+          <div
             className="
-              mt-3
-              text-xs
+              mt-auto
+              flex
+              items-end
+              justify-between
+              gap-2
+              pt-2
+            "
+          >
+            <div className="min-w-0">
+              <p
+                className="
+                  truncate
+                  text-[14px]
+                  font-extrabold
+                  leading-tight
+                  text-[#0E4D64]
+                  sm:text-[15px]
+                "
+              >
+                {formatPrice(
+                  currentPrice,
+                )}
+              </p>
+
+              {hasDiscount ? (
+                <p
+                  className="
+                    mt-1
+                    truncate
+                    text-[9px]
+                    text-muted-foreground
+                    line-through
+                  "
+                >
+                  {formatPrice(
+                    oldPrice,
+                  )}
+                </p>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              disabled={outOfStock}
+              aria-label={
+                outOfStock
+                  ? `${product.name} غير متوفر`
+                  : `إضافة ${product.name} إلى السلة`
+              }
+              onClick={quickAdd}
+              className="
+                relative
+                grid
+                h-10
+                w-10
+                shrink-0
+                place-items-center
+                rounded-xl
+                bg-[#D65A31]
+                text-white
+                shadow-sm
+                transition-all
+                duration-150
+                hover:bg-[#B74624]
+                active:scale-90
+                disabled:cursor-not-allowed
+                disabled:opacity-40
+              "
+            >
+              {cartQuantity > 0 ? (
+                <>
+                  <Check
+                    className="h-4 w-4"
+                    strokeWidth={2.7}
+                  />
+
+                  <span
+                    className="
+                      absolute
+                      -end-1
+                      -top-1
+                      grid
+                      min-h-4
+                      min-w-4
+                      place-items-center
+                      rounded-full
+                      bg-[#0E4D64]
+                      px-1
+                      text-[8px]
+                      font-extrabold
+                      text-white
+                    "
+                  >
+                    {cartQuantity > 99
+                      ? "99+"
+                      : cartQuantity.toLocaleString(
+                          "ar-EG",
+                        )}
+                  </span>
+                </>
+              ) : (
+                <Plus
+                  className="h-4 w-4"
+                  strokeWidth={2.6}
+                />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {cartQuantity > 0 &&
+        !outOfStock ? (
+          <button
+            type="button"
+            onClick={openCart}
+            className="
+              mx-3
+              mb-3
+              flex
+              min-h-8
+              items-center
+              justify-center
+              rounded-xl
+              bg-[#0E4D64]/6
+              px-2
+              py-1.5
+              text-[9px]
               font-bold
-              text-foreground
+              text-[#0E4D64]
+              transition-colors
+              hover:bg-[#0E4D64]/10
             "
           >
-            لا توجد منتجات متاحة حالياً
-          </p>
-
-          <p
-            className="
-              mt-1
-              text-[10px]
-              text-muted-foreground
-            "
-          >
-            سنضيف منتجات جديدة قريباً.
-          </p>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function HomeTrustBar() {
-  return (
-    <div
-      className="
-        grid
-        grid-cols-3
-        overflow-hidden
-        rounded-2xl
-        border
-        border-[#0E4D64]/[0.07]
-        bg-white
-        dark:border-white/[0.07]
-        dark:bg-[#0B2936]
-      "
-    >
-      <TrustItem
-        icon={<Package />}
-        title="توصيل موثوق"
-      />
-
-      <TrustItem
-        icon={<ShoppingBasket />}
-        title="تسوق بسهولة"
-      />
-
-      <TrustItem
-        icon={<Sparkles />}
-        title="تجربة شهارة"
-      />
-    </div>
-  );
-}
-
-function TrustItem({
-  icon,
-  title,
-}: {
-  icon: React.ReactNode;
-  title: string;
-}) {
-  return (
-    <div
-      className="
-        flex
-        min-h-[72px]
-        flex-col
-        items-center
-        justify-center
-        gap-1.5
-        border-s
-        border-[#0E4D64]/[0.06]
-        px-2
-        text-center
-        first:border-s-0
-        dark:border-white/[0.06]
-      "
-    >
-      <span className="text-[#D65A31]">
-        <span className="block h-4 w-4">
-          {icon}
-        </span>
-      </span>
-
-      <span
-        className="
-          text-[9px]
-          font-bold
-          text-foreground
-        "
-      >
-        {title}
-      </span>
-    </div>
-  );
-}
-
-function FinalBrandCard() {
-  return (
-    <section
-      className="
-        relative
-        overflow-hidden
-        rounded-[1.7rem]
-        bg-[#0E4D64]
-        px-5
-        py-7
-        text-white
-        shadow-[0_22px_55px_-32px_rgba(14,77,100,0.8)]
-      "
-    >
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          -end-16
-          -top-20
-          h-48
-          w-48
-          rounded-full
-          border
-          border-white/10
-        "
-      />
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          -end-8
-          -top-12
-          h-32
-          w-32
-          rounded-full
-          border
-          border-[#D65A31]/30
-        "
-      />
-
-      <div className="relative z-10">
-        <div
-          className="
-            inline-flex
-            items-center
-            gap-1.5
-            rounded-full
-            bg-white/10
-            px-3
-            py-1.5
-            text-[9px]
-            font-bold
-            text-white/85
-          "
-        >
-          <TrendingUp className="h-3 w-3" />
-          شهارة
-        </div>
-
-        <h2
-          className="
-            mt-4
-            text-2xl
-            font-black
-            tracking-tight
-          "
-        >
-          تسوق بلا حدود
-        </h2>
-
-        <p
-          className="
-            mt-2
-            max-w-md
-            text-xs
-            leading-6
-            text-white/70
-          "
-        >
-          تجربة تسوق إلكترونية
-          يمنية حديثة تجمع لك
-          المنتجات والعروض في
-          مكان واحد.
-        </p>
-
-        <Link
-          to="/products"
-          className="
-            mt-5
-            inline-flex
-            min-h-10
-            items-center
-            gap-2
-            rounded-xl
-            bg-[#D65A31]
-            px-4
-            text-xs
-            font-extrabold
-            text-white
-            transition-all
-            hover:bg-[#B74624]
-            active:scale-95
-          "
-        >
-          ابدأ التسوق
-
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-      </div>
-    </section>
-  );
-}
-
-function HomePage() {
-  const {
-    data: bestProducts = [],
-    isLoading:
-      bestProductsLoading,
-  } = useQuery({
-    queryKey: [
-      "products",
-      "best",
-      24,
-    ],
-    queryFn: () =>
-      fetchProducts({
-        sort: "best",
-        limit: 24,
-      }),
-    staleTime:
-      1000 * 60 * 5,
-    gcTime:
-      1000 * 60 * 30,
-  });
-
-  const {
-    data: latestProducts = [],
-    isLoading:
-      latestProductsLoading,
-  } = useQuery({
-    queryKey: [
-      "products",
-      "latest",
-      24,
-    ],
-    queryFn: () =>
-      fetchProducts({
-        sort: "newest",
-        limit: 24,
-      }),
-    staleTime:
-      1000 * 60 * 5,
-    gcTime:
-      1000 * 60 * 30,
-  });
-
-  const {
-    data: categories = [],
-  } = useQuery({
-    queryKey: [
-      "categories",
-    ],
-    queryFn:
-      fetchCategories,
-    staleTime:
-      1000 * 60 * 10,
-    gcTime:
-      1000 * 60 * 60,
-  });
-
-  return (
-    <div
-      dir="rtl"
-      className="
-        relative
-        min-h-screen
-        overflow-x-hidden
-        bg-[#FAF9F6]
-        pb-24
-        text-foreground
-        dark:bg-[#071B24]
-      "
-    >
-      <HomeBackground />
-
-      <div className="relative z-10">
-        <SiteHeader />
-
-        <main
-          className="
-            mx-auto
-            w-full
-            max-w-6xl
-            px-3
-            pb-8
-            pt-3
-            sm:px-5
-            sm:pt-5
-            lg:px-6
-          "
-        >
-          {/* العرض الرئيسي */}
-          <section className="mb-4">
-            <PromoSlider />
-          </section>
-
-          {/* الوصول السريع */}
-          <section className="mb-5">
-            <QuickActions />
-          </section>
-
-          {/* الأقسام الرائجة */}
-          <section className="mb-6">
-            <PopularCategories
-              categories={categories}
-              bestProducts={bestProducts}
+            <Heart
+              className="me-1 h-3 w-3"
+              fill="currentColor"
             />
-          </section>
+            في السلة ·{" "}
+            {cartQuantity.toLocaleString(
+              "ar-EG",
+            )}
+          </button>
+        ) : null}
+      </article>
+    );
+  },
+);
 
-          {/* عناصر الثقة */}
-          <section className="mb-7">
-            <HomeTrustBar />
-          </section>
-
-          {/* الأكثر مبيعاً */}
-          <section className="mb-8">
-            <ProductSection
-              title="الأكثر مبيعاً"
-              products={bestProducts}
-              loading={
-                bestProductsLoading
-              }
-            />
-          </section>
-
-          {/* التخفيضات السريعة */}
-          <section className="mb-8">
-            <FlashSaleSection />
-          </section>
-
-          {/* العروض */}
-          <section className="mb-8">
-            <OffersSection />
-          </section>
-
-          {/* وصل حديثاً */}
-          <section className="mb-8">
-            <ProductSection
-              title="وصل حديثاً"
-              products={latestProducts}
-              loading={
-                latestProductsLoading
-              }
-              action="كل المنتجات"
-            />
-          </section>
-
-          {/* المنتجات المحلية */}
-          <section className="mb-8">
-            <LocalProducts />
-          </section>
-
-          {/* العلامات التجارية */}
-          <section className="mb-8">
-            <BrandsSection />
-          </section>
-
-          {/* دعوة التسوق */}
-          <FinalBrandCard />
-        </main>
-
-        <BottomNav />
-      </div>
-    </div>
-  );
-}
-
-export default HomePage;
+ProductCard.displayName =
+  "ProductCard";

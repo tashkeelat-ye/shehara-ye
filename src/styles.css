@@ -1,4 +1,3 @@
-@import "./styles/shehara-app.css";
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
