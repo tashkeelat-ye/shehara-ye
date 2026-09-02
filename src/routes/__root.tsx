@@ -1013,7 +1013,7 @@ function ThemeController() {
           stored,
         );
 
-        return;
+        return undefined;
       }
 
       const mediaQuery =
@@ -1065,6 +1065,8 @@ function ThemeController() {
       applyTheme(
         "light",
       );
+
+      return undefined;
     }
   }, []);
 
