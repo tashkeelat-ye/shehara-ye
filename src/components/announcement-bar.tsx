@@ -78,7 +78,7 @@ function HeritageMark() {
           w-3
           rotate-45
           border
-          border-[#E0B85C]/70
+          border-[#D65A31]/70
         "
       />
 
@@ -89,7 +89,7 @@ function HeritageMark() {
           w-1.5
           rotate-45
           border
-          border-[#F2D58B]/90
+          border-[#E98261]/90
         "
       />
     </span>
@@ -133,7 +133,7 @@ function AnnouncementContent({
           h-3.5
           w-3.5
           shrink-0
-          text-[#E0B85C]
+          text-[#D65A31]
         "
         strokeWidth={2.15}
         aria-hidden="true"
@@ -264,8 +264,8 @@ export function AnnouncementBar() {
           w-full
           overflow-hidden
           border-b
-          border-[#E0B85C]/30
-          bg-[#4A1525]
+          border-[#D65A31]/30
+          bg-[#0E4D64]
           text-white
           shadow-[0_2px_12px_-8px_rgba(74,21,37,0.7)]
         "
@@ -461,7 +461,7 @@ export function AnnouncementBar() {
           focus-visible:outline-none
           focus-visible:ring-2
           focus-visible:ring-inset
-          focus-visible:ring-[#E0B85C]
+          focus-visible:ring-[#D65A31]
         "
         aria-label="فتح الإعلان"
       >
@@ -485,13 +485,13 @@ export function AnnouncementBar() {
         w-full
         overflow-hidden
         border-b
-        border-[#E0B85C]/25
-        bg-[#4A1525]
+        border-[#D65A31]/25
+        bg-[#0E4D64]
         py-1.5
         text-white
         shadow-[0_3px_16px_-10px_rgba(74,21,37,0.75)]
-        dark:border-[#E0B85C]/20
-        dark:bg-[#35101C]
+        dark:border-[#D65A31]/20
+        dark:bg-[#0A3D50]
       "
       style={{
         backgroundImage: `
@@ -527,7 +527,7 @@ export function AnnouncementBar() {
           h-px
           bg-gradient-to-r
           from-transparent
-          via-[#E0B85C]/60
+          via-[#D65A31]/60
           to-transparent
         "
       />
@@ -550,7 +550,7 @@ export function AnnouncementBar() {
           rotate-45
           rounded-[0.5rem]
           border
-          border-[#E0B85C]/[0.035]
+          border-[#D65A31]/[0.035]
         "
       />
 
@@ -568,7 +568,7 @@ export function AnnouncementBar() {
           rotate-45
           rounded-[0.35rem]
           border
-          border-[#E0B85C]/[0.035]
+          border-[#D65A31]/[0.035]
         "
       />
 
@@ -588,7 +588,7 @@ export function AnnouncementBar() {
           h-px
           bg-gradient-to-r
           from-transparent
-          via-[#E0B85C]/30
+          via-[#D65A31]/30
           to-transparent
         "
       />

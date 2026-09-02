@@ -575,7 +575,7 @@ export function StoriesCategories() {
         dir="rtl"
         className="
           border-b
-          border-[#4A1525]/5
+          border-[#0E4D64]/5
           bg-background
           py-4
         "
@@ -653,7 +653,7 @@ export function StoriesCategories() {
         aria-label="قصص شهارة"
         className="
           border-b
-          border-[#4A1525]/5
+          border-[#0E4D64]/5
           bg-background
           py-3
         "
@@ -707,8 +707,8 @@ export function StoriesCategories() {
                     w-[68px]
                     rounded-full
                     bg-gradient-to-tr
-                    from-[#4A1525]
-                    via-[#C99A3B]
+                    from-[#0E4D64]
+                    via-[#B74624]
                     to-[#E7C66A]
                     p-[2.5px]
                     shadow-[0_3px_12px_rgba(74,21,37,0.12)]
@@ -777,7 +777,7 @@ export function StoriesCategories() {
                       rounded-full
                       border
                       border-background
-                      bg-[#E0B85C]
+                      bg-[#D65A31]
                     "
                     aria-hidden="true"
                   />
@@ -797,7 +797,7 @@ export function StoriesCategories() {
                     text-[11px]
                     font-semibold
                     leading-4
-                    text-[#4A1525]
+                    text-[#0E4D64]
                   "
                 >
                   {story.title ||
@@ -1146,8 +1146,8 @@ export function StoriesCategories() {
                     gap-2
                     rounded-full
                     border
-                    border-[#E0B85C]/60
-                    bg-[#4A1525]/95
+                    border-[#D65A31]/60
+                    bg-[#0E4D64]/95
                     px-6
                     text-sm
                     font-bold
@@ -1167,7 +1167,7 @@ export function StoriesCategories() {
                     className="
                       h-4
                       w-4
-                      text-[#E0B85C]
+                      text-[#D65A31]
                     "
                   />
                 </button>

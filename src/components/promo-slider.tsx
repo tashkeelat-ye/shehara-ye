@@ -75,7 +75,7 @@ function HeritageCorner({
           inset-1
           rotate-45
           border
-          border-[#E0B85C]/70
+          border-[#D65A31]/70
         "
       />
 
@@ -89,7 +89,7 @@ function HeritageCorner({
           -translate-x-1/2
           -translate-y-1/2
           rotate-45
-          bg-[#E0B85C]
+          bg-[#D65A31]
         "
       />
     </span>
@@ -116,7 +116,7 @@ function BannerImage({
         h-44
         w-full
         overflow-hidden
-        bg-[#4A1525]
+        bg-[#0E4D64]
         sm:h-60
         md:h-72
       "
@@ -165,9 +165,9 @@ function BannerImage({
           absolute
           inset-0
           bg-gradient-to-t
-          from-[#35101C]/10
+          from-[#0A3D50]/10
           via-transparent
-          to-[#35101C]/5
+          to-[#0A3D50]/5
         "
       />
 
@@ -183,7 +183,7 @@ function BannerImage({
           inset-1
           rounded-[1.35rem]
           border
-          border-[#E0B85C]/15
+          border-[#D65A31]/15
         "
       />
     </div>
@@ -301,8 +301,8 @@ export function PromoSlider() {
             overflow-hidden
             rounded-[1.75rem]
             border
-            border-[#E0B85C]/15
-            bg-[#4A1525]/5
+            border-[#D65A31]/15
+            bg-[#0E4D64]/5
             shadow-[0_15px_45px_-30px_rgba(74,21,37,0.55)]
             sm:h-60
             md:h-72
@@ -327,7 +327,7 @@ export function PromoSlider() {
               inset-3
               rounded-[1.35rem]
               border
-              border-[#E0B85C]/20
+              border-[#D65A31]/20
             "
           />
 
@@ -448,12 +448,12 @@ export function PromoSlider() {
           overflow-hidden
           rounded-[1.75rem]
           border
-          border-[#E0B85C]/25
-          bg-[#4A1525]
+          border-[#D65A31]/25
+          bg-[#0E4D64]
           p-[3px]
           shadow-[0_18px_55px_-30px_rgba(74,21,37,0.65)]
-          dark:border-[#E0B85C]/20
-          dark:bg-[#35101C]
+          dark:border-[#D65A31]/20
+          dark:bg-[#0A3D50]
         "
         onPointerDown={
           handlePointerDown
@@ -533,7 +533,7 @@ export function PromoSlider() {
               rotate-45
               rounded-[2rem]
               border
-              border-[#E0B85C]/[0.055]
+              border-[#D65A31]/[0.055]
             "
           />
 
@@ -551,7 +551,7 @@ export function PromoSlider() {
               rotate-45
               rounded-[1.5rem]
               border
-              border-[#E0B85C]/[0.04]
+              border-[#D65A31]/[0.04]
             "
           />
 
@@ -611,7 +611,7 @@ export function PromoSlider() {
                             focus-visible:outline-none
                             focus-visible:ring-2
                             focus-visible:ring-inset
-                            focus-visible:ring-[#E0B85C]
+                            focus-visible:ring-[#D65A31]
                           "
                         >
                           {body}
@@ -628,7 +628,7 @@ export function PromoSlider() {
                             focus-visible:outline-none
                             focus-visible:ring-2
                             focus-visible:ring-inset
-                            focus-visible:ring-[#E0B85C]
+                            focus-visible:ring-[#D65A31]
                           "
                         >
                           {body}
@@ -664,7 +664,7 @@ export function PromoSlider() {
                 rounded-full
                 border
                 border-white/10
-                bg-[#35101C]/55
+                bg-[#0A3D50]/55
                 px-2.5
                 py-1.5
                 shadow-lg
@@ -700,12 +700,12 @@ export function PromoSlider() {
                       duration-300
                       focus-visible:outline-none
                       focus-visible:ring-2
-                      focus-visible:ring-[#E0B85C]
+                      focus-visible:ring-[#D65A31]
                       ${
                         i ===
                         active
-                          ? "w-6 bg-[#E0B85C]"
-                          : "w-1.5 bg-white/70 hover:bg-[#E0B85C]/70"
+                          ? "w-6 bg-[#D65A31]"
+                          : "w-1.5 bg-white/70 hover:bg-[#D65A31]/70"
                       }
                     `}
                   />
@@ -729,7 +729,7 @@ export function PromoSlider() {
               h-px
               bg-gradient-to-r
               from-transparent
-              via-[#E0B85C]/40
+              via-[#D65A31]/40
               to-transparent
             "
           />

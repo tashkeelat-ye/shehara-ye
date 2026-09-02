@@ -81,22 +81,22 @@ import {
 
 const BRAND = {
   burgundy:
-    "#4A1525",
+    "#0E4D64",
 
   burgundyDeep:
-    "#35101C",
+    "#0A3D50",
 
   gold:
-    "#E0B85C",
+    "#D65A31",
 
   goldDeep:
-    "#C99A3B",
+    "#B74624",
 
   cream:
-    "#FBF7EF",
+    "#FAF9F6",
 
   dark:
-    "#170C11",
+    "#071B24",
 };
 
 /**
@@ -218,7 +218,7 @@ function HeritageWatermark() {
             inset-0
             rounded-[4rem]
             border-[2px]
-            border-[#E0B85C]
+            border-[#D65A31]
           "
         />
 
@@ -229,7 +229,7 @@ function HeritageWatermark() {
             rotate-45
             rounded-[2.5rem]
             border
-            border-[#E0B85C]
+            border-[#D65A31]
           "
         />
 
@@ -239,7 +239,7 @@ function HeritageWatermark() {
             inset-20
             rounded-2xl
             border
-            border-[#E0B85C]
+            border-[#D65A31]
           "
         />
 
@@ -254,7 +254,7 @@ function HeritageWatermark() {
             -translate-y-1/2
             rotate-45
             border-2
-            border-[#E0B85C]
+            border-[#D65A31]
           "
         />
       </div>
@@ -281,8 +281,8 @@ function HeritageWatermark() {
             inset-0
             rounded-[5rem]
             border-[2px]
-            border-[#4A1525]
-            dark:border-[#E0B85C]
+            border-[#0E4D64]
+            dark:border-[#D65A31]
           "
         />
 
@@ -292,8 +292,8 @@ function HeritageWatermark() {
             inset-10
             rounded-[4rem]
             border
-            border-[#4A1525]
-            dark:border-[#E0B85C]
+            border-[#0E4D64]
+            dark:border-[#D65A31]
           "
         />
 
@@ -303,8 +303,8 @@ function HeritageWatermark() {
             inset-24
             rounded-[3rem]
             border
-            border-[#4A1525]
-            dark:border-[#E0B85C]
+            border-[#0E4D64]
+            dark:border-[#D65A31]
           "
         />
       </div>
@@ -331,7 +331,7 @@ function HeritageWatermark() {
             h-px
             bg-gradient-to-r
             from-transparent
-            via-[#E0B85C]
+            via-[#D65A31]
             to-transparent
           "
         />
@@ -344,9 +344,9 @@ function HeritageWatermark() {
             h-px
             bg-gradient-to-r
             from-transparent
-            via-[#4A1525]
+            via-[#0E4D64]
             to-transparent
-            dark:via-[#E0B85C]
+            dark:via-[#D65A31]
           "
         />
 
@@ -358,7 +358,7 @@ function HeritageWatermark() {
             h-px
             bg-gradient-to-r
             from-transparent
-            via-[#E0B85C]
+            via-[#D65A31]
             to-transparent
           "
         />
@@ -377,7 +377,7 @@ function HeritageWatermark() {
           w-10
           rotate-45
           border
-          border-[#E0B85C]/[0.08]
+          border-[#D65A31]/[0.08]
         "
       />
 
@@ -390,7 +390,7 @@ function HeritageWatermark() {
           w-8
           rotate-45
           border
-          border-[#E0B85C]/[0.06]
+          border-[#D65A31]/[0.06]
         "
       />
 
@@ -403,7 +403,7 @@ function HeritageWatermark() {
           w-6
           rotate-45
           border
-          border-[#E0B85C]/[0.06]
+          border-[#D65A31]/[0.06]
         "
       />
     </div>
@@ -438,7 +438,7 @@ function NotFoundComponent() {
           overflow-hidden
           rounded-3xl
           border
-          border-[#E0B85C]/20
+          border-[#D65A31]/20
           bg-card
           p-8
           text-center
@@ -455,7 +455,7 @@ function NotFoundComponent() {
             w-28
             rotate-45
             border
-            border-[#E0B85C]/10
+            border-[#D65A31]/10
           "
         />
 
@@ -468,10 +468,10 @@ function NotFoundComponent() {
             w-20
             place-items-center
             rounded-2xl
-            bg-[#4A1525]
+            bg-[#0E4D64]
             text-3xl
             font-extrabold
-            text-[#E0B85C]
+            text-[#D65A31]
             shadow-lg
           "
         >
@@ -510,19 +510,19 @@ function NotFoundComponent() {
               items-center
               justify-center
               rounded-xl
-              bg-[#4A1525]
+              bg-[#0E4D64]
               px-6
               text-sm
               font-bold
               text-white
               transition-all
-              hover:bg-[#6A263A]
+              hover:bg-[#17647E]
               active:scale-[0.98]
               focus-visible:outline-none
               focus-visible:ring-2
-              focus-visible:ring-[#E0B85C]
-              dark:bg-[#E0B85C]
-              dark:text-[#35101C]
+              focus-visible:ring-[#D65A31]
+              dark:bg-[#D65A31]
+              dark:text-[#0A3D50]
             "
           >
             العودة للرئيسية
@@ -580,7 +580,7 @@ function ErrorComponent({
           max-w-md
           rounded-3xl
           border
-          border-[#E0B85C]/20
+          border-[#D65A31]/20
           bg-card
           p-7
           text-center
@@ -595,10 +595,10 @@ function ErrorComponent({
             w-14
             place-items-center
             rounded-2xl
-            bg-[#4A1525]/10
-            text-[#4A1525]
-            dark:bg-[#E0B85C]/10
-            dark:text-[#E0B85C]
+            bg-[#0E4D64]/10
+            text-[#0E4D64]
+            dark:bg-[#D65A31]/10
+            dark:text-[#D65A31]
           "
         >
           !
@@ -650,19 +650,19 @@ function ErrorComponent({
               items-center
               justify-center
               rounded-xl
-              bg-[#4A1525]
+              bg-[#0E4D64]
               px-5
               text-sm
               font-bold
               text-white
               transition-all
-              hover:bg-[#6A263A]
+              hover:bg-[#17647E]
               active:scale-[0.98]
               focus-visible:outline-none
               focus-visible:ring-2
-              focus-visible:ring-[#E0B85C]
-              dark:bg-[#E0B85C]
-              dark:text-[#35101C]
+              focus-visible:ring-[#D65A31]
+              dark:bg-[#D65A31]
+              dark:text-[#0A3D50]
             "
           >
             المحاولة مرة أخرى
@@ -677,18 +677,18 @@ function ErrorComponent({
               justify-center
               rounded-xl
               border
-              border-[#E0B85C]/20
+              border-[#D65A31]/20
               bg-background
               px-5
               text-sm
               font-bold
               text-foreground
               transition-all
-              hover:bg-[#4A1525]/[0.04]
+              hover:bg-[#0E4D64]/[0.04]
               active:scale-[0.98]
               focus-visible:outline-none
               focus-visible:ring-2
-              focus-visible:ring-[#E0B85C]
+              focus-visible:ring-[#D65A31]
             "
           >
             الرئيسية
@@ -885,8 +885,8 @@ function RootShell({
       dir="rtl"
       className="
         shehara-app
-        bg-[#FBF7EF]
-        dark:bg-[#170C11]
+        bg-[#FAF9F6]
+        dark:bg-[#071B24]
       "
     >
       <head>
@@ -904,15 +904,15 @@ function RootShell({
         className="
           min-h-screen
           overflow-x-hidden
-          bg-[#FBF7EF]
-          text-[#35101C]
+          bg-[#FAF9F6]
+          text-[#0A3D50]
           antialiased
-          selection:bg-[#E0B85C]/30
-          selection:text-[#35101C]
-          dark:bg-[#170C11]
-          dark:text-[#FBF7EF]
-          dark:selection:bg-[#E0B85C]/30
-          dark:selection:text-[#FBF7EF]
+          selection:bg-[#D65A31]/30
+          selection:text-[#0A3D50]
+          dark:bg-[#071B24]
+          dark:text-[#FAF9F6]
+          dark:selection:bg-[#D65A31]/30
+          dark:selection:text-[#FAF9F6]
         "
         onContextMenu={(event) => {
           const target =
@@ -948,8 +948,8 @@ function RootShell({
             relative
             min-h-screen
             overflow-x-hidden
-            bg-[#FBF7EF]
-            dark:bg-[#170C11]
+            bg-[#FAF9F6]
+            dark:bg-[#071B24]
           "
         >
           <HeritageWatermark />
@@ -1389,7 +1389,7 @@ function GlobalFetchingLoader() {
         flex
         items-center
         justify-center
-        bg-[#35101C]/[0.035]
+        bg-[#0A3D50]/[0.035]
         backdrop-blur-[1px]
       "
       aria-hidden="true"
@@ -1398,8 +1398,8 @@ function GlobalFetchingLoader() {
         className="
           rounded-2xl
           border
-          border-[#E0B85C]/20
-          bg-[#FBF7EF]/95
+          border-[#D65A31]/20
+          bg-[#FAF9F6]/95
           p-3
           shadow-[0_15px_45px_-25px_rgba(74,21,37,0.55)]
           dark:bg-[#211117]/95
@@ -1412,9 +1412,9 @@ function GlobalFetchingLoader() {
             animate-spin
             rounded-full
             border-2
-            border-[#E0B85C]/20
-            border-t-[#4A1525]
-            dark:border-t-[#E0B85C]
+            border-[#D65A31]/20
+            border-t-[#0E4D64]
+            dark:border-t-[#D65A31]
           "
         />
       </div>

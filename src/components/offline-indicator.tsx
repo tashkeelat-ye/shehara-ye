@@ -63,10 +63,10 @@ export function OfflineIndicator() {
             items-center
             justify-center
             rounded-full
-            bg-[#C99A3B]/15
-            text-[#E0B85C]
+            bg-[#B74624]/15
+            text-[#D65A31]
             ring-1
-            ring-[#E0B85C]/10
+            ring-[#D65A31]/10
           "
           aria-hidden="true"
         >
@@ -91,7 +91,7 @@ export function OfflineIndicator() {
           <span
             className="
               mx-1.5
-              text-[#E0B85C]
+              text-[#D65A31]
             "
             aria-hidden="true"
           >
