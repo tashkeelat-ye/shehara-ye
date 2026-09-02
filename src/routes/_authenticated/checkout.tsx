@@ -1031,13 +1031,14 @@ function CheckoutPage() {
         _notes:
           notes.trim(),
 
-        _latitude:
-          coords?.lat ??
-          null,
-
-        _longitude:
-          coords?.lng ??
-          null,
+        ...(coords
+          ? {
+              _latitude:
+                coords.lat,
+              _longitude:
+                coords.lng,
+            }
+          : {}),
 
         _needs_payment_request:
           needsReceipt,

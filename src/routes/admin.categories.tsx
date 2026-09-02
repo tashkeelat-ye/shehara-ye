@@ -54,7 +54,7 @@ export function AdminCategories() {
     const { urls, errors } = await uploadManyMedia("categories", Array.from(files));
     setUploadingCat(false);
     if (urls.length > 0) {
-      setEditingCat((prev) => (prev ? { ...prev, image_url: urls[0] } : prev));
+      setEditingCat((prev) => (prev ? { ...prev, image_url: urls[0] ?? "" } : prev));
       toast.success("تم رفع صورة الفئة بنجاح");
     }
     if (errors.length > 0) {
@@ -69,7 +69,7 @@ export function AdminCategories() {
     const { urls, errors } = await uploadManyMedia("brands", Array.from(files));
     setUploadingBrand(false);
     if (urls.length > 0) {
-      setEditingBrand((prev) => (prev ? { ...prev, logo_url: urls[0] } : prev));
+      setEditingBrand((prev) => (prev ? { ...prev, logo_url: urls[0] ?? "" } : prev));
       toast.success("تم رفع شعار الماركة بنجاح");
     }
     if (errors.length > 0) {
