@@ -544,3 +544,17 @@ export const ProductCard = memo(
 
 ProductCard.displayName =
   "ProductCard";
+
+export function ProductCardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="aspect-square w-full animate-pulse bg-muted" />
+
+      <div className="space-y-2 p-2.5">
+        <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+        <div className="h-7 w-full animate-pulse rounded-xl bg-muted" />
+      </div>
+    </div>
+  );
+}
