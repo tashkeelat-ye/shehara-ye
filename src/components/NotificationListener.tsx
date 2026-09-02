@@ -27,11 +27,11 @@ export function NotificationListener({ currentUserId }: { currentUserId?: string
         (payload) => {
           const newNotif = payload.new;
 
-          if (!newNotif.user_id || newNotif.user_id === currentUserId) {
+          if (!newNotif["user_id"] || newNotif["user_id"] === currentUserId) {
             playNotificationSound();
 
-            toast(newNotif.title, {
-              description: newNotif.body,
+            toast(String(newNotif["title"] ?? ""), {
+              description: newNotif["body"] as string | undefined,
               icon: <Bell className="h-4 w-4 text-primary" />,
             });
           }
