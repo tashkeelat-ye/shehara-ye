@@ -392,6 +392,25 @@ function Index() {
     [bestProducts, categories],
   );
 
+  /**
+   * ترتيب وإظهار أقسام الصفحة الرئيسية
+   * يُدار من لوحة الإدارة.
+   */
+  const { data: homeSections } = useQuery({
+    queryKey: ["home-sections"],
+    queryFn: () => fetchHomeSections(false),
+    staleTime: 5 * 60_000,
+  });
+
+  const sectionMap = useMemo(() => {
+    const map: Record<string, HomeSection> = {};
+    for (const section of homeSections ?? []) {
+      map[section.section_key] = section;
+    }
+    return map;
+  }, [homeSections]);
+
+
   return (
     <div
       dir="rtl"
