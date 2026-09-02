@@ -93,7 +93,7 @@ export function FlashSaleSection() {
     if (sales.length === 0) return;
 
     const targetDate = new Date(
-      sales[0].ends_at,
+      sales[0]!.ends_at,
     ).getTime();
 
     const interval = setInterval(() => {
@@ -504,10 +504,9 @@ export function FlashSaleSection() {
                       "
                     >
                       <Link
-                        to="/product/$productId"
+                        to="/product/$id"
                         params={{
-                          productId:
-                            product.id,
+                          id: product.id,
                         }}
                         aria-label={`عرض ${product.name}`}
                         className="
@@ -649,10 +648,9 @@ export function FlashSaleSection() {
                     >
                       <div>
                         <Link
-                          to="/product/$productId"
+                          to="/product/$id"
                           params={{
-                            productId:
-                              product.id,
+                            id: product.id,
                           }}
                           className="
                             line-clamp-2

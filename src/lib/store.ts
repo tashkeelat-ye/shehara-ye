@@ -145,7 +145,7 @@ export async function fetchPage(slug: string): Promise<PageRow | null> {
     .select("id,slug,title,content,is_published,updated_at")
     .eq("slug", slug)
     .maybeSingle<PageRow>();
-  return data ?? [];
+  return data ?? null;
 }
 
 export async function fetchPages(): Promise<PageRow[]> {

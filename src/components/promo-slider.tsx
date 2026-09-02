@@ -490,8 +490,8 @@ export function PromoSlider() {
             background:
               `linear-gradient(
                 135deg,
-                ${BRAND_COLORS.burgundyDeep},
-                ${BRAND_COLORS.burgundy}
+                ${BRAND_COLORS.orangeDeep},
+                ${BRAND_COLORS.orange}
               )`,
           }}
         >

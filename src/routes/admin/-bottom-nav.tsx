@@ -110,7 +110,7 @@ export default function AdminBottomNavManager() {
     setSaving(true);
     try {
       for (let index = 0; index < items.length; index++) {
-        const item = items[index];
+        const item = items[index]!;
         const payload = {
           title: item.title,
           path: item.path,
@@ -141,8 +141,8 @@ export default function AdminBottomNavManager() {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= newItems.length) return;
 
-    const temp = newItems[index];
-    newItems[index] = newItems[targetIndex];
+    const temp = newItems[index]!;
+    newItems[index] = newItems[targetIndex]!;
     newItems[targetIndex] = temp;
 
     setItems(newItems);

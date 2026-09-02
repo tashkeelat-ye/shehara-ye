@@ -24,7 +24,7 @@ export async function registerPushNotifications() {
 
     await supabase.from("user_push_subscriptions").insert({
       user_id: user?.id || null,
-      subscription: subscription,
+      subscription: JSON.parse(JSON.stringify(subscription)),
     });
   } catch (error) {
     console.error("خطأ في تسجيل إشعارات الويب:", error);

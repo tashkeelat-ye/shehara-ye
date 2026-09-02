@@ -995,7 +995,7 @@ function ThemeController() {
       root.style.colorScheme =
         theme;
 
-      root.dataset.theme =
+      root.dataset["theme"] =
         theme;
     }
 
@@ -1013,7 +1013,7 @@ function ThemeController() {
           stored,
         );
 
-        return;
+        return undefined;
       }
 
       const mediaQuery =
@@ -1065,6 +1065,8 @@ function ThemeController() {
       applyTheme(
         "light",
       );
+
+      return undefined;
     }
   }, []);
 
@@ -1446,9 +1448,9 @@ function AppContent() {
       <OfflineIndicator />
 
       <NotificationListener
-        currentUserId={
-          user?.id
-        }
+        {...(user?.id
+          ? { currentUserId: user.id }
+          : {})}
       />
 
       <Outlet />

@@ -79,7 +79,7 @@ export function SiteHeader() {
     document.documentElement.style.colorScheme =
       nextMode ? "dark" : "light";
 
-    document.documentElement.dataset.theme =
+    document.documentElement.dataset["theme"] =
       nextMode ? "dark" : "light";
 
     setDarkMode(nextMode);

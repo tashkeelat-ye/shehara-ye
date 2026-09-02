@@ -60,7 +60,7 @@ export function Banners4to1Manager() {
 
   const handleChange = (index: number, field: keyof Banner4to1, value: string) => {
     const updated = [...banners];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...(updated[index] as Banner4to1), [field]: value };
     setBanners(updated);
   };
 

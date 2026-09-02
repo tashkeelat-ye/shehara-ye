@@ -484,7 +484,7 @@ export type Database = {
           kind: string
           link_url: string
           title: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           body?: string
@@ -494,7 +494,7 @@ export type Database = {
           kind?: string
           link_url?: string
           title: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           body?: string
@@ -504,7 +504,7 @@ export type Database = {
           kind?: string
           link_url?: string
           title?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1330,6 +1330,35 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]

@@ -20,6 +20,7 @@ export type Category = {
   slug: string;
   name: string;
   icon: string;
+  image_url: string | null;
   sort_order: number;
 };
 
@@ -107,7 +108,7 @@ const PRODUCT_COLUMNS = [
 ].join(",");
 
 const CATEGORY_COLUMNS =
-  "id,slug,name,icon,sort_order";
+  "id,slug,name,icon,image_url,sort_order";
 
 const sel = (value: string): string => value;
 

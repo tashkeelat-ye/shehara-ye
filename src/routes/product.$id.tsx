@@ -211,13 +211,13 @@ function ProductDetail() {
 
     setSelectedSize(
       product.sizes?.length
-        ? product.sizes[0]
+        ? product.sizes[0] ?? null
         : null,
     );
 
     setSelectedColor(
       product.colors?.length
-        ? product.colors[0]
+        ? product.colors[0] ?? null
         : null,
     );
   }, [product?.id]);

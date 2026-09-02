@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductCard } from "@/components/product-card";
+import type { Product } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
@@ -71,7 +72,7 @@ export function OffersSection() {
         <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
           {offerProducts.map((product) => (
             <div key={product.id} className="w-40 shrink-0 sm:w-48">
-              <ProductCard product={product} />
+              <ProductCard product={product as unknown as Product} />
             </div>
           ))}
         </div>
