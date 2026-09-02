@@ -30,8 +30,10 @@ import {
 } from "@/lib/db";
 
 type SearchParams = {
-  q?: string;
-  sort?: SortKey;
+  q?: string | undefined;
+  sort?: SortKey | undefined;
+  brand?: string | undefined;
+  offers?: boolean | undefined;
 };
 
 export const Route = createFileRoute("/products")({
@@ -39,20 +41,32 @@ export const Route = createFileRoute("/products")({
     search: Record<string, unknown>,
   ): SearchParams => ({
     q:
-      typeof search.q === "string" &&
-      search.q.trim()
-        ? search.q.trim()
+      typeof search["q"] === "string" &&
+      search["q"].trim()
+        ? search["q"].trim()
         : undefined,
 
     sort:
-      typeof search.sort === "string" &&
+      typeof search["sort"] === "string" &&
       [
         "best",
         "newest",
         "price_asc",
         "price_desc",
-      ].includes(search.sort)
-        ? (search.sort as SortKey)
+      ].includes(search["sort"])
+        ? (search["sort"] as SortKey)
+        : undefined,
+
+    brand:
+      typeof search["brand"] === "string" &&
+      search["brand"].trim()
+        ? search["brand"].trim()
+        : undefined,
+
+    offers:
+      search["offers"] === true ||
+      search["offers"] === "true"
+        ? true
         : undefined,
   }),
 

@@ -38,7 +38,7 @@ export function BannerCarousel4to1() {
 
   if (!banners || banners.length === 0) return null;
 
-  const currentBanner = banners[currentIndex];
+  const currentBanner = banners[currentIndex] ?? banners[0]!;
 
   return (
     <section className="mt-6 px-4">
