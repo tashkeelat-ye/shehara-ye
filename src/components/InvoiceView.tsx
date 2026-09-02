@@ -321,7 +321,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
 
         <div className="text-center md:text-left z-10 max-w-xs">
           <h3 className="text-sm md:text-base font-bold text-[#c49a37]">شكراً لثقتكم بنا</h3>
-          <p className="text-[10px] text-gray-300 mt-0.5">شهارة للتسوق... كل ما تحتاجه في مكان واحد</p>
+          <p className="text-[10px] text-gray-300 mt-0.5">شهارة — تسوق بلا حدود</p>
         </div>
       </div>
 
