@@ -207,3 +207,28 @@ export function formatDate(value: string) {
     day: "numeric",
   });
 }
+
+export type HomeSection = {
+  id: string;
+  section_key: string;
+  title: string;
+  sort_order: number;
+  is_active: boolean;
+};
+
+export async function fetchHomeSections(onlyActive = true): Promise<HomeSection[]> {
+  let q = supabase
+    .from("home_sections")
+    .select("id,section_key,title,sort_order,is_active");
+  if (onlyActive) q = q.eq("is_active", true);
+  const { data } = await q.order("sort_order").returns<HomeSection[]>();
+  return data ?? [];
+}
+
+export async function updateHomeSection(
+  id: string,
+  patch: Partial<Pick<HomeSection, "title" | "sort_order" | "is_active">>,
+) {
+  const { error } = await supabase.from("home_sections").update(patch).eq("id", id);
+  if (error) throw error;
+}
