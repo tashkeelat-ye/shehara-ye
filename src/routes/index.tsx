@@ -31,6 +31,33 @@ import { BottomNav } from "@/components/bottom-nav";
 import { fetchCategories, fetchProducts } from "@/lib/db";
 import type { Category } from "@/lib/db";
 import { BannerCarousel4to1 } from "@/components/home/BannerCarousel4to1";
+import { fetchHomeSections, type HomeSection } from "@/lib/store";
+
+/**
+ * غلاف قسم في الصفحة الرئيسية.
+ * يستخدم ترتيب وحالة الإظهار القادمة من
+ * جدول home_sections في لوحة الإدارة.
+ */
+function Sec({
+  k,
+  cfg,
+  children,
+}: {
+  k: string;
+  cfg: Record<string, HomeSection>;
+  children: React.ReactNode;
+}) {
+  const section = cfg[k];
+
+  if (section && !section.is_active) return null;
+
+  return (
+    <div style={{ order: section?.sort_order ?? 999 }}>
+      {children}
+    </div>
+  );
+}
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
