@@ -216,7 +216,7 @@ export function AuthProvider({
       const normalizedRoles =
         loadedRoles.length > 0
           ? loadedRoles
-          : ["customer"];
+          : (["customer"] as AccountRole[]);
 
       const primaryRole =
         resolvePrimaryRole(normalizedRoles);

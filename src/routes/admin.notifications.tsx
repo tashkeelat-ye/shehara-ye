@@ -78,7 +78,6 @@ function AdminNotifications() {
         body: body.trim(),
         link_url: link.trim(),
         user_id: targetType === "single" ? selectedUserId : null, // null للعام وخاص للمحدد
-        sound: "default",
         kind: targetType === "single" ? "خاص" : "عام",
       };
 

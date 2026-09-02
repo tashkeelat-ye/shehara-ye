@@ -187,7 +187,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const index = prev.findIndex((l) => lineKey(l.product_id, l.size, l.color) === key);
         if (index > -1) {
           const updated = [...prev];
-          updated[index] = { ...updated[index], quantity: updated[index].quantity + quantity };
+          updated[index] = { ...updated[index]!, quantity: updated[index]!.quantity + quantity };
           return updated;
         }
         return [...prev, { id: key, product_id: productId, quantity, size, color }];
