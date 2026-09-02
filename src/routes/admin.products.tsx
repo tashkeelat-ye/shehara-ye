@@ -487,7 +487,7 @@ function Field({
 }: {
   label: string;
   children: ReactNode;
-  error?: string;
+  error?: string | undefined;
 }) {
   return (
     <label className="block">
@@ -576,7 +576,7 @@ export function AdminProducts() {
       resolver:
         zodResolver(
           formSchema,
-        ),
+        ) as unknown as Resolver<FormValues>,
       defaultValues:
         EMPTY_FORM,
       mode: "onBlur",
