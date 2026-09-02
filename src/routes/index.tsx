@@ -46,7 +46,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:title",
         content:
-          "شهارة | كل ما تحتاجه... في مكان واحد",
+          "شهارة | تسوق بلا حدود",
       },
       {
         property: "og:description",

@@ -32,7 +32,7 @@ export function SiteFooter() {
           <div>
             <p className="text-base text-foreground">{s?.store_name ?? "شهارة"}</p>
             <p className="text-[11px] text-muted-foreground">
-              {s?.tagline ?? "كل ما تحتاجه... بتشكيلة واحدة"}
+              {s?.tagline ?? "تسوق بلا حدود"}
             </p>
           </div>
         </div>

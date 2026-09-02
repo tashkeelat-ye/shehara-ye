@@ -120,7 +120,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ order }) => {
             <p className="text-xs text-[#c49a37] font-bold tracking-widest mt-0.5">للتسوق</p>
             <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#c49a37] inline-block"></span>
-              كل ما تحتاجه... في مكان واحد
+              تسوق بلا حدود
             </p>
           </div>
         </div>
