@@ -65,9 +65,8 @@ export function BottomNav() {
     if (item.id === "offers") {
       return (
         location.pathname === "/products" &&
-        new URLSearchParams(
-          location.search,
-        ).get("offers") === "true"
+        (location.search as Record<string, unknown>)["offers"] ===
+          true
       );
     }
 
