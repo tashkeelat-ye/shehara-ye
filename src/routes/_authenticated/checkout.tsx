@@ -168,27 +168,27 @@ function extractErrorDetails(
       >;
 
     const message =
-      typeof value.message ===
+      typeof value["message"] ===
       "string"
-        ? value.message
+        ? value["message"]
         : "";
 
     const code =
-      typeof value.code ===
+      typeof value["code"] ===
       "string"
-        ? value.code
+        ? value["code"]
         : "";
 
     const details =
-      typeof value.details ===
+      typeof value["details"] ===
       "string"
-        ? value.details
+        ? value["details"]
         : "";
 
     const hint =
-      typeof value.hint ===
+      typeof value["hint"] ===
       "string"
-        ? value.hint
+        ? value["hint"]
         : "";
 
     let raw = "";
@@ -621,9 +621,11 @@ function CheckoutPage() {
       ) ??
       addresses[0];
 
-    setAddressId(
-      defaultAddress.id,
-    );
+    if (defaultAddress) {
+      setAddressId(
+        defaultAddress.id,
+      );
+    }
   }, [
     addresses,
   ]);

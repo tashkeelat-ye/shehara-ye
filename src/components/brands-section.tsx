@@ -27,7 +27,7 @@ export function BrandsSection() {
           <Link
             key={brand.id}
             to="/products"
-            search={{ brand: brand.slug }}
+            search={{ brand: brand.slug ?? undefined }}
             className="flex h-20 w-32 shrink-0 items-center justify-center rounded-lg border border-border bg-card p-3 shadow-sm transition-transform hover:scale-105 active:scale-95"
           >
             {brand.logo_url ? (

@@ -995,7 +995,7 @@ function ThemeController() {
       root.style.colorScheme =
         theme;
 
-      root.dataset.theme =
+      root.dataset["theme"] =
         theme;
     }
 
@@ -1446,9 +1446,9 @@ function AppContent() {
       <OfflineIndicator />
 
       <NotificationListener
-        currentUserId={
-          user?.id
-        }
+        {...(user?.id
+          ? { currentUserId: user.id }
+          : {})}
       />
 
       <Outlet />
