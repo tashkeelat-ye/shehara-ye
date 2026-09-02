@@ -7,6 +7,7 @@ import {
 import type { ReactNode } from "react";
 import {
   useForm,
+  type Resolver,
   type SubmitHandler,
 } from "react-hook-form";
 import {
