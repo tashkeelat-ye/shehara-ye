@@ -79,21 +79,21 @@ export const Route = createFileRoute(
   head: () => ({
     meta: [
       {
-        title: "حسابي | تشكيلات",
+        title: "حسابي | شهارة",
       },
       {
         name: "description",
         content:
-          "إدارة حسابك وطلباتك ومحفظتك وعناوين التوصيل في تشكيلات.",
+          "إدارة حسابك وطلباتك ومحفظتك وعناوين التوصيل في شهارة.",
       },
       {
         property: "og:title",
-        content: "حسابي | تشكيلات",
+        content: "حسابي | شهارة",
       },
       {
         property: "og:description",
         content:
-          "إدارة الحساب والطلبات والمحفظة في متجر تشكيلات.",
+          "إدارة الحساب والطلبات والمحفظة في متجر شهارة.",
       },
     ],
   }),
@@ -785,7 +785,7 @@ function AccountPage() {
               </h2>
 
               <p className="mt-0.5 text-[10px] text-muted-foreground">
-                آخر مشترياتك من تشكيلات
+                آخر مشترياتك من شهارة
               </p>
             </div>
 

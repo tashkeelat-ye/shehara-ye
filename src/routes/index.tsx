@@ -36,22 +36,22 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       {
-        title: "تشكيلات | متجر يمني إلكتروني لكل احتياجاتك",
+        title: "شهارة | متجر يمني إلكتروني لكل احتياجاتك",
       },
       {
         name: "description",
         content:
-          "تشكيلات متجر إلكتروني يمني: أزياء، إلكترونيات، منزل ومطبخ، ومنتجات يمنية محلية كالعسل والبخور والحرف اليدوية مع توصيل لكل المحافظات.",
+          "شهارة متجر إلكتروني يمني: أزياء، إلكترونيات، منزل ومطبخ، ومنتجات يمنية محلية كالعسل والبخور والحرف اليدوية مع توصيل لكل المحافظات.",
       },
       {
         property: "og:title",
         content:
-          "تشكيلات | كل ما تحتاجه... في مكان واحد",
+          "شهارة | تسوق بلا حدود",
       },
       {
         property: "og:description",
         content:
-          "تسوّق أزياء وإلكترونيات ومستلزمات المنزل ومنتجات يمنية أصيلة من متجر تشكيلات.",
+          "تسوّق أزياء وإلكترونيات ومستلزمات المنزل ومنتجات يمنية أصيلة من متجر شهارة.",
       },
     ],
   }),
@@ -99,7 +99,7 @@ function HeritagePattern({
           rotate-45
           rounded-[1.25rem]
           border
-          border-[#E0B85C]/[0.055]
+          border-[#D65A31]/[0.055]
         "
       />
 
@@ -113,8 +113,8 @@ function HeritagePattern({
           rotate-45
           rounded-[0.9rem]
           border
-          border-[#4A1525]/[0.035]
-          dark:border-[#E0B85C]/[0.035]
+          border-[#0E4D64]/[0.035]
+          dark:border-[#D65A31]/[0.035]
         "
       />
 
@@ -127,7 +127,7 @@ function HeritagePattern({
           w-4
           rotate-45
           border
-          border-[#E0B85C]/[0.12]
+          border-[#D65A31]/[0.12]
         "
       />
     </div>
@@ -162,7 +162,7 @@ function HeritageSectionFrame({
           h-px
           bg-gradient-to-r
           from-transparent
-          via-[#E0B85C]/20
+          via-[#D65A31]/20
           to-transparent
         "
       />
@@ -372,9 +372,9 @@ function Index() {
         relative
         min-h-screen
         overflow-x-hidden
-        bg-[#FBF7EF]
+        bg-[#FAF9F6]
         text-foreground
-        dark:bg-[#170C11]
+        dark:bg-[#071B24]
       "
     >
       {/* =====================================================
@@ -399,9 +399,9 @@ function Index() {
             h-72
             w-72
             rounded-full
-            bg-[#4A1525]/[0.025]
+            bg-[#0E4D64]/[0.025]
             blur-3xl
-            dark:bg-[#E0B85C]/[0.025]
+            dark:bg-[#D65A31]/[0.025]
           "
         />
 
@@ -413,9 +413,9 @@ function Index() {
             h-80
             w-80
             rounded-full
-            bg-[#E0B85C]/[0.035]
+            bg-[#D65A31]/[0.035]
             blur-3xl
-            dark:bg-[#4A1525]/[0.08]
+            dark:bg-[#0E4D64]/[0.08]
           "
         />
 
@@ -501,7 +501,7 @@ function Index() {
                 overflow-hidden
                 rounded-[1.75rem]
                 border
-                border-[#E0B85C]/20
+                border-[#D65A31]/20
                 bg-white/50
                 p-1
                 shadow-[0_14px_45px_-28px_rgba(74,21,37,0.45)]
@@ -528,7 +528,7 @@ function Index() {
             className="
               rounded-[1.75rem]
               border
-              border-[#E0B85C]/10
+              border-[#D65A31]/10
               bg-white/30
               py-4
               dark:bg-white/[0.015]
@@ -562,10 +562,10 @@ function Index() {
                         place-items-center
                         overflow-hidden
                         rounded-xl
-                        bg-[#4A1525]
-                        text-[#E0B85C]
+                        bg-[#0E4D64]
+                        text-[#D65A31]
                         shadow-sm
-                        dark:bg-[#35101C]
+                        dark:bg-[#0A3D50]
                       "
                     >
                       <span
@@ -576,7 +576,7 @@ function Index() {
                           w-5
                           rotate-45
                           border
-                          border-[#E0B85C]/30
+                          border-[#D65A31]/30
                         "
                       />
 
@@ -597,7 +597,7 @@ function Index() {
                   </h2>
 
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    الأكثر اهتماماً وطلباً من متسوقي تشكيلات
+                    الأكثر اهتماماً وطلباً من متسوقي شهارة
                   </p>
                 </div>
 
@@ -613,10 +613,10 @@ function Index() {
                     py-1
                     text-xs
                     font-medium
-                    text-[#4A1525]
+                    text-[#0E4D64]
                     transition-colors
-                    hover:bg-[#4A1525]/5
-                    dark:text-[#E0B85C]
+                    hover:bg-[#0E4D64]/5
+                    dark:text-[#D65A31]
                   "
                 >
                   كل الأقسام
@@ -684,7 +684,7 @@ function Index() {
                             items-center
                             rounded-2xl
                             border
-                            border-[#E0B85C]/15
+                            border-[#D65A31]/15
                             bg-white/70
                             px-2
                             py-3
@@ -692,10 +692,10 @@ function Index() {
                             transition-all
                             duration-200
                             hover:-translate-y-0.5
-                            hover:border-[#E0B85C]/35
+                            hover:border-[#D65A31]/35
                             hover:shadow-md
                             active:scale-[0.97]
-                            dark:bg-[#35101C]/30
+                            dark:bg-[#0A3D50]/30
                             md:w-auto
                           "
                         >
@@ -708,13 +708,13 @@ function Index() {
                               place-items-center
                               overflow-hidden
                               rounded-2xl
-                              bg-[#4A1525]/[0.07]
-                              text-[#4A1525]
+                              bg-[#0E4D64]/[0.07]
+                              text-[#0E4D64]
                               transition-transform
                               duration-200
                               group-hover:scale-105
-                              dark:bg-[#E0B85C]/[0.08]
-                              dark:text-[#E0B85C]
+                              dark:bg-[#D65A31]/[0.08]
+                              dark:text-[#D65A31]
                             "
                           >
                             <span
@@ -727,7 +727,7 @@ function Index() {
                                 w-8
                                 rotate-45
                                 border
-                                border-[#E0B85C]/20
+                                border-[#D65A31]/20
                               "
                             />
 
@@ -799,7 +799,7 @@ function Index() {
                 overflow-hidden
                 rounded-[1.5rem]
                 border
-                border-[#E0B85C]/15
+                border-[#D65A31]/15
                 bg-white/40
                 shadow-[0_14px_40px_-30px_rgba(74,21,37,0.55)]
                 dark:bg-white/[0.02]
@@ -817,7 +817,7 @@ function Index() {
             className="
               rounded-[1.75rem]
               border
-              border-[#E0B85C]/10
+              border-[#D65A31]/10
               bg-white/25
               py-4
               dark:bg-white/[0.012]
@@ -904,7 +904,7 @@ function Index() {
             className="
               rounded-[1.75rem]
               border
-              border-[#E0B85C]/10
+              border-[#D65A31]/10
               bg-white/25
               py-4
               dark:bg-white/[0.012]

@@ -60,12 +60,12 @@ export const Route = createFileRoute("/courier")({
   head: () => ({
     meta: [
       {
-        title: "لوحة عامل التوصيل | تشكيلات",
+        title: "لوحة عامل التوصيل | شهارة",
       },
       {
         name: "description",
         content:
-          "لوحة عامل التوصيل في متجر تشكيلات.",
+          "لوحة عامل التوصيل في متجر شهارة.",
       },
       {
         name: "robots",
@@ -438,7 +438,7 @@ function CourierDashboard() {
     );
 
     const message = encodeURIComponent(
-      "مرحباً، معك عامل التوصيل من متجر تشكيلات بخصوص طلبك.",
+      "مرحباً، معك عامل التوصيل من متجر شهارة بخصوص طلبك.",
     );
 
     window.open(

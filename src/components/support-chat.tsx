@@ -15,7 +15,7 @@ import { fetchProducts } from "@/lib/db";
 type AiMsg = { role: "user" | "assistant"; content: string };
 
 const WELCOME =
-  "مرحبًا بك في تشكيلات 👋 أنا مساعدك الذكي، اسألني عن أي منتج أو طريقة دفع أو التوصيل.";
+  "مرحبًا بك في شهارة 👋 أنا مساعدك الذكي، اسألني عن أي منتج أو طريقة دفع أو التوصيل.";
 
 export function SupportChat() {
   const [open, setOpen] = useState(false);
@@ -47,7 +47,7 @@ export function SupportChat() {
                   {tab === "ai" ? <Bot className="h-4 w-4" /> : <Headphones className="h-4 w-4" />}
                 </span>
                 <p className="truncate text-sm text-foreground">
-                  {tab === "ai" ? "مساعد تشكيلات الذكي" : "خدمة العملاء"}
+                  {tab === "ai" ? "مساعد شهارة الذكي" : "خدمة العملاء"}
                 </p>
               </div>
               <button
@@ -223,7 +223,7 @@ function HumanChat() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-xs text-muted-foreground">
-          سجّل الدخول للتحدث مع فريق خدمة عملاء تشكيلات ومتابعة ردودهم.
+          سجّل الدخول للتحدث مع فريق خدمة عملاء شهارة ومتابعة ردودهم.
         </p>
         <Link to="/auth" className="h-11 rounded-2xl bg-primary px-6 text-xs leading-[2.75rem] text-primary-foreground">
           تسجيل الدخول

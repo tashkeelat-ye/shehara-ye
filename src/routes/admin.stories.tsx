@@ -529,7 +529,7 @@ function AdminStories() {
 
             <div>
               <p className="text-sm font-semibold text-foreground">
-                قصص متجر تشكيلات
+                قصص متجر شهارة
               </p>
 
               <p className="mt-1 text-xs leading-6 text-muted-foreground">
@@ -818,7 +818,7 @@ function AdminStories() {
             </p>
 
             <p className="mt-1 text-xs text-muted-foreground">
-              أضف أول قصة لمتجر تشكيلات.
+              أضف أول قصة لمتجر شهارة.
             </p>
 
             <button

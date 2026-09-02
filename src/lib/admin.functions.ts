@@ -8,7 +8,7 @@ import {
   phoneToEmail,
 } from "@/lib/phone";
 
-export const ADMIN_EMAIL_DOMAIN = "tashkilat.app";
+export const ADMIN_EMAIL_DOMAIN = "shehara.app";
 
 type ManagedAccountType =
   | "vendor"

@@ -15,7 +15,7 @@ export function isValidYemeniPhone(input: string): boolean {
 
 /** بريد داخلي مشتق من رقم الهاتف (لأن المصادقة تتطلب بريدًا) */
 export function phoneToEmail(input: string): string {
-  return `${normalizeYemeniPhone(input)}@tashkilat.app`;
+  return `${normalizeYemeniPhone(input)}@shehara.app`;
 }
 
 export function formatPhone(input: string): string {

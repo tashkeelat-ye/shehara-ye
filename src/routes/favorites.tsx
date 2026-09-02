@@ -44,7 +44,7 @@ function FavoritesPage() {
     <main
       dir="rtl"
       className="
-        tashkilat-brand-background
+        shehara-brand-background
         min-h-screen
         pb-28
       "
@@ -95,7 +95,7 @@ function FavoritesPage() {
 
             <div className="min-w-0">
               <p className="text-xs font-semibold text-muted-foreground">
-                تشكيلات للتسوق
+                شهارة للتسوق
               </p>
 
               <h1 className="mt-0.5 text-xl font-extrabold text-foreground sm:text-2xl">
@@ -179,7 +179,7 @@ function FavoritesPage() {
             </h2>
 
             <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-              لم تضف أي منتجات إلى المفضلة بعد. استكشف منتجات تشكيلات
+              لم تضف أي منتجات إلى المفضلة بعد. استكشف منتجات شهارة
               وأضف المنتجات التي ترغب في الرجوع إليها لاحقاً.
             </p>
 
@@ -280,7 +280,7 @@ function FavoritesPage() {
         ) : (
           <>
             <div className="mt-6 flex items-center justify-between gap-3">
-              <div className="tashkilat-section-accent">
+              <div className="shehara-section-accent">
                 <h2 className="text-base font-extrabold text-foreground sm:text-lg">
                   منتجاتك المفضلة
                 </h2>

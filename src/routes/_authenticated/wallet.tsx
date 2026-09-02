@@ -15,13 +15,13 @@ import { uploadReceipt } from "@/lib/media";
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
     meta: [
-      { title: "محفظتي | تشكيلات" },
+      { title: "محفظتي | شهارة" },
       {
         name: "description",
-        content: "تابع رصيد محفظتك في تشكيلات، اشحن الرصيد وراجع سجل العمليات.",
+        content: "تابع رصيد محفظتك في شهارة، اشحن الرصيد وراجع سجل العمليات.",
       },
-      { property: "og:title", content: "محفظتي | تشكيلات" },
-      { property: "og:description", content: "رصيد المحفظة وسجل العمليات في متجر تشكيلات." },
+      { property: "og:title", content: "محفظتي | شهارة" },
+      { property: "og:description", content: "رصيد المحفظة وسجل العمليات في متجر شهارة." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

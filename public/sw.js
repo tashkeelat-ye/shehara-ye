@@ -2,7 +2,7 @@
 
 /**
  * =========================================================
- * تشكيلات للتسوق
+ * شهارة للتسوق
  * Service Worker
  * =========================================================
  *
@@ -19,8 +19,8 @@
 
 const CACHE_VERSION = "v7";
 
-const SHELL_CACHE = `tashkilat-shell-${CACHE_VERSION}`;
-const RUNTIME_CACHE = `tashkilat-runtime-${CACHE_VERSION}`;
+const SHELL_CACHE = `shehara-shell-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `shehara-runtime-${CACHE_VERSION}`;
 
 const OFFLINE_URL = "/offline.html";
 
@@ -40,7 +40,7 @@ self.addEventListener("install", (event) => {
       })
       .catch((error) => {
         console.warn(
-          "[Tashkilat SW] Cache install failed:",
+          "[Shehara SW] Cache install failed:",
           error,
         );
       })
@@ -65,7 +65,7 @@ self.addEventListener("activate", (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (
-              cacheName.startsWith("tashkilat-") &&
+              cacheName.startsWith("shehara-") &&
               cacheName !== SHELL_CACHE &&
               cacheName !== RUNTIME_CACHE
             ) {
@@ -104,11 +104,11 @@ self.addEventListener("push", (event) => {
 
   const title =
     data.title ||
-    "إشعار جديد من تشكيلات";
+    "إشعار جديد من شهارة";
 
   const body =
     data.body ||
-    "لديك تحديث جديد في متجر تشكيلات.";
+    "لديك تحديث جديد في متجر شهارة.";
 
   const notificationUrl =
     data.link_url ||

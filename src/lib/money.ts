@@ -1,6 +1,6 @@
 export type CurrencyCode = "YER" | "SAR";
 
-export const CURRENCY_STORAGE_KEY = "tashkilat_currency_v1";
+export const CURRENCY_STORAGE_KEY = "shehara_currency_v1";
 
 /**
  * القيمة الافتراضية لسعر الصرف (كم ريال يمني لكل ١ ريال سعودي) — تُستخدم فقط

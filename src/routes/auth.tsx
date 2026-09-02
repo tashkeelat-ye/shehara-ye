@@ -16,13 +16,13 @@ export const Route = createFileRoute("/auth")({
   }),
   head: () => ({
     meta: [
-      { title: "تسجيل الدخول | تشكيلات" },
+      { title: "تسجيل الدخول | شهارة" },
       {
         name: "description",
-        content: "سجّل الدخول أو أنشئ حسابًا في تشكيلات برقم الهاتف اليمني والاسم الثلاثي.",
+        content: "سجّل الدخول أو أنشئ حسابًا في شهارة برقم الهاتف اليمني والاسم الثلاثي.",
       },
-      { property: "og:title", content: "تسجيل الدخول | تشكيلات" },
-      { property: "og:description", content: "الدخول إلى حسابك في متجر تشكيلات." },
+      { property: "og:title", content: "تسجيل الدخول | شهارة" },
+      { property: "og:description", content: "الدخول إلى حسابك في متجر شهارة." },
     ],
   }),
   component: AuthPage,
@@ -76,7 +76,7 @@ function AuthPage() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-lg text-primary-foreground">
             ت
           </span>
-          <span className="text-lg text-foreground">تشكيلات</span>
+          <span className="text-lg text-foreground">شهارة</span>
         </Link>
 
         <h1 className="mt-5 text-xl text-foreground">

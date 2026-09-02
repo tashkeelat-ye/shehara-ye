@@ -8,13 +8,13 @@ import { fetchPage } from "@/lib/store";
 export const Route = createFileRoute("/page/$slug")({
   head: () => ({
     meta: [
-      { title: "صفحات المتجر | تشكيلات" },
+      { title: "صفحات المتجر | شهارة" },
       {
         name: "description",
-        content: "معلومات متجر تشكيلات: من نحن، التواصل، سياسات الإرجاع والخصوصية والتوصيل.",
+        content: "معلومات متجر شهارة: من نحن، التواصل، سياسات الإرجاع والخصوصية والتوصيل.",
       },
-      { property: "og:title", content: "صفحات المتجر | تشكيلات" },
-      { property: "og:description", content: "سياسات ومعلومات متجر تشكيلات اليمني." },
+      { property: "og:title", content: "صفحات المتجر | شهارة" },
+      { property: "og:description", content: "سياسات ومعلومات متجر شهارة اليمني." },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -55,7 +55,7 @@ function StaticPage() {
           <article className="rounded-2xl border border-border/70 bg-card p-5">
             <h1 className="text-xl text-foreground">{data.title}</h1>
             <div
-              className="prose-tashkilat mt-4 space-y-3 text-sm leading-8 text-muted-foreground [&_a]:text-primary [&_h2]:text-base [&_h2]:text-foreground [&_h3]:text-sm [&_h3]:text-foreground [&_li]:ms-5 [&_li]:list-disc [&_strong]:text-foreground"
+              className="prose-shehara mt-4 space-y-3 text-sm leading-8 text-muted-foreground [&_a]:text-primary [&_h2]:text-base [&_h2]:text-foreground [&_h3]:text-sm [&_h3]:text-foreground [&_li]:ms-5 [&_li]:list-disc [&_strong]:text-foreground"
               // المحتوى يُدار من لوحة التحكم فقط
               dangerouslySetInnerHTML={{ __html: data.content }}
             />

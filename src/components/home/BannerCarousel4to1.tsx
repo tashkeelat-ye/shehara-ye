@@ -49,7 +49,7 @@ export function BannerCarousel4to1() {
         >
           <img
             src={currentBanner.image}
-            alt={currentBanner.title || "إعلان متجر تشكيلات"}
+            alt={currentBanner.title || "إعلان متجر شهارة"}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </a>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bell, MapPin, X } from "lucide-react";
 
-const KEY = "tashkilat:permissions:v1";
+const KEY = "shehara:permissions:v1";
 
 /** يطلب إذن الموقع والإشعارات عند أول تشغيل للتطبيق. */
 export function PermissionPrompt() {
@@ -33,7 +33,7 @@ export function PermissionPrompt() {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           localStorage.setItem(
-            "tashkilat:last-location",
+            "shehara:last-location",
             JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
           );
         },
@@ -50,7 +50,7 @@ export function PermissionPrompt() {
     <div className="fixed inset-x-0 bottom-0 z-[45] p-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] md:pb-4">
       <div className="mx-auto max-w-md rounded-3xl border border-border bg-card p-4 shadow-card">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-          <p className="text-sm text-foreground">لتجربة أفضل داخل تشكيلات</p>
+          <p className="text-sm text-foreground">لتجربة أفضل داخل شهارة</p>
           <button type="button" aria-label="إغلاق" onClick={dismiss} className="shrink-0 text-muted-foreground">
             <X className="h-4 w-4" />
           </button>
