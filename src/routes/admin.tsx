@@ -143,6 +143,13 @@ const NAV = [
   },
 
   {
+    to: "/admin/home-sections",
+    label: "ترتيب الصفحة الرئيسية",
+    icon: LayoutGrid,
+  },
+
+
+  {
     to: "/admin/stories",
     label: "القصص",
     icon: CirclePlay,
