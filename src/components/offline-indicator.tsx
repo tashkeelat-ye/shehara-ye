@@ -1,107 +1,63 @@
-import { WifiOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { RefreshCw, WifiOff, X } from "lucide-react";
 
 import { useOnlineStatus } from "@/hooks/use-online-status";
 
 /**
- * =========================================================
- * شهارة للتسوق
- * Offline Indicator
- * =========================================================
- *
- * يظهر فقط عندما يتم التأكد من عدم توفر الاتصال.
- *
- * المزايا:
- * - متوافق مع RTL.
- * - متوافق مع الهواتف وPWA.
- * - يحترم Safe Area في الأجهزة الحديثة.
- * - لا يضيف مساحة فارغة داخل الصفحة.
- * - يستخدم هوية شهارة العنابية والذهبية.
- * - لا يمنع التفاعل مع محتوى التطبيق.
- * =========================================================
+ * نافذة منبثقة تظهر فقط عند انقطاع الاتصال فعلياً،
+ * مع زر "تجاهل" لإغلاقها وزر لإعادة المحاولة.
  */
-
 export function OfflineIndicator() {
   const isOnline = useOnlineStatus();
+  const [dismissed, setDismissed] = useState(false);
 
-  /**
-   * أثناء الاتصال:
-   * لا نعرض أي عنصر على الإطلاق.
-   */
-  if (isOnline) {
-    return null;
-  }
+  useEffect(() => {
+    if (isOnline) setDismissed(false);
+  }, [isOnline]);
+
+  if (isOnline || dismissed) return null;
 
   return (
     <div
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
       dir="rtl"
-      className="
-        shehara-offline-banner
-        select-none
-      "
+      role="alertdialog"
+      aria-modal="true"
+      aria-label="لا يوجد اتصال بالإنترنت"
+      className="fixed inset-0 z-[200] grid place-items-center bg-black/50 p-5 backdrop-blur-sm"
     >
-      <div
-        className="
-          flex
-          w-full
-          max-w-3xl
-          items-center
-          justify-center
-          gap-2.5
-          text-center
-        "
-      >
-        {/* أيقونة حالة الاتصال */}
-        <span
-          className="
-            flex
-            h-7
-            w-7
-            shrink-0
-            items-center
-            justify-center
-            rounded-full
-            bg-[#B74624]/15
-            text-[#D65A31]
-            ring-1
-            ring-[#D65A31]/10
-          "
-          aria-hidden="true"
-        >
-          <WifiOff
-            className="h-4 w-4"
-            strokeWidth={2.25}
-          />
-        </span>
+      <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 text-center shadow-2xl">
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-destructive/10 text-destructive">
+          <WifiOff className="h-8 w-8" strokeWidth={2} />
+        </div>
 
-        {/* النص */}
-        <span
-          className="
-            leading-5
-            text-xs
-            font-bold
-            text-white
-            sm:text-sm
-          "
-        >
-          أنت غير متصل بالإنترنت
+        <h2 className="mt-4 text-lg font-bold text-foreground">
+          لا يوجد اتصال بالإنترنت
+        </h2>
 
-          <span
-            className="
-              mx-1.5
-              text-[#D65A31]
-            "
-            aria-hidden="true"
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          تحقّق من الشبكة ثم أعد المحاولة. يمكنك متابعة التصفح
+          بالبيانات المحفوظة على جهازك.
+        </p>
+
+        <div className="mt-5 flex gap-2">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground active:scale-95"
           >
-            —
-          </span>
+            <RefreshCw className="h-4 w-4" />
+            إعادة المحاولة
+          </button>
 
-          <span className="font-medium text-white/90">
-            يتم عرض البيانات المحفوظة على جهازك
-          </span>
-        </span>
+          <button
+            type="button"
+            onClick={() => setDismissed(true)}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border bg-muted px-4 py-3 text-sm font-bold text-foreground active:scale-95"
+          >
+            <X className="h-4 w-4" />
+            تجاهل
+          </button>
+        </div>
       </div>
     </div>
   );
