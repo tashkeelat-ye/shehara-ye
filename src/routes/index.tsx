@@ -501,15 +501,18 @@ function Index() {
             mx-auto
             w-full
             max-w-6xl
-            space-y-7
+            flex
+            flex-col
+            gap-7
             pb-24
-            sm:space-y-8
+            sm:gap-8
           "
         >
           {/* =====================================================
               القصص
               ===================================================== */}
 
+          <Sec k="stories" cfg={sectionMap}>
           <section
             className="
               relative
@@ -530,11 +533,13 @@ function Index() {
               <StoriesCategories />
             </div>
           </section>
+          </Sec>
 
           {/* =====================================================
               البنر الرئيسي
               ===================================================== */}
 
+          <Sec k="hero" cfg={sectionMap}>
           <HeritageSectionFrame
             className="
               mx-0
@@ -557,19 +562,23 @@ function Index() {
               <PromoSlider />
             </div>
           </HeritageSectionFrame>
+          </Sec>
 
           {/* =====================================================
               التصنيفات الأساسية
               ===================================================== */}
 
+          <Sec k="categories" cfg={sectionMap}>
           <HeritageSectionFrame>
             <CategoryStrip />
           </HeritageSectionFrame>
+          </Sec>
 
           {/* =====================================================
               الأقسام الرائجة
               ===================================================== */}
 
+          <Sec k="popular_categories" cfg={sectionMap}>
           <HeritageSectionFrame
             className="
               rounded-[1.75rem]
@@ -813,27 +822,33 @@ function Index() {
               )}
             </section>
           </HeritageSectionFrame>
+          </Sec>
 
           {/* =====================================================
               العروض الخاطفة
               ===================================================== */}
 
+          <Sec k="flash_sale" cfg={sectionMap}>
           <HeritageSectionFrame>
             <FlashSaleSection />
           </HeritageSectionFrame>
+          </Sec>
 
           {/* =====================================================
               العروض والتخفيضات
               ===================================================== */}
 
+          <Sec k="offers" cfg={sectionMap}>
           <HeritageSectionFrame>
             <OffersSection />
           </HeritageSectionFrame>
+          </Sec>
 
           {/* =====================================================
               البنرات الإضافية
               ===================================================== */}
 
+          <Sec k="banners" cfg={sectionMap}>
           <HeritageSectionFrame
             className="
               mx-0
@@ -854,11 +869,13 @@ function Index() {
               <BannerCarousel4to1 />
             </div>
           </HeritageSectionFrame>
+          </Sec>
 
           {/* =====================================================
               الأكثر مبيعاً
               ===================================================== */}
 
+          <Sec k="best_sellers" cfg={sectionMap}>
           <HeritageSectionFrame
             className="
               rounded-[1.75rem]
@@ -940,12 +957,14 @@ function Index() {
               ) : null}
             </section>
           </HeritageSectionFrame>
+          </Sec>
 
           {/* =====================================================
               أحدث المنتجات
               تعتمد على created_at الحقيقي
               ===================================================== */}
 
+          <Sec k="new_arrivals" cfg={sectionMap}>
           <HeritageSectionFrame
             className="
               rounded-[1.75rem]
@@ -1027,22 +1046,27 @@ function Index() {
               ) : null}
             </section>
           </HeritageSectionFrame>
+          </Sec>
 
           {/* =====================================================
               الماركات
               ===================================================== */}
 
+          <Sec k="brands" cfg={sectionMap}>
           <HeritageSectionFrame>
             <BrandsSection />
           </HeritageSectionFrame>
+          </Sec>
 
           {/* =====================================================
               المنتجات المحلية
               ===================================================== */}
 
+          <Sec k="local_products" cfg={sectionMap}>
           <HeritageSectionFrame>
             <LocalProducts />
           </HeritageSectionFrame>
+          </Sec>
         </main>
 
         {/* =====================================================
