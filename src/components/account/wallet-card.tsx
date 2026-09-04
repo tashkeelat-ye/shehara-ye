@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Check, Copy, Eye, EyeOff, WalletCards } from "lucide-react";
 
 type WalletCardProps = {
@@ -6,26 +6,28 @@ type WalletCardProps = {
   formattedBalance: string;
   customerName: string;
   phone: string;
-  customerCode: string;
+  walletId: string;
 };
 
 export function WalletCard({
-  balance,
+  balance: _balance,
   formattedBalance,
   customerName,
   phone,
-  customerCode,
+  walletId,
 }: WalletCardProps) {
   const [visible, setVisible] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  async function copyCustomerCode() {
+  async function copyWalletId() {
+    if (!walletId) return;
+
     try {
       if (!navigator.clipboard) {
         throw new Error("Clipboard unavailable");
       }
 
-      await navigator.clipboard.writeText(customerCode);
+      await navigator.clipboard.writeText(walletId);
       setCopied(true);
 
       window.setTimeout(() => {
@@ -36,160 +38,151 @@ export function WalletCard({
     }
   }
 
-  const maskedPhone = maskPhone(phone);
-
   return (
     <section
-      aria-label="محفظة شهارة الرقمية"
-      className="relative overflow-hidden rounded-[24px] border border-white/10 bg-[#0D3B4D] text-white shadow-[0_28px_70px_-38px_rgba(13,59,77,.95)]"
+      aria-label="بطاقة محفظة شهارة الرقمية"
+      className="relative mx-auto aspect-[1.586/1] w-full max-w-[430px] overflow-hidden rounded-[22px] border border-white/10 bg-[#0D3B4D] text-white shadow-[0_24px_60px_-30px_rgba(13,59,77,.9)]"
     >
-      {/* الخلفية الهندسية */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden"
       >
-        <div className="absolute -end-20 -top-24 h-64 w-64 rounded-full border border-white/[0.07]" />
-        <div className="absolute -start-28 -bottom-32 h-72 w-72 rounded-full border border-[#E2723A]/[0.12]" />
+        <div className="absolute -end-20 -top-24 h-56 w-56 rounded-full border border-white/[0.07]" />
+
+        <div className="absolute -start-24 -bottom-28 h-64 w-64 rounded-full border border-[#E2723A]/[0.13]" />
 
         <BridgePattern />
 
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0D3B4D]/20 via-transparent to-[#082A38]/80" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0D3B4D]/10 via-transparent to-[#082A38]/80" />
       </div>
 
-      <div className="relative z-10 p-5 sm:p-6">
-        {/* رأس البطاقة */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/[0.08] backdrop-blur">
+      <div className="relative z-10 flex h-full flex-col p-[5.5%]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.08]">
               <img
                 src="/logo.png"
                 alt="شهارة"
-                className="h-8 w-8 object-contain"
+                className="h-7 w-7 object-contain"
               />
             </div>
 
-            <div>
-              <p className="text-[9px] font-bold tracking-wide text-white/55">
+            <div className="min-w-0">
+              <p className="text-[8px] font-bold text-white/50">
                 المحفظة الرقمية
               </p>
 
-              <p className="mt-0.5 text-sm font-black">
+              <p className="mt-0.5 text-[13px] font-black">
                 شهارة
               </p>
             </div>
           </div>
 
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#E2723A]/15 text-[#E2723A]">
-            <WalletCards className="h-5 w-5" />
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[#E2723A]/15 text-[#E2723A]">
+            <WalletCards className="h-4 w-4" />
           </div>
         </div>
 
-        {/* الرصيد */}
-        <div className="mt-7">
-          <p className="text-[9px] font-bold text-white/50">
-            الرصيد المتاح
-          </p>
+        <div className="mt-auto">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[8px] font-bold text-white/45">
+                الرصيد المتاح
+              </p>
 
-          <div className="mt-1 flex items-center gap-2">
-            <strong
-              className="text-[28px] font-black leading-none tracking-tight text-[#F3A17E] sm:text-[32px]"
-              dir="rtl"
-            >
-              {visible ? formattedBalance : "••••••"}
-            </strong>
+              <div className="mt-1 flex items-center gap-1.5">
+                <strong className="text-[25px] font-black leading-none tracking-tight text-[#F3A17E] sm:text-[29px]">
+                  {visible ? formattedBalance : "••••••"}
+                </strong>
 
-            <button
-              type="button"
-              onClick={() => setVisible((value) => !value)}
-              aria-label={
-                visible
-                  ? "إخفاء رصيد المحفظة"
-                  : "إظهار رصيد المحفظة"
-              }
-              className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.07] text-white/60 transition hover:bg-white/10 hover:text-white active:scale-90"
-            >
-              {visible ? (
-                <Eye className="h-4 w-4" />
-              ) : (
-                <EyeOff className="h-4 w-4" />
-              )}
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setVisible((value) => !value)}
+                  aria-label={
+                    visible
+                      ? "إخفاء رصيد المحفظة"
+                      : "إظهار رصيد المحفظة"
+                  }
+                  className="grid h-7 w-7 place-items-center rounded-lg bg-white/[0.07] text-white/60 transition active:scale-90"
+                >
+                  {visible ? (
+                    <Eye className="h-3.5 w-3.5" />
+                  ) : (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="min-w-0 text-start">
+              <p className="text-[7px] font-bold text-white/35">
+                معرّف المحفظة
+              </p>
+
+              <button
+                type="button"
+                onClick={() => void copyWalletId()}
+                disabled={!walletId}
+                className="mt-1 flex max-w-[150px] items-center gap-1 rounded-lg px-1 py-0.5 text-[9px] font-mono font-bold text-white/80 disabled:opacity-50"
+                title="نسخ معرف المحفظة"
+              >
+                <span
+                  dir="ltr"
+                  className="truncate"
+                >
+                  {walletId || "غير مضاف"}
+                </span>
+
+                {copied ? (
+                  <Check className="h-3 w-3 shrink-0 text-[#F3A17E]" />
+                ) : (
+                  <Copy className="h-3 w-3 shrink-0 text-white/40" />
+                )}
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* بيانات العميل */}
-        <div className="mt-8 flex items-end justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[8px] font-bold uppercase tracking-[0.14em] text-white/35">
-              صاحب المحفظة
-            </p>
+          <div className="mt-[4.5%] flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[7px] font-bold uppercase tracking-[0.12em] text-white/30">
+                صاحب المحفظة
+              </p>
 
-            <p className="mt-1 truncate text-[12px] font-bold text-white/90">
-              {customerName || "عميل شهارة"}
-            </p>
+              <p className="mt-1 truncate text-[11px] font-bold text-white/90">
+                {customerName || "عميل شهارة"}
+              </p>
+            </div>
 
-            <p
-              dir="ltr"
-              className="mt-1 truncate text-start text-[9px] text-white/45"
-            >
-              {maskedPhone || "—"}
-            </p>
+            <div className="min-w-0 text-start">
+              <p className="text-[7px] font-bold text-white/30">
+                رقم الهاتف
+              </p>
+
+              <p
+                dir="ltr"
+                className="mt-1 truncate text-start text-[9px] text-white/55"
+              >
+                {phone || "—"}
+              </p>
+            </div>
           </div>
 
-          <div className="text-start">
-            <p className="text-[8px] font-bold text-white/35">
-              معرّف العميل
-            </p>
-
-            <button
-              type="button"
-              onClick={() => void copyCustomerCode()}
-              className="mt-1 flex items-center gap-1.5 rounded-lg px-1 py-0.5 text-[9px] font-mono font-bold text-white/75 transition hover:bg-white/[0.06] hover:text-white"
-              title="نسخ معرّف العميل"
-            >
-              <span dir="ltr">
-                {customerCode}
-              </span>
-
-              {copied ? (
-                <Check className="h-3 w-3 text-[#F3A17E]" />
-              ) : (
-                <Copy className="h-3 w-3 text-white/40" />
-              )}
-            </button>
+          <div className="mt-[3.5%] flex items-center gap-2">
+            <span className="h-px flex-1 bg-white/[0.08]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E2723A]" />
+            <span className="h-px w-8 bg-white/[0.08]" />
           </div>
-        </div>
-
-        {/* خط زخرفي */}
-        <div className="mt-5 flex items-center gap-2">
-          <span className="h-px flex-1 bg-white/[0.08]" />
-          <span className="h-1.5 w-1.5 rounded-full bg-[#E2723A]" />
-          <span className="h-px w-10 bg-white/[0.08]" />
         </div>
       </div>
     </section>
   );
 }
 
-function maskPhone(phone: string) {
-  const value = phone.replace(/\s+/g, "");
-
-  if (!value) {
-    return "";
-  }
-
-  if (value.length <= 6) {
-    return value;
-  }
-
-  return `${value.slice(0, 3)} •••• ${value.slice(-3)}`;
-}
-
 function BridgePattern() {
   return (
     <svg
       aria-hidden="true"
-      className="absolute inset-x-0 bottom-5 h-32 w-full opacity-[0.11]"
+      className="absolute inset-x-0 bottom-0 h-[42%] w-full opacity-[0.11]"
       viewBox="0 0 600 150"
       preserveAspectRatio="none"
       fill="none"
@@ -216,12 +209,6 @@ function BridgePattern() {
         d="M35 115 H565"
         stroke="currentColor"
         strokeWidth="4"
-      />
-
-      <path
-        d="M80 103 L115 88 M520 103 L485 88"
-        stroke="currentColor"
-        strokeWidth="3"
       />
     </svg>
   );
