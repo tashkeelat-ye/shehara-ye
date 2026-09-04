@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import {
+  Bell,
   CheckCircle2,
   ChevronLeft,
   Copy,
@@ -34,12 +35,10 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-
 import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
 import { NotificationPrefsPanel } from "@/components/notification-prefs";
 import { WalletCard } from "@/components/account/wallet-card";
-
 import { useAuth } from "@/lib/auth-context";
 import { useFormatPrice } from "@/lib/currency-context";
 
@@ -48,25 +47,6 @@ import {
   fetchPaymentMethods,
   formatDate,
 } from "@/lib/store";
-
-export const Route = createFileRoute(
-  "/_authenticated/account",
-)({
-  head: () => ({
-    meta: [
-      {
-        title: "حسابي | شهارة",
-      },
-      {
-        name: "description",
-        content:
-          "إدارة حسابك وطلباتك ومحفظتك وعناوين التوصيل في شهارة.",
-      },
-    ],
-  }),
-
-  component: AccountPage,
-});
 
 type Address = {
   id: string;
@@ -99,30 +79,14 @@ type PaymentMethod = {
   requires_receipt: boolean;
 };
 
-const STATUS_LABELS: Record<
-  string,
-  string
-> = {
-  pending:
-    "بانتظار التأكيد",
-
-  awaiting_payment:
-    "بانتظار الدفع",
-
-  confirmed:
-    "تم التأكيد",
-
-  processing:
-    "قيد التجهيز",
-
-  shipped:
-    "تم الشحن",
-
-  delivered:
-    "تم التسليم",
-
-  cancelled:
-    "ملغي",
+const STATUS_LABELS: Record<string, string> = {
+  pending: "بانتظار التأكيد",
+  awaiting_payment: "بانتظار الدفع",
+  confirmed: "تم التأكيد",
+  processing: "قيد التجهيز",
+  shipped: "تم الشحن",
+  delivered: "تم التسليم",
+  cancelled: "ملغي",
 };
 
 const emptyAddress = {
@@ -134,6 +98,25 @@ const emptyAddress = {
   details: "",
 };
 
+export const Route = createFileRoute(
+  "/_authenticated/account",
+)({
+  head: () => ({
+    meta: [
+      {
+        title: "حسابي | شهارة",
+      },
+      {
+        name: "description",
+        content:
+          "إدارة حسابك ومحفظتك وطلباتك وعناوين التوصيل في شهارة.",
+      },
+    ],
+  }),
+
+  component: AccountPage,
+});
+
 function AccountPage() {
   const {
     user,
@@ -143,76 +126,41 @@ function AccountPage() {
     signOut,
   } = useAuth();
 
-  const formatPrice =
-    useFormatPrice();
+  const formatPrice = useFormatPrice();
 
-  const [
-    fullName,
-    setFullName,
-  ] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
 
-  const [
-    phone,
-    setPhone,
-  ] = useState("");
+  const [addresses, setAddresses] =
+    useState<Address[]>([]);
 
-  const [
-    addresses,
-    setAddresses,
-  ] = useState<Address[]>(
-    [],
-  );
+  const [orders, setOrders] =
+    useState<RecentOrder[]>([]);
 
-  const [
-    orders,
-    setOrders,
-  ] = useState<RecentOrder[]>(
-    [],
-  );
+  const [form, setForm] =
+    useState(emptyAddress);
 
-  const [
-    form,
-    setForm,
-  ] = useState(
-    emptyAddress,
-  );
+  const [busy, setBusy] =
+    useState(false);
 
-  const [
-    busy,
-    setBusy,
-  ] = useState(false);
+  const [loadingAddresses, setLoadingAddresses] =
+    useState(true);
 
-  const [
-    loadingAddresses,
-    setLoadingAddresses,
-  ] = useState(true);
+  const [loadingOrders, setLoadingOrders] =
+    useState(true);
 
-  const [
-    loadingOrders,
-    setLoadingOrders,
-  ] = useState(true);
+  const [editingProfile, setEditingProfile] =
+    useState(false);
 
-  const [
-    editingProfile,
-    setEditingProfile,
-  ] = useState(false);
+  const [showAddressForm, setShowAddressForm] =
+    useState(false);
 
-  const [
-    showAddressForm,
-    setShowAddressForm,
-  ] = useState(false);
-
-  const [
-    copiedPayment,
-    setCopiedPayment,
-  ] = useState<
-    string | null
-  >(null);
+  const [copiedPayment, setCopiedPayment] =
+    useState<string | null>(null);
 
   const {
     data: paymentMethods = [],
-    isLoading:
-      loadingPaymentMethods,
+    isLoading: loadingPaymentMethods,
   } = useQuery({
     queryKey: [
       "payment-methods",
@@ -225,133 +173,86 @@ function AccountPage() {
         true,
       )) as PaymentMethod[],
 
-    staleTime:
-      1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5,
   });
 
   const loadAddresses =
-    useCallback(
-      async () => {
-        if (!user?.id) {
-          setLoadingAddresses(
-            false,
-          );
-          return;
-        }
+    useCallback(async () => {
+      if (!user?.id) {
+        setLoadingAddresses(false);
+        return;
+      }
 
-        setLoadingAddresses(
-          true,
+      setLoadingAddresses(true);
+
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("addresses")
+        .select(
+          "id,label,recipient_name,phone,city,district,details,is_default",
+        )
+        .eq("user_id", user.id)
+        .order("is_default", {
+          ascending: false,
+        })
+        .order("created_at", {
+          ascending: false,
+        })
+        .returns<Address[]>();
+
+      if (error) {
+        toast.error(
+          "تعذر تحميل عناوين التوصيل",
         );
+      }
 
-        const {
-          data,
-          error,
-        } = await supabase
-          .from(
-            "addresses",
-          )
-          .select(
-            "id,label,recipient_name,phone,city,district,details,is_default",
-          )
-          .eq(
-            "user_id",
-            user.id,
-          )
-          .order(
-            "is_default",
-            {
-              ascending:
-                false,
-            },
-          )
-          .order(
-            "created_at",
-            {
-              ascending:
-                false,
-            },
-          )
-          .returns<Address[]>();
-
-        if (error) {
-          toast.error(
-            "تعذر تحميل عناوين التوصيل",
-          );
-        }
-
-        setAddresses(
-          data ?? [],
-        );
-
-        setLoadingAddresses(
-          false,
-        );
-      },
-      [user?.id],
-    );
+      setAddresses(data ?? []);
+      setLoadingAddresses(false);
+    }, [user?.id]);
 
   const loadOrders =
-    useCallback(
-      async () => {
-        if (!user?.id) {
-          setLoadingOrders(
-            false,
-          );
-          return;
-        }
+    useCallback(async () => {
+      if (!user?.id) {
+        setLoadingOrders(false);
+        return;
+      }
 
-        setLoadingOrders(
-          true,
+      setLoadingOrders(true);
+
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("orders")
+        .select(
+          "id,order_number,status,payment_status,total,created_at",
+        )
+        .eq("user_id", user.id)
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(3)
+        .returns<RecentOrder[]>();
+
+      if (error) {
+        toast.error(
+          "تعذر تحميل الطلبات",
         );
+      }
 
-        const {
-          data,
-          error,
-        } = await supabase
-          .from("orders")
-          .select(
-            "id,order_number,status,payment_status,total,created_at",
-          )
-          .eq(
-            "user_id",
-            user.id,
-          )
-          .order(
-            "created_at",
-            {
-              ascending:
-                false,
-            },
-          )
-          .limit(3)
-          .returns<RecentOrder[]>();
-
-        if (error) {
-          toast.error(
-            "تعذر تحميل الطلبات",
-          );
-        }
-
-        setOrders(
-          data ?? [],
-        );
-
-        setLoadingOrders(
-          false,
-        );
-      },
-      [user?.id],
-    );
+      setOrders(data ?? []);
+      setLoadingOrders(false);
+    }, [user?.id]);
 
   useEffect(() => {
     setFullName(
-      profile?.full_name ??
-        "",
+      profile?.full_name ?? "",
     );
 
     setPhone(
-      profile?.phone ??
-        "",
+      profile?.phone ?? "",
     );
   }, [profile]);
 
@@ -363,62 +264,38 @@ function AccountPage() {
     loadOrders,
   ]);
 
-  const roleLabel =
-    useMemo(() => {
-      if (
-        role ===
-        "admin"
-      ) {
-        return "مدير";
-      }
+  const roleLabel = useMemo(() => {
+    if (role === "admin") {
+      return "مدير";
+    }
 
-      if (
-        role ===
-        "vendor"
-      ) {
-        return "تاجر";
-      }
+    if (role === "vendor") {
+      return "تاجر";
+    }
 
-      if (
-        role ===
-        "courier"
-      ) {
-        return "عامل توصيل";
-      }
+    if (role === "courier") {
+      return "عامل توصيل";
+    }
 
-      return "عميل";
-    }, [role]);
+    return "عميل";
+  }, [role]);
 
-  const initials =
-    useMemo(() => {
-      const value =
-        profile?.full_name?.trim() ||
-        "ش";
+  const initials = useMemo(() => {
+    const value =
+      profile?.full_name?.trim() ||
+      "ش";
 
-      const parts =
-        value
-          .split(/\s+/)
-          .filter(
-            Boolean,
-          );
+    const parts =
+      value
+        .split(/\s+/)
+        .filter(Boolean);
 
-      if (
-        parts.length >=
-        2
-      ) {
-        return `${parts[0]?.charAt(
-          0,
-        ) ?? ""}${parts[1]?.charAt(
-          0,
-        ) ?? ""}`;
-      }
+    if (parts.length >= 2) {
+      return `${parts[0]?.charAt(0) ?? ""}${parts[1]?.charAt(0) ?? ""}`;
+    }
 
-      return value.charAt(
-        0,
-      );
-    }, [
-      profile?.full_name,
-    ]);
+    return value.charAt(0);
+  }, [profile?.full_name]);
 
   const walletId =
     profile?.phone?.trim() ||
@@ -446,9 +323,7 @@ function AccountPage() {
   async function copyPaymentAccount(
     method: PaymentMethod,
   ) {
-    if (
-      !method.account_number
-    ) {
+    if (!method.account_number) {
       toast.error(
         "لا يوجد رقم حساب لهذه الطريقة",
       );
@@ -457,9 +332,7 @@ function AccountPage() {
     }
 
     try {
-      if (
-        !navigator.clipboard
-      ) {
+      if (!navigator.clipboard) {
         throw new Error(
           "Clipboard unavailable",
         );
@@ -469,15 +342,11 @@ function AccountPage() {
         method.account_number,
       );
 
-      setCopiedPayment(
-        method.id,
-      );
+      setCopiedPayment(method.id);
 
       window.setTimeout(
         () =>
-          setCopiedPayment(
-            null,
-          ),
+          setCopiedPayment(null),
         1800,
       );
 
@@ -500,16 +369,17 @@ function AccountPage() {
       toast.error(
         "يجب تسجيل الدخول أولاً",
       );
+
       return;
     }
 
     if (
-      fullName.trim()
-        .length < 3
+      fullName.trim().length < 3
     ) {
       toast.error(
         "أدخل اسماً صحيحاً",
       );
+
       return;
     }
 
@@ -565,6 +435,7 @@ function AccountPage() {
       toast.error(
         "يجب تسجيل الدخول أولاً",
       );
+
       return;
     }
 
@@ -576,6 +447,7 @@ function AccountPage() {
       toast.error(
         "أكمل بيانات العنوان المطلوبة",
       );
+
       return;
     }
 
@@ -585,11 +457,10 @@ function AccountPage() {
       const {
         error,
       } = await supabase
-        .from(
-          "addresses",
-        )
+        .from("addresses")
         .insert({
-          user_id: user.id,
+          user_id:
+            user.id,
 
           label:
             form.label.trim() ||
@@ -661,9 +532,7 @@ function AccountPage() {
       const {
         error,
       } = await supabase
-        .from(
-          "addresses",
-        )
+        .from("addresses")
         .delete()
         .eq(
           "id",
@@ -708,9 +577,7 @@ function AccountPage() {
         error:
           clearError,
       } = await supabase
-        .from(
-          "addresses",
-        )
+        .from("addresses")
         .update({
           is_default:
             false,
@@ -728,9 +595,7 @@ function AccountPage() {
         error:
           setError,
       } = await supabase
-        .from(
-          "addresses",
-        )
+        .from("addresses")
         .update({
           is_default:
             true,
@@ -782,6 +647,7 @@ function AccountPage() {
       <SiteHeader />
 
       <main className="mx-auto w-full max-w-3xl space-y-4 px-3 py-4 sm:px-5 sm:py-6">
+
         <section className="px-1">
           <p className="text-[9px] font-black text-[#D65A31]">
             SHEHARA
@@ -804,7 +670,7 @@ function AccountPage() {
           </div>
         </section>
 
-        {/* البطاقة الرقمية أول عنصر */}
+        {/* بطاقة المحفظة أولاً */}
         <WalletCard
           balance={Number(
             profile?.wallet_balance ??
@@ -826,15 +692,19 @@ function AccountPage() {
           walletId={walletId}
         />
 
-        {/* بيانات الحساب أسفل البطاقة */}
+        {/* بيانات الحساب */}
         <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm backdrop-blur-xl dark:bg-card/90">
+
           <div className="flex items-center gap-3">
+
             <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#0E4D64] text-base font-black text-white">
               {initials}
             </div>
 
             <div className="min-w-0 flex-1">
+
               <div className="flex flex-wrap items-center gap-2">
+
                 <h2 className="truncate text-sm font-black">
                   {profile?.full_name ||
                     "مرحباً بك في شهارة"}
@@ -843,6 +713,7 @@ function AccountPage() {
                 <span className="rounded-full bg-[#D65A31]/10 px-2 py-1 text-[8px] font-black text-[#D65A31]">
                   {roleLabel}
                 </span>
+
               </div>
 
               <p
@@ -853,6 +724,7 @@ function AccountPage() {
                   user?.email ||
                   "—"}
               </p>
+
             </div>
 
             <button
@@ -872,16 +744,16 @@ function AccountPage() {
                 <Edit3 className="h-4 w-4" />
               )}
             </button>
+
           </div>
 
           {editingProfile ? (
             <form
-              onSubmit={
-                saveProfile
-              }
+              onSubmit={saveProfile}
               className="mt-4 border-t border-border/60 pt-4"
             >
               <div className="grid gap-3 sm:grid-cols-2">
+
                 <AccountField
                   label="الاسم الكامل"
                   value={fullName}
@@ -900,6 +772,7 @@ function AccountPage() {
                   placeholder="رقم الهاتف"
                   dir="ltr"
                 />
+
               </div>
 
               <button
@@ -913,10 +786,12 @@ function AccountPage() {
               </button>
             </form>
           ) : null}
+
         </section>
 
         {/* المحفظة والمعاملات */}
         <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm dark:bg-card/90">
+
           <SectionHeader
             icon={<Wallet />}
             title="المحفظة والمعاملات"
@@ -932,6 +807,7 @@ function AccountPage() {
           />
 
           <div className="mt-4 grid grid-cols-2 gap-2">
+
             <Link
               to="/wallet"
               className="rounded-2xl bg-[#0E4D64]/5 p-3"
@@ -964,10 +840,14 @@ function AccountPage() {
                   "غير مضاف"}
               </p>
             </Link>
+
           </div>
+
         </section>
 
+        {/* الإجراءات السريعة */}
         <section className="grid grid-cols-2 gap-3">
+
           <QuickAction
             to="/orders"
             icon={<Package />}
@@ -1008,9 +888,12 @@ function AccountPage() {
               منتجاتك المفضلة
             </span>
           </Link>
+
         </section>
 
-        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm dark:bg-card/90">
+        {/* آخر طلب */}
+        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm backdrop-blur-xl dark:bg-card/90">
+
           <SectionHeader
             icon={<Package />}
             title="آخر طلب"
@@ -1032,19 +915,20 @@ function AccountPage() {
               to="/orders"
               className="mt-4 block rounded-2xl border border-[#0E4D64]/10 bg-[#FAF9F6] p-3 dark:bg-[#0B2936]"
             >
+
               <div className="flex items-center gap-3">
+
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
                   <Package className="h-5 w-5" />
                 </span>
 
                 <div className="min-w-0 flex-1">
+
                   <p
                     dir="ltr"
                     className="truncate text-start font-mono text-[10px] font-black"
                   >
-                    {
-                      latestOrder.order_number
-                    }
+                    {latestOrder.order_number}
                   </p>
 
                   <p className="mt-1 text-[8px] text-muted-foreground">
@@ -1052,9 +936,11 @@ function AccountPage() {
                       latestOrder.created_at,
                     )}
                   </p>
+
                 </div>
 
                 <div className="text-start">
+
                   <p className="text-[11px] font-black text-[#0E4D64]">
                     {formatPrice(
                       latestOrder.total,
@@ -1062,40 +948,39 @@ function AccountPage() {
                   </p>
 
                   <span className="mt-1 inline-flex rounded-full bg-[#D65A31]/10 px-2 py-1 text-[8px] font-black text-[#D65A31]">
-                    {
-                      STATUS_LABELS[
-                        latestOrder
-                          .status
-                      ] ??
-                        latestOrder.status
-                    }
+                    {STATUS_LABELS[
+                      latestOrder.status
+                    ] ??
+                      latestOrder.status}
                   </span>
+
                 </div>
 
                 <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+
               </div>
 
               <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
+
                 <span className="rounded-full bg-[#0E4D64]/10 px-2 py-1 text-[8px] font-bold text-[#0E4D64]">
-                  {
-                    STATUS_LABELS[
-                      latestOrder
-                        .status
-                    ] ??
-                      latestOrder.status
-                  }
+                  {STATUS_LABELS[
+                    latestOrder.status
+                  ] ??
+                    latestOrder.status}
                 </span>
 
                 <span className="rounded-full bg-white px-2 py-1 text-[8px] font-bold text-muted-foreground dark:bg-card">
                   {
                     PAYMENT_STATUS_LABELS[
                       latestOrder
-                        .payment_status
+                        .payment_status as keyof typeof PAYMENT_STATUS_LABELS
                     ] ??
                       latestOrder.payment_status
                   }
                 </span>
+
               </div>
+
             </Link>
           ) : (
             <EmptyState
@@ -1105,9 +990,12 @@ function AccountPage() {
               to="/products"
             />
           )}
+
         </section>
 
-        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm dark:bg-card/90">
+        {/* عنوان التوصيل */}
+        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm backdrop-blur-xl dark:bg-card/90">
+
           <SectionHeader
             icon={<MapPin />}
             title="عنوان التوصيل"
@@ -1136,19 +1024,23 @@ function AccountPage() {
             }
           />
 
-          {defaultAddress ? (
+          {loadingAddresses ? (
+            <div className="mt-4 h-20 animate-pulse rounded-2xl bg-muted" />
+          ) : defaultAddress ? (
             <div className="mt-4 rounded-2xl border border-[#0E4D64]/10 bg-[#FAF9F6] p-3 dark:bg-[#0B2936]">
+
               <div className="flex items-start gap-3">
+
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
                   <MapPin className="h-4 w-4" />
                 </span>
 
                 <div className="min-w-0 flex-1">
+
                   <div className="flex flex-wrap items-center gap-2">
+
                     <h3 className="text-xs font-black">
-                      {
-                        defaultAddress.label
-                      }
+                      {defaultAddress.label}
                     </h3>
 
                     {defaultAddress.is_default ? (
@@ -1156,18 +1048,15 @@ function AccountPage() {
                         الافتراضي
                       </span>
                     ) : null}
+
                   </div>
 
                   <p className="mt-1 text-[10px] font-bold">
-                    {
-                      defaultAddress.recipient_name
-                    }
+                    {defaultAddress.recipient_name}
                   </p>
 
                   <p className="mt-1 text-[9px] text-muted-foreground">
-                    {
-                      defaultAddress.city
-                    }
+                    {defaultAddress.city}
 
                     {defaultAddress.district
                       ? ` — ${defaultAddress.district}`
@@ -1175,9 +1064,7 @@ function AccountPage() {
                   </p>
 
                   <p className="mt-1 text-[9px] leading-5 text-muted-foreground">
-                    {
-                      defaultAddress.details
-                    }
+                    {defaultAddress.details}
                   </p>
 
                   {defaultAddress.phone ? (
@@ -1185,14 +1072,784 @@ function AccountPage() {
                       dir="ltr"
                       className="mt-1 text-start text-[9px] text-muted-foreground"
                     >
-                      {
-                        defaultAddress.phone
-                      }
+                      {defaultAddress.phone}
                     </p>
                   ) : null}
+
                 </div>
+
               </div>
 
               <div className="mt-3 flex gap-2 border-t border-border/60 pt-3">
+
                 {!defaultAddress.is_default ? (
                   <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() =>
+                      void makeDefault(
+                        defaultAddress.id,
+                      )
+                    }
+                    className="flex-1 rounded-xl border border-border bg-white py-2 text-[8px] font-bold dark:bg-card"
+                  >
+                    تعيين كافتراضي
+                  </button>
+                ) : null}
+
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    void removeAddress(
+                      defaultAddress.id,
+                    )
+                  }
+                  className="inline-flex items-center justify-center gap-1 rounded-xl bg-red-500/10 px-3 py-2 text-[8px] font-bold text-red-600"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  حذف
+                </button>
+
+              </div>
+
+            </div>
+          ) : (
+            <EmptyState
+              icon={<MapPin />}
+              title="لم تتم إضافة عنوان بعد"
+            />
+          )}
+
+          {showAddressForm ? (
+            <form
+              onSubmit={addAddress}
+              className="mt-4 rounded-2xl border border-[#0E4D64]/10 bg-[#FAF9F6] p-3 dark:bg-[#0B2936]"
+            >
+
+              <div className="grid gap-3 sm:grid-cols-2">
+
+                <AccountField
+                  label="اسم العنوان"
+                  value={form.label}
+                  onChange={(value) =>
+                    setForm(
+                      (current) => ({
+                        ...current,
+                        label: value,
+                      }),
+                    )
+                  }
+                  placeholder="المنزل"
+                />
+
+                <AccountField
+                  label="اسم المستلم *"
+                  value={
+                    form.recipient_name
+                  }
+                  onChange={(value) =>
+                    setForm(
+                      (current) => ({
+                        ...current,
+                        recipient_name:
+                          value,
+                      }),
+                    )
+                  }
+                  placeholder="الاسم الكامل"
+                />
+
+                <AccountField
+                  label="رقم الهاتف"
+                  value={form.phone}
+                  onChange={(value) =>
+                    setForm(
+                      (current) => ({
+                        ...current,
+                        phone: value,
+                      }),
+                    )
+                  }
+                  placeholder="رقم الهاتف"
+                  dir="ltr"
+                />
+
+                <AccountField
+                  label="المدينة *"
+                  value={form.city}
+                  onChange={(value) =>
+                    setForm(
+                      (current) => ({
+                        ...current,
+                        city: value,
+                      }),
+                    )
+                  }
+                  placeholder="المدينة"
+                />
+
+                <AccountField
+                  label="الحي / المنطقة"
+                  value={form.district}
+                  onChange={(value) =>
+                    setForm(
+                      (current) => ({
+                        ...current,
+                        district: value,
+                      }),
+                    )
+                  }
+                  placeholder="الحي"
+                />
+
+                <label className="text-[9px] font-bold text-muted-foreground sm:col-span-2">
+
+                  تفاصيل العنوان *
+
+                  <textarea
+                    value={
+                      form.details
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      setForm(
+                        (current) => ({
+                          ...current,
+                          details:
+                            event.target
+                              .value,
+                        }),
+                      )
+                    }
+                    rows={3}
+                    placeholder="الشارع، رقم المنزل، معلم قريب..."
+                    className="mt-1.5 w-full resize-none rounded-xl border border-border bg-white px-3 py-2 text-xs text-foreground outline-none focus:border-[#0E4D64] dark:bg-card"
+                  />
+
+                </label>
+
+              </div>
+
+              <button
+                type="submit"
+                disabled={busy}
+                className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#D65A31] text-xs font-black text-white disabled:opacity-50"
+              >
+                {busy
+                  ? "جارٍ الحفظ..."
+                  : "حفظ العنوان"}
+              </button>
+
+            </form>
+          ) : null}
+
+          {addresses.length > 1 ? (
+            <div className="mt-3 space-y-2">
+
+              <p className="px-1 text-[9px] font-black text-muted-foreground">
+                العناوين الأخرى
+              </p>
+
+              {addresses
+                .filter(
+                  (address) =>
+                    address.id !==
+                    defaultAddress?.id,
+                )
+                .map(
+                  (address) => (
+                    <div
+                      key={
+                        address.id
+                      }
+                      className="rounded-2xl border border-border/70 bg-white p-3 dark:bg-card"
+                    >
+
+                      <div className="flex items-center gap-3">
+
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+                          <MapPin className="h-4 w-4" />
+                        </span>
+
+                        <div className="min-w-0 flex-1">
+
+                          <p className="text-[10px] font-black">
+                            {address.label}
+                          </p>
+
+                          <p className="mt-0.5 truncate text-[8px] text-muted-foreground">
+                            {address.city}
+
+                            {address.district
+                              ? ` — ${address.district}`
+                              : ""}
+                          </p>
+
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            void makeDefault(
+                              address.id,
+                            )
+                          }
+                          className="rounded-xl bg-[#0E4D64]/10 px-2.5 py-2 text-[8px] font-black text-[#0E4D64]"
+                        >
+                          افتراضي
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            void removeAddress(
+                              address.id,
+                            )
+                          }
+                          aria-label="حذف العنوان"
+                          className="grid h-8 w-8 place-items-center rounded-xl bg-red-500/10 text-red-600"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+
+                      </div>
+
+                    </div>
+                  ),
+                )}
+
+            </div>
+          ) : null}
+
+        </section>
+
+        <NotificationPrefsPanel />
+
+        {/* طرق الدفع */}
+        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm backdrop-blur-xl dark:bg-card/90">
+
+          <SectionHeader
+            icon={<Wallet />}
+            title="طرق الدفع"
+            subtitle="طرق الدفع والتحويل المتاحة حالياً"
+            action={
+              <Link
+                to="/wallet"
+                className="text-[9px] font-black text-[#D65A31]"
+              >
+                المحفظة
+              </Link>
+            }
+          />
+
+          {loadingPaymentMethods ? (
+            <div className="mt-4 space-y-2">
+              <LoadingBox />
+              <LoadingBox />
+            </div>
+          ) : activePaymentMethods.length ? (
+            <div className="mt-4 space-y-2">
+
+              {activePaymentMethods
+                .slice(0, 4)
+                .map(
+                  (method) => (
+                    <PaymentMethodCard
+                      key={method.id}
+                      method={method}
+                      copied={
+                        copiedPayment ===
+                        method.id
+                      }
+                      onCopy={() =>
+                        void copyPaymentAccount(
+                          method,
+                        )
+                      }
+                    />
+                  ),
+                )}
+
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Wallet />}
+              title="لا توجد طرق دفع متاحة حالياً"
+            />
+          )}
+
+        </section>
+
+        {/* الأمان */}
+        <section className="overflow-hidden rounded-[24px] border border-[#0E4D64]/10 bg-white/90 shadow-sm backdrop-blur-xl dark:bg-card/90">
+
+          <div className="flex items-center gap-3 border-b border-border/60 p-4">
+
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
+              <ShieldCheck className="h-5 w-5" />
+            </span>
+
+            <div className="min-w-0 flex-1">
+
+              <h2 className="text-xs font-black">
+                أمان الحساب
+              </h2>
+
+              <p className="mt-1 text-[8px] text-muted-foreground">
+                بياناتك مرتبطة بحسابك المصادق عليه في شهارة
+              </p>
+
+            </div>
+
+            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+
+          </div>
+
+          <div className="divide-y divide-border/60">
+
+            <div className="flex items-center gap-3 p-4">
+
+              <User className="h-4 w-4 text-[#0E4D64]" />
+
+              <div className="min-w-0 flex-1">
+
+                <p className="text-[10px] font-black">
+                  بيانات الحساب
+                </p>
+
+                <p className="mt-0.5 text-[8px] text-muted-foreground">
+                  الاسم ورقم الهاتف
+                </p>
+
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingProfile(
+                    true,
+                  )
+                }
+                className="rounded-xl bg-[#0E4D64]/10 px-3 py-2 text-[8px] font-black text-[#0E4D64]"
+              >
+                تعديل
+              </button>
+
+            </div>
+
+            <div className="flex items-center gap-3 p-4">
+
+              <ShieldCheck className="h-4 w-4 text-[#0E4D64]" />
+
+              <div className="min-w-0 flex-1">
+
+                <p className="text-[10px] font-black">
+                  معرّف المحفظة
+                </p>
+
+                <p
+                  dir="ltr"
+                  className="mt-0.5 truncate text-start font-mono text-[8px] text-muted-foreground"
+                >
+                  {walletId ||
+                    "غير مضاف"}
+                </p>
+
+              </div>
+
+              <button
+                type="button"
+                disabled={!walletId}
+                onClick={async () => {
+                  if (!walletId) {
+                    return;
+                  }
+
+                  try {
+                    await navigator.clipboard.writeText(
+                      walletId,
+                    );
+
+                    toast.success(
+                      "تم نسخ معرّف المحفظة",
+                    );
+                  } catch {
+                    toast.error(
+                      "تعذر نسخ المعرّف",
+                    );
+                  }
+                }}
+                className="grid h-8 w-8 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64] disabled:opacity-50"
+                aria-label="نسخ معرّف المحفظة"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* روابط إضافية */}
+        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-2 shadow-sm dark:bg-card/90">
+
+          <AccountLink
+            to="/orders"
+            icon={<Package />}
+            title="جميع طلباتي"
+            subtitle="متابعة جميع الطلبات السابقة والحالية"
+          />
+
+          <AccountLink
+            to="/wallet"
+            icon={<Wallet />}
+            title="المحفظة"
+            subtitle="الرصيد وطلبات الشحن وسجل العمليات"
+          />
+
+          <AccountLink
+            to="/products"
+            icon={<ShoppingBag />}
+            title="مواصلة التسوق"
+            subtitle="العودة إلى المنتجات"
+          />
+
+          <div className="flex items-center gap-3 rounded-2xl p-3">
+
+            <Bell className="h-4 w-4 text-[#D65A31]" />
+
+            <div className="min-w-0 flex-1">
+
+              <p className="text-[10px] font-black">
+                إشعارات شهارة
+              </p>
+
+              <p className="mt-0.5 text-[8px] text-muted-foreground">
+                إدارة تفضيلات الإشعارات من القسم أعلاه
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* تسجيل الخروج */}
+        <button
+          type="button"
+          onClick={() =>
+            void handleSignOut()
+          }
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/5 text-xs font-black text-red-600 transition active:scale-[.99]"
+        >
+          <LogOut className="h-4 w-4" />
+          تسجيل الخروج
+        </button>
+
+      </main>
+
+      <BottomNav />
+    </div>
+  );
+}
+
+function AccountField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  dir,
+}: {
+  label: string;
+  value: string;
+  onChange: (
+    value: string,
+  ) => void;
+  placeholder?: string;
+  dir?: "ltr" | "rtl";
+}) {
+  return (
+    <label className="text-[9px] font-bold text-muted-foreground">
+
+      {label}
+
+      <input
+        value={value}
+        onChange={(event) =>
+          onChange(
+            event.target.value,
+          )
+        }
+        placeholder={
+          placeholder
+        }
+        dir={dir}
+        className="mt-1.5 h-10 w-full rounded-xl border border-border bg-white px-3 text-xs text-foreground outline-none transition focus:border-[#0E4D64] dark:bg-card"
+      />
+
+    </label>
+  );
+}
+
+function QuickAction({
+  to,
+  icon,
+  title,
+  subtitle,
+  accent,
+}: {
+  to:
+    | "/orders"
+    | "/wallet"
+    | "/products";
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+  accent:
+    | "teal"
+    | "orange";
+}) {
+  const accentClass =
+    accent === "orange"
+      ? "bg-[#D65A31]/10 text-[#D65A31]"
+      : "bg-[#0E4D64]/10 text-[#0E4D64]";
+
+  return (
+    <Link
+      to={to}
+      className="rounded-2xl border border-[#0E4D64]/10 bg-white/90 p-3 shadow-sm transition active:scale-[.98] dark:bg-card/90"
+    >
+
+      <span
+        className={`grid h-9 w-9 place-items-center rounded-xl ${accentClass}`}
+      >
+        {icon}
+      </span>
+
+      <span className="mt-2 block text-[10px] font-black">
+        {title}
+      </span>
+
+      <span className="mt-0.5 block text-[8px] text-muted-foreground">
+        {subtitle}
+      </span>
+
+    </Link>
+  );
+}
+
+function SectionHeader({
+  icon,
+  title,
+  subtitle,
+  action,
+}: {
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+        {icon}
+      </span>
+
+      <div className="min-w-0 flex-1">
+
+        <h2 className="text-sm font-black">
+          {title}
+        </h2>
+
+        <p className="mt-0.5 text-[8px] text-muted-foreground">
+          {subtitle}
+        </p>
+
+      </div>
+
+      {action}
+
+    </div>
+  );
+}
+
+function AccountLink({
+  to,
+  icon,
+  title,
+  subtitle,
+}: {
+  to:
+    | "/orders"
+    | "/wallet"
+    | "/products";
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-3 rounded-2xl p-3 transition active:bg-[#0E4D64]/5"
+    >
+
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+        {icon}
+      </span>
+
+      <span className="min-w-0 flex-1">
+
+        <span className="block text-[10px] font-black">
+          {title}
+        </span>
+
+        <span className="mt-0.5 block truncate text-[8px] text-muted-foreground">
+          {subtitle}
+        </span>
+
+      </span>
+
+      <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+
+    </Link>
+  );
+}
+
+function PaymentMethodCard({
+  method,
+  copied,
+  onCopy,
+}: {
+  method: PaymentMethod;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  const masked =
+    method.account_number
+      ? maskAccountNumber(
+          method.account_number,
+        )
+      : "لا يوجد رقم حساب";
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-[#0E4D64]/10 bg-[#0E4D64] p-3 text-white">
+
+      <div className="absolute -end-10 -top-10 h-28 w-28 rounded-full border border-white/10" />
+
+      <div className="relative flex items-center gap-3">
+
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10">
+          <Wallet className="h-4 w-4 text-[#F3A17E]" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+
+          <p className="text-[10px] font-black">
+            {method.display_name}
+          </p>
+
+          <p className="mt-0.5 text-[8px] text-white/55">
+            {method.account_name ||
+              "طريقة دفع متاحة"}
+          </p>
+
+          <p
+            dir="ltr"
+            className="mt-2 truncate text-start font-mono text-[10px] font-bold tracking-wide text-white/85"
+          >
+            {masked}
+          </p>
+
+        </div>
+
+        {method.account_number ? (
+          <button
+            type="button"
+            onClick={onCopy}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-white"
+            aria-label="نسخ رقم الحساب"
+          >
+            {copied ? (
+              <CheckCircle2 className="h-4 w-4 text-[#F3A17E]" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </button>
+        ) : null}
+
+      </div>
+
+      {method.requires_receipt ? (
+        <p className="relative mt-2 border-t border-white/10 pt-2 text-[8px] text-white/50">
+          هذه الطريقة تتطلب رفع إيصال التحويل عند الدفع.
+        </p>
+      ) : null}
+
+    </div>
+  );
+}
+
+function maskAccountNumber(
+  value: string,
+) {
+  const clean =
+    value.trim();
+
+  if (
+    clean.length <= 8
+  ) {
+    return clean;
+  }
+
+  return `${clean.slice(
+    0,
+    4,
+  )} •••• ${clean.slice(-4)}`;
+}
+
+function LoadingBox() {
+  return (
+    <div className="h-16 animate-pulse rounded-2xl bg-muted" />
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  action,
+  to,
+}: {
+  icon: ReactNode;
+  title: string;
+  action?: string;
+  to?: "/products";
+}) {
+  return (
+    <div className="mt-4 rounded-2xl border border-dashed border-border p-6 text-center">
+
+      <span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-[#0E4D64]/5 text-muted-foreground">
+        {icon}
+      </span>
+
+      <p className="mt-2 text-xs font-bold">
+        {title}
+      </p>
+
+      {action && to ? (
+        <Link
+          to={to}
+          className="mt-2 inline-block text-[9px] font-black text-[#D65A31]"
+        >
+          {action}
+        </Link>
+      ) : null}
+
+    </div>
+  );
+}
