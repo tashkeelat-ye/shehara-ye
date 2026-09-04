@@ -359,6 +359,7 @@ export async function fetchProducts(
   opts: {
     categorySlug?: string | undefined;
     categoryId?: string | undefined;
+    brandSlug?: string | undefined;
     local?: boolean | undefined;
     sort?: SortKey | undefined;
     filters?: ProductFilters | undefined;
@@ -439,6 +440,30 @@ export async function fetchProducts(
         );
       }
     }
+
+    if (opts.brandSlug) {
+      const { data: brand } =
+        await supabase
+          .from("brands")
+          .select("id,slug")
+          .eq("slug", opts.brandSlug)
+          .maybeSingle<{
+            id: string;
+            slug: string | null;
+          }>();
+
+      if (brand) {
+        query = query.or(
+          `brand_id.eq.${brand.id},brand_slug.eq.${opts.brandSlug}`,
+        );
+      } else {
+        query = query.eq(
+          "brand_slug",
+          opts.brandSlug,
+        );
+      }
+    }
+
 
     query = applySort(
       query,

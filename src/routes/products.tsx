@@ -99,6 +99,7 @@ function ProductsPage() {
   const {
     q,
     sort: sortParam,
+    brand,
   } = Route.useSearch();
 
   const navigate = useNavigate();
@@ -124,18 +125,21 @@ function ProductsPage() {
       "all",
       sort,
       filters,
+      brand ?? null,
     ],
 
     queryFn: () =>
       fetchProducts({
         sort,
         filters,
+        brandSlug: brand,
       }),
 
     staleTime: 1000 * 60 * 2,
 
     gcTime: 1000 * 60 * 15,
   });
+
 
   const {
     data: cities = [],

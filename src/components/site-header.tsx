@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Moon,
   Search,
@@ -20,7 +20,6 @@ const THEME_STORAGE_KEY = "shehara-theme";
 
 export function SiteHeader() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const {
     count,
@@ -32,14 +31,6 @@ export function SiteHeader() {
 
   const [searchValue, setSearchValue] =
     useState("");
-
-  /*
-   * إخفاء البحث في صفحات الحساب والطلبات فقط.
-   * يبقى البحث ظاهراً في جميع الصفحات الأخرى.
-   */
-  const hideSearch =
-    location.pathname === "/account" ||
-    location.pathname === "/orders";
 
   useEffect(() => {
     try {
@@ -128,275 +119,257 @@ export function SiteHeader() {
   };
 
   return (
-    <>
-      <header
+    <header
+      className="
+        sticky
+        top-0
+        z-50
+        w-full
+        border-b
+        border-[color:var(--border)]
+        bg-[color:var(--background)]/95
+        shadow-[0_4px_20px_-18px_rgba(14,77,100,0.45)]
+        backdrop-blur-xl
+        supports-[backdrop-filter]:bg-[color:var(--background)]/80
+      "
+    >
+      <div
         className="
-          fixed
-          inset-x-0
-          top-0
-          z-50
+          relative
+          mx-auto
+          flex
+          h-[68px]
           w-full
-          border-b
-          border-[color:var(--border)]
-          bg-[color:var(--background)]/95
-          shadow-[0_4px_20px_-18px_rgba(14,77,100,0.45)]
-          backdrop-blur-xl
-          supports-[backdrop-filter]:bg-[color:var(--background)]/80
+          max-w-7xl
+          items-center
+          justify-between
+          px-3
+          sm:px-5
+          lg:px-8
         "
       >
-        <div
+        {/* القائمة */}
+        <div className="shrink-0">
+          <SideMenu />
+        </div>
+
+        {/* الشعار المركزي */}
+        <Link
+          to="/"
+          aria-label="شهارة - تسوق بلا حدود"
           className="
-            relative
-            mx-auto
+            absolute
+            left-1/2
+            top-1/2
             flex
-            h-[68px]
-            w-full
-            max-w-7xl
+            -translate-x-1/2
+            -translate-y-1/2
             items-center
-            justify-between
-            px-3
-            sm:px-5
-            lg:px-8
+            justify-center
           "
         >
-          {/* القائمة */}
-          <div className="shrink-0">
-            <SideMenu />
-          </div>
-
-          {/* الشعار المركزي */}
-          <Link
-            to="/"
-            aria-label="شهارة - تسوق بلا حدود"
+          <BrandLogo
+            size={52}
             className="
-              absolute
-              left-1/2
-              top-1/2
-              flex
-              -translate-x-1/2
-              -translate-y-1/2
-              items-center
-              justify-center
+              h-11
+              w-11
+              sm:h-12
+              sm:w-12
+            "
+            priority
+          />
+        </Link>
+
+        {/* الأدوات */}
+        <div
+          className="
+            ms-auto
+            flex
+            items-center
+            gap-1
+          "
+        >
+          <button
+            type="button"
+            aria-label={
+              darkMode
+                ? "تفعيل الوضع الفاتح"
+                : "تفعيل الوضع الداكن"
+            }
+            title={
+              darkMode
+                ? "الوضع الفاتح"
+                : "الوضع الداكن"
+            }
+            onClick={toggleDarkMode}
+            className="
+              grid
+              h-10
+              w-10
+              place-items-center
+              rounded-xl
+              text-primary
+              transition-all
+              duration-200
+              hover:bg-accent
+              hover:text-accent-solid
+              active:scale-90
             "
           >
-            <BrandLogo
-              size={52}
-              className="
-                h-11
-                w-11
-                sm:h-12
-                sm:w-12
-              "
-              priority
-            />
-          </Link>
-
-          {/* الأدوات */}
-          <div
-            className="
-              ms-auto
-              flex
-              items-center
-              gap-1
-            "
-          >
-            <button
-              type="button"
-              aria-label={
-                darkMode
-                  ? "تفعيل الوضع الفاتح"
-                  : "تفعيل الوضع الداكن"
-              }
-              title={
-                darkMode
-                  ? "الوضع الفاتح"
-                  : "الوضع الداكن"
-              }
-              onClick={toggleDarkMode}
-              className="
-                grid
-                h-10
-                w-10
-                place-items-center
-                rounded-xl
-                text-primary
-                transition-all
-                duration-200
-                hover:bg-accent
-                hover:text-accent-solid
-                active:scale-90
-              "
-            >
-              {darkMode ? (
-                <Sun
-                  size={20}
-                  strokeWidth={2}
-                />
-              ) : (
-                <Moon
-                  size={20}
-                  strokeWidth={2}
-                />
-              )}
-            </button>
-
-            <NotificationBell />
-
-            <button
-              type="button"
-              aria-label="السلة"
-              title="السلة"
-              onClick={() =>
-                setDrawerOpen(true)
-              }
-              className="
-                relative
-                grid
-                h-10
-                w-10
-                place-items-center
-                rounded-xl
-                text-primary
-                transition-all
-                duration-200
-                hover:bg-accent
-                hover:text-accent-solid
-                active:scale-90
-              "
-            >
-              <ShoppingCart
+            {darkMode ? (
+              <Sun
                 size={20}
                 strokeWidth={2}
               />
+            ) : (
+              <Moon
+                size={20}
+                strokeWidth={2}
+              />
+            )}
+          </button>
 
-              {count > 0 ? (
-                <span
-                  aria-label={`${count} منتج في السلة`}
-                  className="
-                    absolute
-                    -end-0.5
-                    -top-0.5
-                    grid
-                    min-h-4
-                    min-w-4
-                    place-items-center
-                    rounded-full
-                    bg-accent-solid
-                    px-1
-                    text-[8px]
-                    font-extrabold
-                    leading-none
-                    text-white
-                    shadow-sm
-                  "
-                >
-                  {count > 99
-                    ? "99+"
-                    : count.toLocaleString(
-                        "ar-EG",
-                      )}
-                </span>
-              ) : null}
-            </button>
-          </div>
-        </div>
+          <NotificationBell />
 
-        {/* البحث — يظهر في بقية الواجهات فقط */}
-        {!hideSearch ? (
-          <div
+          <button
+            type="button"
+            aria-label="السلة"
+            title="السلة"
+            onClick={() =>
+              setDrawerOpen(true)
+            }
             className="
-              border-t
-              border-[color:var(--border)]/70
-              bg-[color:var(--background)]
-              px-3
-              py-3
-              sm:px-5
-              lg:px-8
+              relative
+              grid
+              h-10
+              w-10
+              place-items-center
+              rounded-xl
+              text-primary
+              transition-all
+              duration-200
+              hover:bg-accent
+              hover:text-accent-solid
+              active:scale-90
             "
           >
-            <form
-              onSubmit={handleSearch}
-              role="search"
-              className="
-                mx-auto
-                w-full
-                max-w-4xl
-              "
-            >
-              <div
+            <ShoppingCart
+              size={20}
+              strokeWidth={2}
+            />
+
+            {count > 0 ? (
+              <span
+                aria-label={`${count} منتج في السلة`}
                 className="
-                  relative
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-[color:var(--border)]
-                  bg-white
-                  shadow-[0_8px_24px_-20px_rgba(14,77,100,0.6)]
-                  transition-all
-                  duration-200
-                  focus-within:border-[#0E4D64]
-                  focus-within:ring-4
-                  focus-within:ring-[#0E4D64]/10
-                  dark:bg-[color:var(--card)]
+                  absolute
+                  -end-0.5
+                  -top-0.5
+                  grid
+                  min-h-4
+                  min-w-4
+                  place-items-center
+                  rounded-full
+                  bg-accent-solid
+                  px-1
+                  text-[8px]
+                  font-extrabold
+                  leading-none
+                  text-white
+                  shadow-sm
                 "
               >
-                <Search
-                  size={19}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                  className="
-                    pointer-events-none
-                    absolute
-                    start-4
-                    top-1/2
-                    -translate-y-1/2
-                    text-[#0E4D64]
-                  "
-                />
+                {count > 99
+                  ? "99+"
+                  : count.toLocaleString(
+                      "ar-EG",
+                    )}
+              </span>
+            ) : null}
+          </button>
+        </div>
+      </div>
 
-                <input
-                  value={searchValue}
-                  onChange={(event) =>
-                    setSearchValue(
-                      event.target.value,
-                    )
-                  }
-                  type="search"
-                  placeholder="ابحث عن منتج، عسل، بن، عطور، إلكترونيات..."
-                  aria-label="البحث عن المنتجات"
-                  autoComplete="off"
-                  className="
-                    h-12
-                    w-full
-                    border-0
-                    bg-transparent
-                    pe-4
-                    ps-12
-                    text-sm
-                    font-medium
-                    text-foreground
-                    outline-none
-                    placeholder:text-muted-foreground
-                  "
-                />
-              </div>
-            </form>
-          </div>
-        ) : null}
-      </header>
-
-      {/*
-       * مساحة تعويضية مساوية لارتفاع القائمة الثابتة.
-       * تمنع تداخل المحتوى مع الـ Fixed Header.
-       */}
+      {/* البحث */}
       <div
-        aria-hidden="true"
-        className={
-          hideSearch
-            ? "h-[68px]"
-            : "h-[141px]"
-        }
-      />
-    </>
+        className="
+          border-t
+          border-[color:var(--border)]/70
+          bg-[color:var(--background)]
+          px-3
+          py-3
+          sm:px-5
+          lg:px-8
+        "
+      >
+        <form
+          onSubmit={handleSearch}
+          role="search"
+          className="
+            mx-auto
+            w-full
+            max-w-4xl
+          "
+        >
+          <div
+            className="
+              relative
+              overflow-hidden
+              rounded-2xl
+              border
+              border-[color:var(--border)]
+              bg-white
+              shadow-[0_8px_24px_-20px_rgba(14,77,100,0.6)]
+              transition-all
+              duration-200
+              focus-within:border-[#0E4D64]
+              focus-within:ring-4
+              focus-within:ring-[#0E4D64]/10
+              dark:bg-[color:var(--card)]
+            "
+          >
+            <Search
+              size={19}
+              strokeWidth={2}
+              aria-hidden="true"
+              className="
+                pointer-events-none
+                absolute
+                start-4
+                top-1/2
+                -translate-y-1/2
+                text-[#0E4D64]
+              "
+            />
+
+            <input
+              value={searchValue}
+              onChange={(event) =>
+                setSearchValue(
+                  event.target.value,
+                )
+              }
+              type="search"
+              placeholder="ابحث عن منتج، عسل، بن، عطور، إلكترونيات..."
+              aria-label="البحث عن المنتجات"
+              autoComplete="off"
+              className="
+                h-12
+                w-full
+                border-0
+                bg-transparent
+                pe-4
+                ps-12
+                text-sm
+                font-medium
+                text-foreground
+                outline-none
+                placeholder:text-muted-foreground
+              "
+            />
+          </div>
+        </form>
+      </div>
+    </header>
   );
 }

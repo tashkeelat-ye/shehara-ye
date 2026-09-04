@@ -147,7 +147,7 @@
 }
 
 /* =========================================================
-   نظام شهارة العام
+   توافق أسماء الهوية القديمة
    ========================================================= */
 
 .shehara-app {
@@ -161,176 +161,6 @@
 
 .dark.shehara-app {
   color-scheme: dark;
-}
-
-/* =========================================================
-   خلفية تطبيق شهارة
-   ========================================================= */
-
-/*
- * الملف:
- *
- * public/app-background.png
- *
- * الخلفية الرسمية العامة للتطبيق.
- *
- * يتم وضع الصورة على عنصر HTML الجذري حتى لا تعتمد
- * على Route معين أو صفحة معينة.
- */
-
-html.shehara-app {
-  min-height: 100%;
-  background-color: #faf9f6;
-
-  background-image:
-    linear-gradient(
-      180deg,
-      rgb(255 255 255 / 0.88),
-      rgb(250 249 246 / 0.94)
-    ),
-    url("/app-background.png");
-
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  background-attachment: fixed;
-}
-
-/*
- * جسم الصفحة شفاف حتى تظهر خلفية HTML.
- */
-
-html.shehara-app body {
-  min-height: 100vh;
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/*
- * الحاوية الجذرية للتطبيق.
- *
- * RootShell الحالية تحتوي على خلفية صريحة:
- *
- * bg-[#FAF9F6]
- * dark:bg-[#071B24]
- *
- * لذلك يتم جعلها شفافة هنا.
- */
-
-html.shehara-app body > div {
-  min-height: 100vh;
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/*
- * بعض Routes قد تستخدم bg-background.
- *
- * نجعل الخلفية العامة شفافة، بينما تبقى البطاقات
- * التي تستخدم bg-card بيضاء بشكل طبيعي.
- */
-
-html.shehara-app .bg-background {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/*
- * RootShell يستخدم ألوانًا ثابتة مباشرة.
- */
-
-html.shehara-app [class~="bg-[#FAF9F6]"] {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-html.shehara-app [class~="dark:bg-[#071B24]"] {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/*
- * أي حاوية رئيسية تأخذ min-h-screen مع background
- * لا ينبغي أن تحجب الخلفية العامة.
- */
-
-html.shehara-app .min-h-screen.bg-background {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/* =========================================================
-   طبقة خفيفة لتحسين وضوح المحتوى
-   ========================================================= */
-
-/*
- * لا نضع Overlay مستقل فوق كامل التطبيق لأن ذلك سيؤثر
- * على Header / Bottom Navigation / Modals.
- *
- * الصورة نفسها مدمجة مع طبقة شفافية في background-image.
- */
-
-/* =========================================================
-   الوضع الداكن
-   ========================================================= */
-
-html.dark.shehara-app {
-  min-height: 100%;
-  background-color: #071b24;
-
-  background-image:
-    linear-gradient(
-      180deg,
-      rgb(7 27 36 / 0.93),
-      rgb(7 27 36 / 0.97)
-    ),
-    url("/app-background.png");
-
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  background-attachment: fixed;
-}
-
-html.dark.shehara-app body {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-html.dark.shehara-app body > div {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/*
- * في الوضع الداكن نمنع bg-background من إخفاء الصورة.
- */
-
-html.dark.shehara-app .bg-background {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-html.dark.shehara-app [class~="dark:bg-[#071B24]"] {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/* =========================================================
-   Splash
-   ========================================================= */
-
-/*
- * شاشة الافتتاح لديها خلفيتها الخاصة:
- *
- * public/splash-background.png
- *
- * لذلك لا نسمح للخلفية العامة بالتأثير عليها.
- */
-
-html.shehara-app
-  [aria-label="شهارة"][role="status"] {
-  background-image: none !important;
 }
 
 /* =========================================================
@@ -374,7 +204,7 @@ html.shehara-app
 }
 
 /* =========================================================
-   الروابط
+   روابط
    ========================================================= */
 
 .shehara-app a:not([class*="underline"]) {
@@ -430,88 +260,21 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 /* =========================================================
-   الخلفية الأساسية
+   خلفية التطبيق
    ========================================================= */
 
-/*
- * مهم:
- * body نفسه شفاف حتى لا يحجب صورة التطبيق الموجودة
- * على html.shehara-app.
- */
-
 body {
-  background-color: transparent;
+  background-color: #faf9f6;
   color: #081d27;
 }
 
 .dark body {
-  background-color: transparent;
+  background-color: #071b24;
   color: #f5fafc;
 }
 
 /* =========================================================
-   تحسين طبقات التطبيق
-   ========================================================= */
-
-/*
- * البطاقات والنوافذ تبقى ذات خلفياتها الخاصة.
- *
- * هذا يعني أن:
- *
- * bg-card
- * bg-popover
- * bg-white
- *
- * لن يتم جعلها شفافة.
- *
- * الخلفية تظهر فقط في المساحات التي لا تغطيها
- * مكونات الواجهة.
- */
-
-/* =========================================================
-   Safe Area
-   ========================================================= */
-
-.shehara-app {
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* =========================================================
-   الأجهزة الصغيرة
-   ========================================================= */
-
-@media (max-width: 640px) {
-  html.shehara-app {
-    background-position: center center;
-    background-size: cover;
-    background-attachment: fixed;
-  }
-}
-
-/* =========================================================
-   الأجهزة ذات الشاشات الطويلة
-   ========================================================= */
-
-@media (min-height: 800px) {
-  html.shehara-app {
-    background-position: center center;
-    background-size: cover;
-  }
-}
-
-/* =========================================================
-   الأجهزة التي لا تدعم background-attachment: fixed
-   ========================================================= */
-
-@supports not (background-attachment: fixed) {
-  html.shehara-app {
-    background-attachment: scroll;
-  }
-}
-
-/* =========================================================
-   تقليل الحركة
+   منع الحركة الزائدة
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {

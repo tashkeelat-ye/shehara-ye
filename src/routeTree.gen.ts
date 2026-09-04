@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CourierRouteImport } from './routes/courier'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as OffersRouteImport } from './routes/offers'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
@@ -29,6 +30,7 @@ import { Route as AdminCouriersRouteImport } from './routes/admin.couriers'
 import { Route as AdminHomeSectionsRouteImport } from './routes/admin.home-sections'
 import { Route as AdminInventoryRouteImport } from './routes/admin.inventory'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminOffersRouteImport } from './routes/admin.offers'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminPaymentRequestsRouteImport } from './routes/admin.payment-requests'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
@@ -75,6 +77,11 @@ const FaqRoute = FaqRouteImport.update({
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersRoute = OffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -140,6 +147,11 @@ const AdminInventoryRoute = AdminInventoryRouteImport.update({
 const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOffersRoute = AdminOffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
@@ -215,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/courier': typeof CourierRoute
   '/faq': typeof FaqRoute
   '/favorites': typeof FavoritesRoute
+  '/offers': typeof OffersRoute
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -227,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/admin/home-sections': typeof AdminHomeSectionsRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/offers': typeof AdminOffersRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment-requests': typeof AdminPaymentRequestsRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -248,6 +262,7 @@ export interface FileRoutesByTo {
   '/courier': typeof CourierRoute
   '/faq': typeof FaqRoute
   '/favorites': typeof FavoritesRoute
+  '/offers': typeof OffersRoute
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -260,6 +275,7 @@ export interface FileRoutesByTo {
   '/admin/home-sections': typeof AdminHomeSectionsRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/offers': typeof AdminOffersRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment-requests': typeof AdminPaymentRequestsRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -284,6 +300,7 @@ export interface FileRoutesById {
   '/courier': typeof CourierRoute
   '/faq': typeof FaqRoute
   '/favorites': typeof FavoritesRoute
+  '/offers': typeof OffersRoute
   '/products': typeof ProductsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
@@ -296,6 +313,7 @@ export interface FileRoutesById {
   '/admin/home-sections': typeof AdminHomeSectionsRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/offers': typeof AdminOffersRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment-requests': typeof AdminPaymentRequestsRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -320,6 +338,7 @@ export interface FileRouteTypes {
     | '/courier'
     | '/faq'
     | '/favorites'
+    | '/offers'
     | '/products'
     | '/account'
     | '/checkout'
@@ -332,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin/home-sections'
     | '/admin/inventory'
     | '/admin/notifications'
+    | '/admin/offers'
     | '/admin/orders'
     | '/admin/payment-requests'
     | '/admin/payments'
@@ -353,6 +373,7 @@ export interface FileRouteTypes {
     | '/courier'
     | '/faq'
     | '/favorites'
+    | '/offers'
     | '/products'
     | '/account'
     | '/checkout'
@@ -365,6 +386,7 @@ export interface FileRouteTypes {
     | '/admin/home-sections'
     | '/admin/inventory'
     | '/admin/notifications'
+    | '/admin/offers'
     | '/admin/orders'
     | '/admin/payment-requests'
     | '/admin/payments'
@@ -388,6 +410,7 @@ export interface FileRouteTypes {
     | '/courier'
     | '/faq'
     | '/favorites'
+    | '/offers'
     | '/products'
     | '/_authenticated/account'
     | '/_authenticated/checkout'
@@ -400,6 +423,7 @@ export interface FileRouteTypes {
     | '/admin/home-sections'
     | '/admin/inventory'
     | '/admin/notifications'
+    | '/admin/offers'
     | '/admin/orders'
     | '/admin/payment-requests'
     | '/admin/payments'
@@ -424,6 +448,7 @@ export interface RootRouteChildren {
   CourierRoute: typeof CourierRoute
   FaqRoute: typeof FaqRoute
   FavoritesRoute: typeof FavoritesRoute
+  OffersRoute: typeof OffersRoute
   ProductsRoute: typeof ProductsRoute
   ApiChatRoute: typeof ApiChatRoute
   CategorySlugRoute: typeof CategorySlugRoute
@@ -480,6 +505,13 @@ declare module '@tanstack/react-router' {
       path: '/favorites'
       fullPath: '/favorites'
       preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers': {
+      id: '/offers'
+      path: '/offers'
+      fullPath: '/offers'
+      preLoaderRoute: typeof OffersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -571,6 +603,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/admin/notifications'
       preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/offers': {
+      id: '/admin/offers'
+      path: '/offers'
+      fullPath: '/admin/offers'
+      preLoaderRoute: typeof AdminOffersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/orders': {
@@ -692,6 +731,7 @@ interface AdminRouteChildren {
   AdminHomeSectionsRoute: typeof AdminHomeSectionsRoute
   AdminInventoryRoute: typeof AdminInventoryRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
+  AdminOffersRoute: typeof AdminOffersRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPaymentRequestsRoute: typeof AdminPaymentRequestsRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
@@ -712,6 +752,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminHomeSectionsRoute: AdminHomeSectionsRoute,
   AdminInventoryRoute: AdminInventoryRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
+  AdminOffersRoute: AdminOffersRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPaymentRequestsRoute: AdminPaymentRequestsRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
@@ -734,6 +775,7 @@ const rootRouteChildren: RootRouteChildren = {
   CourierRoute: CourierRoute,
   FaqRoute: FaqRoute,
   FavoritesRoute: FavoritesRoute,
+  OffersRoute: OffersRoute,
   ProductsRoute: ProductsRoute,
   ApiChatRoute: ApiChatRoute,
   CategorySlugRoute: CategorySlugRoute,
