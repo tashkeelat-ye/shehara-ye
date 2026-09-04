@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CourierRouteImport } from './routes/courier'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as OffersRouteImport } from './routes/offers'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
@@ -75,6 +76,11 @@ const FaqRoute = FaqRouteImport.update({
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OffersRoute = OffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/courier': typeof CourierRoute
   '/faq': typeof FaqRoute
   '/favorites': typeof FavoritesRoute
+  '/offers': typeof OffersRoute
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -248,6 +255,7 @@ export interface FileRoutesByTo {
   '/courier': typeof CourierRoute
   '/faq': typeof FaqRoute
   '/favorites': typeof FavoritesRoute
+  '/offers': typeof OffersRoute
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/courier': typeof CourierRoute
   '/faq': typeof FaqRoute
   '/favorites': typeof FavoritesRoute
+  '/offers': typeof OffersRoute
   '/products': typeof ProductsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
@@ -320,6 +329,7 @@ export interface FileRouteTypes {
     | '/courier'
     | '/faq'
     | '/favorites'
+    | '/offers'
     | '/products'
     | '/account'
     | '/checkout'
@@ -353,6 +363,7 @@ export interface FileRouteTypes {
     | '/courier'
     | '/faq'
     | '/favorites'
+    | '/offers'
     | '/products'
     | '/account'
     | '/checkout'
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | '/courier'
     | '/faq'
     | '/favorites'
+    | '/offers'
     | '/products'
     | '/_authenticated/account'
     | '/_authenticated/checkout'
@@ -424,6 +436,7 @@ export interface RootRouteChildren {
   CourierRoute: typeof CourierRoute
   FaqRoute: typeof FaqRoute
   FavoritesRoute: typeof FavoritesRoute
+  OffersRoute: typeof OffersRoute
   ProductsRoute: typeof ProductsRoute
   ApiChatRoute: typeof ApiChatRoute
   CategorySlugRoute: typeof CategorySlugRoute
@@ -480,6 +493,13 @@ declare module '@tanstack/react-router' {
       path: '/favorites'
       fullPath: '/favorites'
       preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offers': {
+      id: '/offers'
+      path: '/offers'
+      fullPath: '/offers'
+      preLoaderRoute: typeof OffersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -734,6 +754,7 @@ const rootRouteChildren: RootRouteChildren = {
   CourierRoute: CourierRoute,
   FaqRoute: FaqRoute,
   FavoritesRoute: FavoritesRoute,
+  OffersRoute: OffersRoute,
   ProductsRoute: ProductsRoute,
   ApiChatRoute: ApiChatRoute,
   CategorySlugRoute: CategorySlugRoute,
