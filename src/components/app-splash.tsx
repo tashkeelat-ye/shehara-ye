@@ -20,50 +20,30 @@ export function AppSplash({
   onFinished,
   duration = 2200,
 }: AppSplashProps) {
-  const [
-    visible,
-    setVisible,
-  ] = useState(true);
-
-  const [
-    leaving,
-    setLeaving,
-  ] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    const leaveTimer =
-      window.setTimeout(
-        () => {
-          setLeaving(true);
-        },
-        Math.max(
-          duration - 450,
-          300,
-        ),
-      );
+    const leaveTimer = window.setTimeout(
+      () => {
+        setLeaving(true);
+      },
+      Math.max(duration - 450, 300),
+    );
 
-    const finishTimer =
-      window.setTimeout(
-        () => {
-          setVisible(false);
-          onFinished?.();
-        },
-        duration,
-      );
+    const finishTimer = window.setTimeout(
+      () => {
+        setVisible(false);
+        onFinished?.();
+      },
+      duration,
+    );
 
     return () => {
-      window.clearTimeout(
-        leaveTimer,
-      );
-
-      window.clearTimeout(
-        finishTimer,
-      );
+      window.clearTimeout(leaveTimer);
+      window.clearTimeout(finishTimer);
     };
-  }, [
-    duration,
-    onFinished,
-  ]);
+  }, [duration, onFinished]);
 
   if (!visible) {
     return null;
@@ -76,93 +56,44 @@ export function AppSplash({
       className={[
         "fixed inset-0 z-[10000] overflow-hidden",
         "flex items-center justify-center",
-        "bg-[#05465F]",
+        "bg-white",
         "transition-opacity duration-500 ease-out",
         leaving
           ? "opacity-0"
           : "opacity-100",
       ].join(" ")}
     >
-      {/* الخلفية */}
+      {/* خلفية هوية شهارة */}
+      <img
+        src="/splash-background.png"
+        alt=""
+        aria-hidden="true"
+        className={[
+          "pointer-events-none",
+          "absolute inset-0",
+          "h-full w-full",
+          "object-cover",
+          "object-center",
+          "select-none",
+        ].join(" ")}
+      />
+
+      {/* طبقة بيضاء خفيفة للحفاظ على وضوح المحتوى */}
       <div
         aria-hidden="true"
         className="
           pointer-events-none
-          absolute
-          inset-0
-          overflow-hidden
+          absolute inset-0
+          bg-white/10
         "
-      >
-        <div
-          className="
-            absolute
-            left-1/2
-            top-1/2
-            h-[420px]
-            w-[420px]
-            -translate-x-1/2
-            -translate-y-1/2
-            rounded-full
-            bg-[#CD562B]/10
-            blur-3xl
-          "
-        />
+      />
 
-        <div
-          className="
-            absolute
-            -right-32
-            -top-32
-            h-72
-            w-72
-            rounded-full
-            border
-            border-[#CD562B]/20
-          "
-        />
-
-        <div
-          className="
-            absolute
-            -bottom-40
-            -left-32
-            h-80
-            w-80
-            rounded-full
-            border
-            border-[#CD562B]/15
-          "
-        />
-
-        <div
-          className="
-            absolute
-            inset-x-0
-            top-0
-            h-32
-            bg-gradient-to-b
-            from-black/10
-            to-transparent
-          "
-        />
-
-        <div
-          className="
-            absolute
-            inset-x-0
-            bottom-0
-            h-40
-            bg-gradient-to-t
-            from-black/15
-            to-transparent
-          "
-        />
-      </div>
-
-      {/* المحتوى */}
+      {/* محتوى شاشة الافتتاح */}
       <div
         className={[
-          "relative z-10 flex w-full max-w-sm flex-col items-center px-8 text-center",
+          "relative z-10",
+          "flex w-full max-w-sm flex-col items-center",
+          "px-8 text-center",
           "transition-all duration-700 ease-out",
           leaving
             ? "translate-y-2 scale-[0.98] opacity-0"
@@ -190,7 +121,7 @@ export function AppSplash({
               inset-[-8px]
               rounded-full
               border
-              border-white/15
+              border-[#05465F]/15
             "
           />
 
@@ -205,7 +136,7 @@ export function AppSplash({
               border
               border-[#CD562B]/35
               bg-white/95
-              shadow-[0_20px_60px_rgba(0,0,0,0.28)]
+              shadow-[0_20px_60px_rgba(0,0,0,0.18)]
               backdrop-blur-sm
             "
           >
@@ -219,7 +150,7 @@ export function AppSplash({
           </div>
         </div>
 
-        {/* الاسم */}
+        {/* اسم شهارة */}
         <div
           className="
             animate-[fadeInUp_700ms_250ms_both]
@@ -230,7 +161,7 @@ export function AppSplash({
               text-[30px]
               font-extrabold
               tracking-tight
-              text-white
+              text-[#05465F]
             "
           >
             {BRAND_NAME}
@@ -246,20 +177,20 @@ export function AppSplash({
               gap-2
             "
           >
-            <span className="h-px w-8 bg-[#CD562B]/70" />
+            <span className="h-px w-8 bg-[#CD562B]/80" />
 
             <span
               className="
                 text-[10px]
                 font-bold
                 tracking-[0.22em]
-                text-white/80
+                text-[#05465F]/80
               "
             >
               {BRAND_LATIN_NAME}
             </span>
 
-            <span className="h-px w-8 bg-[#CD562B]/70" />
+            <span className="h-px w-8 bg-[#CD562B]/80" />
           </div>
         </div>
 
@@ -270,13 +201,13 @@ export function AppSplash({
             animate-[fadeInUp_700ms_450ms_both]
             text-[13px]
             font-medium
-            text-white/75
+            text-[#05465F]/70
           "
         >
           {STORE_TAGLINE}
         </p>
 
-        {/* التحميل */}
+        {/* مؤشر التحميل */}
         <div
           className="
             mt-10
@@ -292,18 +223,44 @@ export function AppSplash({
               gap-1.5
             "
           >
-            <span className="h-1.5 w-1.5 animate-[splashDot_1.2s_ease-in-out_infinite] rounded-full bg-[#CD562B]" />
+            <span
+              className="
+                h-1.5
+                w-1.5
+                animate-[splashDot_1.2s_ease-in-out_infinite]
+                rounded-full
+                bg-[#CD562B]
+              "
+            />
 
-            <span className="h-1.5 w-1.5 animate-[splashDot_1.2s_200ms_ease-in-out_infinite] rounded-full bg-[#CD562B]" />
+            <span
+              className="
+                h-1.5
+                w-1.5
+                animate-[splashDot_1.2s_200ms_ease-in-out_infinite]
+                rounded-full
+                bg-[#CD562B]
+              "
+            />
 
-            <span className="h-1.5 w-1.5 animate-[splashDot_1.2s_400ms_ease-in-out_infinite] rounded-full bg-[#CD562B]" />
+            <span
+              className="
+                h-1.5
+                w-1.5
+                animate-[splashDot_1.2s_400ms_ease-in-out_infinite]
+                rounded-full
+                bg-[#CD562B]
+              "
+            />
           </div>
         </div>
       </div>
 
+      {/* النص السفلي */}
       <div
         className={[
-          "absolute bottom-8 left-0 right-0 text-center",
+          "absolute bottom-8 left-0 right-0",
+          "z-10 text-center",
           "transition-opacity duration-500",
           leaving
             ? "opacity-0"
@@ -315,7 +272,7 @@ export function AppSplash({
             text-[9px]
             font-medium
             tracking-wide
-            text-white/60
+            text-[#05465F]/60
           "
         >
           متجر إلكتروني يمني
