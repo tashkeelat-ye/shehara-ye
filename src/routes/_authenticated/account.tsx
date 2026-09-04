@@ -2,35 +2,52 @@ import {
   createFileRoute,
   Link,
 } from "@tanstack/react-router";
+
 import {
   useCallback,
   useEffect,
   useMemo,
   useState,
+  type FormEvent,
+  type ReactNode,
 } from "react";
+
+import { useQuery } from "@tanstack/react-query";
+
 import { toast } from "sonner";
+
 import {
   Bell,
+  CheckCircle2,
   ChevronLeft,
+  Copy,
   Edit3,
+  Heart,
   LogOut,
   MapPin,
   Package,
   Plus,
   ShieldCheck,
+  ShoppingBag,
+  Trash2,
   User,
   Wallet,
   X,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+
 import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
-import { useAuth } from "@/lib/auth-context";
 import { NotificationPrefsPanel } from "@/components/notification-prefs";
+import { WalletCard } from "@/components/account/wallet-card";
+
+import { useAuth } from "@/lib/auth-context";
 import { useFormatPrice } from "@/lib/currency-context";
+
 import {
   PAYMENT_STATUS_LABELS,
+  fetchPaymentMethods,
   formatDate,
 } from "@/lib/store";
 
@@ -52,6 +69,17 @@ type RecentOrder = {
   payment_status: string;
   total: number;
   created_at: string;
+};
+
+type PaymentMethod = {
+  id: string;
+  code: string;
+  display_name: string;
+  account_name: string;
+  account_number: string;
+  instructions: string;
+  kind: string;
+  requires_receipt: boolean;
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -86,17 +114,9 @@ export const Route = createFileRoute(
         content:
           "إدارة حسابك وطلباتك ومحفظتك وعناوين التوصيل في شهارة.",
       },
-      {
-        property: "og:title",
-        content: "حسابي | شهارة",
-      },
-      {
-        property: "og:description",
-        content:
-          "إدارة الحساب والطلبات والمحفظة في متجر شهارة.",
-      },
     ],
   }),
+
   component: AccountPage,
 });
 
@@ -123,7 +143,8 @@ function AccountPage() {
   const [form, setForm] =
     useState(emptyAddress);
 
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] =
+    useState(false);
 
   const [loadingAddresses, setLoadingAddresses] =
     useState(true);
@@ -137,6 +158,29 @@ function AccountPage() {
   const [showAddressForm, setShowAddressForm] =
     useState(false);
 
+  const [copiedPayment, setCopiedPayment] =
+    useState<string | null>(null);
+
+  const {
+    data: paymentMethods = [],
+    isLoading: loadingPaymentMethods,
+  } = useQuery({
+    queryKey: [
+      "payment-methods",
+      "active",
+      "account",
+    ],
+
+    queryFn: async () => {
+      const methods =
+        await fetchPaymentMethods(true);
+
+      return methods as PaymentMethod[];
+    },
+
+    staleTime: 1000 * 60 * 5,
+  });
+
   const loadAddresses =
     useCallback(async () => {
       if (!user?.id) {
@@ -146,20 +190,22 @@ function AccountPage() {
 
       setLoadingAddresses(true);
 
-      const { data, error } =
-        await supabase
-          .from("addresses")
-          .select(
-            "id,label,recipient_name,phone,city,district,details,is_default",
-          )
-          .eq("user_id", user.id)
-          .order("is_default", {
-            ascending: false,
-          })
-          .order("created_at", {
-            ascending: false,
-          })
-          .returns<Address[]>();
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("addresses")
+        .select(
+          "id,label,recipient_name,phone,city,district,details,is_default",
+        )
+        .eq("user_id", user.id)
+        .order("is_default", {
+          ascending: false,
+        })
+        .order("created_at", {
+          ascending: false,
+        })
+        .returns<Address[]>();
 
       if (error) {
         console.error(
@@ -185,18 +231,20 @@ function AccountPage() {
 
       setLoadingOrders(true);
 
-      const { data, error } =
-        await supabase
-          .from("orders")
-          .select(
-            "id,order_number,status,payment_status,total,created_at",
-          )
-          .eq("user_id", user.id)
-          .order("created_at", {
-            ascending: false,
-          })
-          .limit(3)
-          .returns<RecentOrder[]>();
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("orders")
+        .select(
+          "id,order_number,status,payment_status,total,created_at",
+        )
+        .eq("user_id", user.id)
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(3)
+        .returns<RecentOrder[]>();
 
       if (error) {
         console.error(
@@ -249,7 +297,8 @@ function AccountPage() {
 
   const initials = useMemo(() => {
     const value =
-      profile?.full_name?.trim() || "ت";
+      profile?.full_name?.trim() ||
+      "ش";
 
     const parts =
       value
@@ -263,28 +312,71 @@ function AccountPage() {
     return value.charAt(0);
   }, [profile?.full_name]);
 
-  const getOrderStatusLabel =
-    useCallback(
-      (status: string) =>
-        STATUS_LABELS[status] ??
-        status ??
-        "غير معروف",
-      [],
+  const customerCode = useMemo(() => {
+    const id = user?.id ?? "";
+
+    if (!id) {
+      return "SH-••••••••";
+    }
+
+    return `SH-${id.slice(0, 4).toUpperCase()}••••${id
+      .slice(-4)
+      .toUpperCase()}`;
+  }, [user?.id]);
+
+  const defaultAddress =
+    addresses.find(
+      (address) => address.is_default,
+    ) ?? addresses[0] ?? null;
+
+  const latestOrder =
+    orders[0] ?? null;
+
+  const activePaymentMethods =
+    paymentMethods.filter(
+      (method) => method.display_name,
     );
 
-  const getPaymentStatusLabel =
-    useCallback(
-      (status: string) =>
-        PAYMENT_STATUS_LABELS[
-          status as keyof typeof PAYMENT_STATUS_LABELS
-        ] ??
-        status ??
-        "غير معروف",
-      [],
-    );
+  async function copyPaymentAccount(
+    method: PaymentMethod,
+  ) {
+    if (!method.account_number) {
+      toast.error(
+        "لا يوجد رقم حساب لهذه الطريقة",
+      );
+
+      return;
+    }
+
+    try {
+      if (!navigator.clipboard) {
+        throw new Error(
+          "Clipboard unavailable",
+        );
+      }
+
+      await navigator.clipboard.writeText(
+        method.account_number,
+      );
+
+      setCopiedPayment(method.id);
+
+      window.setTimeout(() => {
+        setCopiedPayment(null);
+      }, 1800);
+
+      toast.success(
+        "تم نسخ رقم الحساب",
+      );
+    } catch {
+      toast.error(
+        "تعذر نسخ رقم الحساب",
+      );
+    }
+  }
 
   async function saveProfile(
-    event: React.FormEvent,
+    event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
@@ -292,6 +384,7 @@ function AccountPage() {
       toast.error(
         "يجب تسجيل الدخول أولاً",
       );
+
       return;
     }
 
@@ -301,22 +394,25 @@ function AccountPage() {
       toast.error(
         "أدخل اسماً صحيحاً",
       );
+
       return;
     }
 
     setBusy(true);
 
     try {
-      const { error } =
-        await supabase
-          .from("profiles")
-          .update({
-            full_name:
-              fullName.trim(),
-            phone:
-              phone.trim(),
-          })
-          .eq("id", user.id);
+      const {
+        error,
+      } = await supabase
+        .from("profiles")
+        .update({
+          full_name:
+            fullName.trim(),
+
+          phone:
+            phone.trim(),
+        })
+        .eq("id", user.id);
 
       if (error) {
         throw error;
@@ -325,7 +421,7 @@ function AccountPage() {
       await refreshProfile();
 
       toast.success(
-        "تم تحديث بياناتك بنجاح",
+        "تم تحديث بيانات الحساب",
       );
 
       setEditingProfile(false);
@@ -341,7 +437,7 @@ function AccountPage() {
   }
 
   async function addAddress(
-    event: React.FormEvent,
+    event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
@@ -349,6 +445,7 @@ function AccountPage() {
       toast.error(
         "يجب تسجيل الدخول أولاً",
       );
+
       return;
     }
 
@@ -360,40 +457,49 @@ function AccountPage() {
       toast.error(
         "أكمل بيانات العنوان المطلوبة",
       );
+
       return;
     }
 
     setBusy(true);
 
     try {
-      const { error } =
-        await supabase
-          .from("addresses")
-          .insert({
-            user_id: user.id,
-            label:
-              form.label.trim() ||
-              "العنوان",
-            recipient_name:
-              form.recipient_name.trim(),
-            phone:
-              form.phone.trim(),
-            city:
-              form.city.trim(),
-            district:
-              form.district.trim(),
-            details:
-              form.details.trim(),
-            is_default:
-              addresses.length === 0,
-          });
+      const {
+        error,
+      } = await supabase
+        .from("addresses")
+        .insert({
+          user_id: user.id,
+
+          label:
+            form.label.trim() ||
+            "العنوان",
+
+          recipient_name:
+            form.recipient_name.trim(),
+
+          phone:
+            form.phone.trim(),
+
+          city:
+            form.city.trim(),
+
+          district:
+            form.district.trim(),
+
+          details:
+            form.details.trim(),
+
+          is_default:
+            addresses.length === 0,
+        });
 
       if (error) {
         throw error;
       }
 
       toast.success(
-        "تمت إضافة العنوان بنجاح",
+        "تمت إضافة العنوان",
       );
 
       setForm({
@@ -430,26 +536,35 @@ function AccountPage() {
       return;
     }
 
-    const { error } =
-      await supabase
+    setBusy(true);
+
+    try {
+      const {
+        error,
+      } = await supabase
         .from("addresses")
         .delete()
         .eq("id", id)
         .eq("user_id", user.id);
 
-    if (error) {
-      toast.error(
-        error.message ||
-          "تعذر حذف العنوان",
+      if (error) {
+        throw error;
+      }
+
+      toast.success(
+        "تم حذف العنوان",
       );
-      return;
+
+      await loadAddresses();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "تعذر حذف العنوان",
+      );
+    } finally {
+      setBusy(false);
     }
-
-    toast.success(
-      "تم حذف العنوان",
-    );
-
-    await loadAddresses();
   }
 
   async function makeDefault(
@@ -462,29 +577,31 @@ function AccountPage() {
     setBusy(true);
 
     try {
-      const first =
-        await supabase
-          .from("addresses")
-          .update({
-            is_default: false,
-          })
-          .eq("user_id", user.id);
+      const {
+        error: clearError,
+      } = await supabase
+        .from("addresses")
+        .update({
+          is_default: false,
+        })
+        .eq("user_id", user.id);
 
-      if (first.error) {
-        throw first.error;
+      if (clearError) {
+        throw clearError;
       }
 
-      const second =
-        await supabase
-          .from("addresses")
-          .update({
-            is_default: true,
-          })
-          .eq("id", id)
-          .eq("user_id", user.id);
+      const {
+        error: setError,
+      } = await supabase
+        .from("addresses")
+        .update({
+          is_default: true,
+        })
+        .eq("id", id)
+        .eq("user_id", user.id);
 
-      if (second.error) {
-        throw second.error;
+      if (setError) {
+        throw setError;
       }
 
       toast.success(
@@ -516,667 +633,526 @@ function AccountPage() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-background pb-28 text-foreground md:pb-8"
+      className="min-h-screen overflow-x-hidden bg-transparent pb-28 text-foreground md:pb-8"
     >
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 sm:py-6">
+      <main className="mx-auto w-full max-w-3xl space-y-4 px-3 py-4 sm:px-5 sm:py-6">
 
-        {/* بطاقة الحساب */}
-
-        <section className="relative overflow-hidden rounded-3xl border border-border/70 bg-card shadow-sm">
-          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-l from-primary/15 via-primary/5 to-transparent" />
-
-          <div className="relative p-4 sm:p-5">
-            <div className="flex items-center gap-3">
-
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary text-lg font-black text-primary-foreground shadow-sm">
-                {initials}
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-
-                  <h1 className="truncate text-base font-bold text-foreground">
-                    {profile?.full_name ||
-                      "مرحباً بك"}
-                  </h1>
-
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary">
-                    {roleLabel}
-                  </span>
-
-                </div>
-
-                <p
-                  dir="ltr"
-                  className="mt-1 truncate text-start text-[11px] text-muted-foreground"
-                >
-                  {profile?.phone ||
-                    user?.email ||
-                    "—"}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setEditingProfile(
-                    (value) => !value,
-                  )
-                }
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-background text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                aria-label={
-                  editingProfile
-                    ? "إغلاق تعديل الحساب"
-                    : "تعديل الحساب"
-                }
-              >
-                {editingProfile ? (
-                  <X className="h-4 w-4" />
-                ) : (
-                  <Edit3 className="h-4 w-4" />
-                )}
-              </button>
-
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2">
-
-              <Link
-                to="/orders"
-                className="flex min-h-16 items-center gap-3 rounded-2xl border border-border/70 bg-background px-3 transition-colors hover:bg-secondary"
-              >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                  <Package className="h-4 w-4" />
-                </span>
-
-                <span className="min-w-0">
-                  <span className="block text-xs font-bold text-foreground">
-                    طلباتي
-                  </span>
-
-                  <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                    متابعة الطلبات
-                  </span>
-                </span>
-
-                <ChevronLeft className="ms-auto h-4 w-4 shrink-0 text-muted-foreground" />
-              </Link>
-
-              <Link
-                to="/wallet"
-                className="flex min-h-16 items-center gap-3 rounded-2xl border border-border/70 bg-background px-3 transition-colors hover:bg-secondary"
-              >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                  <Wallet className="h-4 w-4" />
-                </span>
-
-                <span className="min-w-0">
-                  <span className="block text-xs font-bold text-foreground">
-                    محفظتي
-                  </span>
-
-                  <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
-                    {formatPrice(
-                      profile?.wallet_balance ??
-                        0,
-                    )}
-                  </span>
-                </span>
-
-                <ChevronLeft className="ms-auto h-4 w-4 shrink-0 text-muted-foreground" />
-              </Link>
-
-            </div>
-          </div>
-        </section>
-
-        {/* تعديل الحساب */}
-
-        {editingProfile ? (
-          <form
-            onSubmit={saveProfile}
-            className="rounded-3xl border border-border/70 bg-card p-4 shadow-sm"
-          >
-            <div className="mb-4 flex items-center gap-2">
-
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <User className="h-4 w-4" />
-              </span>
-
-              <div>
-                <h2 className="text-sm font-bold">
-                  البيانات الشخصية
-                </h2>
-
-                <p className="text-[10px] text-muted-foreground">
-                  حدّث بيانات حسابك
-                </p>
-              </div>
-
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-
-              <label className="block">
-                <span className="mb-1.5 block text-[11px] font-semibold text-muted-foreground">
-                  الاسم
-                </span>
-
-                <input
-                  value={fullName}
-                  onChange={(event) =>
-                    setFullName(
-                      event.target.value,
-                    )
-                  }
-                  placeholder="الاسم الكامل"
-                  maxLength={100}
-                  className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/10"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1.5 block text-[11px] font-semibold text-muted-foreground">
-                  رقم الهاتف
-                </span>
-
-                <input
-                  value={phone}
-                  onChange={(event) =>
-                    setPhone(
-                      event.target.value,
-                    )
-                  }
-                  placeholder="رقم الهاتف"
-                  dir="ltr"
-                  maxLength={20}
-                  className="h-11 w-full rounded-xl border border-border bg-secondary px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/10"
-                />
-              </label>
-
-            </div>
-
-            <div className="mt-3 flex gap-2">
-
-              <button
-                type="submit"
-                disabled={busy}
-                className="h-11 flex-1 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground transition-opacity disabled:opacity-60 hover:opacity-90"
-              >
-                {busy
-                  ? "جارٍ الحفظ..."
-                  : "حفظ التعديلات"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setEditingProfile(false)
-                }
-                className="h-11 rounded-xl border border-border bg-background px-4 text-xs font-bold text-foreground"
-              >
-                إلغاء
-              </button>
-
-            </div>
-          </form>
-        ) : null}
-
-        {/* المحفظة */}
-
-        <section className="rounded-3xl border border-border/70 bg-card p-4 shadow-sm">
-
-          <div className="flex items-center justify-between gap-3">
-
-            <div className="flex items-center gap-2">
-
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Wallet className="h-4 w-4" />
-              </span>
-
-              <div>
-                <h2 className="text-sm font-bold">
-                  رصيد المحفظة
-                </h2>
-
-                <p className="text-[10px] text-muted-foreground">
-                  استخدم رصيدك للدفع بسهولة
-                </p>
-              </div>
-
-            </div>
-
-            <Link
-              to="/wallet"
-              className="text-[10px] font-bold text-primary"
-            >
-              عرض المحفظة
-            </Link>
-
-          </div>
-
-          <div className="mt-3 rounded-2xl bg-primary/5 px-4 py-4">
-
-            <p className="text-[10px] text-muted-foreground">
-              الرصيد الحالي
+        {/* رأس الصفحة */}
+        <section className="flex items-center justify-between gap-3 px-1">
+          <div>
+            <p className="text-[9px] font-bold text-[#D65A31]">
+              SHEHARA
             </p>
 
-            <p className="mt-1 text-xl font-black text-primary">
-              {formatPrice(
-                profile?.wallet_balance ??
-                  0,
-              )}
+            <h1 className="mt-0.5 text-xl font-black tracking-tight">
+              حسابي
+            </h1>
+
+            <p className="mt-1 text-[9px] text-muted-foreground">
+              كل ما يخص حسابك في مكان واحد
             </p>
+          </div>
 
+          <div className="grid h-11 w-11 place-items-center rounded-2xl border border-[#0E4D64]/10 bg-white/80 shadow-sm backdrop-blur">
+            <User className="h-5 w-5 text-[#0E4D64]" />
           </div>
         </section>
 
-        {/* الطلبات */}
-
-        <section className="rounded-3xl border border-border/70 bg-card p-4 shadow-sm">
-
-          <div className="flex items-center justify-between gap-3">
-
-            <div>
-              <h2 className="text-sm font-bold">
-                طلباتك الأخيرة
-              </h2>
-
-              <p className="mt-0.5 text-[10px] text-muted-foreground">
-                آخر مشترياتك من شهارة
-              </p>
+        {/* الملف الشخصي */}
+        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-[0_18px_45px_-35px_rgba(14,77,100,.75)] backdrop-blur-xl dark:bg-card/90">
+          <div className="flex items-center gap-3">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#0E4D64] text-base font-black text-white shadow-sm">
+              {initials}
             </div>
 
-            <Link
-              to="/orders"
-              className="text-[10px] font-bold text-primary"
-            >
-              عرض الكل
-            </Link>
-
-          </div>
-
-          {loadingOrders ? (
-            <div className="mt-3 space-y-2">
-              {[1, 2].map((item) => (
-                <div
-                  key={item}
-                  className="h-16 animate-pulse rounded-2xl bg-muted"
-                />
-              ))}
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="mt-3 rounded-2xl border border-dashed border-border p-5 text-center">
-
-              <Package className="mx-auto h-6 w-6 text-muted-foreground" />
-
-              <p className="mt-2 text-xs font-semibold text-foreground">
-                لا توجد طلبات بعد
-              </p>
-
-              <Link
-                to="/products"
-                className="mt-2 inline-block text-[10px] font-bold text-primary"
-              >
-                ابدأ التسوق
-              </Link>
-
-            </div>
-          ) : (
-            <div className="mt-3 space-y-2">
-
-              {orders.map((order) => (
-                <Link
-                  key={order.id}
-                  to="/orders"
-                  className="block rounded-2xl border border-border/70 bg-background p-3 transition-colors hover:bg-secondary"
-                >
-
-                  <div className="flex items-center gap-3">
-
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-muted-foreground">
-                      <Package className="h-4 w-4" />
-                    </span>
-
-                    <span className="min-w-0 flex-1">
-
-                      <span
-                        dir="ltr"
-                        className="block truncate font-mono text-[11px] font-bold text-foreground"
-                      >
-                        {order.order_number}
-                      </span>
-
-                      <span className="mt-0.5 block text-[9px] text-muted-foreground">
-                        {formatDate(
-                          order.created_at,
-                        )}
-                      </span>
-
-                    </span>
-
-                    <span className="text-start">
-
-                      <span className="block text-[10px] font-bold text-primary">
-                        {formatPrice(
-                          order.total,
-                        )}
-                      </span>
-
-                      <span className="mt-1 block text-[8px] font-bold text-muted-foreground">
-                        {getOrderStatusLabel(
-                          order.status,
-                        )}
-                      </span>
-
-                    </span>
-
-                    <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
-
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-
-                    <span className="rounded-full bg-primary/10 px-2 py-1 text-[8px] font-bold text-primary">
-                      {getOrderStatusLabel(
-                        order.status,
-                      )}
-                    </span>
-
-                    <span className="rounded-full bg-secondary px-2 py-1 text-[8px] font-bold text-muted-foreground">
-                      {getPaymentStatusLabel(
-                        order.payment_status,
-                      )}
-                    </span>
-
-                  </div>
-
-                </Link>
-              ))}
-
-            </div>
-          )}
-
-        </section>
-
-        {/* العناوين */}
-
-        <section className="rounded-3xl border border-border/70 bg-card p-4 shadow-sm">
-
-          <div className="flex items-center justify-between gap-3">
-
-            <div className="flex items-center gap-2">
-
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <MapPin className="h-4 w-4" />
-              </span>
-
-              <div>
-                <h2 className="text-sm font-bold">
-                  عناوين التوصيل
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="truncate text-sm font-black">
+                  {profile?.full_name ||
+                    "مرحباً بك في شهارة"}
                 </h2>
 
-                <p className="text-[10px] text-muted-foreground">
-                  إدارة عناوين استلام طلباتك
-                </p>
+                <span className="rounded-full bg-[#D65A31]/10 px-2 py-1 text-[8px] font-black text-[#D65A31]">
+                  {roleLabel}
+                </span>
               </div>
 
+              <p
+                dir="ltr"
+                className="mt-1 truncate text-start text-[9px] text-muted-foreground"
+              >
+                {profile?.phone ||
+                  user?.email ||
+                  "—"}
+              </p>
             </div>
 
             <button
               type="button"
               onClick={() =>
-                setShowAddressForm(
+                setEditingProfile(
                   (value) => !value,
                 )
               }
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-[10px] font-bold text-primary-foreground"
+              aria-label={
+                editingProfile
+                  ? "إغلاق التعديل"
+                  : "تعديل الحساب"
+              }
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#0E4D64]/10 bg-[#FAF9F6] text-[#0E4D64] transition active:scale-90"
             >
-              {showAddressForm ? (
-                <X className="h-3.5 w-3.5" />
+              {editingProfile ? (
+                <X className="h-4 w-4" />
               ) : (
-                <Plus className="h-3.5 w-3.5" />
+                <Edit3 className="h-4 w-4" />
               )}
-
-              {showAddressForm
-                ? "إغلاق"
-                : "إضافة عنوان"}
             </button>
-
           </div>
+
+          {editingProfile ? (
+            <form
+              onSubmit={saveProfile}
+              className="mt-4 border-t border-border/60 pt-4"
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <AccountField
+                  label="الاسم الكامل"
+                  value={fullName}
+                  onChange={setFullName}
+                  placeholder="الاسم الكامل"
+                />
+
+                <AccountField
+                  label="رقم الهاتف"
+                  value={phone}
+                  onChange={setPhone}
+                  placeholder="رقم الهاتف"
+                  dir="ltr"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={busy}
+                className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#0E4D64] text-xs font-black text-white transition active:scale-[.99] disabled:opacity-50"
+              >
+                {busy
+                  ? "جارٍ الحفظ..."
+                  : "حفظ بيانات الحساب"}
+              </button>
+            </form>
+          ) : null}
+        </section>
+
+        {/* المحفظة الرقمية */}
+        <WalletCard
+          balance={Number(
+            profile?.wallet_balance ?? 0,
+          )}
+          formattedBalance={formatPrice(
+            profile?.wallet_balance ?? 0,
+          )}
+          customerName={
+            profile?.full_name ||
+            "عميل شهارة"
+          }
+          phone={
+            profile?.phone ||
+            user?.email ||
+            ""
+          }
+          customerCode={customerCode}
+        />
+
+        {/* إجراءات سريعة */}
+        <section className="grid grid-cols-2 gap-3">
+          <QuickAction
+            to="/orders"
+            icon={<Package />}
+            title="طلباتي"
+            subtitle="متابعة الطلبات"
+            accent="teal"
+          />
+
+          <QuickAction
+            to="/wallet"
+            icon={<Wallet />}
+            title="معاملات المحفظة"
+            subtitle="الرصيد والشحن"
+            accent="orange"
+          />
+
+          <QuickAction
+            to="/products"
+            icon={<ShoppingBag />}
+            title="تسوق الآن"
+            subtitle="اكتشف المنتجات"
+            accent="teal"
+          />
+
+          <Link
+            to="/products"
+            className="group rounded-2xl border border-[#0E4D64]/10 bg-white/90 p-3 shadow-sm transition active:scale-[.98] dark:bg-card/90"
+          >
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#D65A31]/10 text-[#D65A31]">
+              <Heart className="h-4 w-4" />
+            </span>
+
+            <span className="mt-2 block text-[10px] font-black">
+              المفضلة
+            </span>
+
+            <span className="mt-0.5 block text-[8px] text-muted-foreground">
+              منتجاتك المفضلة
+            </span>
+          </Link>
+        </section>
+
+        {/* آخر طلب */}
+        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm backdrop-blur-xl dark:bg-card/90">
+          <SectionHeader
+            icon={<Package />}
+            title="آخر طلب"
+            subtitle="أحدث عملية شراء"
+            action={
+              <Link
+                to="/orders"
+                className="text-[9px] font-black text-[#D65A31]"
+              >
+                عرض الكل
+              </Link>
+            }
+          />
+
+          {loadingOrders ? (
+            <LoadingBox />
+          ) : latestOrder ? (
+            <Link
+              to="/orders"
+              className="mt-4 block rounded-2xl border border-[#0E4D64]/10 bg-[#FAF9F6] p-3 transition active:scale-[.99] dark:bg-[#0B2936]"
+            >
+              <div className="flex items-center gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+                  <Package className="h-5 w-5" />
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <p
+                    dir="ltr"
+                    className="truncate text-start font-mono text-[10px] font-black"
+                  >
+                    {latestOrder.order_number}
+                  </p>
+
+                  <p className="mt-1 text-[8px] text-muted-foreground">
+                    {formatDate(
+                      latestOrder.created_at,
+                    )}
+                  </p>
+                </div>
+
+                <div className="text-start">
+                  <p className="text-[11px] font-black text-[#0E4D64]">
+                    {formatPrice(
+                      latestOrder.total,
+                    )}
+                  </p>
+
+                  <span className="mt-1 inline-flex rounded-full bg-[#D65A31]/10 px-2 py-1 text-[8px] font-black text-[#D65A31]">
+                    {STATUS_LABELS[
+                      latestOrder.status
+                    ] ??
+                      latestOrder.status}
+                  </span>
+                </div>
+
+                <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
+                <span className="rounded-full bg-[#0E4D64]/10 px-2 py-1 text-[8px] font-bold text-[#0E4D64]">
+                  {STATUS_LABELS[
+                    latestOrder.status
+                  ] ??
+                    latestOrder.status}
+                </span>
+
+                <span className="rounded-full bg-white px-2 py-1 text-[8px] font-bold text-muted-foreground dark:bg-card">
+                  {PAYMENT_STATUS_LABELS[
+                    latestOrder
+                      .payment_status as keyof typeof PAYMENT_STATUS_LABELS
+                  ] ??
+                    latestOrder.payment_status}
+                </span>
+              </div>
+            </Link>
+          ) : (
+            <EmptyState
+              icon={<Package />}
+              title="لا توجد طلبات بعد"
+              action="ابدأ التسوق"
+              to="/products"
+            />
+          )}
+        </section>
+
+        {/* العنوان الافتراضي */}
+        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm backdrop-blur-xl dark:bg-card/90">
+          <SectionHeader
+            icon={<MapPin />}
+            title="عنوان التوصيل"
+            subtitle="العنوان المستخدم لاستلام الطلبات"
+            action={
+              <button
+                type="button"
+                onClick={() =>
+                  setShowAddressForm(
+                    (value) => !value,
+                  )
+                }
+                className="inline-flex items-center gap-1 rounded-xl bg-[#0E4D64] px-3 py-2 text-[9px] font-black text-white active:scale-95"
+              >
+                {showAddressForm ? (
+                  <X className="h-3.5 w-3.5" />
+                ) : (
+                  <Plus className="h-3.5 w-3.5" />
+                )}
+
+                {showAddressForm
+                  ? "إغلاق"
+                  : "إضافة"}
+              </button>
+            }
+          />
+
+          {defaultAddress ? (
+            <div className="mt-4 rounded-2xl border border-[#0E4D64]/10 bg-[#FAF9F6] p-3 dark:bg-[#0B2936]">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+                  <MapPin className="h-4 w-4" />
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-xs font-black">
+                      {defaultAddress.label}
+                    </h3>
+
+                    {defaultAddress.is_default ? (
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[7px] font-black text-emerald-700">
+                        الافتراضي
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <p className="mt-1 text-[10px] font-bold">
+                    {defaultAddress.recipient_name}
+                  </p>
+
+                  <p className="mt-1 text-[9px] text-muted-foreground">
+                    {defaultAddress.city}
+
+                    {defaultAddress.district
+                      ? ` — ${defaultAddress.district}`
+                      : ""}
+                  </p>
+
+                  <p className="mt-1 text-[9px] leading-5 text-muted-foreground">
+                    {defaultAddress.details}
+                  </p>
+
+                  {defaultAddress.phone ? (
+                    <p
+                      dir="ltr"
+                      className="mt-1 text-start text-[9px] text-muted-foreground"
+                    >
+                      {defaultAddress.phone}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="mt-3 flex gap-2 border-t border-border/60 pt-3">
+                {!defaultAddress.is_default ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() =>
+                      void makeDefault(
+                        defaultAddress.id,
+                      )
+                    }
+                    className="flex-1 rounded-xl border border-border bg-white py-2 text-[8px] font-bold dark:bg-card"
+                  >
+                    تعيين كافتراضي
+                  </button>
+                ) : null}
+
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    void removeAddress(
+                      defaultAddress.id,
+                    )
+                  }
+                  className="inline-flex items-center justify-center gap-1 rounded-xl bg-red-500/10 px-3 py-2 text-[8px] font-bold text-red-600"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  حذف
+                </button>
+              </div>
+            </div>
+          ) : (
+            <EmptyState
+              icon={<MapPin />}
+              title="لم تتم إضافة عنوان بعد"
+            />
+          )}
 
           {showAddressForm ? (
             <form
               onSubmit={addAddress}
-              className="mt-4 grid gap-3 rounded-2xl border border-border/70 bg-background p-3 sm:grid-cols-2"
+              className="mt-4 rounded-2xl border border-[#0E4D64]/10 bg-[#FAF9F6] p-3 dark:bg-[#0B2936]"
             >
-
-              <label className="block">
-                <span className="mb-1.5 block text-[10px] font-semibold text-muted-foreground">
-                  اسم العنوان
-                </span>
-
-                <input
+              <div className="grid gap-3 sm:grid-cols-2">
+                <AccountField
+                  label="اسم العنوان"
                   value={form.label}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setForm((current) => ({
                       ...current,
-                      label:
-                        event.target.value,
+                      label: value,
                     }))
                   }
                   placeholder="المنزل"
-                  maxLength={50}
-                  className="h-10 w-full rounded-xl border border-border bg-secondary px-3 text-xs outline-none focus:border-primary"
                 />
-              </label>
 
-              <label className="block">
-                <span className="mb-1.5 block text-[10px] font-semibold text-muted-foreground">
-                  اسم المستلم *
-                </span>
-
-                <input
+                <AccountField
+                  label="اسم المستلم *"
                   value={
                     form.recipient_name
                   }
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setForm((current) => ({
                       ...current,
                       recipient_name:
-                        event.target.value,
+                        value,
                     }))
                   }
                   placeholder="الاسم الكامل"
-                  maxLength={100}
-                  className="h-10 w-full rounded-xl border border-border bg-secondary px-3 text-xs outline-none focus:border-primary"
                 />
-              </label>
 
-              <label className="block">
-                <span className="mb-1.5 block text-[10px] font-semibold text-muted-foreground">
-                  رقم الهاتف
-                </span>
-
-                <input
+                <AccountField
+                  label="رقم الهاتف"
                   value={form.phone}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setForm((current) => ({
                       ...current,
-                      phone:
-                        event.target.value,
+                      phone: value,
                     }))
                   }
                   placeholder="رقم الهاتف"
                   dir="ltr"
-                  maxLength={20}
-                  className="h-10 w-full rounded-xl border border-border bg-secondary px-3 text-xs outline-none focus:border-primary"
                 />
-              </label>
 
-              <label className="block">
-                <span className="mb-1.5 block text-[10px] font-semibold text-muted-foreground">
-                  المدينة *
-                </span>
-
-                <input
+                <AccountField
+                  label="المدينة *"
                   value={form.city}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setForm((current) => ({
                       ...current,
-                      city:
-                        event.target.value,
+                      city: value,
                     }))
                   }
                   placeholder="المدينة"
-                  maxLength={100}
-                  className="h-10 w-full rounded-xl border border-border bg-secondary px-3 text-xs outline-none focus:border-primary"
                 />
-              </label>
 
-              <label className="block">
-                <span className="mb-1.5 block text-[10px] font-semibold text-muted-foreground">
-                  الحي
-                </span>
-
-                <input
+                <AccountField
+                  label="الحي / المنطقة"
                   value={form.district}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setForm((current) => ({
                       ...current,
-                      district:
-                        event.target.value,
+                      district: value,
                     }))
                   }
-                  placeholder="الحي / المنطقة"
-                  maxLength={100}
-                  className="h-10 w-full rounded-xl border border-border bg-secondary px-3 text-xs outline-none focus:border-primary"
+                  placeholder="الحي"
                 />
-              </label>
 
-              <label className="block sm:col-span-2">
-                <span className="mb-1.5 block text-[10px] font-semibold text-muted-foreground">
+                <label className="text-[9px] font-bold text-muted-foreground sm:col-span-2">
                   تفاصيل العنوان *
-                </span>
 
-                <textarea
-                  value={form.details}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      details:
-                        event.target.value,
-                    }))
-                  }
-                  placeholder="الشارع، رقم المنزل، معلم قريب..."
-                  rows={3}
-                  maxLength={500}
-                  className="w-full resize-none rounded-xl border border-border bg-secondary px-3 py-2.5 text-xs outline-none focus:border-primary"
-                />
-              </label>
-
-              <div className="sm:col-span-2">
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="h-11 w-full rounded-xl bg-primary text-xs font-bold text-primary-foreground disabled:opacity-60"
-                >
-                  {busy
-                    ? "جارٍ الحفظ..."
-                    : "حفظ العنوان"}
-                </button>
+                  <textarea
+                    value={form.details}
+                    onChange={(event) =>
+                      setForm(
+                        (current) => ({
+                          ...current,
+                          details:
+                            event.target
+                              .value,
+                        }),
+                      )
+                    }
+                    rows={3}
+                    placeholder="الشارع، رقم المنزل، معلم قريب..."
+                    className="mt-1.5 w-full resize-none rounded-xl border border-border bg-white px-3 py-2 text-xs text-foreground outline-none focus:border-[#0E4D64] dark:bg-card"
+                  />
+                </label>
               </div>
 
+              <button
+                type="submit"
+                disabled={busy}
+                className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#D65A31] text-xs font-black text-white disabled:opacity-50"
+              >
+                {busy
+                  ? "جارٍ الحفظ..."
+                  : "حفظ العنوان"}
+              </button>
             </form>
           ) : null}
 
-          {loadingAddresses ? (
+          {/* بقية العناوين */}
+          {addresses.length > 1 ? (
             <div className="mt-3 space-y-2">
-              {[1, 2].map((item) => (
-                <div
-                  key={item}
-                  className="h-24 animate-pulse rounded-2xl bg-muted"
-                />
-              ))}
-            </div>
-          ) : addresses.length === 0 ? (
-            <div className="mt-3 rounded-2xl border border-dashed border-border p-5 text-center">
-
-              <MapPin className="mx-auto h-6 w-6 text-muted-foreground" />
-
-              <p className="mt-2 text-xs font-semibold">
-                لا توجد عناوين محفوظة
+              <p className="px-1 text-[9px] font-black text-muted-foreground">
+                العناوين الأخرى
               </p>
 
-              <p className="mt-1 text-[10px] text-muted-foreground">
-                أضف عنوانك لتسهيل عملية الطلب
-              </p>
+              {addresses
+                .filter(
+                  (address) =>
+                    address.id !==
+                    defaultAddress?.id,
+                )
+                .map((address) => (
+                  <div
+                    key={address.id}
+                    className="rounded-2xl border border-border/70 bg-white p-3 dark:bg-card"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+                        <MapPin className="h-4 w-4" />
+                      </span>
 
-            </div>
-          ) : (
-            <div className="mt-3 space-y-2">
-
-              {addresses.map((address) => (
-                <div
-                  key={address.id}
-                  className="rounded-2xl border border-border/70 bg-background p-3"
-                >
-
-                  <div className="flex items-start gap-3">
-
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                      <MapPin className="h-4 w-4" />
-                    </span>
-
-                    <div className="min-w-0 flex-1">
-
-                      <div className="flex flex-wrap items-center gap-2">
-
-                        <h3 className="text-xs font-bold">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-black">
                           {address.label}
-                        </h3>
+                        </p>
 
-                        {address.is_default ? (
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[8px] font-bold text-primary">
-                            الافتراضي
-                          </span>
-                        ) : null}
+                        <p className="mt-0.5 truncate text-[8px] text-muted-foreground">
+                          {address.city}
 
+                          {address.district
+                            ? ` — ${address.district}`
+                            : ""}
+                        </p>
                       </div>
 
-                      <p className="mt-1 text-[10px] font-semibold">
-                        {address.recipient_name}
-                      </p>
-
-                      <p className="mt-0.5 text-[10px] text-muted-foreground">
-                        {address.city}
-                        {address.district
-                          ? ` — ${address.district}`
-                          : ""}
-                      </p>
-
-                      <p className="mt-0.5 text-[10px] text-muted-foreground">
-                        {address.details}
-                      </p>
-
-                      {address.phone ? (
-                        <p
-                          dir="ltr"
-                          className="mt-0.5 text-start text-[10px] text-muted-foreground"
-                        >
-                          {address.phone}
-                        </p>
-                      ) : null}
-
-                    </div>
-
-                  </div>
-
-                  <div className="mt-3 flex gap-2 border-t border-border/60 pt-2">
-
-                    {!address.is_default ? (
                       <button
                         type="button"
                         disabled={busy}
@@ -1185,121 +1161,489 @@ function AccountPage() {
                             address.id,
                           )
                         }
-                        className="flex-1 rounded-xl border border-border bg-background py-2 text-[9px] font-bold text-foreground disabled:opacity-50"
+                        className="rounded-xl bg-[#0E4D64]/10 px-2.5 py-2 text-[8px] font-black text-[#0E4D64]"
                       >
-                        تعيين كافتراضي
+                        افتراضي
                       </button>
-                    ) : null}
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void removeAddress(
-                          address.id,
-                        )
-                      }
-                      className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-[9px] font-bold text-destructive"
-                    >
-                      حذف
-                    </button>
-
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                          void removeAddress(
+                            address.id,
+                          )
+                        }
+                        aria-label="حذف العنوان"
+                        className="grid h-8 w-8 place-items-center rounded-xl bg-red-500/10 text-red-600"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-
-                </div>
-              ))}
-
+                ))}
             </div>
-          )}
+          ) : null}
 
+          {loadingAddresses ? (
+            <div className="mt-3 h-20 animate-pulse rounded-2xl bg-muted" />
+          ) : null}
         </section>
 
         {/* الإشعارات */}
-
         <NotificationPrefsPanel />
 
-        {/* روابط الحساب */}
+        {/* طرق الدفع */}
+        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-4 shadow-sm backdrop-blur-xl dark:bg-card/90">
+          <SectionHeader
+            icon={<Wallet />}
+            title="طرق الدفع"
+            subtitle="طرق الدفع والتحويل المتاحة حالياً"
+            action={
+              <Link
+                to="/wallet"
+                className="text-[9px] font-black text-[#D65A31]"
+              >
+                المحفظة
+              </Link>
+            }
+          />
 
-        <section className="rounded-3xl border border-border/70 bg-card p-4 shadow-sm">
+          {loadingPaymentMethods ? (
+            <div className="mt-4 space-y-2">
+              <LoadingBox />
+              <LoadingBox />
+            </div>
+          ) : activePaymentMethods.length ? (
+            <div className="mt-4 space-y-2">
+              {activePaymentMethods
+                .slice(0, 4)
+                .map((method) => (
+                  <PaymentMethodCard
+                    key={method.id}
+                    method={method}
+                    copied={
+                      copiedPayment ===
+                      method.id
+                    }
+                    onCopy={() =>
+                      void copyPaymentAccount(
+                        method,
+                      )
+                    }
+                  />
+                ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Wallet />}
+              title="لا توجد طرق دفع متاحة حالياً"
+            />
+          )}
+        </section>
 
-          <div className="space-y-2">
+        {/* الأمان والحساب */}
+        <section className="overflow-hidden rounded-[24px] border border-[#0E4D64]/10 bg-white/90 shadow-sm backdrop-blur-xl dark:bg-card/90">
+          <div className="flex items-center gap-3 border-b border-border/60 p-4">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
+              <ShieldCheck className="h-5 w-5" />
+            </span>
 
-            <Link
-              to="/orders"
-              className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background p-3 transition-colors hover:bg-secondary"
-            >
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Package className="h-4 w-4" />
-              </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xs font-black">
+                أمان الحساب
+              </h2>
 
-              <span className="flex-1">
-                <span className="block text-xs font-bold">
-                  جميع طلباتي
-                </span>
-                <span className="mt-0.5 block text-[9px] text-muted-foreground">
-                  متابعة جميع الطلبات السابقة والحالية
-                </span>
-              </span>
-
-              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-            </Link>
-
-            <Link
-              to="/wallet"
-              className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background p-3 transition-colors hover:bg-secondary"
-            >
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Wallet className="h-4 w-4" />
-              </span>
-
-              <span className="flex-1">
-                <span className="block text-xs font-bold">
-                  المحفظة
-                </span>
-                <span className="mt-0.5 block text-[9px] text-muted-foreground">
-                  شحن الرصيد وطلبات الاسترداد وكشف الحساب
-                </span>
-              </span>
-
-              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-            </Link>
-
-            <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background p-3">
-
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <ShieldCheck className="h-4 w-4" />
-              </span>
-
-              <span className="flex-1">
-                <span className="block text-xs font-bold">
-                  حسابك محمي
-                </span>
-
-                <span className="mt-0.5 block text-[9px] text-muted-foreground">
-                  بيانات الحساب محمية بواسطة نظام المصادقة
-                </span>
-              </span>
-
+              <p className="mt-1 text-[8px] text-muted-foreground">
+                بياناتك مرتبطة بحسابك المصادق عليه في شهارة
+              </p>
             </div>
 
+            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+          </div>
+
+          <div className="divide-y divide-border/60">
+            <div className="flex items-center gap-3 p-4">
+              <User className="h-4 w-4 text-[#0E4D64]" />
+
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black">
+                  بيانات الحساب
+                </p>
+
+                <p className="mt-0.5 text-[8px] text-muted-foreground">
+                  الاسم ورقم الهاتف
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingProfile(true)
+                }
+                className="rounded-xl bg-[#0E4D64]/10 px-3 py-2 text-[8px] font-black text-[#0E4D64]"
+              >
+                تعديل
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 p-4">
+              <ShieldCheck className="h-4 w-4 text-[#0E4D64]" />
+
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black">
+                  معرّف العميل
+                </p>
+
+                <p
+                  dir="ltr"
+                  className="mt-0.5 truncate text-start font-mono text-[8px] text-muted-foreground"
+                >
+                  {customerCode}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(
+                      customerCode,
+                    );
+
+                    toast.success(
+                      "تم نسخ معرّف العميل",
+                    );
+                  } catch {
+                    toast.error(
+                      "تعذر نسخ المعرّف",
+                    );
+                  }
+                }}
+                className="grid h-8 w-8 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]"
+                aria-label="نسخ معرّف العميل"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* روابط إضافية */}
+        <section className="rounded-[24px] border border-[#0E4D64]/10 bg-white/90 p-2 shadow-sm dark:bg-card/90">
+          <AccountLink
+            to="/orders"
+            icon={<Package />}
+            title="جميع طلباتي"
+            subtitle="متابعة جميع الطلبات السابقة والحالية"
+          />
+
+          <AccountLink
+            to="/wallet"
+            icon={<Wallet />}
+            title="المحفظة"
+            subtitle="الرصيد وطلبات الشحن وسجل العمليات"
+          />
+
+          <AccountLink
+            to="/products"
+            icon={<ShoppingBag />}
+            title="مواصلة التسوق"
+            subtitle="العودة إلى المنتجات"
+          />
+
+          <div className="flex items-center gap-3 rounded-2xl p-3">
+            <Bell className="h-4 w-4 text-[#D65A31]" />
+
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-black">
+                إشعارات شهارة
+              </p>
+
+              <p className="mt-0.5 text-[8px] text-muted-foreground">
+                إدارة تفضيلات الإشعارات من القسم أعلاه
+              </p>
+            </div>
           </div>
         </section>
 
         {/* تسجيل الخروج */}
-
         <button
           type="button"
           onClick={() =>
             void handleSignOut()
           }
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/5 text-xs font-bold text-destructive transition-colors hover:bg-destructive/10"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/5 text-xs font-black text-red-600 transition active:scale-[.99]"
         >
           <LogOut className="h-4 w-4" />
           تسجيل الخروج
         </button>
 
+        <div className="pb-2 pt-1 text-center">
+          <p className="text-[8px] font-bold text-muted-foreground/60">
+            شهارة — تسوق بلا حدود
+          </p>
+        </div>
       </main>
 
       <BottomNav />
+    </div>
+  );
+}
+
+function AccountField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  dir,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  dir?: "ltr" | "rtl";
+}) {
+  return (
+    <label className="text-[9px] font-bold text-muted-foreground">
+      {label}
+
+      <input
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        placeholder={placeholder}
+        dir={dir}
+        className="mt-1.5 h-10 w-full rounded-xl border border-border bg-white px-3 text-xs text-foreground outline-none transition focus:border-[#0E4D64] dark:bg-card"
+      />
+    </label>
+  );
+}
+
+function QuickAction({
+  to,
+  icon,
+  title,
+  subtitle,
+  accent,
+}: {
+  to: "/orders" | "/wallet" | "/products";
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+  accent: "teal" | "orange";
+}) {
+  const accentClass =
+    accent === "orange"
+      ? "bg-[#D65A31]/10 text-[#D65A31]"
+      : "bg-[#0E4D64]/10 text-[#0E4D64]";
+
+  return (
+    <Link
+      to={to}
+      className="group rounded-2xl border border-[#0E4D64]/10 bg-white/90 p-3 shadow-sm transition active:scale-[.98] dark:bg-card/90"
+    >
+      <span
+        className={`grid h-9 w-9 place-items-center rounded-xl ${accentClass}`}
+      >
+        {icon}
+      </span>
+
+      <span className="mt-2 block text-[10px] font-black">
+        {title}
+      </span>
+
+      <span className="mt-0.5 block text-[8px] text-muted-foreground">
+        {subtitle}
+      </span>
+    </Link>
+  );
+}
+
+function SectionHeader({
+  icon,
+  title,
+  subtitle,
+  action,
+}: {
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+        {icon}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <h2 className="text-sm font-black">
+          {title}
+        </h2>
+
+        <p className="mt-0.5 text-[8px] text-muted-foreground">
+          {subtitle}
+        </p>
+      </div>
+
+      {action}
+    </div>
+  );
+}
+
+function AccountLink({
+  to,
+  icon,
+  title,
+  subtitle,
+}: {
+  to: "/orders" | "/wallet" | "/products";
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-3 rounded-2xl p-3 transition active:bg-[#0E4D64]/5"
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64]">
+        {icon}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="block text-[10px] font-black">
+          {title}
+        </span>
+
+        <span className="mt-0.5 block truncate text-[8px] text-muted-foreground">
+          {subtitle}
+        </span>
+      </span>
+
+      <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </Link>
+  );
+}
+
+function PaymentMethodCard({
+  method,
+  copied,
+  onCopy,
+}: {
+  method: PaymentMethod;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  const masked =
+    method.account_number
+      ? maskAccountNumber(
+          method.account_number,
+        )
+      : "لا يوجد رقم حساب";
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-[#0E4D64]/10 bg-[#0E4D64] p-3 text-white">
+      <div className="absolute -end-10 -top-10 h-28 w-28 rounded-full border border-white/10" />
+
+      <div className="relative flex items-center gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10">
+          <Wallet className="h-4 w-4 text-[#F3A17E]" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-black">
+            {method.display_name}
+          </p>
+
+          <p className="mt-0.5 text-[8px] text-white/55">
+            {method.account_name ||
+              "طريقة دفع متاحة"}
+          </p>
+
+          <p
+            dir="ltr"
+            className="mt-2 truncate text-start font-mono text-[10px] font-bold tracking-wide text-white/85"
+          >
+            {masked}
+          </p>
+        </div>
+
+        {method.account_number ? (
+          <button
+            type="button"
+            onClick={onCopy}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-white transition active:scale-90"
+            aria-label="نسخ رقم الحساب"
+          >
+            {copied ? (
+              <CheckCircle2 className="h-4 w-4 text-[#F3A17E]" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </button>
+        ) : null}
+      </div>
+
+      {method.requires_receipt ? (
+        <p className="relative mt-2 border-t border-white/10 pt-2 text-[8px] text-white/50">
+          هذه الطريقة تتطلب رفع إيصال التحويل عند الدفع.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function maskAccountNumber(
+  value: string,
+) {
+  const clean =
+    value.trim();
+
+  if (clean.length <= 8) {
+    return clean;
+  }
+
+  return `${clean.slice(0, 4)} •••• ${clean.slice(-4)}`;
+}
+
+function LoadingBox() {
+  return (
+    <div className="h-16 animate-pulse rounded-2xl bg-muted" />
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  action,
+  to,
+}: {
+  icon: ReactNode;
+  title: string;
+  action?: string;
+  to?: "/products";
+}) {
+  return (
+    <div className="mt-4 rounded-2xl border border-dashed border-border p-6 text-center">
+      <span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-[#0E4D64]/5 text-muted-foreground">
+        {icon}
+      </span>
+
+      <p className="mt-2 text-xs font-bold">
+        {title}
+      </p>
+
+      {action && to ? (
+        <Link
+          to={to}
+          className="mt-2 inline-block text-[9px] font-black text-[#D65A31]"
+        >
+          {action}
+        </Link>
+      ) : null}
     </div>
   );
 }
