@@ -34,7 +34,7 @@ const NAV_ITEMS: BottomNavItem[] = [
   {
     id: "offers",
     label: "العروض",
-    path: "/products",
+    path: "/offers",
     icon: ShoppingBag,
   },
   {
@@ -62,39 +62,12 @@ export function BottomNav() {
       return location.pathname === "/";
     }
 
-    if (item.id === "offers") {
-      return (
-        location.pathname === "/products" &&
-        (location.search as Record<string, unknown>)["offers"] ===
-          true
-      );
-    }
-
     return (
       location.pathname === item.path ||
       location.pathname.startsWith(
         `${item.path}/`,
       )
     );
-  };
-
-  const handleNavigation = (
-    item: BottomNavItem,
-  ) => {
-    if (item.id === "offers") {
-      void navigate({
-        to: "/products",
-        search: {
-          offers: true,
-        },
-      } as never);
-
-      return;
-    }
-
-    void navigate({
-      to: item.path as never,
-    });
   };
 
   return (
@@ -165,11 +138,11 @@ export function BottomNav() {
                       : undefined
                   }
                   aria-label={item.label}
-                  onClick={() =>
-                    handleNavigation(
-                      item,
-                    )
-                  }
+                  onClick={() => {
+                    void navigate({
+                      to: item.path as never,
+                    });
+                  }}
                   className={`
                     group
                     relative
@@ -211,10 +184,7 @@ export function BottomNav() {
                     `}
                   >
                     <Icon
-                      className="
-                        h-[21px]
-                        w-[21px]
-                      "
+                      className="h-[21px] w-[21px]"
                       strokeWidth={
                         active
                           ? 2.3
@@ -233,7 +203,7 @@ export function BottomNav() {
                     {item.label}
                   </span>
 
-                  {active ? (
+                  {active && (
                     <span
                       aria-hidden="true"
                       className="
@@ -245,7 +215,7 @@ export function BottomNav() {
                         bg-[#D65A31]
                       "
                     />
-                  ) : null}
+                  )}
                 </button>
               </li>
             );
