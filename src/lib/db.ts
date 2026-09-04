@@ -359,6 +359,7 @@ export async function fetchProducts(
   opts: {
     categorySlug?: string | undefined;
     categoryId?: string | undefined;
+    brandSlug?: string | undefined;
     local?: boolean | undefined;
     sort?: SortKey | undefined;
     filters?: ProductFilters | undefined;
