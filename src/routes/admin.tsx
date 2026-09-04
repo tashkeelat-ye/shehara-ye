@@ -138,9 +138,16 @@ const NAV = [
 
   {
     to: "/admin/banners",
-    label: "الإعلانات والعروض",
+    label: "الإعلانات والبنرات",
     icon: Image,
   },
+
+  {
+    to: "/admin/offers",
+    label: "العروض والتخفيضات",
+    icon: Image,
+  },
+
 
   {
     to: "/admin/home-sections",
