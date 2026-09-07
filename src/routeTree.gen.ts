@@ -44,6 +44,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as PageSlugRouteImport } from './routes/page.$slug'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
+import { Route as VendorIdRouteImport } from './routes/vendor.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -219,6 +220,11 @@ const ProductIdRoute = ProductIdRouteImport.update({
   path: '/product/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VendorIdRoute = VendorIdRouteImport.update({
+  id: '/vendor/$id',
+  path: '/vendor/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/vendor/$id': typeof VendorIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -289,6 +296,7 @@ export interface FileRoutesByTo {
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/vendor/$id': typeof VendorIdRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/vendor/$id': typeof VendorIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -365,6 +374,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
+    | '/vendor/$id'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -400,6 +410,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
+    | '/vendor/$id'
     | '/admin'
   id:
     | '__root__'
@@ -437,6 +448,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/page/$slug'
     | '/product/$id'
+    | '/vendor/$id'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -454,6 +466,7 @@ export interface RootRouteChildren {
   CategorySlugRoute: typeof CategorySlugRoute
   PageSlugRoute: typeof PageSlugRoute
   ProductIdRoute: typeof ProductIdRoute
+  VendorIdRoute: typeof VendorIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -703,6 +716,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vendor/$id': {
+      id: '/vendor/$id'
+      path: '/vendor/$id'
+      fullPath: '/vendor/$id'
+      preLoaderRoute: typeof VendorIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -781,6 +801,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategorySlugRoute: CategorySlugRoute,
   PageSlugRoute: PageSlugRoute,
   ProductIdRoute: ProductIdRoute,
+  VendorIdRoute: VendorIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
