@@ -735,6 +735,16 @@ export const Route =
             "شهارة — تسوق بلا حدود. متجر إلكتروني يمني.",
         },
 
+        /*
+         * Google Search Console verification
+         */
+        {
+          name:
+            "google-site-verification",
+          content:
+            "FBIryYkocqm8iD_zPXL6PGrTpHlDLs5uSUNixCcGmUY",
+        },
+
         {
           name:
             "theme-color",
