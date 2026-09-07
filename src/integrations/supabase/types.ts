@@ -866,9 +866,11 @@ export type Database = {
           created_at: string
           description: string
           discount_price: number | null
+          featured_sort: number
           id: string
           images: string[]
           is_active: boolean
+          is_featured: boolean
           is_local: boolean
           is_yemeni_local: boolean | null
           low_stock_threshold: number
@@ -903,9 +905,11 @@ export type Database = {
           created_at?: string
           description?: string
           discount_price?: number | null
+          featured_sort?: number
           id?: string
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
           is_local?: boolean
           is_yemeni_local?: boolean | null
           low_stock_threshold?: number
@@ -940,9 +944,11 @@ export type Database = {
           created_at?: string
           description?: string
           discount_price?: number | null
+          featured_sort?: number
           id?: string
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
           is_local?: boolean
           is_yemeni_local?: boolean | null
           low_stock_threshold?: number
@@ -1307,27 +1313,36 @@ export type Database = {
           account_enabled: boolean
           city: string
           created_at: string
+          description: string
           id: string
           is_active: boolean
+          logo_url: string
           name: string
+          phone: string
           user_id: string | null
         }
         Insert: {
           account_enabled?: boolean
           city?: string
           created_at?: string
+          description?: string
           id?: string
           is_active?: boolean
+          logo_url?: string
           name: string
+          phone?: string
           user_id?: string | null
         }
         Update: {
           account_enabled?: boolean
           city?: string
           created_at?: string
+          description?: string
           id?: string
           is_active?: boolean
+          logo_url?: string
           name?: string
+          phone?: string
           user_id?: string | null
         }
         Relationships: []
@@ -1599,9 +1614,11 @@ export type Database = {
           created_at: string
           description: string
           discount_price: number | null
+          featured_sort: number
           id: string
           images: string[]
           is_active: boolean
+          is_featured: boolean
           is_local: boolean
           is_yemeni_local: boolean | null
           low_stock_threshold: number
