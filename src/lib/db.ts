@@ -360,6 +360,7 @@ export async function fetchProducts(
     categorySlug?: string | undefined;
     categoryId?: string | undefined;
     brandSlug?: string | undefined;
+    vendorId?: string | undefined;
     local?: boolean | undefined;
     sort?: SortKey | undefined;
     filters?: ProductFilters | undefined;
@@ -378,12 +379,20 @@ export async function fetchProducts(
       );
     }
 
+    if (opts.vendorId) {
+      query = query.eq(
+        "vendor_id",
+        opts.vendorId,
+      );
+    }
+
     if (opts.local) {
       query = query.eq(
         "is_local",
         true,
       );
     }
+
 
     const filters = opts.filters ?? {};
 

@@ -27,6 +27,7 @@ import {
   ProductCardSkeleton,
 } from "@/components/product-card";
 import { LocalProducts } from "@/components/local-products";
+import { TopVendors } from "@/components/home/top-vendors";
 import { BottomNav } from "@/components/bottom-nav";
 import { fetchCategories, fetchProducts } from "@/lib/db";
 import type { Category } from "@/lib/db";
@@ -1055,6 +1056,16 @@ function Index() {
           <Sec k="brands" cfg={sectionMap}>
           <HeritageSectionFrame>
             <BrandsSection />
+          </HeritageSectionFrame>
+          </Sec>
+
+          {/* =====================================================
+              أبرز التجار
+              ===================================================== */}
+
+          <Sec k="top_vendors" cfg={sectionMap}>
+          <HeritageSectionFrame>
+            <TopVendors />
           </HeritageSectionFrame>
           </Sec>
 
