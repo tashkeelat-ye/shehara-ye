@@ -820,6 +820,7 @@ export type Database = {
           is_approved: boolean | null
           product_id: string | null
           rating: number
+          user_id: string | null
           user_name: string
         }
         Insert: {
@@ -829,6 +830,7 @@ export type Database = {
           is_approved?: boolean | null
           product_id?: string | null
           rating: number
+          user_id?: string | null
           user_name: string
         }
         Update: {
@@ -838,6 +840,7 @@ export type Database = {
           is_approved?: boolean | null
           product_id?: string | null
           rating?: number
+          user_id?: string | null
           user_name?: string
         }
         Relationships: [
@@ -1031,6 +1034,7 @@ export type Database = {
           comment: string
           created_at: string
           id: string
+          is_approved: boolean
           product_id: string
           rating: number
           user_id: string | null
@@ -1040,6 +1044,7 @@ export type Database = {
           comment?: string
           created_at?: string
           id?: string
+          is_approved?: boolean
           product_id: string
           rating?: number
           user_id?: string | null
@@ -1049,6 +1054,7 @@ export type Database = {
           comment?: string
           created_at?: string
           id?: string
+          is_approved?: boolean
           product_id?: string
           rating?: number
           user_id?: string | null

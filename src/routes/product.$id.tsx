@@ -1214,6 +1214,21 @@ function ProductReviewsSection({
     setSubmitting(true);
 
     try {
+      const {
+        data: authData,
+      } =
+        await supabase.auth.getUser();
+
+      const userId =
+        authData.user?.id;
+
+      if (!userId) {
+        toast.error(
+          "يرجى تسجيل الدخول لإضافة تقييم.",
+        );
+        return;
+      }
+
       const { error } =
         await supabase
           .from(
@@ -1222,13 +1237,12 @@ function ProductReviewsSection({
           .insert({
             product_id:
               productId,
+            user_id: userId,
             user_name:
               name.trim(),
             rating,
             comment:
               comment.trim(),
-            is_approved:
-              true,
           });
 
       if (error) {
@@ -1240,8 +1254,9 @@ function ProductReviewsSection({
       setRating(5);
 
       toast.success(
-        "تم إرسال تقييمك بنجاح.",
+        "تم إرسال تقييمك، وسيظهر بعد مراجعته.",
       );
+
 
       onSubmitted();
     } catch (error) {
