@@ -61,7 +61,7 @@ function VendorPage() {
 
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["vendor-products", id],
-    queryFn: () => fetchProducts({ vendorId: id, sort: "best_selling" }),
+    queryFn: () => fetchProducts({ vendorId: id, sort: "best" }),
     staleTime: 60_000,
   });
 
