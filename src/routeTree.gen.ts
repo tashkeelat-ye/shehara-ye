@@ -27,6 +27,7 @@ import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as AdminCouriersRouteImport } from './routes/admin.couriers'
+import { Route as AdminFeaturedRouteImport } from './routes/admin.featured'
 import { Route as AdminHomeSectionsRouteImport } from './routes/admin.home-sections'
 import { Route as AdminInventoryRouteImport } from './routes/admin.inventory'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
@@ -133,6 +134,11 @@ const AdminContentRoute = AdminContentRouteImport.update({
 const AdminCouriersRoute = AdminCouriersRouteImport.update({
   id: '/couriers',
   path: '/couriers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFeaturedRoute = AdminFeaturedRouteImport.update({
+  id: '/featured',
+  path: '/featured',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminHomeSectionsRoute = AdminHomeSectionsRouteImport.update({
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/featured': typeof AdminFeaturedRoute
   '/admin/home-sections': typeof AdminHomeSectionsRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -279,6 +286,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/featured': typeof AdminFeaturedRoute
   '/admin/home-sections': typeof AdminHomeSectionsRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -318,6 +326,7 @@ export interface FileRoutesById {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/featured': typeof AdminFeaturedRoute
   '/admin/home-sections': typeof AdminHomeSectionsRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -357,6 +366,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/content'
     | '/admin/couriers'
+    | '/admin/featured'
     | '/admin/home-sections'
     | '/admin/inventory'
     | '/admin/notifications'
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/content'
     | '/admin/couriers'
+    | '/admin/featured'
     | '/admin/home-sections'
     | '/admin/inventory'
     | '/admin/notifications'
@@ -431,6 +442,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/content'
     | '/admin/couriers'
+    | '/admin/featured'
     | '/admin/home-sections'
     | '/admin/inventory'
     | '/admin/notifications'
@@ -597,6 +609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCouriersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/featured': {
+      id: '/admin/featured'
+      path: '/featured'
+      fullPath: '/admin/featured'
+      preLoaderRoute: typeof AdminFeaturedRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/home-sections': {
       id: '/admin/home-sections'
       path: '/home-sections'
@@ -748,6 +767,7 @@ interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminContentRoute: typeof AdminContentRoute
   AdminCouriersRoute: typeof AdminCouriersRoute
+  AdminFeaturedRoute: typeof AdminFeaturedRoute
   AdminHomeSectionsRoute: typeof AdminHomeSectionsRoute
   AdminInventoryRoute: typeof AdminInventoryRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -769,6 +789,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminContentRoute: AdminContentRoute,
   AdminCouriersRoute: AdminCouriersRoute,
+  AdminFeaturedRoute: AdminFeaturedRoute,
   AdminHomeSectionsRoute: AdminHomeSectionsRoute,
   AdminInventoryRoute: AdminInventoryRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
