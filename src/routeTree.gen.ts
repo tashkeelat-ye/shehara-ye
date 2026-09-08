@@ -20,6 +20,7 @@ import { Route as OffersRouteImport } from './routes/offers'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
+import { Route as AuthenticatedMerchantRouteImport } from './routes/_authenticated/merchant'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -27,6 +28,7 @@ import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as AdminCouriersRouteImport } from './routes/admin.couriers'
+import { Route as AdminFeaturedRouteImport } from './routes/admin.featured'
 import { Route as AdminHomeSectionsRouteImport } from './routes/admin.home-sections'
 import { Route as AdminInventoryRouteImport } from './routes/admin.inventory'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
@@ -40,6 +42,7 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminStoriesRouteImport } from './routes/admin.stories'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminVendorsRouteImport } from './routes/admin.vendors'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as PageSlugRouteImport } from './routes/page.$slug'
@@ -100,6 +103,11 @@ const AuthenticatedCheckoutRoute = AuthenticatedCheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMerchantRoute = AuthenticatedMerchantRouteImport.update({
+  id: '/merchant',
+  path: '/merchant',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -133,6 +141,11 @@ const AdminContentRoute = AdminContentRouteImport.update({
 const AdminCouriersRoute = AdminCouriersRouteImport.update({
   id: '/couriers',
   path: '/couriers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFeaturedRoute = AdminFeaturedRouteImport.update({
+  id: '/featured',
+  path: '/featured',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminHomeSectionsRoute = AdminHomeSectionsRouteImport.update({
@@ -200,6 +213,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminVendorsRoute = AdminVendorsRouteImport.update({
+  id: '/vendors',
+  path: '/vendors',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -237,12 +255,14 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
+  '/merchant': typeof AuthenticatedMerchantRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/featured': typeof AdminFeaturedRoute
   '/admin/home-sections': typeof AdminHomeSectionsRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -256,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/admin/stories': typeof AdminStoriesRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/vendors': typeof AdminVendorsRoute
   '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
@@ -273,12 +294,14 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
+  '/merchant': typeof AuthenticatedMerchantRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/featured': typeof AdminFeaturedRoute
   '/admin/home-sections': typeof AdminHomeSectionsRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -292,6 +315,7 @@ export interface FileRoutesByTo {
   '/admin/stories': typeof AdminStoriesRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/vendors': typeof AdminVendorsRoute
   '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
@@ -312,12 +336,14 @@ export interface FileRoutesById {
   '/products': typeof ProductsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
+  '/_authenticated/merchant': typeof AuthenticatedMerchantRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/content': typeof AdminContentRoute
   '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/featured': typeof AdminFeaturedRoute
   '/admin/home-sections': typeof AdminHomeSectionsRoute
   '/admin/inventory': typeof AdminInventoryRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -331,6 +357,7 @@ export interface FileRoutesById {
   '/admin/stories': typeof AdminStoriesRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/vendors': typeof AdminVendorsRoute
   '/api/chat': typeof ApiChatRoute
   '/category/$slug': typeof CategorySlugRoute
   '/page/$slug': typeof PageSlugRoute
@@ -351,12 +378,14 @@ export interface FileRouteTypes {
     | '/products'
     | '/account'
     | '/checkout'
+    | '/merchant'
     | '/orders'
     | '/wallet'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/content'
     | '/admin/couriers'
+    | '/admin/featured'
     | '/admin/home-sections'
     | '/admin/inventory'
     | '/admin/notifications'
@@ -370,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin/stories'
     | '/admin/support'
     | '/admin/users'
+    | '/admin/vendors'
     | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
@@ -387,12 +417,14 @@ export interface FileRouteTypes {
     | '/products'
     | '/account'
     | '/checkout'
+    | '/merchant'
     | '/orders'
     | '/wallet'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/content'
     | '/admin/couriers'
+    | '/admin/featured'
     | '/admin/home-sections'
     | '/admin/inventory'
     | '/admin/notifications'
@@ -406,6 +438,7 @@ export interface FileRouteTypes {
     | '/admin/stories'
     | '/admin/support'
     | '/admin/users'
+    | '/admin/vendors'
     | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
@@ -425,12 +458,14 @@ export interface FileRouteTypes {
     | '/products'
     | '/_authenticated/account'
     | '/_authenticated/checkout'
+    | '/_authenticated/merchant'
     | '/_authenticated/orders'
     | '/_authenticated/wallet'
     | '/admin/banners'
     | '/admin/categories'
     | '/admin/content'
     | '/admin/couriers'
+    | '/admin/featured'
     | '/admin/home-sections'
     | '/admin/inventory'
     | '/admin/notifications'
@@ -444,6 +479,7 @@ export interface FileRouteTypes {
     | '/admin/stories'
     | '/admin/support'
     | '/admin/users'
+    | '/admin/vendors'
     | '/api/chat'
     | '/category/$slug'
     | '/page/$slug'
@@ -548,6 +584,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCheckoutRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/merchant': {
+      id: '/_authenticated/merchant'
+      path: '/merchant'
+      fullPath: '/merchant'
+      preLoaderRoute: typeof AuthenticatedMerchantRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/orders': {
       id: '/_authenticated/orders'
       path: '/orders'
@@ -595,6 +638,13 @@ declare module '@tanstack/react-router' {
       path: '/couriers'
       fullPath: '/admin/couriers'
       preLoaderRoute: typeof AdminCouriersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/featured': {
+      id: '/admin/featured'
+      path: '/featured'
+      fullPath: '/admin/featured'
+      preLoaderRoute: typeof AdminFeaturedRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/home-sections': {
@@ -688,6 +738,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/vendors': {
+      id: '/admin/vendors'
+      path: '/vendors'
+      fullPath: '/admin/vendors'
+      preLoaderRoute: typeof AdminVendorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -729,6 +786,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedCheckoutRoute: typeof AuthenticatedCheckoutRoute
+  AuthenticatedMerchantRoute: typeof AuthenticatedMerchantRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
 }
@@ -736,6 +794,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedCheckoutRoute: AuthenticatedCheckoutRoute,
+  AuthenticatedMerchantRoute: AuthenticatedMerchantRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
 }
@@ -748,6 +807,7 @@ interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminContentRoute: typeof AdminContentRoute
   AdminCouriersRoute: typeof AdminCouriersRoute
+  AdminFeaturedRoute: typeof AdminFeaturedRoute
   AdminHomeSectionsRoute: typeof AdminHomeSectionsRoute
   AdminInventoryRoute: typeof AdminInventoryRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -761,6 +821,7 @@ interface AdminRouteChildren {
   AdminStoriesRoute: typeof AdminStoriesRoute
   AdminSupportRoute: typeof AdminSupportRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminVendorsRoute: typeof AdminVendorsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -769,6 +830,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminContentRoute: AdminContentRoute,
   AdminCouriersRoute: AdminCouriersRoute,
+  AdminFeaturedRoute: AdminFeaturedRoute,
   AdminHomeSectionsRoute: AdminHomeSectionsRoute,
   AdminInventoryRoute: AdminInventoryRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
@@ -782,6 +844,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminStoriesRoute: AdminStoriesRoute,
   AdminSupportRoute: AdminSupportRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminVendorsRoute: AdminVendorsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

@@ -50,6 +50,10 @@ export type Product = {
   is_local: boolean;
   is_active: boolean;
 
+  /** منتج مميز يظهر في قسم «منتجات مميزة» بالرئيسية */
+  is_featured?: boolean;
+  featured_sort?: number;
+
   /**
    * نظام المخزون
    */
@@ -101,6 +105,8 @@ const PRODUCT_COLUMNS = [
   "badge",
   "is_local",
   "is_active",
+  "is_featured",
+  "featured_sort",
   "total_stock",
   "stock_left",
   "low_stock_threshold",
@@ -143,6 +149,8 @@ function normalizeProduct(
       : [],
 
     is_local: Boolean(product.is_local),
+    is_featured: Boolean(product.is_featured),
+    featured_sort: Number(product.featured_sort) || 0,
     is_active:
       product.is_active !== false,
 
@@ -361,6 +369,7 @@ export async function fetchProducts(
     categoryId?: string | undefined;
     brandSlug?: string | undefined;
     vendorId?: string | undefined;
+    featured?: boolean | undefined;
     local?: boolean | undefined;
     sort?: SortKey | undefined;
     filters?: ProductFilters | undefined;
@@ -389,6 +398,13 @@ export async function fetchProducts(
     if (opts.local) {
       query = query.eq(
         "is_local",
+        true,
+      );
+    }
+
+    if (opts.featured) {
+      query = query.eq(
+        "is_featured",
         true,
       );
     }
