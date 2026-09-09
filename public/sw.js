@@ -10,20 +10,23 @@
  * - تحديث PWA
  * - التخزين المؤقت
  * - العمل دون اتصال
- * - الإشعارات
+ * - Web Push Notifications
  * - فتح التطبيق عند الضغط على الإشعار
  *
- * لا يحتوي على أي منطق خاص بتصميم الواجهة.
+ * ملاحظة:
+ * صوت الإشعار عندما يكون التطبيق مغلقًا بالكامل
+ * يخضع لإعدادات نظام التشغيل والمتصفح.
+ * تشغيل notification.mp3 مخصص يتم من داخل التطبيق
+ * عندما تكون الصفحة مفتوحة.
  * =========================================================
  */
 
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 
 const SHELL_CACHE = `shehara-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `shehara-runtime-${CACHE_VERSION}`;
 
 const OFFLINE_URL = "/offline.html";
-
 
 /**
  * =========================================================
@@ -49,7 +52,6 @@ self.addEventListener("install", (event) => {
       }),
   );
 });
-
 
 /**
  * =========================================================
@@ -82,11 +84,14 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-
 /**
  * =========================================================
  * Push Notifications
  * =========================================================
+ *
+ * يعمل حتى عندما تكون واجهة التطبيق غير مفتوحة،
+ * بشرط أن يكون Web Push مسجلاً بشكل صحيح وأن يسمح
+ * نظام التشغيل والمتصفح بالإشعارات.
  */
 
 self.addEventListener("push", (event) => {
@@ -115,25 +120,56 @@ self.addEventListener("push", (event) => {
     data.url ||
     "/";
 
+  const notificationTag =
+    data.tag ||
+    data.kind ||
+    "shehara-notification";
+
+  const options = {
+    body,
+    dir: "rtl",
+    lang: "ar",
+
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+
+    tag: notificationTag,
+
+    /**
+     * السماح بإعادة التنبيه عند وصول إشعار جديد
+     * بنفس النوع.
+     */
+    renotify: true,
+
+    /**
+     * إبقاء إشعار طلب جديد ظاهرًا حتى يتفاعل المستخدم
+     * معه، قدر الإمكان وفق نظام التشغيل.
+     */
+    requireInteraction: true,
+
+    /**
+     * اهتزاز الأجهزة التي تدعم ذلك.
+     */
+    vibrate: [250, 100, 250, 100, 400],
+
+    timestamp: Date.now(),
+
+    data: {
+      url: notificationUrl,
+      notification_id:
+        data.notification_id || null,
+      kind:
+        data.kind || null,
+    },
+  };
+
   event.waitUntil(
     self.registration.showNotification(
       title,
-      {
-        body,
-        dir: "rtl",
-        lang: "ar",
-
-        icon: "/icon-192.png",
-        badge: "/icon-192.png",
-
-        data: {
-          url: notificationUrl,
-        },
-      },
+      options,
     ),
   );
 });
-
 
 /**
  * =========================================================
@@ -159,26 +195,50 @@ self.addEventListener(
           type: "window",
           includeUncontrolled: true,
         })
-        .then((clientList) => {
+        .then(async (clientList) => {
+          /**
+           * إذا كان التطبيق مفتوحًا بالفعل،
+           * نحاول استخدام النافذة الحالية بدل فتح نافذة جديدة.
+           */
           for (const client of clientList) {
             if (
               client.url &&
               "focus" in client
             ) {
-              return client
-                .navigate(targetUrl)
-                .then(() => client.focus());
+              try {
+                if (
+                  typeof client.navigate ===
+                  "function"
+                ) {
+                  await client.navigate(
+                    targetUrl,
+                  );
+                }
+              } catch {
+                // تجاهل فشل التنقل واستمر بمحاولة التركيز.
+              }
+
+              return client.focus();
             }
           }
 
-          return self.clients.openWindow(
-            targetUrl,
-          );
+          /**
+           * إذا لم يكن التطبيق مفتوحًا،
+           * افتح الرابط المطلوب.
+           */
+          if (
+            "openWindow" in self.clients
+          ) {
+            return self.clients.openWindow(
+              targetUrl,
+            );
+          }
+
+          return undefined;
         }),
     );
   },
 );
-
 
 /**
  * =========================================================
@@ -233,7 +293,6 @@ self.addEventListener("fetch", (event) => {
 
     return;
   }
-
 
   /**
    * =======================================================
@@ -307,7 +366,6 @@ self.addEventListener("fetch", (event) => {
 
     return;
   }
-
 
   /**
    * =======================================================
