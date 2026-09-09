@@ -144,10 +144,6 @@ const ADDRESS_COLUMNS =
   "id,label,recipient_name,phone,city,district,details,landmark,latitude,longitude,is_default";
 
 
-/**
- * استخراج رسالة الخطأ الحقيقية من أي كائن
- * قادم من Supabase / PostgREST / PostgreSQL.
- */
 function extractErrorDetails(
   error: unknown,
 ): {
@@ -242,10 +238,6 @@ function extractErrorDetails(
 }
 
 
-/**
- * تحويل خطأ Supabase إلى نص واضح
- * حتى لا نخسر code/details/hint.
- */
 function buildErrorMessage(
   error: unknown,
   stage: string,
@@ -308,6 +300,7 @@ function CheckoutPage() {
   const navigate =
     useNavigate();
 
+
   const {
     data: settings,
   } = useQuery({
@@ -317,6 +310,7 @@ function CheckoutPage() {
     queryFn:
       fetchSettings,
   });
+
 
   const {
     data: methods = [],
@@ -330,6 +324,7 @@ function CheckoutPage() {
         true,
       ),
   });
+
 
   const {
     data: addresses = [],
@@ -512,10 +507,6 @@ function CheckoutPage() {
     useState(false);
 
 
-  /**
-   * Token ثابت لمنع إنشاء طلب مكرر
-   * عند إعادة المحاولة.
-   */
   const [
     checkoutToken,
   ] =
@@ -536,17 +527,6 @@ function CheckoutPage() {
   const total =
     Number(subtotal) +
     deliveryFee;
-
-  const walletBalance =
-    Number(
-      profile?.wallet_balance ??
-        0,
-    );
-
-  const mustAgree =
-    !Boolean(
-      profile?.accepted_order_policy,
-    );
 
 
   const selected =
@@ -571,13 +551,111 @@ function CheckoutPage() {
       "wallet_balance";
 
 
+  /*
+   * ============================================================
+   * المحفظة الجديدة
+   * ============================================================
+   *
+   * لا نقرأ wallet_balance من profile.
+   *
+   * الرصيد الرسمي أصبح في wallets.
+   *
+   * نستعمل RPC get_wallet حتى لا نعتمد على قراءة مباشرة
+   * من جدول حساس، مع بقاء عملية الخصم الحقيقية داخل
+   * pay_order_from_wallet في PostgreSQL.
+   */
+  const {
+    data: walletBalance = 0,
+    refetch:
+      refetchWalletBalance,
+  } = useQuery({
+    queryKey: [
+      "wallet-balance",
+      user?.id ?? "",
+      "YER",
+    ],
+
+    enabled:
+      Boolean(user?.id),
+
+    queryFn:
+      async () => {
+        if (!user?.id) {
+          return 0;
+        }
+
+        try {
+          /*
+           * get_wallet تمت إضافتها في migration
+           * 20260909000400_phase1_payment_financial_security.sql
+           *
+           * نستخدم any هنا مؤقتًا لأن types.ts الحالي
+           * قد لا يكون قد أُعيد توليده بعد إضافة wallets.
+           */
+          const {
+            data,
+            error,
+          } =
+            await (
+              supabase as any
+            ).rpc(
+              "get_wallet",
+              {
+                requested_currency:
+                  "YER",
+              },
+            );
+
+          if (error) {
+            console.error(
+              "[Checkout][Wallet] Failed to load wallet:",
+              error,
+            );
+
+            return 0;
+          }
+
+          if (
+            Array.isArray(data)
+          ) {
+            const row =
+              data[0];
+
+            return Number(
+              row?.balance ??
+                0,
+            );
+          }
+
+          return Number(
+            data?.balance ??
+              0,
+          );
+        } catch (error) {
+          console.error(
+            "[Checkout][Wallet] Unexpected wallet error:",
+            error,
+          );
+
+          return 0;
+        }
+      },
+  });
+
+
+  const mustAgree =
+    !Boolean(
+      profile?.accepted_order_policy,
+    );
+
+
   const needsReceipt =
     Boolean(
       selected?.requires_receipt,
     );
 
 
-  /**
+  /*
    * اختيار أول طريقة دفع تلقائيًا.
    */
   useEffect(() => {
@@ -603,7 +681,7 @@ function CheckoutPage() {
   ]);
 
 
-  /**
+  /*
    * اختيار العنوان الافتراضي.
    */
   useEffect(() => {
@@ -631,7 +709,7 @@ function CheckoutPage() {
   ]);
 
 
-  /**
+  /*
    * تعبئة بيانات العنوان.
    */
   useEffect(() => {
@@ -712,8 +790,14 @@ function CheckoutPage() {
   ]);
 
 
-  /**
+  /*
    * التحقق من الطلب.
+   *
+   * ملاحظة أمنية:
+   * فحص walletBalance هنا للواجهة فقط.
+   *
+   * لا يعتبر هذا الفحص مصدر الحقيقة.
+   * الخادم يعيد فحص الرصيد ويخصم بشكل ذري.
    */
   function validateCheckout() {
     if (!user?.id) {
@@ -807,12 +891,6 @@ function CheckoutPage() {
   }
 
 
-  /**
-   * تنفيذ الطلب.
-   *
-   * تم هنا إضافة متغير stage
-   * لمعرفة المكان الدقيق للفشل.
-   */
   async function submit(
     e: React.FormEvent,
   ) {
@@ -846,10 +924,8 @@ function CheckoutPage() {
         );
 
 
-      /**
-       * -------------------------------------------------------
+      /*
        * 1. رفع إيصال الدفع
-       * -------------------------------------------------------
        */
       let receiptPath = "";
 
@@ -874,7 +950,9 @@ function CheckoutPage() {
               user.id,
               receipt,
             );
-        } catch (receiptError) {
+        } catch (
+          receiptError
+        ) {
           console.error(
             "[Checkout][ReceiptUpload]",
             extractErrorDetails(
@@ -891,10 +969,8 @@ function CheckoutPage() {
       }
 
 
-      /**
-       * -------------------------------------------------------
+      /*
        * 2. تحديد الحالة
-       * -------------------------------------------------------
        */
       stage =
         "تحديد حالة الطلب والدفع";
@@ -915,10 +991,8 @@ function CheckoutPage() {
           : "unpaid";
 
 
-      /**
-       * -------------------------------------------------------
+      /*
        * 3. تجهيز عناصر الطلب
-       * -------------------------------------------------------
        */
       stage =
         "تجهيز عناصر الطلب";
@@ -958,16 +1032,14 @@ function CheckoutPage() {
         );
 
 
-      console.log(
-        "[Checkout] Prepared order items:",
-        orderItems,
-      );
+      /*
+       * لا نسجل عناصر الطلب كاملة في Console
+       * لأنها قد تحتوي على بيانات لا نحتاج كشفها.
+       */
 
 
-      /**
-       * -------------------------------------------------------
-       * 4. RPC create_checkout_order
-       * -------------------------------------------------------
+      /*
+       * 4. إنشاء الطلب عبر RPC الآمن
        */
       stage =
         "استدعاء create_checkout_order";
@@ -1035,6 +1107,7 @@ function CheckoutPage() {
           ? {
               _latitude:
                 coords.lat,
+
               _longitude:
                 coords.lng,
             }
@@ -1059,15 +1132,6 @@ function CheckoutPage() {
       };
 
 
-      console.log(
-        "[Checkout] Calling create_checkout_order",
-        {
-          payload:
-            rpcPayload,
-        },
-      );
-
-
       const {
         data: checkoutData,
         error:
@@ -1079,49 +1143,17 @@ function CheckoutPage() {
         );
 
 
-      console.log(
-        "[Checkout] RPC response",
-        {
-          data:
-            checkoutData,
-          error:
-            checkoutError,
-        },
-      );
-
-
       toast.dismiss(
         "checkout-progress",
       );
 
 
-      /**
-       * لا نخفي تفاصيل خطأ Supabase.
-       */
       if (checkoutError) {
-        const info =
-          extractErrorDetails(
-            checkoutError,
-          );
-
         console.error(
           "[Checkout][RPC ERROR]",
-          {
-            message:
-              info.message,
-
-            code:
-              info.code,
-
-            details:
-              info.details,
-
-            hint:
-              info.hint,
-
-            raw:
-              info.raw,
-          },
+          extractErrorDetails(
+            checkoutError,
+          ),
         );
 
         throw checkoutError;
@@ -1149,12 +1181,6 @@ function CheckoutPage() {
         };
 
 
-      console.log(
-        "[Checkout] RPC result:",
-        result,
-      );
-
-
       if (
         !result.id ||
         !result.order_number
@@ -1165,10 +1191,20 @@ function CheckoutPage() {
       }
 
 
-      /**
-       * -------------------------------------------------------
+      /*
        * 5. الدفع من المحفظة
-       * -------------------------------------------------------
+       *
+       * هذه هي العملية المالية الحقيقية.
+       *
+       * لا نقوم هنا بحساب الرصيد أو تحديثه من العميل.
+       *
+       * PostgreSQL هو الذي:
+       * - يقفل الطلب
+       * - يقفل المحفظة
+       * - يتحقق من الرصيد
+       * - يمنع الخصم المكرر
+       * - يسجل الحركة
+       * - يغير حالة الطلب
        */
       if (isWallet) {
         stage =
@@ -1186,7 +1222,6 @@ function CheckoutPage() {
             },
           );
 
-
         if (paymentError) {
           console.error(
             "[Checkout][WalletPayment]",
@@ -1197,13 +1232,25 @@ function CheckoutPage() {
 
           throw paymentError;
         }
+
+        /*
+         * تحديث الرصيد المعروض بعد الخصم.
+         */
+        try {
+          await refetchWalletBalance();
+        } catch (
+          walletRefreshError
+        ) {
+          console.warn(
+            "[Checkout] Wallet refresh warning:",
+            walletRefreshError,
+          );
+        }
       }
 
 
-      /**
-       * -------------------------------------------------------
+      /*
        * 6. حفظ العنوان
-       * -------------------------------------------------------
        */
       if (saveAddress) {
         stage =
@@ -1314,10 +1361,8 @@ function CheckoutPage() {
       }
 
 
-      /**
-       * -------------------------------------------------------
+      /*
        * 7. حفظ موافقة الشروط
-       * -------------------------------------------------------
        */
       if (
         mustAgree &&
@@ -1366,10 +1411,8 @@ function CheckoutPage() {
       }
 
 
-      /**
-       * -------------------------------------------------------
+      /*
        * 8. تفريغ السلة
-       * -------------------------------------------------------
        */
       stage =
         "تفريغ السلة";
@@ -1386,10 +1429,11 @@ function CheckoutPage() {
       }
 
 
-      /**
-       * -------------------------------------------------------
+      /*
        * 9. تحديث الملف الشخصي
-       * -------------------------------------------------------
+       *
+       * ما زال مطلوبًا لتحديث قبول الشروط.
+       * الرصيد لم يعد مأخوذًا من profile.
        */
       stage =
         "تحديث الملف الشخصي";
@@ -1406,10 +1450,8 @@ function CheckoutPage() {
       }
 
 
-      /**
-       * -------------------------------------------------------
+      /*
        * 10. النجاح
-       * -------------------------------------------------------
        */
       toast.success(
         needsReceipt
@@ -1425,6 +1467,7 @@ function CheckoutPage() {
       await navigate({
         to: "/orders",
       });
+
     } catch (
       error
     ) {
@@ -1434,63 +1477,22 @@ function CheckoutPage() {
         );
 
 
-      /**
-       * تسجيل كامل في Console.
-       */
-      console.error(
-        "================================================",
-      );
-
       console.error(
         "[CHECKOUT FINAL ERROR]",
-      );
-
-      console.error(
-        "Stage:",
-        stage,
-      );
-
-      console.error(
-        "Message:",
-        info.message,
-      );
-
-      console.error(
-        "Code:",
-        info.code,
-      );
-
-      console.error(
-        "Details:",
-        info.details,
-      );
-
-      console.error(
-        "Hint:",
-        info.hint,
-      );
-
-      console.error(
-        "Raw:",
-        info.raw,
-      );
-
-      console.error(
-        "Original error:",
-        error,
-      );
-
-      console.error(
-        "================================================",
+        {
+          stage,
+          message:
+            info.message,
+          code:
+            info.code,
+          details:
+            info.details,
+          hint:
+            info.hint,
+        },
       );
 
 
-      /**
-       * رسالة المستخدم.
-       *
-       * نعرض الخطأ الحقيقي مؤقتًا حتى نستطيع
-       * تحديد السبب النهائي.
-       */
       let message =
         buildErrorMessage(
           error,
@@ -1508,9 +1510,6 @@ function CheckoutPage() {
       }
 
 
-      /**
-       * أخطاء الشبكة.
-       */
       if (
         /HTTP request cancelled|request cancelled|AbortError|aborted/i.test(
           info.message,
@@ -1535,6 +1534,7 @@ function CheckoutPage() {
             10000,
         },
       );
+
     } finally {
       toast.dismiss(
         "checkout-progress",
@@ -1678,7 +1678,6 @@ function CheckoutPage() {
                           )
                         }
                       />
-
 
                       <span className="min-w-0">
 
@@ -1997,19 +1996,14 @@ function CheckoutPage() {
 
               {coords ? (
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
-
                   تم تحديد الموقع:{" "}
-
                   {coords.lat.toFixed(
                     5,
                   )}
-
                   ,{" "}
-
                   {coords.lng.toFixed(
                     5,
                   )}
-
                 </p>
               ) : null}
 
