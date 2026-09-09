@@ -10,6 +10,7 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+
   public: {
     Tables: {
       addresses: {
@@ -149,7 +150,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
-          logo_url?: string | null
+          logo_url?: string
           name: string
           slug?: string | null
           sort_order?: number | null
@@ -158,7 +159,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
-          logo_url?: string | null
+          logo_url?: string
           name?: string
           slug?: string | null
           sort_order?: number | null
@@ -610,6 +611,7 @@ export type Database = {
           courier_id: string | null
           created_at: string
           currency: string
+          created_at: string
           delivery_fee: number
           id: string
           invoice_number: string | null
@@ -1306,22 +1308,34 @@ export type Database = {
 
       user_push_subscriptions: {
         Row: {
-          created_at: string | null
-          id: number
+          created_at: string
+          endpoint: string
+          id: string
+          is_active: boolean
           subscription: Json
-          user_id: string | null
+          updated_at: string
+          user_agent: string
+          user_id: string
         }
         Insert: {
-          created_at?: string | null
-          id?: number
-          subscription?: Json
-          user_id?: string | null
+          created_at?: string
+          endpoint?: string
+          id?: string
+          is_active?: boolean
+          subscription: Json
+          updated_at?: string
+          user_agent?: string
+          user_id: string
         }
         Update: {
-          created_at?: string | null
-          id?: number
+          created_at?: string
+          endpoint?: string
+          id?: string
+          is_active?: boolean
           subscription?: Json
-          user_id?: string | null
+          updated_at?: string
+          user_agent?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1533,6 +1547,14 @@ export type Database = {
           _payment_request_id: string
         }
         Returns: Database["public"]["Tables"]["payment_requests"]["Row"]
+      }
+
+      assign_order_courier_secure: {
+        Args: {
+          _courier_id?: string | null
+          _order_id: string
+        }
+        Returns: Database["public"]["Tables"]["orders"]["Row"]
       }
 
       broadcast_notification: {
@@ -1853,6 +1875,21 @@ export type Database = {
         Returns: Database["public"]["Tables"]["payment_requests"]["Row"]
       }
 
+      register_push_subscription: {
+        Args: {
+          _subscription: Json
+          _user_agent?: string
+        }
+        Returns: Database["public"]["Tables"]["user_push_subscriptions"]["Row"]
+      }
+
+      remove_push_subscription: {
+        Args: {
+          _endpoint: string
+        }
+        Returns: boolean
+      }
+
       request_wallet_refund: {
         Args: {
           _amount: number
@@ -1905,6 +1942,14 @@ export type Database = {
         Returns: string
       }
 
+      update_order_status_secure: {
+        Args: {
+          _new_status: Database["public"]["Enums"]["order_status"]
+          _order_id: string
+        }
+        Returns: Database["public"]["Tables"]["orders"]["Row"]
+      }
+
       urlencode:
         | {
             Args: {
@@ -1923,7 +1968,11 @@ export type Database = {
     }
 
     Enums: {
-      app_role: "customer" | "vendor" | "admin" | "courier"
+      app_role:
+        | "customer"
+        | "vendor"
+        | "admin"
+        | "courier"
 
       order_status:
         | "pending"
@@ -1963,10 +2012,13 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals =
+  Omit<Database, "__InternalSupabase">
 
 type DefaultSchema =
-  DatabaseWithoutInternals[Extract<keyof Database, "public">]
+  DatabaseWithoutInternals[
+    Extract<keyof Database, "public">
+  ]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
@@ -2003,7 +2055,8 @@ export type Tables<
       ? R
       : never
     : DefaultSchemaTableNameOrOptions extends keyof (
-          DefaultSchema["Tables"] & DefaultSchema["Views"]
+          DefaultSchema["Tables"] &
+            DefaultSchema["Views"]
         )
       ? (
           DefaultSchema["Tables"] &
@@ -2104,7 +2157,9 @@ export type Enums<
         DefaultSchemaEnumNameOrOptions["schema"]
       ]["Enums"][EnumName]
     : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-      ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+      ? DefaultSchema["Enums"][
+          DefaultSchemaEnumNameOrOptions
+        ]
       : never
 
 export type CompositeTypes<
@@ -2136,7 +2191,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["customer", "vendor", "admin", "courier"],
+      app_role: [
+        "customer",
+        "vendor",
+        "admin",
+        "courier",
+      ],
       order_status: [
         "pending",
         "awaiting_payment",
