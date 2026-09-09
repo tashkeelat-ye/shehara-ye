@@ -4,7 +4,6 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { AdminCard, btnCls, btnGhostCls } from "@/components/admin-ui";
-import { formatPrice } from "@/lib/db";
 import {
   fetchPaymentRequests,
   formatDate,
@@ -23,10 +22,12 @@ function formatMoney(amount: number, currency: string) {
   const normalizedCurrency = currency === "SAR" ? "SAR" : "YER";
 
   try {
-    return new Intl.NumberFormat("ar-YE", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(Number(amount ?? 0)) + ` ${normalizedCurrency}`;
+    return (
+      new Intl.NumberFormat("ar-YE", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(Number(amount ?? 0)) + ` ${normalizedCurrency}`
+    );
   } catch {
     return `${Number(amount ?? 0).toFixed(2)} ${normalizedCurrency}`;
   }
@@ -35,8 +36,7 @@ function formatMoney(amount: number, currency: string) {
 function purposeLabel(purpose: string) {
   return (
     PAYMENT_REQUEST_PURPOSE_LABELS[purpose] ??
-    purpose ||
-    "عملية مالية"
+    (purpose || "عملية مالية")
   );
 }
 
@@ -100,7 +100,9 @@ function AdminPaymentRequests() {
   const [rows, setRows] = useState<PaymentRequest[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(
+    null,
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -122,7 +124,10 @@ function AdminPaymentRequests() {
               return [request.id, ""] as const;
             }
 
-            return [request.id, data?.signedUrl ?? ""] as const;
+            return [
+              request.id,
+              data?.signedUrl ?? "",
+            ] as const;
           }),
       );
 
@@ -178,7 +183,9 @@ function AdminPaymentRequests() {
         if (request.purpose === "topup") {
           toast.success("تم اعتماد شحن المحفظة بنجاح.");
         } else if (request.purpose === "refund") {
-          toast.success("تم اعتماد الاسترداد وإضافة المبلغ للمحفظة.");
+          toast.success(
+            "تم اعتماد الاسترداد وإضافة المبلغ للمحفظة.",
+          );
         } else {
           toast.success("تم اعتماد دفع الطلب.");
         }
@@ -320,7 +327,9 @@ function AdminPaymentRequests() {
                         void review(request, "approve")
                       }
                     >
-                      {busy ? "جارٍ التنفيذ..." : "تأكيد واعتماد"}
+                      {busy
+                        ? "جارٍ التنفيذ..."
+                        : "تأكيد واعتماد"}
                     </button>
 
                     <button
