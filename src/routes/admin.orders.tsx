@@ -59,7 +59,6 @@ type Order = {
 
 const STATUSES = Object.keys(ORDER_STATUS_LABELS);
 
-
 function AdminOrders() {
   const [rows, setRows] = useState<Order[]>([]);
   const [open, setOpen] = useState<string | null>(null);
@@ -68,7 +67,6 @@ function AdminOrders() {
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(
     null,
   );
-
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,7 +98,6 @@ function AdminOrders() {
     }
   }, []);
 
-
   const loadCouriers = useCallback(async () => {
     try {
       const list = await fetchCouriers(false);
@@ -116,12 +113,10 @@ function AdminOrders() {
     }
   }, []);
 
-
   useEffect(() => {
     void load();
     void loadCouriers();
   }, [load, loadCouriers]);
-
 
   async function setCourier(
     orderId: string,
@@ -165,7 +160,6 @@ function AdminOrders() {
     }
   }
 
-
   async function setStatus(
     orderId: string,
     status: string,
@@ -174,10 +168,25 @@ function AdminOrders() {
       return;
     }
 
+    if (!status.trim()) {
+      toast.error("حالة الطلب غير صالحة.");
+      return;
+    }
+
     setProcessingOrderId(orderId);
 
     try {
-      const { error } = await supabase.rpc(
+      /*
+       * استخدم RPC الآمن المخصص للإدارة.
+       *
+       * يتم تمرير الحالة كنص لأن النسخة الآمنة الجديدة من
+       * update_order_status_secure تستقبل _new_status من نوع text
+       * ثم تتحقق من القيمة وتحولها داخلياً إلى order_status.
+       *
+       * استخدام any هنا يمنع اعتماد الواجهة على نسخة قديمة من
+       * generated Supabase types في حال لم يتم تحديث types.ts بعد.
+       */
+      const { error } = await (supabase as any).rpc(
         "update_order_status_secure",
         {
           _order_id: orderId,
@@ -203,7 +212,6 @@ function AdminOrders() {
       setProcessingOrderId(null);
     }
   }
-
 
   function shareWhatsApp(order: Order) {
     const lines = [
@@ -236,7 +244,6 @@ function AdminOrders() {
       "noopener,noreferrer",
     );
   }
-
 
   return (
     <AdminCard
@@ -510,6 +517,7 @@ function AdminOrders() {
                         <span className="text-muted-foreground">
                           المجموع الفرعي
                         </span>
+
                         <span className="font-medium">
                           {formatPrice(
                             order.subtotal,
@@ -521,6 +529,7 @@ function AdminOrders() {
                         <span className="text-muted-foreground">
                           رسوم التوصيل
                         </span>
+
                         <span className="font-medium">
                           {formatPrice(
                             order.delivery_fee,
@@ -532,6 +541,7 @@ function AdminOrders() {
                         <span className="font-semibold text-foreground">
                           الإجمالي
                         </span>
+
                         <span className="font-bold text-primary">
                           {formatPrice(order.total)}
                         </span>
