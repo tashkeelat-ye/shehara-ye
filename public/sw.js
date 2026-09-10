@@ -1,5 +1,5 @@
 const CACHE_NAME =
-  "shehara-v10";
+  "shehara-v11";
 
 const APP_SHELL = [
   "/",
@@ -14,16 +14,15 @@ self.addEventListener(
       caches
         .open(CACHE_NAME)
         .then((cache) =>
-          cache.addAll(
-            APP_SHELL,
-          ),
-        )
-        .catch(() => {
-          /*
-           * لا نمنع تثبيت Service Worker
-           * إذا تعذر تخزين أحد الملفات.
-           */
-        }),
+          cache
+            .addAll(APP_SHELL)
+            .catch(() => {
+              /*
+               * لا نمنع تثبيت Service Worker
+               * إذا تعذر تخزين أحد الملفات.
+               */
+            }),
+        ),
     );
 
     self.skipWaiting();
@@ -69,10 +68,9 @@ self.addEventListener(
       return;
     }
 
-    const url =
-      new URL(
-        event.request.url,
-      );
+    const url = new URL(
+      event.request.url,
+    );
 
     if (
       url.origin !==
@@ -112,6 +110,12 @@ self.addEventListener(
   },
 );
 
+/*
+ * ============================================================
+ * WEB PUSH
+ * ============================================================
+ */
+
 self.addEventListener(
   "push",
   (event) => {
@@ -124,11 +128,15 @@ self.addEventListener(
       }
     } catch {
       try {
-        data = event.data
-          ? JSON.parse(
-              event.data.text(),
-            )
-          : {};
+        const text =
+          event.data
+            ? event.data.text()
+            : "";
+
+        if (text) {
+          data =
+            JSON.parse(text);
+        }
       } catch {
         data = {};
       }
@@ -136,56 +144,83 @@ self.addEventListener(
 
     const title =
       data.title ||
-      "طلبية جديدة من شهارة 🛍️";
+      "إشعار من شهارة 🔔";
 
     const body =
       data.body ||
-      "لديك طلبية جديدة في لوحة الإدارة.";
+      "لديك إشعار جديد من شهارة.";
 
     const linkUrl =
       data.link_url ||
-      "/admin/orders";
+      "/";
 
     const notificationId =
       data.notification_id ||
-      `shehara-${Date.now()}`;
+      `shehara-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}`;
+
+    /*
+     * مهم جداً:
+     *
+     * silent: false
+     *
+     * يعني أن الإشعار غير صامت،
+     * ويترك للمتصفح/Android تشغيل
+     * صوت قناة الإشعارات الخاصة به.
+     *
+     * Web Push لا يسمح بتحديد ملف MP3
+     * مخصص من Service Worker.
+     */
 
     const options = {
       body,
 
-      icon: "/icon-192.png",
+      icon:
+        "/icon-192.png",
 
-      badge: "/icon-192.png",
+      badge:
+        "/icon-192.png",
 
-      dir: "rtl",
+      dir:
+        "rtl",
 
-      lang: "ar",
+      lang:
+        "ar",
 
-      tag: notificationId,
+      tag:
+        `shehara-${notificationId}`,
 
-      renotify: true,
+      renotify:
+        true,
 
-      requireInteraction: true,
+      requireInteraction:
+        true,
 
-      silent: false,
+      silent:
+        false,
 
       vibrate: [
         300,
         150,
         300,
         150,
-        600,
+        700,
       ],
 
-      timestamp: Date.now(),
+      timestamp:
+        Date.now(),
 
       data: {
-        url: linkUrl,
+        url:
+          linkUrl,
+
         notification_id:
           notificationId,
+
         kind:
           data.kind ||
-          "new_order",
+          "notification",
       },
     };
 
@@ -198,6 +233,12 @@ self.addEventListener(
   },
 );
 
+/*
+ * ============================================================
+ * فتح الإشعار
+ * ============================================================
+ */
+
 self.addEventListener(
   "notificationclick",
   (event) => {
@@ -206,7 +247,7 @@ self.addEventListener(
     const targetUrl =
       event.notification?.data
         ?.url ||
-      "/admin/orders";
+      "/";
 
     event.waitUntil(
       self.clients
@@ -215,17 +256,19 @@ self.addEventListener(
           includeUncontrolled: true,
         })
         .then((clients) => {
-          for (const client of clients) {
+          const target =
+            new URL(
+              targetUrl,
+              self.location.origin,
+            );
+
+          for (
+            const client of clients
+          ) {
             try {
               const clientUrl =
                 new URL(
                   client.url,
-                );
-
-              const target =
-                new URL(
-                  targetUrl,
-                  self.location.origin,
                 );
 
               if (
@@ -247,10 +290,11 @@ self.addEventListener(
           }
 
           if (
-            self.clients.openWindow
+            self.clients
+              .openWindow
           ) {
             return self.clients.openWindow(
-              targetUrl,
+              target.href,
             );
           }
 
