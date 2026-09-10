@@ -16,8 +16,7 @@ import { useCart } from "@/lib/cart-context";
 import { OffersDialog } from "@/components/offers-dialog";
 
 export function BottomNav() {
-  const location =
-    useLocation();
+  const location = useLocation();
 
   const {
     count,
@@ -32,53 +31,81 @@ export function BottomNav() {
   const pathname =
     location.pathname;
 
-  const isActive = (
-    path: string,
-    exact = false,
-  ) =>
-    exact
-      ? pathname === path
-      : pathname.startsWith(path);
+  const isHome =
+    pathname === "/";
 
-  const itemCls = (
-    active: boolean,
-  ) => `
+  const isProducts =
+    pathname.startsWith(
+      "/products",
+    );
+
+  const isAccount =
+    pathname.startsWith(
+      "/account",
+    );
+
+  const itemBase = `
     group
     relative
     flex
-    min-h-[62px]
-    w-full
+    min-w-0
+    flex-1
     flex-col
     items-center
     justify-center
     gap-1
     px-1
-    py-1.5
+    py-2
     text-[10px]
+    font-medium
+    outline-none
     transition-all
-    duration-200
-    active:scale-90
-    ${
-      active
-        ? "font-bold text-primary"
-        : "font-medium text-muted-foreground"
-    }
+    duration-300
+    active:scale-95
+    focus-visible:ring-2
+    focus-visible:ring-inset
+    focus-visible:ring-primary
   `;
 
-  const iconWrap = (
+  const iconContainer = (
     active: boolean,
   ) => `
     relative
-    grid
-    h-8
-    w-11
-    place-items-center
+    flex
+    h-9
+    w-12
+    items-center
+    justify-center
+    rounded-2xl
     transition-all
-    duration-200
+    duration-300
     ${
       active
-        ? "bg-primary/12"
-        : "group-hover:bg-foreground/5"
+        ? `
+          bg-primary/12
+          text-primary
+          shadow-[0_6px_20px_-14px_rgba(226,114,58,0.9)]
+        `
+        : `
+          text-muted-foreground
+          group-hover:bg-muted/70
+          group-hover:text-foreground
+        `
+    }
+  `;
+
+  const labelClass = (
+    active: boolean,
+  ) => `
+    max-w-full
+    truncate
+    leading-4
+    transition-colors
+    duration-300
+    ${
+      active
+        ? "font-extrabold text-primary"
+        : "text-muted-foreground"
     }
   `;
 
@@ -98,202 +125,342 @@ export function BottomNav() {
       >
         <div
           className="
+            relative
             w-full
-            overflow-hidden
-            border
-            border-x-0
-            border-b-0
-            border-border
-            bg-card/95
-            shadow-[0_-15px_40px_-25px_rgba(0,0,0,0.45)]
-            backdrop-blur-xl
+            border-t
+            border-border/70
+            bg-background/96
+            shadow-[0_-18px_45px_-30px_rgba(0,0,0,0.65)]
+            backdrop-blur-2xl
+            supports-[backdrop-filter]:bg-background/82
           "
         >
+          {/* خط الهوية */}
           <div
             aria-hidden="true"
             className="
+              absolute
+              inset-x-0
+              top-0
               h-[2px]
-              w-full
+              overflow-hidden
               bg-gradient-to-r
               from-transparent
-              via-primary
+              via-primary/70
               to-transparent
             "
           />
 
-          <ul
+          <div
             className="
-              grid
-              min-h-[66px]
+              mx-auto
+              flex
               w-full
-              grid-cols-5
-              px-1
+              max-w-lg
+              items-stretch
+              px-2
               pt-1
-              pb-[env(safe-area-inset-bottom)]
+              pb-[max(5px,env(safe-area-inset-bottom))]
             "
           >
             {/* الرئيسية */}
-            <li className="flex">
-              <Link
-                to="/"
-                className={itemCls(
-                  isActive(
-                    "/",
-                    true,
-                  ),
+            <Link
+              to="/"
+              aria-current={
+                isHome
+                  ? "page"
+                  : undefined
+              }
+              className={`${itemBase} ${
+                isHome
+                  ? "text-primary"
+                  : ""
+              }`}
+            >
+              <span
+                className={iconContainer(
+                  isHome,
                 )}
               >
-                <span
-                  className={iconWrap(
-                    isActive(
-                      "/",
-                      true,
-                    ),
-                  )}
-                >
-                  <Home className="h-[20px] w-[20px]" />
-                </span>
+                {isHome ? (
+                  <span
+                    aria-hidden="true"
+                    className="
+                      absolute
+                      inset-1
+                      rounded-xl
+                      bg-primary/7
+                    "
+                  />
+                ) : null}
 
-                <span className="truncate leading-4">
-                  الرئيسية
-                </span>
-              </Link>
-            </li>
+                <Home
+                  className="
+                    relative
+                    z-10
+                    h-[20px]
+                    w-[20px]
+                  "
+                  strokeWidth={
+                    isHome ? 2.5 : 2
+                  }
+                />
+              </span>
+
+              <span
+                className={labelClass(
+                  isHome,
+                )}
+              >
+                الرئيسية
+              </span>
+
+              {isHome ? (
+                <span
+                  aria-hidden="true"
+                  className="
+                    absolute
+                    bottom-0.5
+                    h-1
+                    w-5
+                    rounded-full
+                    bg-primary
+                  "
+                />
+              ) : null}
+            </Link>
 
             {/* الأقسام */}
-            <li className="flex">
-              <Link
-                to="/products"
-                className={itemCls(
-                  isActive(
-                    "/products",
-                  ),
+            <Link
+              to="/products"
+              aria-current={
+                isProducts
+                  ? "page"
+                  : undefined
+              }
+              className={`${itemBase} ${
+                isProducts
+                  ? "text-primary"
+                  : ""
+              }`}
+            >
+              <span
+                className={iconContainer(
+                  isProducts,
                 )}
               >
-                <span
-                  className={iconWrap(
-                    isActive(
-                      "/products",
-                    ),
-                  )}
-                >
-                  <Grid2X2 className="h-[20px] w-[20px]" />
-                </span>
+                <Grid2X2
+                  className="
+                    h-[20px]
+                    w-[20px]
+                  "
+                  strokeWidth={
+                    isProducts
+                      ? 2.5
+                      : 2
+                  }
+                />
+              </span>
 
-                <span className="truncate leading-4">
-                  الأقسام
-                </span>
-              </Link>
-            </li>
+              <span
+                className={labelClass(
+                  isProducts,
+                )}
+              >
+                الأقسام
+              </span>
+
+              {isProducts ? (
+                <span
+                  aria-hidden="true"
+                  className="
+                    absolute
+                    bottom-0.5
+                    h-1
+                    w-5
+                    rounded-full
+                    bg-primary
+                  "
+                />
+              ) : null}
+            </Link>
 
             {/* العروض */}
-            <li className="flex">
-              <button
-                type="button"
-                aria-label="العروض"
-                onClick={() =>
-                  setOffersOpen(true)
-                }
-                className={itemCls(
-                  offersOpen ||
-                    isActive(
-                      "/offers",
-                    ),
+            <button
+              type="button"
+              aria-label="العروض"
+              aria-expanded={
+                offersOpen
+              }
+              onClick={() =>
+                setOffersOpen(true)
+              }
+              className={`${itemBase} ${
+                offersOpen
+                  ? "text-primary"
+                  : ""
+              }`}
+            >
+              <span
+                className={iconContainer(
+                  offersOpen,
                 )}
               >
-                <span
-                  className={iconWrap(
-                    offersOpen ||
-                      isActive(
-                        "/offers",
-                      ),
-                  )}
-                >
-                  <Tag className="h-[20px] w-[20px]" />
-                </span>
+                <Tag
+                  className="
+                    h-[20px]
+                    w-[20px]
+                  "
+                  strokeWidth={
+                    offersOpen
+                      ? 2.5
+                      : 2
+                  }
+                />
+              </span>
 
-                <span className="truncate leading-4">
-                  العروض
-                </span>
-              </button>
-            </li>
+              <span
+                className={labelClass(
+                  offersOpen,
+                )}
+              >
+                العروض
+              </span>
+
+              {offersOpen ? (
+                <span
+                  aria-hidden="true"
+                  className="
+                    absolute
+                    bottom-0.5
+                    h-1
+                    w-5
+                    rounded-full
+                    bg-primary
+                  "
+                />
+              ) : null}
+            </button>
 
             {/* السلة */}
-            <li className="flex">
-              <button
-                type="button"
-                aria-label="سلة المشتريات"
-                onClick={() =>
-                  setDrawerOpen(true)
-                }
-                className={itemCls(
+            <button
+              type="button"
+              aria-label={`سلة المشتريات${
+                count > 0
+                  ? `، ${count} منتجات`
+                  : ""
+              }`}
+              onClick={() =>
+                setDrawerOpen(true)
+              }
+              className={itemBase}
+            >
+              <span
+                className={iconContainer(
                   false,
                 )}
               >
-                <span
-                  className={iconWrap(
-                    false,
-                  )}
-                >
-                  <ShoppingCart className="h-[20px] w-[20px]" />
+                <ShoppingCart
+                  className="
+                    h-[20px]
+                    w-[20px]
+                  "
+                  strokeWidth={2}
+                />
 
-                  {count > 0 ? (
-                    <span
-                      className="
-                        absolute
-                        -top-1
-                        left-1
-                        grid
-                        h-[18px]
-                        min-w-[18px]
-                        place-items-center
-                        rounded-full
-                        bg-primary
-                        px-1
-                        text-[9px]
-                        font-bold
-                        text-primary-foreground
-                      "
-                    >
-                      {count > 99
-                        ? "99+"
-                        : count}
-                    </span>
-                  ) : null}
-                </span>
+                {count > 0 ? (
+                  <span
+                    aria-label={`${count} في السلة`}
+                    className="
+                      absolute
+                      -end-0.5
+                      -top-1
+                      flex
+                      min-h-[18px]
+                      min-w-[18px]
+                      items-center
+                      justify-center
+                      rounded-full
+                      border-2
+                      border-background
+                      bg-primary
+                      px-1
+                      text-[8px]
+                      font-extrabold
+                      leading-none
+                      text-primary-foreground
+                      shadow-sm
+                    "
+                  >
+                    {count > 99
+                      ? "99+"
+                      : count}
+                  </span>
+                ) : null}
+              </span>
 
-                <span className="truncate leading-4">
-                  السلة
-                </span>
-              </button>
-            </li>
-
-            {/* حسابي */}
-            <li className="flex">
-              <Link
-                to="/account"
-                className={itemCls(
-                  isActive(
-                    "/account",
-                  ),
+              <span
+                className={labelClass(
+                  false,
                 )}
               >
-                <span
-                  className={iconWrap(
-                    isActive(
-                      "/account",
-                    ),
-                  )}
-                >
-                  <User className="h-[20px] w-[20px]" />
-                </span>
+                السلة
+              </span>
+            </button>
 
-                <span className="truncate leading-4">
-                  حسابي
-                </span>
-              </Link>
-            </li>
-          </ul>
+            {/* حسابي */}
+            <Link
+              to="/account"
+              aria-current={
+                isAccount
+                  ? "page"
+                  : undefined
+              }
+              className={`${itemBase} ${
+                isAccount
+                  ? "text-primary"
+                  : ""
+              }`}
+            >
+              <span
+                className={iconContainer(
+                  isAccount,
+                )}
+              >
+                <User
+                  className="
+                    h-[20px]
+                    w-[20px]
+                  "
+                  strokeWidth={
+                    isAccount ? 2.5 : 2
+                  }
+                />
+              </span>
+
+              <span
+                className={labelClass(
+                  isAccount,
+                )}
+              >
+                حسابي
+              </span>
+
+              {isAccount ? (
+                <span
+                  aria-hidden="true"
+                  className="
+                    absolute
+                    bottom-0.5
+                    h-1
+                    w-5
+                    rounded-full
+                    bg-primary
+                  "
+                />
+              ) : null}
+            </Link>
+          </div>
         </div>
       </nav>
 
