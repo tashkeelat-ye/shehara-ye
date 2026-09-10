@@ -17,13 +17,38 @@ type IncomingNotification = {
   link_url?: string | null;
 };
 
+const NOTIFICATION_SOUND = "/notification.mp3";
+
+const AUDIO_UNLOCK_STORAGE_KEY =
+  "shehara_notification_audio_unlocked";
+
+function createNotificationAudio(): HTMLAudioElement {
+  const audio = new Audio(
+    NOTIFICATION_SOUND,
+  );
+
+  audio.preload = "auto";
+  audio.volume = 1;
+  audio.setAttribute(
+    "playsinline",
+    "true",
+  );
+
+  return audio;
+}
+
 export function NotificationListener({
   currentUserId,
 }: NotificationListenerProps) {
   const audioRef =
-    useRef<HTMLAudioElement | null>(null);
+    useRef<HTMLAudioElement | null>(
+      null,
+    );
 
   const audioUnlockedRef =
+    useRef(false);
+
+  const mountedRef =
     useRef(false);
 
   useEffect(() => {
@@ -31,9 +56,17 @@ export function NotificationListener({
       return;
     }
 
+    mountedRef.current = true;
+
     let disposed = false;
 
-    const createAudio = () => {
+    /*
+     * ========================================================
+     * إنشاء الصوت
+     * ========================================================
+     */
+
+    const getAudio = () => {
       if (
         typeof window === "undefined"
       ) {
@@ -41,23 +74,43 @@ export function NotificationListener({
       }
 
       if (!audioRef.current) {
-        const audio =
-          new Audio(
-            "/notification.mp3",
-          );
-
-        audio.preload = "auto";
-        audio.volume = 1;
-        audio.setAttribute(
-          "playsinline",
-          "true",
-        );
-
-        audioRef.current = audio;
+        audioRef.current =
+          createNotificationAudio();
       }
 
       return audioRef.current;
     };
+
+    /*
+     * ========================================================
+     * اختبار تحميل ملف الصوت
+     * ========================================================
+     */
+
+    const preloadAudio = () => {
+      const audio = getAudio();
+
+      if (!audio) {
+        return;
+      }
+
+      try {
+        audio.load();
+      } catch {
+        // لا نوقف الإشعارات إذا تعذر تحميل الصوت.
+      }
+    };
+
+    /*
+     * ========================================================
+     * فتح صلاحية تشغيل الصوت
+     *
+     * Android/Chrome يمنع الصوت التلقائي قبل وجود
+     * تفاعل من المستخدم.
+     *
+     * لذلك ننفذ تشغيل/إيقاف قصير جداً عند أول تفاعل.
+     * ========================================================
+     */
 
     const unlockAudio = () => {
       if (
@@ -67,102 +120,167 @@ export function NotificationListener({
         return;
       }
 
-      const audio = createAudio();
+      const audio = getAudio();
 
       if (!audio) {
         return;
       }
 
       try {
+        audio.muted = true;
+        audio.volume = 0;
         audio.currentTime = 0;
 
-        void audio
-          .play()
-          .then(() => {
-            if (disposed) {
-              return;
-            }
+        const playPromise =
+          audio.play();
 
-            audio.pause();
-            audio.currentTime = 0;
+        if (
+          playPromise &&
+          typeof playPromise.then ===
+            "function"
+        ) {
+          void playPromise
+            .then(() => {
+              if (disposed) {
+                return;
+              }
 
-            audioUnlockedRef.current =
-              true;
-          })
-          .catch(() => {
-            /*
-             * المتصفح لم يسمح بعد
-             * بتشغيل الصوت.
-             *
-             * سنعيد المحاولة مع تفاعل
-             * مستخدم لاحق.
-             */
-          });
+              audio.pause();
+
+              try {
+                audio.currentTime = 0;
+              } catch {
+                // تجاهل.
+              }
+
+              audio.muted = false;
+              audio.volume = 1;
+
+              audioUnlockedRef.current =
+                true;
+
+              try {
+                sessionStorage.setItem(
+                  AUDIO_UNLOCK_STORAGE_KEY,
+                  "true",
+                );
+              } catch {
+                // تجاهل.
+              }
+            })
+            .catch(() => {
+              /*
+               * سيعاد المحاولة عند التفاعل
+               * التالي للمستخدم.
+               */
+            });
+        }
       } catch {
-        // تجاهل منع المتصفح للصوت.
+        // المتصفح منع التشغيل.
       }
     };
 
+    /*
+     * ========================================================
+     * تشغيل صوت الإشعار
+     * ========================================================
+     */
+
     const playNotificationSound =
       () => {
-        const audio =
-          createAudio();
+        if (disposed) {
+          return;
+        }
+
+        const audio = getAudio();
 
         if (!audio) {
           return;
         }
 
         try {
+          /*
+           * إعادة الصوت من البداية حتى لو كان
+           * هناك إشعار سابق ما زال يعمل.
+           */
           audio.pause();
           audio.currentTime = 0;
+          audio.muted = false;
           audio.volume = 1;
 
-          void audio.play().catch(
-            (error) => {
-              console.warn(
-                "تعذر تشغيل صوت إشعار الطلب:",
-                error,
-              );
-            },
-          );
+          const promise =
+            audio.play();
+
+          if (
+            promise &&
+            typeof promise.catch ===
+              "function"
+          ) {
+            void promise.catch(
+              (error) => {
+                /*
+                 * إذا منع المتصفح التشغيل،
+                 * نحاول فتح الصوت مرة أخرى
+                 * بعد تفاعل المستخدم.
+                 */
+                audioUnlockedRef.current =
+                  false;
+
+                console.warn(
+                  "تعذر تشغيل صوت إشعار شهارة:",
+                  error,
+                );
+              },
+            );
+          }
         } catch (error) {
           console.warn(
-            "خطأ في تشغيل صوت إشعار الطلب:",
+            "خطأ في تشغيل صوت إشعار شهارة:",
             error,
           );
         }
       };
 
-    const handleVisibilityChange =
-      () => {
-        /*
-         * عندما تعود لوحة الإدارة
-         * إلى الواجهة، نعيد محاولة
-         * فتح صلاحية الصوت.
-         */
-        if (
-          document.visibilityState ===
-          "visible"
-        ) {
-          unlockAudio();
-        }
-      };
+    /*
+     * ========================================================
+     * تهيئة الصوت
+     * ========================================================
+     */
 
-    const handleFocus = () => {
-      unlockAudio();
-    };
+    preloadAudio();
+
+    try {
+      if (
+        sessionStorage.getItem(
+          AUDIO_UNLOCK_STORAGE_KEY,
+        ) === "true"
+      ) {
+        /*
+         * لا نعتمد على القيمة وحدها،
+         * لأن المتصفح قد يعيد ضبط سياسة
+         * التشغيل.
+         */
+        audioUnlockedRef.current =
+          true;
+      }
+    } catch {
+      // تجاهل.
+    }
+
+    /*
+     * ========================================================
+     * جميع تفاعلات المستخدم
+     * ========================================================
+     */
+
+    const handleUserInteraction =
+      () => {
+        unlockAudio();
+      };
 
     window.addEventListener(
       "pointerdown",
-      unlockAudio,
-      {
-        passive: true,
-      },
-    );
-
-    window.addEventListener(
-      "keydown",
-      unlockAudio,
+      handleUserInteraction,
       {
         passive: true,
       },
@@ -170,7 +288,7 @@ export function NotificationListener({
 
     window.addEventListener(
       "touchstart",
-      unlockAudio,
+      handleUserInteraction,
       {
         passive: true,
       },
@@ -178,7 +296,15 @@ export function NotificationListener({
 
     window.addEventListener(
       "click",
-      unlockAudio,
+      handleUserInteraction,
+      {
+        passive: true,
+      },
+    );
+
+    window.addEventListener(
+      "keydown",
+      handleUserInteraction,
       {
         passive: true,
       },
@@ -186,8 +312,30 @@ export function NotificationListener({
 
     window.addEventListener(
       "focus",
-      handleFocus,
+      handleUserInteraction,
     );
+
+    /*
+     * ========================================================
+     * عند عودة التطبيق للواجهة
+     * ========================================================
+     */
+
+    const handleVisibilityChange =
+      () => {
+        if (
+          document.visibilityState ===
+          "visible"
+        ) {
+          preloadAudio();
+
+          if (
+            !audioUnlockedRef.current
+          ) {
+            unlockAudio();
+          }
+        }
+      };
 
     document.addEventListener(
       "visibilitychange",
@@ -195,16 +343,27 @@ export function NotificationListener({
     );
 
     /*
-     * نحاول تجهيز الصوت فوراً.
-     * قد يمنعه المتصفح، لكن أول
-     * تفاعل للمستخدم سيعيد المحاولة.
+     * ========================================================
+     * محاولة أولية
+     * ========================================================
      */
+
     unlockAudio();
+
+    /*
+     * ========================================================
+     * Realtime notifications
+     *
+     * مهم:
+     * نستقبل جميع أنواع إشعارات العميل.
+     * لا نقتصر على new_order.
+     * ========================================================
+     */
 
     const channel =
       supabase
         .channel(
-          `admin-notifications-${currentUserId}`,
+          `user-notifications-${currentUserId}`,
         )
         .on(
           "postgres_changes",
@@ -215,31 +374,33 @@ export function NotificationListener({
             filter: `user_id=eq.${currentUserId}`,
           },
           (payload) => {
-            const notification =
-              payload.new as IncomingNotification;
-
-            if (
-              notification.kind !==
-              "new_order"
-            ) {
+            if (disposed) {
               return;
             }
 
+            const notification =
+              payload.new as IncomingNotification;
+
             /*
-             * الصوت داخل لوحة الإدارة.
+             * لا نحتاج إلى فحص kind هنا.
+             *
+             * أي إشعار يصل لهذا المستخدم
+             * يجب أن يكون له صوت.
              */
+
             playNotificationSound();
 
             /*
-             * إشعار داخل لوحة الإدارة.
+             * عرض الإشعار داخل التطبيق.
              */
+
             toast(
               notification.title ||
-                "طلبية جديدة من شهارة 🛍️",
+                "إشعار من شهارة 🔔",
               {
                 description:
                   notification.body ||
-                  "لديك طلبية جديدة في لوحة الإدارة.",
+                  "لديك إشعار جديد من شهارة.",
 
                 icon: (
                   <Bell className="h-4 w-4 text-primary" />
@@ -247,55 +408,84 @@ export function NotificationListener({
 
                 duration: 15000,
 
-                action: {
-                  label: "فتح الطلبات",
-
-                  onClick: () => {
-                    window.location.href =
-                      notification.link_url ||
-                      "/admin/orders";
-                  },
-                },
+                action:
+                  notification.link_url
+                    ? {
+                        label:
+                          "فتح",
+                        onClick: () => {
+                          window.location.href =
+                            notification.link_url ||
+                            "/";
+                        },
+                      }
+                    : undefined,
               },
             );
           },
         )
         .subscribe((status) => {
           if (
-            status === "CHANNEL_ERROR"
+            status ===
+            "SUBSCRIBED"
+          ) {
+            console.info(
+              "تم تفعيل إشعارات Realtime للمستخدم.",
+            );
+          }
+
+          if (
+            status ===
+            "CHANNEL_ERROR"
           ) {
             console.error(
-              "تعذر الاشتراك في قناة إشعارات الإدارة.",
+              "تعذر الاشتراك في قناة إشعارات المستخدم.",
+            );
+          }
+
+          if (
+            status ===
+            "TIMED_OUT"
+          ) {
+            console.warn(
+              "انتهت مهلة قناة إشعارات المستخدم.",
             );
           }
         });
 
+    /*
+     * ========================================================
+     * تنظيف
+     * ========================================================
+     */
+
     return () => {
       disposed = true;
+      mountedRef.current = false;
 
       window.removeEventListener(
         "pointerdown",
-        unlockAudio,
-      );
-
-      window.removeEventListener(
-        "keydown",
-        unlockAudio,
+        handleUserInteraction,
       );
 
       window.removeEventListener(
         "touchstart",
-        unlockAudio,
+        handleUserInteraction,
       );
 
       window.removeEventListener(
         "click",
-        unlockAudio,
+        handleUserInteraction,
+      );
+
+      window.removeEventListener(
+        "keydown",
+        handleUserInteraction,
       );
 
       window.removeEventListener(
         "focus",
-        handleFocus,
+        handleUserInteraction,
       );
 
       document.removeEventListener(
@@ -308,8 +498,15 @@ export function NotificationListener({
       );
 
       if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
+        try {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.src = "";
+          audioRef.current.load();
+        } catch {
+          // تجاهل.
+        }
+
         audioRef.current = null;
       }
 
