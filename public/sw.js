@@ -1,109 +1,136 @@
-/* eslint-env serviceworker */
+const CACHE_NAME =
+  "shehara-v10";
 
-/**
- * =========================================================
- * شهارة للتسوق
- * Service Worker
- * =========================================================
- */
-
-const CACHE_VERSION = "v9";
-
-const SHELL_CACHE =
-  `shehara-shell-${CACHE_VERSION}`;
-
-const RUNTIME_CACHE =
-  `shehara-runtime-${CACHE_VERSION}`;
-
-const OFFLINE_URL =
-  "/offline.html";
-
-
-/* =========================================================
- * Install
- * ========================================================= */
+const APP_SHELL = [
+  "/",
+  "/icon-192.png",
+  "/icon-512.png",
+];
 
 self.addEventListener(
   "install",
   (event) => {
     event.waitUntil(
       caches
-        .open(SHELL_CACHE)
-        .then((cache) => {
-          return cache.add("/");
-        })
+        .open(CACHE_NAME)
+        .then((cache) =>
+          cache.addAll(
+            APP_SHELL,
+          ),
+        )
         .catch(() => {
-          // لا تفشل عملية التثبيت بسبب cache.
-        })
-        .then(() => {
-          return self.skipWaiting();
+          /*
+           * لا نمنع تثبيت Service Worker
+           * إذا تعذر تخزين أحد الملفات.
+           */
         }),
     );
+
+    self.skipWaiting();
   },
 );
-
-
-/* =========================================================
- * Activate
- * ========================================================= */
 
 self.addEventListener(
   "activate",
   (event) => {
     event.waitUntil(
-      caches
-        .keys()
-        .then((cacheNames) => {
-          return Promise.all(
-            cacheNames.map(
-              (cacheName) => {
-                if (
-                  cacheName.startsWith(
-                    "shehara-",
-                  ) &&
-                  cacheName !==
-                    SHELL_CACHE &&
-                  cacheName !==
-                    RUNTIME_CACHE
-                ) {
-                  return caches.delete(
-                    cacheName,
-                  );
-                }
+      Promise.all([
+        self.clients.claim(),
 
-                return Promise.resolve(
-                  false,
-                );
-              },
+        caches
+          .keys()
+          .then((keys) =>
+            Promise.all(
+              keys
+                .filter(
+                  (key) =>
+                    key !==
+                    CACHE_NAME,
+                )
+                .map((key) =>
+                  caches.delete(
+                    key,
+                  ),
+                ),
             ),
-          );
-        })
-        .then(() => {
-          return self.clients.claim();
-        }),
+          ),
+      ]),
     );
   },
 );
 
+self.addEventListener(
+  "fetch",
+  (event) => {
+    if (
+      event.request.method !==
+      "GET"
+    ) {
+      return;
+    }
 
-/* =========================================================
- * Web Push
- * ========================================================= */
+    const url =
+      new URL(
+        event.request.url,
+      );
+
+    if (
+      url.origin !==
+      self.location.origin
+    ) {
+      return;
+    }
+
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (
+            response &&
+            response.ok
+          ) {
+            const copy =
+              response.clone();
+
+            void caches
+              .open(CACHE_NAME)
+              .then((cache) =>
+                cache.put(
+                  event.request,
+                  copy,
+                ),
+              );
+          }
+
+          return response;
+        })
+        .catch(() =>
+          caches.match(
+            event.request,
+          ),
+        ),
+    );
+  },
+);
 
 self.addEventListener(
   "push",
   (event) => {
     let data = {};
 
-    if (event.data) {
-      try {
+    try {
+      if (event.data) {
         data =
           event.data.json();
+      }
+    } catch {
+      try {
+        data = event.data
+          ? JSON.parse(
+              event.data.text(),
+            )
+          : {};
       } catch {
-        data = {
-          body:
-            event.data.text(),
-        };
+        data = {};
       }
     }
 
@@ -115,66 +142,47 @@ self.addEventListener(
       data.body ||
       "لديك طلبية جديدة في لوحة الإدارة.";
 
-    const notificationUrl =
+    const linkUrl =
       data.link_url ||
-      data.url ||
       "/admin/orders";
 
-    const notificationTag =
-      data.tag ||
-      (
-        data.notification_id
-          ? `notification-${data.notification_id}`
-          : `shehara-${Date.now()}`
-      );
+    const notificationId =
+      data.notification_id ||
+      `shehara-${Date.now()}`;
 
     const options = {
       body,
+
+      icon: "/icon-192.png",
+
+      badge: "/icon-192.png",
 
       dir: "rtl",
 
       lang: "ar",
 
-      icon:
-        "/icon-192.png",
-
-      badge:
-        "/icon-192.png",
-
-      tag:
-        notificationTag,
-
-      /*
-       * لا تجعل الإشعار صامتًا.
-       *
-       * الصوت النهائي يخضع لإعدادات
-       * Android والمتصفح.
-       */
-      silent: false,
+      tag: notificationId,
 
       renotify: true,
 
       requireInteraction: true,
 
+      silent: false,
+
       vibrate: [
-        250,
-        100,
-        250,
-        100,
-        500,
+        300,
+        150,
+        300,
+        150,
+        600,
       ],
 
-      timestamp:
-        Date.now(),
+      timestamp: Date.now(),
 
       data: {
-        url:
-          notificationUrl,
-
+        url: linkUrl,
         notification_id:
-          data.notification_id ||
-          null,
-
+          notificationId,
         kind:
           data.kind ||
           "new_order",
@@ -182,19 +190,13 @@ self.addEventListener(
     };
 
     event.waitUntil(
-      self.registration
-        .showNotification(
-          title,
-          options,
-        ),
+      self.registration.showNotification(
+        title,
+        options,
+      ),
     );
   },
 );
-
-
-/* =========================================================
- * Notification Click
- * ========================================================= */
 
 self.addEventListener(
   "notificationclick",
@@ -202,8 +204,7 @@ self.addEventListener(
     event.notification.close();
 
     const targetUrl =
-      event.notification
-        ?.data
+      event.notification?.data
         ?.url ||
       "/admin/orders";
 
@@ -213,33 +214,40 @@ self.addEventListener(
           type: "window",
           includeUncontrolled: true,
         })
-        .then(async (clientList) => {
-          for (
-            const client of clientList
-          ) {
-            if (
-              "focus" in client
-            ) {
-              try {
-                if (
-                  typeof client.navigate ===
-                  "function"
-                ) {
-                  await client.navigate(
-                    targetUrl,
-                  );
-                }
-              } catch {
-                // تجاهل فشل navigate.
-              }
+        .then((clients) => {
+          for (const client of clients) {
+            try {
+              const clientUrl =
+                new URL(
+                  client.url,
+                );
 
-              return client.focus();
+              const target =
+                new URL(
+                  targetUrl,
+                  self.location.origin,
+                );
+
+              if (
+                clientUrl.origin ===
+                  target.origin &&
+                "focus" in client
+              ) {
+                return client
+                  .navigate(
+                    target.href,
+                  )
+                  .then(() =>
+                    client.focus(),
+                  );
+              }
+            } catch {
+              // تجاهل العميل غير الصالح.
             }
           }
 
           if (
-            "openWindow" in
-            self.clients
+            self.clients.openWindow
           ) {
             return self.clients.openWindow(
               targetUrl,
@@ -249,176 +257,5 @@ self.addEventListener(
           return undefined;
         }),
     );
-  },
-);
-
-
-/* =========================================================
- * Fetch
- * ========================================================= */
-
-self.addEventListener(
-  "fetch",
-  (event) => {
-    const request =
-      event.request;
-
-    if (
-      request.method !== "GET"
-    ) {
-      return;
-    }
-
-    const url =
-      new URL(request.url);
-
-    if (
-      url.origin !==
-      self.location.origin
-    ) {
-      return;
-    }
-
-    if (
-      url.pathname.startsWith(
-        "/~oauth",
-      )
-    ) {
-      return;
-    }
-
-    if (
-      url.searchParams.has(
-        "connectivity",
-      )
-    ) {
-      event.respondWith(
-        fetch(request, {
-          cache: "no-store",
-        }),
-      );
-
-      return;
-    }
-
-    if (
-      request.mode ===
-      "navigate"
-    ) {
-      event.respondWith(
-        fetch(request)
-          .then((response) => {
-            if (response.ok) {
-              const clone =
-                response.clone();
-
-              caches
-                .open(
-                  RUNTIME_CACHE,
-                )
-                .then((cache) => {
-                  return cache.put(
-                    request,
-                    clone,
-                  );
-                })
-                .catch(() => {});
-            }
-
-            return response;
-          })
-          .catch(async () => {
-            const cached =
-              await caches.match(
-                request,
-              );
-
-            if (cached) {
-              return cached;
-            }
-
-            const home =
-              await caches.match(
-                "/",
-              );
-
-            if (home) {
-              return home;
-            }
-
-            const offline =
-              await caches.match(
-                OFFLINE_URL,
-              );
-
-            if (offline) {
-              return offline;
-            }
-
-            return new Response(
-              "أنت غير متصل بالإنترنت.",
-              {
-                status: 503,
-                headers: {
-                  "Content-Type":
-                    "text/plain; charset=utf-8",
-                },
-              },
-            );
-          }),
-      );
-
-      return;
-    }
-
-    const isStaticAsset =
-      /\.(?:js|css|png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf)$/i.test(
-        url.pathname,
-      );
-
-    if (isStaticAsset) {
-      event.respondWith(
-        caches
-          .match(request)
-          .then(
-            (cachedResponse) => {
-              if (cachedResponse) {
-                return cachedResponse;
-              }
-
-              return fetch(request)
-                .then(
-                  (response) => {
-                    if (
-                      response.ok
-                    ) {
-                      const clone =
-                        response.clone();
-
-                      caches
-                        .open(
-                          RUNTIME_CACHE,
-                        )
-                        .then(
-                          (cache) => {
-                            return cache.put(
-                              request,
-                              clone,
-                            );
-                          },
-                        )
-                        .catch(() => {});
-                    }
-
-                    return response;
-                  },
-                );
-            },
-          )
-          .catch(() =>
-            Response.error(),
-          ),
-      );
-    }
   },
 );
