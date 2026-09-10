@@ -5,177 +5,196 @@
  * شهارة للتسوق
  * Service Worker
  * =========================================================
- *
- * مسؤول عن:
- * - تحديث PWA
- * - التخزين المؤقت
- * - العمل دون اتصال
- * - Web Push Notifications
- * - فتح التطبيق عند الضغط على الإشعار
- *
- * ملاحظة:
- * صوت الإشعار عندما يكون التطبيق مغلقًا بالكامل
- * يخضع لإعدادات نظام التشغيل والمتصفح.
- * تشغيل notification.mp3 مخصص يتم من داخل التطبيق
- * عندما تكون الصفحة مفتوحة.
- * =========================================================
  */
 
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 
-const SHELL_CACHE = `shehara-shell-${CACHE_VERSION}`;
-const RUNTIME_CACHE = `shehara-runtime-${CACHE_VERSION}`;
+const SHELL_CACHE =
+  `shehara-shell-${CACHE_VERSION}`;
 
-const OFFLINE_URL = "/offline.html";
+const RUNTIME_CACHE =
+  `shehara-runtime-${CACHE_VERSION}`;
 
-/**
- * =========================================================
+const OFFLINE_URL =
+  "/offline.html";
+
+
+/* =========================================================
  * Install
- * =========================================================
- */
+ * ========================================================= */
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches
-      .open(SHELL_CACHE)
-      .then((cache) => {
-        return cache.add("/");
-      })
-      .catch((error) => {
-        console.warn(
-          "[Shehara SW] Cache install failed:",
-          error,
-        );
-      })
-      .then(() => {
-        return self.skipWaiting();
-      }),
-  );
-});
+self.addEventListener(
+  "install",
+  (event) => {
+    event.waitUntil(
+      caches
+        .open(SHELL_CACHE)
+        .then((cache) => {
+          return cache.add("/");
+        })
+        .catch(() => {
+          // لا تفشل عملية التثبيت بسبب cache.
+        })
+        .then(() => {
+          return self.skipWaiting();
+        }),
+    );
+  },
+);
 
-/**
- * =========================================================
+
+/* =========================================================
  * Activate
- * =========================================================
- */
+ * ========================================================= */
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (
-              cacheName.startsWith("shehara-") &&
-              cacheName !== SHELL_CACHE &&
-              cacheName !== RUNTIME_CACHE
-            ) {
-              return caches.delete(cacheName);
-            }
+self.addEventListener(
+  "activate",
+  (event) => {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((cacheNames) => {
+          return Promise.all(
+            cacheNames.map(
+              (cacheName) => {
+                if (
+                  cacheName.startsWith(
+                    "shehara-",
+                  ) &&
+                  cacheName !==
+                    SHELL_CACHE &&
+                  cacheName !==
+                    RUNTIME_CACHE
+                ) {
+                  return caches.delete(
+                    cacheName,
+                  );
+                }
 
-            return Promise.resolve(false);
-          }),
-        );
-      })
-      .then(() => {
-        return self.clients.claim();
-      }),
-  );
-});
+                return Promise.resolve(
+                  false,
+                );
+              },
+            ),
+          );
+        })
+        .then(() => {
+          return self.clients.claim();
+        }),
+    );
+  },
+);
 
-/**
- * =========================================================
- * Push Notifications
- * =========================================================
- *
- * يعمل حتى عندما تكون واجهة التطبيق غير مفتوحة،
- * بشرط أن يكون Web Push مسجلاً بشكل صحيح وأن يسمح
- * نظام التشغيل والمتصفح بالإشعارات.
- */
 
-self.addEventListener("push", (event) => {
-  let data = {};
+/* =========================================================
+ * Web Push
+ * ========================================================= */
 
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch {
-      data = {
-        body: event.data.text(),
-      };
+self.addEventListener(
+  "push",
+  (event) => {
+    let data = {};
+
+    if (event.data) {
+      try {
+        data =
+          event.data.json();
+      } catch {
+        data = {
+          body:
+            event.data.text(),
+        };
+      }
     }
-  }
 
-  const title =
-    data.title ||
-    "إشعار جديد من شهارة";
+    const title =
+      data.title ||
+      "طلبية جديدة من شهارة 🛍️";
 
-  const body =
-    data.body ||
-    "لديك تحديث جديد في متجر شهارة.";
+    const body =
+      data.body ||
+      "لديك طلبية جديدة في لوحة الإدارة.";
 
-  const notificationUrl =
-    data.link_url ||
-    data.url ||
-    "/";
+    const notificationUrl =
+      data.link_url ||
+      data.url ||
+      "/admin/orders";
 
-  const notificationTag =
-    data.tag ||
-    data.kind ||
-    "shehara-notification";
+    const notificationTag =
+      data.tag ||
+      (
+        data.notification_id
+          ? `notification-${data.notification_id}`
+          : `shehara-${Date.now()}`
+      );
 
-  const options = {
-    body,
-    dir: "rtl",
-    lang: "ar",
+    const options = {
+      body,
 
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+      dir: "rtl",
 
-    tag: notificationTag,
+      lang: "ar",
 
-    /**
-     * السماح بإعادة التنبيه عند وصول إشعار جديد
-     * بنفس النوع.
-     */
-    renotify: true,
+      icon:
+        "/icon-192.png",
 
-    /**
-     * إبقاء إشعار طلب جديد ظاهرًا حتى يتفاعل المستخدم
-     * معه، قدر الإمكان وفق نظام التشغيل.
-     */
-    requireInteraction: true,
+      badge:
+        "/icon-192.png",
 
-    /**
-     * اهتزاز الأجهزة التي تدعم ذلك.
-     */
-    vibrate: [250, 100, 250, 100, 400],
+      tag:
+        notificationTag,
 
-    timestamp: Date.now(),
+      /*
+       * لا تجعل الإشعار صامتًا.
+       *
+       * الصوت النهائي يخضع لإعدادات
+       * Android والمتصفح.
+       */
+      silent: false,
 
-    data: {
-      url: notificationUrl,
-      notification_id:
-        data.notification_id || null,
-      kind:
-        data.kind || null,
-    },
-  };
+      renotify: true,
 
-  event.waitUntil(
-    self.registration.showNotification(
-      title,
-      options,
-    ),
-  );
-});
+      requireInteraction: true,
 
-/**
- * =========================================================
+      vibrate: [
+        250,
+        100,
+        250,
+        100,
+        500,
+      ],
+
+      timestamp:
+        Date.now(),
+
+      data: {
+        url:
+          notificationUrl,
+
+        notification_id:
+          data.notification_id ||
+          null,
+
+        kind:
+          data.kind ||
+          "new_order",
+      },
+    };
+
+    event.waitUntil(
+      self.registration
+        .showNotification(
+          title,
+          options,
+        ),
+    );
+  },
+);
+
+
+/* =========================================================
  * Notification Click
- * =========================================================
- */
+ * ========================================================= */
 
 self.addEventListener(
   "notificationclick",
@@ -183,11 +202,10 @@ self.addEventListener(
     event.notification.close();
 
     const targetUrl =
-      event.notification &&
-      event.notification.data &&
-      event.notification.data.url
-        ? event.notification.data.url
-        : "/";
+      event.notification
+        ?.data
+        ?.url ||
+      "/admin/orders";
 
     event.waitUntil(
       self.clients
@@ -196,13 +214,10 @@ self.addEventListener(
           includeUncontrolled: true,
         })
         .then(async (clientList) => {
-          /**
-           * إذا كان التطبيق مفتوحًا بالفعل،
-           * نحاول استخدام النافذة الحالية بدل فتح نافذة جديدة.
-           */
-          for (const client of clientList) {
+          for (
+            const client of clientList
+          ) {
             if (
-              client.url &&
               "focus" in client
             ) {
               try {
@@ -215,19 +230,16 @@ self.addEventListener(
                   );
                 }
               } catch {
-                // تجاهل فشل التنقل واستمر بمحاولة التركيز.
+                // تجاهل فشل navigate.
               }
 
               return client.focus();
             }
           }
 
-          /**
-           * إذا لم يكن التطبيق مفتوحًا،
-           * افتح الرابط المطلوب.
-           */
           if (
-            "openWindow" in self.clients
+            "openWindow" in
+            self.clients
           ) {
             return self.clients.openWindow(
               targetUrl,
@@ -240,181 +252,173 @@ self.addEventListener(
   },
 );
 
-/**
- * =========================================================
+
+/* =========================================================
  * Fetch
- * =========================================================
- */
+ * ========================================================= */
 
-self.addEventListener("fetch", (event) => {
-  const request = event.request;
+self.addEventListener(
+  "fetch",
+  (event) => {
+    const request =
+      event.request;
 
-  /**
-   * Service Worker يتعامل مع GET فقط.
-   */
-  if (request.method !== "GET") {
-    return;
-  }
+    if (
+      request.method !== "GET"
+    ) {
+      return;
+    }
 
-  const url = new URL(request.url);
+    const url =
+      new URL(request.url);
 
-  /**
-   * لا نتعامل مع طلبات النطاقات الخارجية.
-   */
-  if (
-    url.origin !== self.location.origin
-  ) {
-    return;
-  }
+    if (
+      url.origin !==
+      self.location.origin
+    ) {
+      return;
+    }
 
-  /**
-   * لا نتدخل في OAuth.
-   */
-  if (
-    url.pathname.startsWith("/~oauth")
-  ) {
-    return;
-  }
+    if (
+      url.pathname.startsWith(
+        "/~oauth",
+      )
+    ) {
+      return;
+    }
 
-  /**
-   * =======================================================
-   * Connectivity Check
-   * =======================================================
-   */
-
-  if (
-    url.searchParams.has("connectivity")
-  ) {
-    event.respondWith(
-      fetch(request, {
-        cache: "no-store",
-      }),
-    );
-
-    return;
-  }
-
-  /**
-   * =======================================================
-   * صفحات التطبيق
-   *
-   * Network First
-   * ثم Cache
-   * ثم Offline
-   * =======================================================
-   */
-
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const responseClone =
-              response.clone();
-
-            caches
-              .open(RUNTIME_CACHE)
-              .then((cache) => {
-                return cache.put(
-                  request,
-                  responseClone,
-                );
-              })
-              .catch(() => {
-                // تجاهل خطأ التخزين المؤقت
-              });
-          }
-
-          return response;
-        })
-        .catch(async () => {
-          const cachedPage =
-            await caches.match(request);
-
-          if (cachedPage) {
-            return cachedPage;
-          }
-
-          const cachedHome =
-            await caches.match("/");
-
-          if (cachedHome) {
-            return cachedHome;
-          }
-
-          const offlinePage =
-            await caches.match(
-              OFFLINE_URL,
-            );
-
-          if (offlinePage) {
-            return offlinePage;
-          }
-
-          return new Response(
-            "أنت غير متصل بالإنترنت.",
-            {
-              status: 503,
-              headers: {
-                "Content-Type":
-                  "text/plain; charset=utf-8",
-              },
-            },
-          );
+    if (
+      url.searchParams.has(
+        "connectivity",
+      )
+    ) {
+      event.respondWith(
+        fetch(request, {
+          cache: "no-store",
         }),
-    );
+      );
 
-    return;
-  }
+      return;
+    }
 
-  /**
-   * =======================================================
-   * الملفات الثابتة
-   *
-   * Cache First
-   * ثم Network
-   * =======================================================
-   */
+    if (
+      request.mode ===
+      "navigate"
+    ) {
+      event.respondWith(
+        fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              const clone =
+                response.clone();
 
-  const isStaticAsset =
-    /\.(?:js|css|png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf)$/i.test(
-      url.pathname,
-    );
+              caches
+                .open(
+                  RUNTIME_CACHE,
+                )
+                .then((cache) => {
+                  return cache.put(
+                    request,
+                    clone,
+                  );
+                })
+                .catch(() => {});
+            }
 
-  if (isStaticAsset) {
-    event.respondWith(
-      caches
-        .match(request)
-        .then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
+            return response;
+          })
+          .catch(async () => {
+            const cached =
+              await caches.match(
+                request,
+              );
 
-          return fetch(request)
-            .then((response) => {
-              if (response.ok) {
-                const responseClone =
-                  response.clone();
+            if (cached) {
+              return cached;
+            }
 
-                caches
-                  .open(RUNTIME_CACHE)
-                  .then((cache) => {
-                    return cache.put(
-                      request,
-                      responseClone,
-                    );
-                  })
-                  .catch(() => {
-                    // تجاهل خطأ التخزين المؤقت
-                  });
+            const home =
+              await caches.match(
+                "/",
+              );
+
+            if (home) {
+              return home;
+            }
+
+            const offline =
+              await caches.match(
+                OFFLINE_URL,
+              );
+
+            if (offline) {
+              return offline;
+            }
+
+            return new Response(
+              "أنت غير متصل بالإنترنت.",
+              {
+                status: 503,
+                headers: {
+                  "Content-Type":
+                    "text/plain; charset=utf-8",
+                },
+              },
+            );
+          }),
+      );
+
+      return;
+    }
+
+    const isStaticAsset =
+      /\.(?:js|css|png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf)$/i.test(
+        url.pathname,
+      );
+
+    if (isStaticAsset) {
+      event.respondWith(
+        caches
+          .match(request)
+          .then(
+            (cachedResponse) => {
+              if (cachedResponse) {
+                return cachedResponse;
               }
 
-              return response;
-            });
-        })
-        .catch(() => {
-          return Response.error();
-        }),
-    );
-  }
-});
+              return fetch(request)
+                .then(
+                  (response) => {
+                    if (
+                      response.ok
+                    ) {
+                      const clone =
+                        response.clone();
+
+                      caches
+                        .open(
+                          RUNTIME_CACHE,
+                        )
+                        .then(
+                          (cache) => {
+                            return cache.put(
+                              request,
+                              clone,
+                            );
+                          },
+                        )
+                        .catch(() => {});
+                    }
+
+                    return response;
+                  },
+                );
+            },
+          )
+          .catch(() =>
+            Response.error(),
+          ),
+      );
+    }
+  },
+);
