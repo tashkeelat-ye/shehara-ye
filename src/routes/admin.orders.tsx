@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -57,16 +57,101 @@ type Order = {
   order_items: Item[];
 };
 
-const STATUSES = Object.keys(ORDER_STATUS_LABELS);
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  awaiting_payment: [
+    "pending",
+    "cancelled",
+  ],
+
+  pending: [
+    "confirmed",
+    "cancelled",
+  ],
+
+  confirmed: [
+    "processing",
+    "cancelled",
+  ],
+
+  processing: [
+    "shipped",
+    "cancelled",
+  ],
+
+  shipped: [
+    "delivered",
+  ],
+
+  delivered: [],
+
+  cancelled: [],
+};
+
+function getAllowedStatuses(currentStatus: string) {
+  const transitions =
+    STATUS_TRANSITIONS[currentStatus] ?? [];
+
+  return [
+    currentStatus,
+    ...transitions.filter(
+      (status) => status !== currentStatus,
+    ),
+  ];
+}
+
+function getErrorMessage(error: unknown) {
+  if (
+    error &&
+    typeof error === "object"
+  ) {
+    const candidate =
+      error as {
+        message?: unknown;
+        details?: unknown;
+        hint?: unknown;
+        code?: unknown;
+      };
+
+    const parts = [
+      typeof candidate.message === "string"
+        ? candidate.message
+        : "",
+      typeof candidate.details === "string"
+        ? candidate.details
+        : "",
+      typeof candidate.hint === "string"
+        ? candidate.hint
+        : "",
+    ].filter(Boolean);
+
+    if (parts.length > 0) {
+      const code =
+        typeof candidate.code === "string"
+          ? ` [${candidate.code}]`
+          : "";
+
+      return `${parts.join(" — ")}${code}`;
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "حدث خطأ غير معروف.";
+}
 
 function AdminOrders() {
   const [rows, setRows] = useState<Order[]>([]);
-  const [open, setOpen] = useState<string | null>(null);
-  const [couriers, setCouriers] = useState<Courier[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [processingOrderId, setProcessingOrderId] = useState<string | null>(
+  const [open, setOpen] = useState<string | null>(
     null,
   );
+  const [couriers, setCouriers] = useState<Courier[]>(
+    [],
+  );
+  const [loading, setLoading] = useState(true);
+  const [processingOrderId, setProcessingOrderId] =
+    useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -77,7 +162,9 @@ function AdminOrders() {
         .select(
           "id,order_number,status,payment_status,payment_method_code,total,subtotal,delivery_fee,shipping_name,shipping_phone,shipping_city,shipping_district,shipping_details,latitude,longitude,created_at,courier_id,order_items(id,product_name,quantity,unit_price)",
         )
-        .order("created_at", { ascending: false })
+        .order("created_at", {
+          ascending: false,
+        })
         .returns<Order[]>();
 
       if (error) {
@@ -86,12 +173,12 @@ function AdminOrders() {
 
       setRows(data ?? []);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "تعذر تحميل الطلبات.";
+      toast.error(
+        `تعذر تحميل الطلبات: ${getErrorMessage(
+          error,
+        )}`,
+      );
 
-      toast.error(`تعذر تحميل الطلبات: ${message}`);
       setRows([]);
     } finally {
       setLoading(false);
@@ -103,12 +190,12 @@ function AdminOrders() {
       const list = await fetchCouriers(false);
       setCouriers(list);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "تعذر تحميل عمال التوصيل.";
+      toast.error(
+        `تعذر تحميل عمال التوصيل: ${getErrorMessage(
+          error,
+        )}`,
+      );
 
-      toast.error(`تعذر تحميل عمال التوصيل: ${message}`);
       setCouriers([]);
     }
   }, []);
@@ -129,11 +216,14 @@ function AdminOrders() {
     setProcessingOrderId(orderId);
 
     try {
-      const { error } = await supabase.rpc(
+      const { error } = await (
+        supabase as any
+      ).rpc(
         "assign_order_courier_secure",
         {
           _order_id: orderId,
-          _courier_id: courierId || null,
+          _courier_id:
+            courierId.trim() || null,
         },
       );
 
@@ -142,19 +232,18 @@ function AdminOrders() {
       }
 
       toast.success(
-        courierId
+        courierId.trim()
           ? "تم تعيين الطلب لعامل التوصيل بنجاح."
           : "تم إلغاء تعيين عامل التوصيل.",
       );
 
       await load();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "تعذر تعيين عامل التوصيل.";
-
-      toast.error(`تعذر التعيين: ${message}`);
+      toast.error(
+        `تعذر التعيين: ${getErrorMessage(
+          error,
+        )}`,
+      );
     } finally {
       setProcessingOrderId(null);
     }
@@ -168,25 +257,53 @@ function AdminOrders() {
       return;
     }
 
-    if (!status.trim()) {
-      toast.error("حالة الطلب غير صالحة.");
+    const order = rows.find(
+      (item) => item.id === orderId,
+    );
+
+    if (!order) {
+      toast.error("لم يتم العثور على الطلب.");
+      return;
+    }
+
+    const currentStatus = order.status;
+
+    if (
+      !status ||
+      !STATUS_TRANSITIONS[currentStatus]
+    ) {
+      toast.error(
+        "حالة الطلب الحالية غير معروفة.",
+      );
+      return;
+    }
+
+    if (status === currentStatus) {
+      return;
+    }
+
+    const allowed =
+      STATUS_TRANSITIONS[currentStatus];
+
+    if (!allowed.includes(status)) {
+      toast.error(
+        `لا يمكن الانتقال من «${
+          ORDER_STATUS_LABELS[currentStatus] ??
+          currentStatus
+        }» إلى «${
+          ORDER_STATUS_LABELS[status] ??
+          status
+        }».`,
+      );
       return;
     }
 
     setProcessingOrderId(orderId);
 
     try {
-      /*
-       * استخدم RPC الآمن المخصص للإدارة.
-       *
-       * يتم تمرير الحالة كنص لأن النسخة الآمنة الجديدة من
-       * update_order_status_secure تستقبل _new_status من نوع text
-       * ثم تتحقق من القيمة وتحولها داخلياً إلى order_status.
-       *
-       * استخدام any هنا يمنع اعتماد الواجهة على نسخة قديمة من
-       * generated Supabase types في حال لم يتم تحديث types.ts بعد.
-       */
-      const { error } = await (supabase as any).rpc(
+      const { error } = await (
+        supabase as any
+      ).rpc(
         "update_order_status_secure",
         {
           _order_id: orderId,
@@ -198,16 +315,29 @@ function AdminOrders() {
         throw error;
       }
 
-      toast.success("تم تحديث حالة الطلب بنجاح.");
+      toast.success(
+        `تم تحديث حالة الطلب إلى «${
+          ORDER_STATUS_LABELS[status] ??
+          status
+        }» بنجاح.`,
+      );
 
       await load();
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : "تعذر تحديث حالة الطلب.";
+        getErrorMessage(error);
 
-      toast.error(`تعذر التحديث: ${message}`);
+      console.error(
+        "update_order_status_secure failed:",
+        error,
+      );
+
+      toast.error(
+        `تعذر تحديث حالة الطلب: ${message}`,
+        {
+          duration: 10000,
+        },
+      );
     } finally {
       setProcessingOrderId(null);
     }
@@ -219,11 +349,13 @@ function AdminOrders() {
       `العميل: ${order.shipping_name} - ${order.shipping_phone}`,
       `العنوان: ${order.shipping_city} ${order.shipping_district} - ${order.shipping_details}`,
       `الحالة: ${
-        ORDER_STATUS_LABELS[order.status] ?? order.status
+        ORDER_STATUS_LABELS[order.status] ??
+        order.status
       }`,
       `الدفع: ${
-        PAYMENT_STATUS_LABELS[order.payment_status] ??
-        order.payment_status
+        PAYMENT_STATUS_LABELS[
+          order.payment_status
+        ] ?? order.payment_status
       } (${order.payment_method_code})`,
       `الإجمالي: ${formatPrice(order.total)}`,
       ...order.order_items.map(
@@ -247,7 +379,9 @@ function AdminOrders() {
 
   return (
     <AdminCard
-      title={`الطلبات (${rows.length.toLocaleString("ar-EG")})`}
+      title={`الطلبات (${rows.length.toLocaleString(
+        "ar-EG",
+      )})`}
     >
       {loading ? (
         <div className="rounded-xl border border-border/70 p-4 text-center text-xs text-muted-foreground">
@@ -260,7 +394,11 @@ function AdminOrders() {
       ) : (
         <ul className="space-y-2">
           {rows.map((order) => {
-            const busy = processingOrderId === order.id;
+            const busy =
+              processingOrderId === order.id;
+
+            const allowedStatuses =
+              getAllowedStatuses(order.status);
 
             return (
               <li
@@ -278,11 +416,14 @@ function AdminOrders() {
                   <span className="rounded-full bg-brand-soft px-2 py-0.5 text-primary">
                     {PAYMENT_STATUS_LABELS[
                       order.payment_status
-                    ] ?? order.payment_status}
+                    ] ??
+                      order.payment_status}
                   </span>
 
                   <span className="text-muted-foreground">
-                    {formatDate(order.created_at)}
+                    {formatDate(
+                      order.created_at,
+                    )}
                   </span>
 
                   <span className="font-bold text-primary">
@@ -355,7 +496,10 @@ function AdminOrders() {
                   <select
                     aria-label="حالة الطلب"
                     value={order.status}
-                    disabled={busy}
+                    disabled={
+                      busy ||
+                      allowedStatuses.length <= 1
+                    }
                     onChange={(event) =>
                       void setStatus(
                         order.id,
@@ -364,15 +508,18 @@ function AdminOrders() {
                     }
                     className={`${inputCls} ms-auto w-auto`}
                   >
-                    {STATUSES.map((status) => (
-                      <option
-                        key={status}
-                        value={status}
-                      >
-                        {ORDER_STATUS_LABELS[status] ??
-                          status}
-                      </option>
-                    ))}
+                    {allowedStatuses.map(
+                      (status) => (
+                        <option
+                          key={status}
+                          value={status}
+                        >
+                          {ORDER_STATUS_LABELS[
+                            status
+                          ] ?? status}
+                        </option>
+                      ),
+                    )}
                   </select>
 
                   <button
@@ -431,7 +578,9 @@ function AdminOrders() {
                     <div className="flex flex-wrap items-center gap-2">
                       <select
                         aria-label="عامل التوصيل"
-                        value={order.courier_id ?? ""}
+                        value={
+                          order.courier_id ?? ""
+                        }
                         disabled={busy}
                         onChange={(event) =>
                           void setCourier(
@@ -445,22 +594,24 @@ function AdminOrders() {
                           بدون عامل توصيل
                         </option>
 
-                        {couriers.map((courier) => (
-                          <option
-                            key={courier.id}
-                            value={courier.id}
-                            disabled={
-                              !courier.is_active &&
-                              courier.id !==
-                                order.courier_id
-                            }
-                          >
-                            {courier.name}{" "}
-                            {courier.is_active
-                              ? ""
-                              : "(غير متاح)"}
-                          </option>
-                        ))}
+                        {couriers.map(
+                          (courier) => (
+                            <option
+                              key={courier.id}
+                              value={courier.id}
+                              disabled={
+                                !courier.is_active &&
+                                courier.id !==
+                                  order.courier_id
+                              }
+                            >
+                              {courier.name}{" "}
+                              {courier.is_active
+                                ? ""
+                                : "(غير متاح)"}
+                            </option>
+                          ),
+                        )}
                       </select>
 
                       <button
@@ -474,8 +625,10 @@ function AdminOrders() {
                         مشاركة عبر واتساب
                       </button>
 
-                      {order.latitude !== null &&
-                      order.longitude !== null ? (
+                      {order.latitude !==
+                        null &&
+                      order.longitude !==
+                        null ? (
                         <a
                           className={btnGhostCls}
                           target="_blank"
@@ -495,7 +648,10 @@ function AdminOrders() {
                             className="flex justify-between"
                           >
                             <span className="text-foreground">
-                              {item.product_name} ×{" "}
+                              {
+                                item.product_name
+                              }{" "}
+                              ×{" "}
                               {item.quantity.toLocaleString(
                                 "ar-EG",
                               )}
@@ -543,13 +699,17 @@ function AdminOrders() {
                         </span>
 
                         <span className="font-bold text-primary">
-                          {formatPrice(order.total)}
+                          {formatPrice(
+                            order.total,
+                          )}
                         </span>
                       </div>
                     </div>
 
-                    {order.latitude !== null &&
-                    order.longitude !== null ? (
+                    {order.latitude !==
+                        null &&
+                    order.longitude !==
+                        null ? (
                       <LocationPicker
                         readOnly
                         height={180}
