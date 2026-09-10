@@ -8,6 +8,15 @@ type NotificationListenerProps = {
   currentUserId?: string;
 };
 
+type IncomingNotification = {
+  id?: string;
+  user_id?: string | null;
+  title?: string | null;
+  body?: string | null;
+  kind?: string | null;
+  link_url?: string | null;
+};
+
 export function NotificationListener({
   currentUserId,
 }: NotificationListenerProps) {
@@ -22,32 +31,58 @@ export function NotificationListener({
       return;
     }
 
+    let disposed = false;
+
+    const createAudio = () => {
+      if (
+        typeof window === "undefined"
+      ) {
+        return null;
+      }
+
+      if (!audioRef.current) {
+        const audio =
+          new Audio(
+            "/notification.mp3",
+          );
+
+        audio.preload = "auto";
+        audio.volume = 1;
+        audio.setAttribute(
+          "playsinline",
+          "true",
+        );
+
+        audioRef.current = audio;
+      }
+
+      return audioRef.current;
+    };
+
     const unlockAudio = () => {
-      if (audioUnlockedRef.current) {
+      if (
+        disposed ||
+        audioUnlockedRef.current
+      ) {
+        return;
+      }
+
+      const audio = createAudio();
+
+      if (!audio) {
         return;
       }
 
       try {
-        if (!audioRef.current) {
-          audioRef.current =
-            new Audio(
-              "/notification.mp3",
-            );
-
-          audioRef.current.preload =
-            "auto";
-
-          audioRef.current.volume = 1;
-        }
-
-        const audio =
-          audioRef.current;
-
         audio.currentTime = 0;
 
         void audio
           .play()
           .then(() => {
+            if (disposed) {
+              return;
+            }
+
             audio.pause();
             audio.currentTime = 0;
 
@@ -55,7 +90,13 @@ export function NotificationListener({
               true;
           })
           .catch(() => {
-            // سيتم إعادة المحاولة عند تفاعل المستخدم.
+            /*
+             * المتصفح لم يسمح بعد
+             * بتشغيل الصوت.
+             *
+             * سنعيد المحاولة مع تفاعل
+             * مستخدم لاحق.
+             */
           });
       } catch {
         // تجاهل منع المتصفح للصوت.
@@ -64,42 +105,53 @@ export function NotificationListener({
 
     const playNotificationSound =
       () => {
+        const audio =
+          createAudio();
+
+        if (!audio) {
+          return;
+        }
+
         try {
-          if (!audioRef.current) {
-            audioRef.current =
-              new Audio(
-                "/notification.mp3",
-              );
-
-            audioRef.current.preload =
-              "auto";
-
-            audioRef.current.volume = 1;
-          }
-
-          const audio =
-            audioRef.current;
-
+          audio.pause();
           audio.currentTime = 0;
+          audio.volume = 1;
 
           void audio.play().catch(
-            () => {
-              /*
-               * إذا كان المتصفح يمنع
-               * التشغيل، فلا نحاول تجاوز
-               * سياسة المتصفح.
-               */
+            (error) => {
+              console.warn(
+                "تعذر تشغيل صوت إشعار الطلب:",
+                error,
+              );
             },
           );
-        } catch {
-          // تجاهل الخطأ.
+        } catch (error) {
+          console.warn(
+            "خطأ في تشغيل صوت إشعار الطلب:",
+            error,
+          );
         }
       };
 
-    /*
-     * فتح صلاحية تشغيل الصوت بعد أول
-     * تفاعل حقيقي مع الصفحة.
-     */
+    const handleVisibilityChange =
+      () => {
+        /*
+         * عندما تعود لوحة الإدارة
+         * إلى الواجهة، نعيد محاولة
+         * فتح صلاحية الصوت.
+         */
+        if (
+          document.visibilityState ===
+          "visible"
+        ) {
+          unlockAudio();
+        }
+      };
+
+    const handleFocus = () => {
+      unlockAudio();
+    };
+
     window.addEventListener(
       "pointerdown",
       unlockAudio,
@@ -124,6 +176,31 @@ export function NotificationListener({
       },
     );
 
+    window.addEventListener(
+      "click",
+      unlockAudio,
+      {
+        passive: true,
+      },
+    );
+
+    window.addEventListener(
+      "focus",
+      handleFocus,
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange,
+    );
+
+    /*
+     * نحاول تجهيز الصوت فوراً.
+     * قد يمنعه المتصفح، لكن أول
+     * تفاعل للمستخدم سيعيد المحاولة.
+     */
+    unlockAudio();
+
     const channel =
       supabase
         .channel(
@@ -139,18 +216,8 @@ export function NotificationListener({
           },
           (payload) => {
             const notification =
-              payload.new as {
-                id?: string;
-                user_id?: string | null;
-                title?: string | null;
-                body?: string | null;
-                kind?: string | null;
-                link_url?: string | null;
-              };
+              payload.new as IncomingNotification;
 
-            /*
-             * إشعارات الطلبات فقط.
-             */
             if (
               notification.kind !==
               "new_order"
@@ -158,8 +225,14 @@ export function NotificationListener({
               return;
             }
 
+            /*
+             * الصوت داخل لوحة الإدارة.
+             */
             playNotificationSound();
 
+            /*
+             * إشعار داخل لوحة الإدارة.
+             */
             toast(
               notification.title ||
                 "طلبية جديدة من شهارة 🛍️",
@@ -187,9 +260,19 @@ export function NotificationListener({
             );
           },
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (
+            status === "CHANNEL_ERROR"
+          ) {
+            console.error(
+              "تعذر الاشتراك في قناة إشعارات الإدارة.",
+            );
+          }
+        });
 
     return () => {
+      disposed = true;
+
       window.removeEventListener(
         "pointerdown",
         unlockAudio,
@@ -203,6 +286,21 @@ export function NotificationListener({
       window.removeEventListener(
         "touchstart",
         unlockAudio,
+      );
+
+      window.removeEventListener(
+        "click",
+        unlockAudio,
+      );
+
+      window.removeEventListener(
+        "focus",
+        handleFocus,
+      );
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange,
       );
 
       void supabase.removeChannel(
