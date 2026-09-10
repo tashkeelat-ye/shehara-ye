@@ -2,14 +2,9 @@ import {
   createFileRoute,
   useNavigate,
 } from "@tanstack/react-router";
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Check,
   Filter,
   Search,
   SlidersHorizontal,
@@ -43,9 +38,7 @@ type SearchParams = {
   offers?: boolean | undefined;
 };
 
-export const Route = createFileRoute(
-  "/products",
-)({
+export const Route = createFileRoute("/products")({
   validateSearch: (
     search: Record<string, unknown>,
   ): SearchParams => ({
@@ -119,60 +112,8 @@ function ProductsPage() {
   const [filters, setFilters] =
     useState<ProductFilters>({});
 
-  const [
-    showFilters,
-    setShowFilters,
-  ] = useState(false);
-
-  /*
-   * منع تمرير الصفحة خلف نافذة الفلاتر
-   */
-  useEffect(() => {
-    if (!showFilters) {
-      document.body.style.overflow = "";
-      return;
-    }
-
-    const previousOverflow =
-      document.body.style.overflow;
-
-    document.body.style.overflow =
-      "hidden";
-
-    return () => {
-      document.body.style.overflow =
-        previousOverflow;
-    };
-  }, [showFilters]);
-
-  /*
-   * إغلاق نافذة الفلاتر بزر Escape
-   */
-  useEffect(() => {
-    if (!showFilters) {
-      return;
-    }
-
-    const handleKeyDown = (
-      event: KeyboardEvent,
-    ) => {
-      if (event.key === "Escape") {
-        setShowFilters(false);
-      }
-    };
-
-    window.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
-
-    return () => {
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
-    };
-  }, [showFilters]);
+  const [showFilters, setShowFilters] =
+    useState(false);
 
   const {
     data: products,
@@ -218,8 +159,7 @@ function ProductsPage() {
     q?.trim().toLocaleLowerCase("ar");
 
   const list = useMemo(() => {
-    const all =
-      products ?? [];
+    const all = products ?? [];
 
     if (!normalizedQuery) {
       return all;
@@ -227,30 +167,22 @@ function ProductsPage() {
 
     return all.filter((product) => {
       const name =
-        product.name
-          ?.toLocaleLowerCase("ar") ??
+        product.name?.toLocaleLowerCase("ar") ??
         "";
 
       const description =
-        product.description
-          ?.toLocaleLowerCase("ar") ??
-        "";
+        product.description?.toLocaleLowerCase(
+          "ar",
+        ) ?? "";
 
       const city =
-        product.city
-          ?.toLocaleLowerCase("ar") ??
+        product.city?.toLocaleLowerCase("ar") ??
         "";
 
       return (
-        name.includes(
-          normalizedQuery,
-        ) ||
-        description.includes(
-          normalizedQuery,
-        ) ||
-        city.includes(
-          normalizedQuery,
-        )
+        name.includes(normalizedQuery) ||
+        description.includes(normalizedQuery) ||
+        city.includes(normalizedQuery)
       );
     });
   }, [
@@ -263,39 +195,21 @@ function ProductsPage() {
    */
   const activeFiltersCount =
     Number(
-      filters.minPrice !==
-        undefined,
+      filters.minPrice !== undefined,
     ) +
     Number(
-      filters.maxPrice !==
-        undefined,
+      filters.maxPrice !== undefined,
     ) +
     Number(
-      filters.minRating !==
-        undefined,
+      filters.minRating !== undefined,
     ) +
-    Number(
-      Boolean(filters.city),
-    );
+    Number(Boolean(filters.city));
 
   /*
-   * هل توجد فلاتر؟
-   */
-  const hasActiveFilters =
-    activeFiltersCount > 0;
-
-  /*
-   * مسح جميع الفلاتر
+   * مسح الفلاتر
    */
   const clearFilters = () => {
     setFilters({});
-  };
-
-  /*
-   * إغلاق نافذة الفلاتر
-   */
-  const closeFilters = () => {
-    setShowFilters(false);
   };
 
   /*
@@ -307,7 +221,6 @@ function ProductsPage() {
       search: {
         sort,
         q: undefined,
-        brand,
       },
     });
   };
@@ -323,9 +236,22 @@ function ProductsPage() {
       search: {
         q,
         sort: nextSort,
-        brand,
       },
     });
+  };
+
+  /*
+   * فتح الفلاتر
+   */
+  const openFilters = () => {
+    setShowFilters(true);
+  };
+
+  /*
+   * إغلاق الفلاتر
+   */
+  const closeFilters = () => {
+    setShowFilters(false);
   };
 
   return (
@@ -339,15 +265,7 @@ function ProductsPage() {
         md:pb-8
       "
     >
-      {/* =====================================================
-          الرأس الرئيسي
-          ===================================================== */}
-
       <SiteHeader />
-
-      {/* =====================================================
-          المحتوى
-          ===================================================== */}
 
       <main
         className="
@@ -358,299 +276,183 @@ function ProductsPage() {
           md:pt-6
         "
       >
-        {/* ===================================================
-            رأس صفحة الأقسام
-            =================================================== */}
+        {/* =====================================================
+            رأس الصفحة
+            ===================================================== */}
 
         <section className="px-4">
           <div
             className="
               flex
-              flex-col
-              gap-4
-              rounded-2xl
-              border
-              border-border/60
-              bg-card/70
-              p-4
-              shadow-sm
-              backdrop-blur-sm
-              md:p-5
+              items-center
+              justify-between
+              gap-3
             "
           >
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-                gap-3
-              "
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="
-                      flex
-                      h-9
-                      w-9
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-xl
-                      bg-primary/10
-                      text-primary
-                    "
-                  >
-                    <GridIcon />
-                  </span>
-
-                  <div className="min-w-0">
-                    <h1
-                      className="
-                        truncate
-                        text-lg
-                        font-extrabold
-                        text-foreground
-                        md:text-xl
-                      "
-                    >
-                      {q
-                        ? "نتائج البحث"
-                        : "كل المنتجات"}
-                    </h1>
-
-                    <p
-                      className="
-                        mt-0.5
-                        text-[10px]
-                        leading-5
-                        text-muted-foreground
-                        md:text-[11px]
-                      "
-                    >
-                      {q
-                        ? `المنتجات المطابقة للبحث عن «${q}»`
-                        : "اكتشف منتجات شهارة واختر ما يناسبك"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* زر الفلاتر للجوال */}
-              <button
-                type="button"
-                onClick={() =>
-                  setShowFilters(true)
-                }
+            <div className="min-w-0">
+              <h1
                 className="
-                  relative
-                  flex
-                  min-h-10
-                  shrink-0
-                  items-center
-                  gap-2
-                  rounded-xl
-                  border
-                  border-border
-                  bg-background
-                  px-3
-                  text-xs
-                  font-bold
+                  text-lg
+                  font-extrabold
                   text-foreground
-                  shadow-sm
-                  transition-all
-                  duration-200
-                  hover:border-primary/40
-                  hover:bg-primary/5
-                  hover:text-primary
-                  active:scale-95
-                  md:hidden
+                  md:text-xl
                 "
-                aria-expanded={
-                  showFilters
-                }
-                aria-controls="mobile-product-filters"
               >
-                <SlidersHorizontal className="h-4 w-4" />
+                {q
+                  ? "نتائج البحث"
+                  : "كل المنتجات"}
+              </h1>
 
-                <span>
-                  الفلاتر
-                </span>
-
-                {hasActiveFilters ? (
-                  <span
-                    className="
-                      absolute
-                      -end-1.5
-                      -top-1.5
-                      grid
-                      min-h-5
-                      min-w-5
-                      place-items-center
-                      rounded-full
-                      bg-accent-solid
-                      px-1
-                      text-[9px]
-                      font-extrabold
-                      text-accent-solid-foreground
-                      shadow-sm
-                    "
-                  >
-                    {activeFiltersCount}
-                  </span>
-                ) : null}
-              </button>
+              <p
+                className="
+                  mt-1
+                  text-[11px]
+                  leading-5
+                  text-muted-foreground
+                "
+              >
+                {q
+                  ? `المنتجات المطابقة للبحث عن «${q}»`
+                  : "اكتشف منتجات شهارة واختر ما يناسبك"}
+              </p>
             </div>
 
-            {/* =================================================
-                البحث الحالي
-                ================================================= */}
+            {/* زر الفلاتر للجوال */}
+            <button
+              type="button"
+              onClick={openFilters}
+              className="
+                relative
+                flex
+                min-h-10
+                shrink-0
+                items-center
+                gap-2
+                rounded-xl
+                border
+                border-border
+                bg-card
+                px-3
+                text-xs
+                font-semibold
+                text-foreground
+                shadow-sm
+                transition-all
+                duration-200
+                hover:border-primary/30
+                hover:text-primary
+                active:scale-95
+                md:hidden
+              "
+              aria-expanded={showFilters}
+              aria-controls="mobile-product-filters"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
 
-            {q ? (
-              <div
-                className="
-                  flex
-                  min-h-11
-                  items-center
-                  justify-between
-                  gap-3
-                  rounded-xl
-                  border
-                  border-primary/15
-                  bg-brand-soft
-                  px-3
-                "
-              >
-                <div
+              <span>
+                الفلاتر
+              </span>
+
+              {activeFiltersCount > 0 ? (
+                <span
                   className="
-                    flex
-                    min-w-0
-                    items-center
-                    gap-2
-                  "
-                >
-                  <Search
-                    className="
-                      h-4
-                      w-4
-                      shrink-0
-                      text-primary
-                    "
-                    aria-hidden="true"
-                  />
-
-                  <div className="min-w-0">
-                    <span
-                      className="
-                        block
-                        text-[9px]
-                        font-medium
-                        text-muted-foreground
-                      "
-                    >
-                      نتائج البحث عن
-                    </span>
-
-                    <span
-                      className="
-                        block
-                        truncate
-                        text-xs
-                        font-bold
-                        text-primary
-                      "
-                    >
-                      {q}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={
-                    clearSearch
-                  }
-                  className="
+                    absolute
+                    -end-1.5
+                    -top-1.5
                     grid
-                    h-8
-                    w-8
-                    shrink-0
+                    min-h-5
+                    min-w-5
                     place-items-center
-                    rounded-lg
-                    text-muted-foreground
-                    transition
-                    hover:bg-card
-                    hover:text-foreground
+                    rounded-full
+                    bg-accent-solid
+                    px-1
+                    text-[9px]
+                    font-bold
+                    text-accent-solid-foreground
                   "
-                  aria-label="إلغاء البحث"
                 >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : null}
+                  {activeFiltersCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
 
-            {/* =================================================
-                العلامة التجارية النشطة
-                ================================================= */}
+          {/* ===================================================
+              البحث الحالي
+              =================================================== */}
 
-            {brand ? (
+          {q ? (
+            <div
+              className="
+                mt-3
+                flex
+                min-h-10
+                items-center
+                justify-between
+                gap-2
+                rounded-xl
+                border
+                border-primary/15
+                bg-brand-soft
+                px-3
+              "
+            >
               <div
                 className="
                   flex
+                  min-w-0
                   items-center
-                  justify-between
-                  gap-3
-                  rounded-xl
-                  border
-                  border-primary/10
-                  bg-primary/5
-                  px-3
-                  py-2.5
+                  gap-2
                 "
               >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="
-                      grid
-                      h-7
-                      w-7
-                      place-items-center
-                      rounded-lg
-                      bg-primary/10
-                      text-primary
-                    "
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </span>
+                <Search
+                  className="
+                    h-4
+                    w-4
+                    shrink-0
+                    text-primary
+                  "
+                  aria-hidden="true"
+                />
 
-                  <div>
-                    <p
-                      className="
-                        text-[9px]
-                        text-muted-foreground
-                      "
-                    >
-                      العلامة التجارية
-                    </p>
-
-                    <p
-                      className="
-                        text-xs
-                        font-bold
-                        text-primary
-                      "
-                    >
-                      {brand}
-                    </p>
-                  </div>
-                </div>
+                <span
+                  className="
+                    truncate
+                    text-xs
+                    font-semibold
+                    text-primary
+                  "
+                >
+                  {q}
+                </span>
               </div>
-            ) : null}
-          </div>
+
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="
+                  grid
+                  h-8
+                  w-8
+                  shrink-0
+                  place-items-center
+                  rounded-lg
+                  text-muted-foreground
+                  transition
+                  hover:bg-card
+                  hover:text-foreground
+                "
+                aria-label="إلغاء البحث"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : null}
         </section>
 
         {/* =====================================================
-            نافذة الفلاتر للجوال
+            الفلاتر للجوال
+            Bottom Sheet
             ===================================================== */}
 
         {showFilters ? (
@@ -659,40 +461,34 @@ function ProductsPage() {
             className="
               fixed
               inset-0
-              z-[120]
+              z-[100]
               md:hidden
             "
             role="dialog"
             aria-modal="true"
-            aria-labelledby="mobile-filters-title"
+            aria-label="فلاتر المنتجات"
           >
             {/* الخلفية */}
-            <button
-              type="button"
-              aria-label="إغلاق الفلاتر"
-              onClick={
-                closeFilters
-              }
+            <div
               className="
                 absolute
                 inset-0
-                h-full
-                w-full
-                cursor-default
                 bg-black/45
                 backdrop-blur-[2px]
               "
+              onClick={closeFilters}
+              aria-hidden="true"
             />
 
-            {/* Bottom Sheet */}
-            <div
+            {/* نافذة الفلاتر */}
+            <section
               className="
                 absolute
                 inset-x-0
                 bottom-0
                 max-h-[88vh]
                 overflow-hidden
-                rounded-t-[28px]
+                rounded-t-[26px]
                 border-t
                 border-border/70
                 bg-background
@@ -700,11 +496,17 @@ function ProductsPage() {
               "
             >
               {/* المقبض */}
-              <div className="flex justify-center pt-2.5">
+              <div
+                className="
+                  flex
+                  justify-center
+                  pt-2.5
+                "
+              >
                 <span
                   className="
                     h-1
-                    w-12
+                    w-11
                     rounded-full
                     bg-muted-foreground/25
                   "
@@ -723,7 +525,13 @@ function ProductsPage() {
                   py-4
                 "
               >
-                <div className="flex items-center gap-3">
+                <div
+                  className="
+                    flex
+                    items-center
+                    gap-3
+                  "
+                >
                   <span
                     className="
                       grid
@@ -740,7 +548,6 @@ function ProductsPage() {
 
                   <div>
                     <h2
-                      id="mobile-filters-title"
                       className="
                         text-base
                         font-extrabold
@@ -757,16 +564,14 @@ function ProductsPage() {
                         text-muted-foreground
                       "
                     >
-                      خصص النتائج حسب ما يناسبك
+                      حدد الخيارات المناسبة لك
                     </p>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={
-                    closeFilters
-                  }
+                  onClick={closeFilters}
                   className="
                     grid
                     h-9
@@ -802,82 +607,46 @@ function ProductsPage() {
                 />
               </div>
 
-              {/* أزرار التحكم */}
+              {/* زر تطبيق */}
               <div
                 className="
                   border-t
                   border-border/60
-                  bg-background/95
+                  bg-background
                   p-3
                   pb-[max(12px,env(safe-area-inset-bottom))]
-                  backdrop-blur-xl
                 "
               >
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={
-                      clearFilters
-                    }
-                    className="
-                      flex
-                      min-h-11
-                      flex-1
-                      items-center
-                      justify-center
-                      gap-2
-                      rounded-xl
-                      border
-                      border-border
-                      bg-secondary/70
-                      px-4
-                      text-[11px]
-                      font-bold
-                      text-muted-foreground
-                      transition
-                      hover:border-primary/30
-                      hover:bg-primary/5
-                      hover:text-primary
-                    "
-                  >
-                    إعادة التعيين
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={
-                      closeFilters
-                    }
-                    className="
-                      flex
-                      min-h-11
-                      flex-[1.5]
-                      items-center
-                      justify-center
-                      gap-2
-                      rounded-xl
-                      bg-primary
-                      px-4
-                      text-[11px]
-                      font-extrabold
-                      text-primary-foreground
-                      shadow-[0_8px_25px_-15px_rgba(226,114,58,0.9)]
-                      transition
-                      hover:bg-primary/90
-                      active:scale-[0.98]
-                    "
-                  >
-                    <Check className="h-4 w-4" />
-
-                    عرض
-                    {list.length.toLocaleString(
-                      "ar-EG",
-                    )}
-                    نتيجة
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={closeFilters}
+                  className="
+                    flex
+                    min-h-11
+                    w-full
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-primary
+                    px-4
+                    text-xs
+                    font-extrabold
+                    text-primary-foreground
+                    shadow-sm
+                    transition
+                    hover:bg-primary/90
+                    active:scale-[0.99]
+                  "
+                >
+                  عرض النتائج
+                  {list.length > 0
+                    ? ` (${list.length.toLocaleString(
+                        "ar-EG",
+                      )})`
+                    : ""}
+                </button>
               </div>
-            </div>
+            </section>
           </div>
         ) : null}
 
@@ -888,9 +657,7 @@ function ProductsPage() {
         <section className="mt-4">
           <SortBar
             sort={sort}
-            onSortChange={
-              updateSort
-            }
+            onSortChange={updateSort}
             countLabel={`${list.length.toLocaleString(
               "ar-EG",
             )} منتج`}
@@ -910,9 +677,9 @@ function ProductsPage() {
             md:grid-cols-[240px_minmax(0,1fr)]
           "
         >
-          {/* =================================================
+          {/* ===================================================
               الفلاتر - سطح المكتب
-              ================================================= */}
+              =================================================== */}
 
           <aside className="hidden md:block">
             <div className="sticky top-24">
@@ -925,58 +692,42 @@ function ProductsPage() {
                   px-1
                 "
               >
-                <div className="flex items-center gap-2">
-                  <span
+                <div
+                  className="
+                    flex
+                    items-center
+                    gap-2
+                  "
+                >
+                  <Filter
                     className="
-                      grid
-                      h-8
-                      w-8
-                      place-items-center
-                      rounded-lg
-                      bg-primary/10
+                      h-4
+                      w-4
                       text-primary
                     "
+                  />
+
+                  <h2
+                    className="
+                      text-sm
+                      font-bold
+                      text-foreground
+                    "
                   >
-                    <Filter className="h-4 w-4" />
-                  </span>
-
-                  <div>
-                    <h2
-                      className="
-                        text-sm
-                        font-extrabold
-                        text-foreground
-                      "
-                    >
-                      تصفية المنتجات
-                    </h2>
-
-                    <p
-                      className="
-                        text-[9px]
-                        text-muted-foreground
-                      "
-                    >
-                      الوصول السريع للمنتج المناسب
-                    </p>
-                  </div>
+                    تصفية المنتجات
+                  </h2>
                 </div>
 
-                {hasActiveFilters ? (
+                {activeFiltersCount > 0 ? (
                   <button
                     type="button"
-                    onClick={
-                      clearFilters
-                    }
+                    onClick={clearFilters}
                     className="
-                      rounded-lg
-                      px-2
-                      py-1.5
                       text-[10px]
-                      font-bold
+                      font-semibold
                       text-primary
                       transition
-                      hover:bg-primary/5
+                      hover:underline
                     "
                   >
                     مسح الكل
@@ -992,12 +743,13 @@ function ProductsPage() {
             </div>
           </aside>
 
-          {/* =================================================
+          {/* ===================================================
               المنتجات
-              ================================================= */}
+              =================================================== */}
 
           <div className="min-w-0">
-            {/* حالة التحميل */}
+            {/* التحميل */}
+
             {isLoading ? (
               <div
                 className="
@@ -1012,19 +764,17 @@ function ProductsPage() {
               >
                 {Array.from({
                   length: 8,
-                }).map(
-                  (_, index) => (
-                    <ProductCardSkeleton
-                      key={index}
-                    />
-                  ),
-                )}
+                }).map((_, index) => (
+                  <ProductCardSkeleton
+                    key={index}
+                  />
+                ))}
               </div>
             ) : null}
 
-            {/* حالة الخطأ */}
-            {!isLoading &&
-            isError ? (
+            {/* الخطأ */}
+
+            {!isLoading && isError ? (
               <div
                 className="
                   flex
@@ -1103,6 +853,7 @@ function ProductsPage() {
             ) : null}
 
             {/* النتائج */}
+
             {!isLoading &&
             !isError &&
             list.length > 0 ? (
@@ -1139,27 +890,21 @@ function ProductsPage() {
                     lg:grid-cols-4
                   "
                 >
-                  {list.map(
-                    (product) => (
-                      <ProductCard
-                        key={
-                          product.id
-                        }
-                        product={
-                          product
-                        }
-                      />
-                    ),
-                  )}
+                  {list.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                    />
+                  ))}
                 </div>
               </>
             ) : null}
 
             {/* لا توجد نتائج */}
+
             {!isLoading &&
             !isError &&
-            list.length ===
-              0 ? (
+            list.length === 0 ? (
               <div
                 className="
                   flex
@@ -1206,3 +951,77 @@ function ProductsPage() {
                     max-w-sm
                     text-xs
                     leading-6
+                    text-muted-foreground
+                  "
+                >
+                  جرّب تغيير كلمات البحث أو
+                  إزالة بعض الفلاتر للوصول إلى
+                  نتائج أكثر.
+                </p>
+
+                <div
+                  className="
+                    mt-5
+                    flex
+                    flex-wrap
+                    justify-center
+                    gap-2
+                  "
+                >
+                  {q ? (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="
+                        rounded-xl
+                        border
+                        border-border
+                        bg-card
+                        px-4
+                        py-2.5
+                        text-xs
+                        font-semibold
+                        text-foreground
+                        transition
+                        hover:border-primary/30
+                        hover:text-primary
+                      "
+                    >
+                      مسح البحث
+                    </button>
+                  ) : null}
+
+                  {activeFiltersCount > 0 ? (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="
+                        rounded-xl
+                        bg-primary
+                        px-4
+                        py-2.5
+                        text-xs
+                        font-bold
+                        text-primary-foreground
+                        transition
+                        hover:bg-primary/90
+                      "
+                    >
+                      إزالة الفلاتر
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      </main>
+
+      {/* =====================================================
+          القائمة السفلية
+          ===================================================== */}
+
+      <BottomNav />
+    </div>
+  );
+}
