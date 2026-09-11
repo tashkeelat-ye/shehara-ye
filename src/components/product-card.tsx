@@ -10,6 +10,7 @@ import {
   Check,
   Heart,
   Plus,
+  ShoppingBag,
   Star,
 } from "lucide-react";
 
@@ -34,8 +35,7 @@ export const ProductCard = memo(
       getItemQuantity,
     } = useCart();
 
-    const formatPrice =
-      useFormatPrice();
+    const formatPrice = useFormatPrice();
 
     const stockLeft = Math.max(
       0,
@@ -44,13 +44,10 @@ export const ProductCard = memo(
 
     const threshold = Math.max(
       1,
-      Number(
-        product.low_stock_threshold,
-      ) || 5,
+      Number(product.low_stock_threshold) || 5,
     );
 
-    const outOfStock =
-      stockLeft <= 0;
+    const outOfStock = stockLeft <= 0;
 
     const lowStock =
       !outOfStock &&
@@ -63,9 +60,7 @@ export const ProductCard = memo(
       Number(product.rating) || 0;
 
     const reviews =
-      Number(
-        product.reviews_count,
-      ) || 0;
+      Number(product.reviews_count) || 0;
 
     const hasRating =
       rating > 0 && reviews > 0;
@@ -85,78 +80,73 @@ export const ProductCard = memo(
     const discount =
       hasDiscount
         ? Math.round(
-            ((oldPrice -
-              currentPrice) /
+            ((oldPrice - currentPrice) /
               oldPrice) *
               100,
           )
         : 0;
 
-    const quickAdd =
-      useCallback(
-        async (
-          event: MouseEvent<HTMLButtonElement>,
-        ) => {
-          event.preventDefault();
-          event.stopPropagation();
+    const quickAdd = useCallback(
+      async (
+        event: MouseEvent<HTMLButtonElement>,
+      ) => {
+        event.preventDefault();
+        event.stopPropagation();
 
-          if (outOfStock) {
-            toast.error(
-              "عذراً، هذا المنتج نفد من المخزون.",
-            );
+        if (outOfStock) {
+          toast.error(
+            "عذراً، هذا المنتج نفد من المخزون.",
+          );
 
-            return;
-          }
+          return;
+        }
 
-          try {
-            await addItem({
-              productId: product.id,
-              quantity: 1,
-            });
+        try {
+          await addItem({
+            productId: product.id,
+            quantity: 1,
+          });
 
-            toast.success(
-              cartQuantity > 0
-                ? "تمت إضافة قطعة أخرى إلى السلة"
-                : "تمت إضافة المنتج إلى السلة",
-              {
-                action: {
-                  label: "عرض السلة",
-                  onClick: () =>
-                    setDrawerOpen(
-                      true,
-                    ),
-                },
+          toast.success(
+            cartQuantity > 0
+              ? "تمت إضافة قطعة أخرى إلى السلة"
+              : "تمت إضافة المنتج إلى السلة",
+            {
+              action: {
+                label: "عرض السلة",
+                onClick: () =>
+                  setDrawerOpen(true),
               },
-            );
-          } catch (error) {
-            toast.error(
-              error instanceof Error
-                ? error.message
-                : "تعذر إضافة المنتج إلى السلة",
-            );
-          }
-        },
-        [
-          addItem,
-          cartQuantity,
-          outOfStock,
-          product.id,
-          setDrawerOpen,
-        ],
-      );
+            },
+          );
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "تعذر إضافة المنتج إلى السلة",
+          );
+        }
+      },
+      [
+        addItem,
+        cartQuantity,
+        outOfStock,
+        product.id,
+        setDrawerOpen,
+      ],
+    );
 
-    const openCart =
-      useCallback(
-        (
-          event: MouseEvent<HTMLButtonElement>,
-        ) => {
-          event.preventDefault();
-          event.stopPropagation();
+    const openCart = useCallback(
+      (
+        event: MouseEvent<HTMLButtonElement>,
+      ) => {
+        event.preventDefault();
+        event.stopPropagation();
 
-          setDrawerOpen(true);
-        },
-        [setDrawerOpen],
-      );
+        setDrawerOpen(true);
+      },
+      [setDrawerOpen],
+    );
 
     return (
       <article
@@ -167,20 +157,22 @@ export const ProductCard = memo(
           min-w-0
           flex-col
           overflow-hidden
-          rounded-2xl
+          rounded-[1.25rem]
           border
-          border-[#0E4D64]/8
+          border-[#0D3B4D]/[0.08]
           bg-white
-          shadow-[0_8px_25px_-20px_rgba(14,77,100,0.55)]
+          shadow-[0_12px_35px_-27px_rgba(13,59,77,0.55)]
           transition-all
-          duration-200
-          hover:-translate-y-0.5
-          hover:border-[#0E4D64]/18
-          hover:shadow-[0_18px_35px_-25px_rgba(14,77,100,0.65)]
+          duration-300
+          hover:-translate-y-1
+          hover:border-[#E2723A]/25
+          hover:shadow-[0_22px_42px_-27px_rgba(13,59,77,0.7)]
           active:scale-[0.985]
-          dark:bg-card
+          dark:border-white/[0.07]
+          dark:bg-[#0A2A38]
         "
       >
+        {/* صورة المنتج */}
         <Link
           to="/product/$id"
           params={{
@@ -194,7 +186,7 @@ export const ProductCard = memo(
             outline-none
             focus-visible:ring-2
             focus-visible:ring-inset
-            focus-visible:ring-[#D65A31]
+            focus-visible:ring-[#E2723A]
           "
         >
           <div
@@ -202,71 +194,94 @@ export const ProductCard = memo(
               relative
               aspect-square
               overflow-hidden
-              bg-[#F4F7F8]
+              bg-[#F3F5F5]
               dark:bg-[#103847]
             "
           >
             <ProductImage
-              src={
-                product.images[0]
-              }
+              src={product.images[0]}
               alt={product.name}
               className="
                 h-full
                 w-full
                 transition-transform
-                duration-500
-                group-hover:scale-[1.035]
+                duration-700
+                ease-out
+                group-hover:scale-[1.06]
               "
             />
 
-            {discount > 0 ? (
+            {/* طبقة فخامة خفيفة */}
+            <div
+              aria-hidden="true"
+              className="
+                pointer-events-none
+                absolute
+                inset-0
+                bg-gradient-to-t
+                from-[#0D3B4D]/[0.12]
+                via-transparent
+                to-transparent
+                opacity-0
+                transition-opacity
+                duration-300
+                group-hover:opacity-100
+              "
+            />
+
+            {/* الخصم */}
+            {discount > 0 && (
               <span
                 className="
                   absolute
-                  start-2
-                  top-2
+                  start-2.5
+                  top-2.5
                   rounded-full
-                  bg-[#D65A31]
-                  px-2
-                  py-1
+                  bg-[#E2723A]
+                  px-2.5
+                  py-1.5
                   text-[9px]
                   font-extrabold
                   leading-none
                   text-white
-                  shadow-sm
+                  shadow-[0_5px_15px_-8px_rgba(226,114,58,0.9)]
                 "
               >
-                -{discount}%
+                خصم {discount}%
               </span>
-            ) : null}
+            )}
 
-            {product.badge ? (
+            {/* Badge */}
+            {product.badge && (
               <span
                 className="
                   absolute
-                  end-2
-                  top-2
-                  max-w-[62%]
+                  end-2.5
+                  top-2.5
+                  max-w-[58%]
                   truncate
                   rounded-full
                   border
-                  border-white/70
-                  bg-white/95
-                  px-2
-                  py-1
+                  border-white/80
+                  bg-white/90
+                  px-2.5
+                  py-1.5
                   text-[9px]
                   font-bold
-                  text-[#0E4D64]
+                  text-[#0D3B4D]
                   shadow-sm
-                  backdrop-blur-sm
+                  backdrop-blur-md
+                  dark:border-white/10
+                  dark:bg-[#0D3B4D]/90
+                  dark:text-white
                 "
               >
                 {product.badge}
               </span>
-            ) : null}
+            )}
 
-            {outOfStock ? (
+            {/* نفاد المخزون */}
+            {outOfStock && (
               <div
                 className="
                   absolute
@@ -274,32 +289,36 @@ export const ProductCard = memo(
                   flex
                   items-center
                   justify-center
-                  bg-white/65
+                  bg-[#0D3B4D]/45
                   backdrop-blur-[2px]
                 "
               >
                 <span
                   className="
                     rounded-full
-                    bg-[#0E4D64]
-                    px-3
-                    py-1.5
+                    border
+                    border-white/20
+                    bg-[#0D3B4D]/95
+                    px-4
+                    py-2
                     text-[10px]
-                    font-bold
+                    font-extrabold
                     text-white
+                    shadow-xl
                   "
                 >
                   نفد المخزون
                 </span>
               </div>
-            ) : null}
+            )}
           </div>
         </Link>
 
+        {/* معلومات المنتج */}
         <div
           className="
             flex
-            min-h-[150px]
+            min-h-[158px]
             flex-1
             flex-col
             p-3
@@ -310,88 +329,106 @@ export const ProductCard = memo(
             params={{
               id: product.id,
             }}
+            className="min-w-0"
           >
             <h3
               className="
                 line-clamp-2
                 min-h-[2.7rem]
-                text-[12.5px]
+                text-[12px]
                 font-bold
-                leading-[1.5]
-                text-foreground
+                leading-[1.55]
+                text-[#102F3A]
                 transition-colors
-                group-hover:text-[#0E4D64]
+                group-hover:text-[#0D3B4D]
+                dark:text-white
               "
             >
               {product.name}
             </h3>
           </Link>
 
-          {hasRating ? (
-            <div
-              className="
-                mt-2
-                flex
-                items-center
-                gap-1
-                text-[10px]
-                text-muted-foreground
-              "
-            >
-              <Star
+          {/* التقييم */}
+          <div className="mt-2 min-h-4">
+            {hasRating ? (
+              <div
                 className="
-                  h-3.5
-                  w-3.5
-                  fill-[#D65A31]
-                  text-[#D65A31]
-                "
-                aria-hidden="true"
-              />
-
-              <span
-                className="
-                  font-bold
-                  text-foreground
+                  flex
+                  items-center
+                  gap-1
+                  text-[9px]
                 "
               >
-                {rating.toLocaleString(
-                  "ar-EG",
-                  {
-                    maximumFractionDigits: 1,
-                  },
-                )}
-              </span>
+                <Star
+                  className="
+                    h-3.5
+                    w-3.5
+                    fill-[#E2723A]
+                    text-[#E2723A]
+                  "
+                  aria-hidden="true"
+                />
 
-              <span>
-                (
-                {reviews.toLocaleString(
-                  "ar-EG",
-                )}
-                )
-              </span>
-            </div>
-          ) : (
-            <div className="mt-2 h-4" />
-          )}
+                <span
+                  className="
+                    font-extrabold
+                    text-[#0D3B4D]
+                    dark:text-white
+                  "
+                >
+                  {rating.toLocaleString(
+                    "ar-EG",
+                    {
+                      maximumFractionDigits: 1,
+                    },
+                  )}
+                </span>
 
+                <span className="text-muted-foreground">
+                  (
+                  {reviews.toLocaleString(
+                    "ar-EG",
+                  )}
+                  )
+                </span>
+              </div>
+            ) : (
+              <div className="h-4" />
+            )}
+          </div>
+
+          {/* المخزون */}
           <div className="mt-1 min-h-4">
-            {lowStock ? (
+            {lowStock && (
               <p
                 className="
+                  flex
+                  items-center
+                  gap-1
                   text-[9px]
                   font-bold
-                  text-[#D65A31]
+                  text-[#E2723A]
                 "
               >
+                <span
+                  className="
+                    h-1.5
+                    w-1.5
+                    rounded-full
+                    bg-[#E2723A]
+                  "
+                />
+
                 متبقي{" "}
                 {stockLeft.toLocaleString(
                   "ar-EG",
                 )}{" "}
                 فقط
               </p>
-            ) : null}
+            )}
           </div>
 
+          {/* السعر والإضافة */}
           <div
             className="
               mt-auto
@@ -409,32 +446,31 @@ export const ProductCard = memo(
                   text-[14px]
                   font-extrabold
                   leading-tight
-                  text-[#0E4D64]
+                  text-[#0D3B4D]
+                  dark:text-[#E2723A]
                   sm:text-[15px]
                 "
               >
-                {formatPrice(
-                  currentPrice,
-                )}
+                {formatPrice(currentPrice)}
               </p>
 
-              {hasDiscount ? (
+              {hasDiscount && (
                 <p
                   className="
                     mt-1
                     truncate
                     text-[9px]
+                    font-medium
                     text-muted-foreground
                     line-through
                   "
                 >
-                  {formatPrice(
-                    oldPrice,
-                  )}
+                  {formatPrice(oldPrice)}
                 </p>
-              ) : null}
+              )}
             </div>
 
+            {/* زر السلة */}
             <button
               type="button"
               disabled={outOfStock}
@@ -452,12 +488,13 @@ export const ProductCard = memo(
                 shrink-0
                 place-items-center
                 rounded-xl
-                bg-[#D65A31]
+                bg-[#E2723A]
                 text-white
-                shadow-sm
+                shadow-[0_8px_18px_-10px_rgba(226,114,58,0.9)]
                 transition-all
-                duration-150
-                hover:bg-[#B74624]
+                duration-200
+                hover:scale-105
+                hover:bg-[#D35F2C]
                 active:scale-90
                 disabled:cursor-not-allowed
                 disabled:opacity-40
@@ -467,24 +504,27 @@ export const ProductCard = memo(
                 <>
                   <Check
                     className="h-4 w-4"
-                    strokeWidth={2.7}
+                    strokeWidth={2.8}
                   />
 
                   <span
                     className="
                       absolute
-                      -end-1
-                      -top-1
+                      -end-1.5
+                      -top-1.5
                       grid
-                      min-h-4
-                      min-w-4
+                      min-h-5
+                      min-w-5
                       place-items-center
                       rounded-full
-                      bg-[#0E4D64]
+                      border-2
+                      border-white
+                      bg-[#0D3B4D]
                       px-1
                       text-[8px]
                       font-extrabold
                       text-white
+                      dark:border-[#0A2A38]
                     "
                   >
                     {cartQuantity > 99
@@ -497,63 +537,92 @@ export const ProductCard = memo(
               ) : (
                 <Plus
                   className="h-4 w-4"
-                  strokeWidth={2.6}
+                  strokeWidth={2.7}
                 />
               )}
             </button>
           </div>
         </div>
 
+        {/* حالة المنتج في السلة */}
         {cartQuantity > 0 &&
-        !outOfStock ? (
-          <button
-            type="button"
-            onClick={openCart}
-            className="
-              mx-3
-              mb-3
-              flex
-              min-h-8
-              items-center
-              justify-center
-              rounded-xl
-              bg-[#0E4D64]/6
-              px-2
-              py-1.5
-              text-[9px]
-              font-bold
-              text-[#0E4D64]
-              transition-colors
-              hover:bg-[#0E4D64]/10
-            "
-          >
-            <Heart
-              className="me-1 h-3 w-3"
-              fill="currentColor"
-            />
-            في السلة ·{" "}
-            {cartQuantity.toLocaleString(
-              "ar-EG",
-            )}
-          </button>
-        ) : null}
+          !outOfStock && (
+            <button
+              type="button"
+              onClick={openCart}
+              className="
+                mx-3
+                mb-3
+                flex
+                min-h-8
+                items-center
+                justify-center
+                gap-1
+                rounded-xl
+                border
+                border-[#0D3B4D]/[0.07]
+                bg-[#0D3B4D]/[0.045]
+                px-2
+                py-1.5
+                text-[9px]
+                font-bold
+                text-[#0D3B4D]
+                transition-all
+                hover:border-[#E2723A]/20
+                hover:bg-[#E2723A]/[0.07]
+                dark:border-white/[0.06]
+                dark:bg-white/[0.035]
+                dark:text-white
+              "
+            >
+              <ShoppingBag
+                className="h-3 w-3"
+                strokeWidth={2}
+              />
+
+              في السلة ·{" "}
+              {cartQuantity.toLocaleString(
+                "ar-EG",
+              )}
+            </button>
+          )}
       </article>
     );
   },
 );
 
-ProductCard.displayName =
-  "ProductCard";
+ProductCard.displayName = "ProductCard";
 
 export function ProductCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="aspect-square w-full animate-pulse bg-muted" />
+    <div
+      className="
+        overflow-hidden
+        rounded-[1.25rem]
+        border
+        border-border
+        bg-card
+      "
+    >
+      <div
+        className="
+          aspect-square
+          w-full
+          animate-pulse
+          bg-muted
+        "
+      />
 
-      <div className="space-y-2 p-2.5">
-        <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
-        <div className="h-7 w-full animate-pulse rounded-xl bg-muted" />
+      <div className="space-y-3 p-3">
+        <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+
+        <div className="h-3 w-2/5 animate-pulse rounded bg-muted" />
+
+        <div className="flex items-center justify-between gap-2 pt-2">
+          <div className="h-5 w-1/3 animate-pulse rounded bg-muted" />
+
+          <div className="h-10 w-10 animate-pulse rounded-xl bg-muted" />
+        </div>
       </div>
     </div>
   );
