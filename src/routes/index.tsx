@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   ChevronLeft,
   CookingPot,
@@ -31,14 +31,14 @@ import { TopVendors } from "@/components/home/top-vendors";
 import { BottomNav } from "@/components/bottom-nav";
 import { fetchCategories, fetchProducts } from "@/lib/db";
 import type { Category } from "@/lib/db";
-import { BannerCarousel4to1 } from "@/components/home/BannerCarousel4to1";
-import { fetchHomeSections, type HomeSection } from "@/lib/store";
+import {
+  BannerCarousel4to1,
+} from "@/components/home/BannerCarousel4to1";
+import {
+  fetchHomeSections,
+  type HomeSection,
+} from "@/lib/store";
 
-/**
- * غلاف قسم في الصفحة الرئيسية.
- * يستخدم ترتيب وحالة الإظهار القادمة من
- * جدول home_sections في لوحة الإدارة.
- */
 function Sec({
   k,
   cfg,
@@ -46,19 +46,24 @@ function Sec({
 }: {
   k: string;
   cfg: Record<string, HomeSection>;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const section = cfg[k];
 
-  if (section && !section.is_active) return null;
+  if (section && !section.is_active) {
+    return null;
+  }
 
   return (
-    <div style={{ order: section?.sort_order ?? 999 }}>
+    <div
+      style={{
+        order: section?.sort_order ?? 999,
+      }}
+    >
       {children}
     </div>
   );
 }
-
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -73,8 +78,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content:
-          "شهارة | تسوق بلا حدود",
+        content: "شهارة | تسوق بلا حدود",
       },
       {
         property: "og:description",
@@ -102,13 +106,6 @@ type PopularCategory = Category & {
   popularityScore: number;
 };
 
-/**
- * زخرفة هندسية خفيفة مستوحاة من الزخارف
- * التراثية اليمنية.
- *
- * لا تعتمد على صورة خارجية حتى لا تزيد حجم
- * الصفحة أو تؤثر على سرعة التحميل.
- */
 function HeritagePattern({
   className = "",
 }: {
@@ -127,7 +124,7 @@ function HeritagePattern({
           rotate-45
           rounded-[1.25rem]
           border
-          border-[#D65A31]/[0.055]
+          border-[#E2723A]/[0.055]
         "
       />
 
@@ -141,8 +138,8 @@ function HeritagePattern({
           rotate-45
           rounded-[0.9rem]
           border
-          border-[#0E4D64]/[0.035]
-          dark:border-[#D65A31]/[0.035]
+          border-[#0D3B4D]/[0.035]
+          dark:border-[#E2723A]/[0.035]
         "
       />
 
@@ -155,79 +152,109 @@ function HeritagePattern({
           w-4
           rotate-45
           border
-          border-[#D65A31]/[0.12]
+          border-[#E2723A]/[0.12]
         "
       />
     </div>
   );
 }
 
-/**
- * إطار هوية خفيف للأقسام الكبيرة.
- */
-function HeritageSectionFrame({
+function SectionShell({
   children,
   className = "",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
-    <div
+    <section
       className={`
         relative
         overflow-hidden
+        rounded-[1.5rem]
+        border
+        border-[#0D3B4D]/[0.07]
+        bg-white/75
+        shadow-[0_18px_55px_-42px_rgba(13,59,77,0.55)]
+        backdrop-blur-md
+        dark:border-white/[0.06]
+        dark:bg-[#0A2A38]/50
         ${className}
       `}
     >
-      <span
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          inset-x-4
-          top-0
-          h-px
-          bg-gradient-to-r
-          from-transparent
-          via-[#D65A31]/20
-          to-transparent
-        "
-      />
-
       <HeritagePattern
         className="
-          -right-8
+          -right-10
           top-4
           opacity-70
-        "
-      />
-
-      <HeritagePattern
-        className="
-          -left-10
-          bottom-0
-          scale-75
-          opacity-50
         "
       />
 
       <div className="relative z-10">
         {children}
       </div>
+    </section>
+  );
+}
+
+function HorizontalProducts({
+  products,
+  loading,
+}: {
+  products: Awaited<ReturnType<typeof fetchProducts>>;
+  loading: boolean;
+}) {
+  return (
+    <div
+      className="
+        no-scrollbar
+        flex
+        snap-x
+        snap-mandatory
+        gap-3
+        overflow-x-auto
+        px-4
+        pb-2
+        md:grid
+        md:grid-cols-3
+        md:overflow-visible
+        lg:grid-cols-4
+      "
+    >
+      {loading
+        ? Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="
+                w-[174px]
+                shrink-0
+                snap-start
+                sm:w-[190px]
+                md:w-auto
+              "
+            >
+              <ProductCardSkeleton />
+            </div>
+          ))
+        : products.map((product) => (
+            <div
+              key={product.id}
+              className="
+                w-[174px]
+                shrink-0
+                snap-start
+                sm:w-[190px]
+                md:w-auto
+              "
+            >
+              <ProductCard product={product} />
+            </div>
+          ))}
     </div>
   );
 }
 
 function Index() {
-  /*
-   * نستفيد من استعلام واحد للمنتجات الأكثر مبيعاً:
-   *
-   * - أول 8 منتجات تُعرض في قسم الأكثر مبيعاً.
-   * - أول 24 منتجاً تُستخدم أيضاً لحساب الأقسام الرائجة.
-   *
-   * بهذه الطريقة لا نحتاج إلى استعلام منفصل لكل قسم.
-   */
   const {
     data: bestProducts = [],
     isLoading: bestProductsLoading,
@@ -242,9 +269,6 @@ function Index() {
     gcTime: 1000 * 60 * 30,
   });
 
-  /*
-   * أحدث المنتجات تعتمد مباشرة على created_at في قاعدة البيانات.
-   */
   const {
     data: newestProducts = [],
     isLoading: newestProductsLoading,
@@ -259,13 +283,6 @@ function Index() {
     gcTime: 1000 * 60 * 30,
   });
 
-  /*
-   * التصنيفات الحقيقية من Supabase.
-   *
-   * CategoryStrip يستخدم نفس queryKey،
-   * لذلك React Query يستطيع مشاركة النتيجة
-   * بدلاً من تحميل نفس البيانات مرتين.
-   */
   const {
     data: categories = [],
     isLoading: categoriesLoading,
@@ -276,21 +293,22 @@ function Index() {
     gcTime: 1000 * 60 * 60,
   });
 
+  const {
+    data: homeSections,
+  } = useQuery({
+    queryKey: ["home-sections"],
+    queryFn: () => fetchHomeSections(false),
+    staleTime: 5 * 60_000,
+  });
+
   const bestSellers = useMemo(
     () => bestProducts.slice(0, 8),
     [bestProducts],
   );
 
-  /*
-   * حساب الأقسام الرائجة فعلياً:
-   *
-   * نعتمد على sales_count للمنتجات الموجودة فعلياً.
-   *
-   * لا نضيف أي بيانات وهمية.
-   */
-  const popularCategories = useMemo<PopularCategory[]>(
-    () => {
-      if (categories.length === 0) {
+  const popularCategories =
+    useMemo<PopularCategory[]>(() => {
+      if (!categories.length) {
         return [];
       }
 
@@ -310,7 +328,6 @@ function Index() {
           };
 
         current.productCount += 1;
-
         current.popularityScore +=
           Number(product.sales_count) || 0;
 
@@ -365,52 +382,34 @@ function Index() {
         })
         .slice(0, 8);
 
-      /*
-       * في حالة عدم وجود مبيعات كافية حتى الآن،
-       * لا نخفي القسم بالكامل.
-       *
-       * نعرض أفضل التصنيفات حسب ترتيب الإدارة
-       * باستخدام بيانات حقيقية من categories.
-       */
-      if (ranked.length === 0) {
-        return categories
-          .slice()
-          .sort(
-            (a, b) =>
-              a.sort_order -
-              b.sort_order,
-          )
-          .slice(0, 8)
-          .map((category) => ({
-            ...category,
-            productCount: 0,
-            popularityScore: 0,
-          }));
+      if (ranked.length > 0) {
+        return ranked;
       }
 
-      return ranked;
-    },
-    [bestProducts, categories],
-  );
-
-  /**
-   * ترتيب وإظهار أقسام الصفحة الرئيسية
-   * يُدار من لوحة الإدارة.
-   */
-  const { data: homeSections } = useQuery({
-    queryKey: ["home-sections"],
-    queryFn: () => fetchHomeSections(false),
-    staleTime: 5 * 60_000,
-  });
+      return categories
+        .slice()
+        .sort(
+          (a, b) =>
+            a.sort_order -
+            b.sort_order,
+        )
+        .slice(0, 8)
+        .map((category) => ({
+          ...category,
+          productCount: 0,
+          popularityScore: 0,
+        }));
+    }, [bestProducts, categories]);
 
   const sectionMap = useMemo(() => {
     const map: Record<string, HomeSection> = {};
+
     for (const section of homeSections ?? []) {
       map[section.section_key] = section;
     }
+
     return map;
   }, [homeSections]);
-
 
   return (
     <div
@@ -419,15 +418,12 @@ function Index() {
         relative
         min-h-screen
         overflow-x-hidden
-        bg-[#FAF9F6]
+        bg-[#F6F2EE]
         text-foreground
         dark:bg-[#071B24]
       "
     >
-      {/* =====================================================
-          طبقة العلامة المائية الخلفية
-          ===================================================== */}
-
+      {/* الخلفية الفاخرة */}
       <div
         aria-hidden="true"
         className="
@@ -441,35 +437,35 @@ function Index() {
         <div
           className="
             absolute
-            -right-24
-            top-32
-            h-72
-            w-72
+            -right-32
+            top-40
+            h-96
+            w-96
             rounded-full
-            bg-[#0E4D64]/[0.025]
+            bg-[#0D3B4D]/[0.045]
             blur-3xl
-            dark:bg-[#D65A31]/[0.025]
+            dark:bg-[#E2723A]/[0.025]
           "
         />
 
         <div
           className="
             absolute
-            -left-24
-            top-[42rem]
-            h-80
-            w-80
+            -left-32
+            top-[48rem]
+            h-96
+            w-96
             rounded-full
-            bg-[#D65A31]/[0.035]
+            bg-[#E2723A]/[0.04]
             blur-3xl
-            dark:bg-[#0E4D64]/[0.08]
+            dark:bg-[#0D3B4D]/[0.12]
           "
         />
 
         <HeritagePattern
           className="
-            right-[-50px]
-            top-[18rem]
+            right-[-55px]
+            top-[20rem]
             scale-[1.8]
             opacity-80
           "
@@ -477,19 +473,19 @@ function Index() {
 
         <HeritagePattern
           className="
-            left-[-50px]
-            top-[68rem]
-            scale-[2.1]
-            opacity-70
+            left-[-55px]
+            top-[70rem]
+            scale-[2]
+            opacity-60
           "
         />
 
         <HeritagePattern
           className="
-            right-[-30px]
+            right-[-40px]
             top-[125rem]
-            scale-[1.7]
-            opacity-60
+            scale-[1.8]
+            opacity-50
           "
         />
       </div>
@@ -500,161 +496,129 @@ function Index() {
         <main
           className="
             mx-auto
-            w-full
-            max-w-6xl
             flex
+            w-full
+            max-w-7xl
             flex-col
-            gap-7
-            pb-24
-            sm:gap-8
+            gap-5
+            px-3
+            pb-28
+            pt-2
+            sm:gap-7
+            sm:px-4
+            lg:px-5
           "
         >
-          {/* =====================================================
-              القصص
-              ===================================================== */}
-
-          <Sec k="stories" cfg={sectionMap}>
-          <section
-            className="
-              relative
-              overflow-hidden
-              pt-1
-            "
+          {/* القصص */}
+          <Sec
+            k="stories"
+            cfg={sectionMap}
           >
-            <HeritagePattern
-              className="
-                right-[-70px]
-                top-[-45px]
-                scale-75
-                opacity-50
-              "
-            />
-
-            <div className="relative z-10">
+            <section className="relative">
               <StoriesCategories />
-            </div>
-          </section>
+            </section>
           </Sec>
 
-          {/* =====================================================
-              البنر الرئيسي
-              ===================================================== */}
-
-          <Sec k="hero" cfg={sectionMap}>
-          <HeritageSectionFrame
-            className="
-              mx-0
-              rounded-[1.75rem]
-              sm:mx-4
-            "
-          >
-            <div
-              className="
-                overflow-hidden
-                rounded-[1.75rem]
-                border
-                border-[#D65A31]/20
-                bg-white/50
-                p-1
-                shadow-[0_14px_45px_-28px_rgba(74,21,37,0.45)]
-                dark:bg-white/[0.025]
-              "
-            >
-              <PromoSlider />
-            </div>
-          </HeritageSectionFrame>
-          </Sec>
-
-          {/* =====================================================
-              التصنيفات الأساسية
-              ===================================================== */}
-
-          <Sec k="categories" cfg={sectionMap}>
-          <HeritageSectionFrame>
-            <CategoryStrip />
-          </HeritageSectionFrame>
-          </Sec>
-
-          {/* =====================================================
-              الأقسام الرائجة
-              ===================================================== */}
-
-          <Sec k="popular_categories" cfg={sectionMap}>
-          <HeritageSectionFrame
-            className="
-              rounded-[1.75rem]
-              border
-              border-[#D65A31]/10
-              bg-white/30
-              py-4
-              dark:bg-white/[0.015]
-            "
+          {/* Hero */}
+          <Sec
+            k="hero"
+            cfg={sectionMap}
           >
             <section
-              aria-labelledby="popular-categories-title"
-              className="space-y-3"
+              className="
+                relative
+                overflow-hidden
+                rounded-[1.5rem]
+                border
+                border-[#E2723A]/20
+                bg-[#0D3B4D]
+                p-1
+                shadow-[0_25px_65px_-35px_rgba(13,59,77,0.65)]
+              "
             >
-              <div className="flex items-center justify-between gap-3 px-4">
-                <div className="min-w-0">
-                  <h2
-                    id="popular-categories-title"
+              <div
+                className="
+                  overflow-hidden
+                  rounded-[1.25rem]
+                "
+              >
+                <PromoSlider />
+              </div>
+            </section>
+          </Sec>
+
+          {/* التصنيفات */}
+          <Sec
+            k="categories"
+            cfg={sectionMap}
+          >
+            <SectionShell
+              className="py-2"
+            >
+              <CategoryStrip />
+            </SectionShell>
+          </Sec>
+
+          {/* الأقسام الرائجة */}
+          <Sec
+            k="popular_categories"
+            cfg={sectionMap}
+          >
+            <SectionShell className="py-4">
+              <div
+                className="
+                  mb-3
+                  flex
+                  items-center
+                  justify-between
+                  gap-3
+                  px-4
+                "
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
                     className="
-                      flex
-                      items-center
-                      gap-2
-                      text-base
-                      font-bold
-                      text-foreground
-                      sm:text-lg
+                      grid
+                      h-10
+                      w-10
+                      shrink-0
+                      place-items-center
+                      rounded-xl
+                      bg-[#0D3B4D]
+                      text-[#E2723A]
+                      shadow-sm
                     "
                   >
-                    <span
+                    <Grid2X2
+                      className="h-5 w-5"
+                      strokeWidth={1.8}
+                    />
+                  </span>
+
+                  <div className="min-w-0">
+                    <h2
                       className="
-                        relative
-                        grid
-                        h-8
-                        w-8
-                        shrink-0
-                        place-items-center
-                        overflow-hidden
-                        rounded-xl
-                        bg-[#0E4D64]
-                        text-[#D65A31]
-                        shadow-sm
-                        dark:bg-[#0A3D50]
+                        text-base
+                        font-extrabold
+                        text-[#0D3B4D]
+                        dark:text-white
+                        sm:text-lg
                       "
                     >
-                      <span
-                        aria-hidden="true"
-                        className="
-                          absolute
-                          h-5
-                          w-5
-                          rotate-45
-                          border
-                          border-[#D65A31]/30
-                        "
-                      />
-
-                      <Grid2X2
-                        className="
-                          relative
-                          z-10
-                          h-4
-                          w-4
-                        "
-                        strokeWidth={1.8}
-                      />
-                    </span>
-
-                    <span>
                       أقسام رائجة
-                    </span>
-                  </h2>
+                    </h2>
 
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    الأكثر اهتماماً وطلباً من متسوقي شهارة
-                  </p>
+                    <p
+                      className="
+                        mt-0.5
+                        text-[10px]
+                        text-muted-foreground
+                        sm:text-[11px]
+                      "
+                    >
+                      اكتشف الأكثر طلباً في شهارة
+                    </p>
+                  </div>
                 </div>
 
                 <a
@@ -664,36 +628,40 @@ function Index() {
                     shrink-0
                     items-center
                     gap-0.5
-                    rounded-lg
+                    rounded-xl
                     px-2
-                    py-1
-                    text-xs
-                    font-medium
-                    text-[#0E4D64]
+                    py-2
+                    text-[11px]
+                    font-bold
+                    text-[#0D3B4D]
                     transition-colors
-                    hover:bg-[#0E4D64]/5
-                    dark:text-[#D65A31]
+                    hover:bg-[#0D3B4D]/5
+                    dark:text-[#E2723A]
                   "
                 >
-                  كل الأقسام
-
-                  <ChevronLeft
-                    className="h-4 w-4"
-                    aria-hidden="true"
-                  />
+                  الكل
+                  <ChevronLeft className="h-4 w-4" />
                 </a>
               </div>
 
               {categoriesLoading ? (
-                <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
+                <div
+                  className="
+                    no-scrollbar
+                    flex
+                    gap-3
+                    overflow-x-auto
+                    px-4
+                  "
+                >
                   {Array.from({
-                    length: 5,
+                    length: 6,
                   }).map((_, index) => (
                     <div
                       key={index}
                       className="
-                        h-[118px]
-                        w-[92px]
+                        h-28
+                        w-24
                         shrink-0
                         animate-pulse
                         rounded-2xl
@@ -702,7 +670,7 @@ function Index() {
                     />
                   ))}
                 </div>
-              ) : popularCategories.length > 0 ? (
+              ) : popularCategories.length ? (
                 <div
                   className="
                     no-scrollbar
@@ -722,8 +690,7 @@ function Index() {
                       const Icon =
                         CATEGORY_ICONS[
                           category.icon as keyof typeof CATEGORY_ICONS
-                        ] ??
-                        Grid2X2;
+                        ] ?? Grid2X2;
 
                       return (
                         <a
@@ -734,24 +701,23 @@ function Index() {
                           className="
                             group
                             flex
-                            w-[92px]
+                            w-24
                             shrink-0
                             flex-col
                             items-center
                             rounded-2xl
                             border
-                            border-[#D65A31]/15
-                            bg-white/70
+                            border-[#0D3B4D]/[0.07]
+                            bg-white/80
                             px-2
                             py-3
-                            shadow-[0_8px_25px_-20px_rgba(74,21,37,0.7)]
                             transition-all
                             duration-200
-                            hover:-translate-y-0.5
-                            hover:border-[#D65A31]/35
-                            hover:shadow-md
+                            hover:-translate-y-1
+                            hover:border-[#E2723A]/30
+                            hover:shadow-[0_14px_30px_-20px_rgba(13,59,77,0.55)]
                             active:scale-[0.97]
-                            dark:bg-[#0A3D50]/30
+                            dark:bg-white/[0.035]
                             md:w-auto
                           "
                         >
@@ -764,29 +730,15 @@ function Index() {
                               place-items-center
                               overflow-hidden
                               rounded-2xl
-                              bg-[#0E4D64]/[0.07]
-                              text-[#0E4D64]
+                              bg-[#0D3B4D]/[0.07]
+                              text-[#0D3B4D]
                               transition-transform
                               duration-200
                               group-hover:scale-105
-                              dark:bg-[#D65A31]/[0.08]
-                              dark:text-[#D65A31]
+                              dark:bg-[#E2723A]/[0.08]
+                              dark:text-[#E2723A]
                             "
                           >
-                            <span
-                              aria-hidden="true"
-                              className="
-                                absolute
-                                -right-2
-                                -top-2
-                                h-8
-                                w-8
-                                rotate-45
-                                border
-                                border-[#D65A31]/20
-                              "
-                            />
-
                             <Icon
                               className="
                                 relative
@@ -795,294 +747,198 @@ function Index() {
                                 w-6
                               "
                               strokeWidth={1.7}
-                              aria-hidden="true"
                             />
                           </span>
 
-                          <span className="mt-2 line-clamp-1 w-full text-center text-[11px] font-semibold text-foreground">
+                          <span
+                            className="
+                              mt-2
+                              line-clamp-1
+                              w-full
+                              text-center
+                              text-[10px]
+                              font-bold
+                              text-foreground
+                            "
+                          >
                             {category.name}
                           </span>
 
-                          {category.productCount > 0 ? (
-                            <span className="mt-0.5 text-[9px] text-muted-foreground">
+                          {category.productCount > 0 && (
+                            <span
+                              className="
+                                mt-1
+                                text-[8px]
+                                text-muted-foreground
+                              "
+                            >
                               {category.productCount.toLocaleString(
                                 "ar-EG",
                               )}{" "}
-                              منتجات رائجة
+                              منتجات
                             </span>
-                          ) : null}
+                          )}
                         </a>
                       );
                     },
                   )}
                 </div>
-              ) : (
-                <div className="mx-4 rounded-2xl border border-dashed border-border bg-card px-4 py-6 text-center text-xs text-muted-foreground">
-                  ستظهر الأقسام الرائجة هنا عند توفر المنتجات.
-                </div>
-              )}
-            </section>
-          </HeritageSectionFrame>
+              ) : null}
+            </SectionShell>
           </Sec>
 
-          {/* =====================================================
-              العروض الخاطفة
-              ===================================================== */}
-
-          <Sec k="flash_sale" cfg={sectionMap}>
-          <HeritageSectionFrame>
-            <FlashSaleSection />
-          </HeritageSectionFrame>
-          </Sec>
-
-          {/* =====================================================
-              العروض والتخفيضات
-              ===================================================== */}
-
-          <Sec k="offers" cfg={sectionMap}>
-          <HeritageSectionFrame>
-            <OffersSection />
-          </HeritageSectionFrame>
-          </Sec>
-
-          {/* =====================================================
-              البنرات الإضافية
-              ===================================================== */}
-
-          <Sec k="banners" cfg={sectionMap}>
-          <HeritageSectionFrame
-            className="
-              mx-0
-              sm:mx-4
-            "
+          {/* العروض الخاطفة */}
+          <Sec
+            k="flash_sale"
+            cfg={sectionMap}
           >
-            <div
+            <SectionShell>
+              <FlashSaleSection />
+            </SectionShell>
+          </Sec>
+
+          {/* العروض */}
+          <Sec
+            k="offers"
+            cfg={sectionMap}
+          >
+            <SectionShell>
+              <OffersSection />
+            </SectionShell>
+          </Sec>
+
+          {/* البنرات */}
+          <Sec
+            k="banners"
+            cfg={sectionMap}
+          >
+            <section
               className="
                 overflow-hidden
                 rounded-[1.5rem]
                 border
-                border-[#D65A31]/15
-                bg-white/40
-                shadow-[0_14px_40px_-30px_rgba(74,21,37,0.55)]
-                dark:bg-white/[0.02]
+                border-[#E2723A]/15
+                bg-[#0D3B4D]
+                p-1
+                shadow-[0_25px_60px_-38px_rgba(13,59,77,0.65)]
               "
             >
-              <BannerCarousel4to1 />
-            </div>
-          </HeritageSectionFrame>
+              <div className="overflow-hidden rounded-[1.25rem]">
+                <BannerCarousel4to1 />
+              </div>
+            </section>
           </Sec>
 
-          {/* =====================================================
-              الأكثر مبيعاً
-              ===================================================== */}
-
-          <Sec k="best_sellers" cfg={sectionMap}>
-          <HeritageSectionFrame
-            className="
-              rounded-[1.75rem]
-              border
-              border-[#D65A31]/10
-              bg-white/25
-              py-4
-              dark:bg-white/[0.012]
-            "
+          {/* الأكثر مبيعاً */}
+          <Sec
+            k="best_sellers"
+            cfg={sectionMap}
           >
-            <section
-              aria-labelledby="best-sellers-title"
-              className="space-y-3"
-            >
-              <div className="px-4">
+            <SectionShell className="py-4">
+              <div className="mb-3 px-4">
                 <SectionHeading
                   title="الأكثر مبيعًا"
                   to="/products"
                 />
               </div>
 
-              <div
-                className="
-                  no-scrollbar
-                  flex
-                  snap-x
-                  snap-mandatory
-                  gap-3
-                  overflow-x-auto
-                  px-4
-                  pb-2
-                  md:grid
-                  md:grid-cols-3
-                  md:overflow-visible
-                  lg:grid-cols-4
-                "
-              >
-                {bestProductsLoading
-                  ? Array.from({
-                      length: 4,
-                    }).map((_, index) => (
-                      <div
-                        key={index}
-                        className="
-                          w-[168px]
-                          shrink-0
-                          snap-start
-                          md:w-auto
-                        "
-                      >
-                        <ProductCardSkeleton />
-                      </div>
-                    ))
-                  : bestSellers.map(
-                      (product) => (
-                        <div
-                          key={product.id}
-                          className="
-                            w-[168px]
-                            shrink-0
-                            snap-start
-                            sm:w-[190px]
-                            md:w-auto
-                          "
-                        >
-                          <ProductCard
-                            product={product}
-                          />
-                        </div>
-                      ),
-                    )}
-              </div>
+              <HorizontalProducts
+                products={bestSellers}
+                loading={bestProductsLoading}
+              />
 
               {!bestProductsLoading &&
-              bestSellers.length === 0 ? (
-                <div className="mx-4 rounded-2xl border border-dashed border-border bg-card px-4 py-8 text-center text-xs text-muted-foreground">
-                  لا توجد منتجات متاحة حالياً.
-                </div>
-              ) : null}
-            </section>
-          </HeritageSectionFrame>
+                bestSellers.length === 0 && (
+                  <div
+                    className="
+                      mx-4
+                      rounded-2xl
+                      border
+                      border-dashed
+                      border-border
+                      px-4
+                      py-8
+                      text-center
+                      text-xs
+                      text-muted-foreground
+                    "
+                  >
+                    لا توجد منتجات متاحة حالياً.
+                  </div>
+                )}
+            </SectionShell>
           </Sec>
 
-          {/* =====================================================
-              أحدث المنتجات
-              تعتمد على created_at الحقيقي
-              ===================================================== */}
-
-          <Sec k="new_arrivals" cfg={sectionMap}>
-          <HeritageSectionFrame
-            className="
-              rounded-[1.75rem]
-              border
-              border-[#D65A31]/10
-              bg-white/25
-              py-4
-              dark:bg-white/[0.012]
-            "
+          {/* أحدث المنتجات */}
+          <Sec
+            k="new_arrivals"
+            cfg={sectionMap}
           >
-            <section
-              aria-labelledby="new-products-title"
-              className="space-y-3"
-            >
-              <div className="px-4">
+            <SectionShell className="py-4">
+              <div className="mb-3 px-4">
                 <SectionHeading
-                  title="أحدث المنتجات"
+                  title="وصل حديثًا"
                   to="/products"
                 />
               </div>
 
-              <div
-                className="
-                  no-scrollbar
-                  flex
-                  snap-x
-                  snap-mandatory
-                  gap-3
-                  overflow-x-auto
-                  px-4
-                  pb-2
-                  md:grid
-                  md:grid-cols-3
-                  md:overflow-visible
-                  lg:grid-cols-4
-                "
-              >
-                {newestProductsLoading
-                  ? Array.from({
-                      length: 4,
-                    }).map((_, index) => (
-                      <div
-                        key={index}
-                        className="
-                          w-[168px]
-                          shrink-0
-                          snap-start
-                          md:w-auto
-                        "
-                      >
-                        <ProductCardSkeleton />
-                      </div>
-                    ))
-                  : newestProducts.map(
-                      (product) => (
-                        <div
-                          key={product.id}
-                          className="
-                            w-[168px]
-                            shrink-0
-                            snap-start
-                            sm:w-[190px]
-                            md:w-auto
-                          "
-                        >
-                          <ProductCard
-                            product={product}
-                          />
-                        </div>
-                      ),
-                    )}
-              </div>
+              <HorizontalProducts
+                products={newestProducts}
+                loading={newestProductsLoading}
+              />
 
               {!newestProductsLoading &&
-              newestProducts.length === 0 ? (
-                <div className="mx-4 rounded-2xl border border-dashed border-border bg-card px-4 py-8 text-center text-xs text-muted-foreground">
-                  لا توجد منتجات جديدة حالياً.
-                </div>
-              ) : null}
-            </section>
-          </HeritageSectionFrame>
+                newestProducts.length === 0 && (
+                  <div
+                    className="
+                      mx-4
+                      rounded-2xl
+                      border
+                      border-dashed
+                      border-border
+                      px-4
+                      py-8
+                      text-center
+                      text-xs
+                      text-muted-foreground
+                    "
+                  >
+                    لا توجد منتجات جديدة حالياً.
+                  </div>
+                )}
+            </SectionShell>
           </Sec>
 
-          {/* =====================================================
-              الماركات
-              ===================================================== */}
-
-          <Sec k="brands" cfg={sectionMap}>
-          <HeritageSectionFrame>
-            <BrandsSection />
-          </HeritageSectionFrame>
+          {/* الماركات */}
+          <Sec
+            k="brands"
+            cfg={sectionMap}
+          >
+            <SectionShell>
+              <BrandsSection />
+            </SectionShell>
           </Sec>
 
-          {/* =====================================================
-              أبرز التجار
-              ===================================================== */}
-
-          <Sec k="top_vendors" cfg={sectionMap}>
-          <HeritageSectionFrame>
-            <TopVendors />
-          </HeritageSectionFrame>
+          {/* التجار */}
+          <Sec
+            k="top_vendors"
+            cfg={sectionMap}
+          >
+            <SectionShell>
+              <TopVendors />
+            </SectionShell>
           </Sec>
 
-          {/* =====================================================
-              المنتجات المحلية
-              ===================================================== */}
-
-          <Sec k="local_products" cfg={sectionMap}>
-          <HeritageSectionFrame>
-            <LocalProducts />
-          </HeritageSectionFrame>
+          {/* المنتجات اليمنية */}
+          <Sec
+            k="local_products"
+            cfg={sectionMap}
+          >
+            <SectionShell>
+              <LocalProducts />
+            </SectionShell>
           </Sec>
         </main>
-
-        {/* =====================================================
-            Bottom Navigation
-            ===================================================== */}
 
         <BottomNav />
       </div>
