@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +39,8 @@ type Item = {
 type Order = {
   id: string;
   order_number: string;
+  invoice_number: string | null;
+  currency: string | null;
   status: string;
   payment_status: string;
   payment_method_code: string;
@@ -58,29 +60,15 @@ type Order = {
 };
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
-  awaiting_payment: [
-    "pending",
-    "cancelled",
-  ],
+  awaiting_payment: ["pending", "cancelled"],
 
-  pending: [
-    "confirmed",
-    "cancelled",
-  ],
+  pending: ["confirmed", "cancelled"],
 
-  confirmed: [
-    "processing",
-    "cancelled",
-  ],
+  confirmed: ["processing", "cancelled"],
 
-  processing: [
-    "shipped",
-    "cancelled",
-  ],
+  processing: ["shipped", "cancelled"],
 
-  shipped: [
-    "delivered",
-  ],
+  shipped: ["delivered"],
 
   delivered: [],
 
@@ -160,7 +148,28 @@ function AdminOrders() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id,order_number,status,payment_status,payment_method_code,total,subtotal,delivery_fee,shipping_name,shipping_phone,shipping_city,shipping_district,shipping_details,latitude,longitude,created_at,courier_id,order_items(id,product_name,quantity,unit_price)",
+          [
+            "id",
+            "order_number",
+            "invoice_number",
+            "currency",
+            "status",
+            "payment_status",
+            "payment_method_code",
+            "total",
+            "subtotal",
+            "delivery_fee",
+            "shipping_name",
+            "shipping_phone",
+            "shipping_city",
+            "shipping_district",
+            "shipping_details",
+            "latitude",
+            "longitude",
+            "created_at",
+            "courier_id",
+            "order_items(id,product_name,quantity,unit_price)",
+          ].join(","),
         )
         .order("created_at", {
           ascending: false,
@@ -346,17 +355,21 @@ function AdminOrders() {
   function shareWhatsApp(order: Order) {
     const lines = [
       `طلب: ${order.order_number}`,
+      order.invoice_number
+        ? `الفاتورة: ${order.invoice_number}`
+        : "",
       `العميل: ${order.shipping_name} - ${order.shipping_phone}`,
       `العنوان: ${order.shipping_city} ${order.shipping_district} - ${order.shipping_details}`,
       `الحالة: ${
         ORDER_STATUS_LABELS[order.status] ??
         order.status
       }`,
-      `الدفع: ${
+      `حالة الدفع: ${
         PAYMENT_STATUS_LABELS[
           order.payment_status
         ] ?? order.payment_status
-      } (${order.payment_method_code})`,
+      }`,
+      `طريقة الدفع: ${order.payment_method_code}`,
       `الإجمالي: ${formatPrice(order.total)}`,
       ...order.order_items.map(
         (item) =>
@@ -413,6 +426,15 @@ function AdminOrders() {
                     {order.order_number}
                   </span>
 
+                  {order.invoice_number ? (
+                    <span
+                      dir="ltr"
+                      className="rounded-full bg-muted px-2 py-0.5 font-mono text-muted-foreground"
+                    >
+                      {order.invoice_number}
+                    </span>
+                  ) : null}
+
                   <span className="rounded-full bg-brand-soft px-2 py-0.5 text-primary">
                     {PAYMENT_STATUS_LABELS[
                       order.payment_status
@@ -444,50 +466,46 @@ function AdminOrders() {
                     <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto rounded-3xl border-none bg-white p-2 shadow-2xl sm:p-6">
                       <InvoiceView
                         order={{
-                          invoiceNumber: `INV-2026-${order.order_number.replace(
-                            /\D/g,
-                            "",
-                          )}`,
-                          invoiceDate:
-                            new Date(
-                              order.created_at,
-                            ).toLocaleDateString(
-                              "ar-YE",
-                            ),
-                          orderNumber:
+                          invoice_number:
+                            order.invoice_number,
+                          order_number:
                             order.order_number,
-                          customerDetails: {
-                            name: order.shipping_name,
-                            phone:
-                              order.shipping_phone,
-                            address: `${order.shipping_city} - ${order.shipping_district} (${order.shipping_details})`,
-                            paymentMethod:
-                              PAYMENT_STATUS_LABELS[
-                                order.payment_status
-                              ] ??
-                              order.payment_method_code,
-                            currency:
-                              "ريال يمني (YER)",
-                          },
-                          items:
+                          created_at:
+                            order.created_at,
+                          currency:
+                            order.currency,
+                          shipping_name:
+                            order.shipping_name,
+                          shipping_phone:
+                            order.shipping_phone,
+                          shipping_city:
+                            order.shipping_city,
+                          shipping_district:
+                            order.shipping_district,
+                          shipping_details:
+                            order.shipping_details,
+                          payment_method_code:
+                            order.payment_method_code,
+                          payment_status:
+                            order.payment_status,
+                          subtotal:
+                            order.subtotal,
+                          delivery_fee:
+                            order.delivery_fee,
+                          total:
+                            order.total,
+                          order_items:
                             order.order_items.map(
                               (item) => ({
                                 id: item.id,
-                                title:
+                                product_name:
                                   item.product_name,
                                 quantity:
                                   item.quantity,
-                                price:
+                                unit_price:
                                   item.unit_price,
-                                image:
-                                  "/logo.png",
                               }),
                             ),
-                          subtotal:
-                            order.subtotal,
-                          shippingFee:
-                            order.delivery_fee,
-                          total: order.total,
                         }}
                       />
                     </DialogContent>
@@ -552,6 +570,23 @@ function AdminOrders() {
                         {order.shipping_city}{" "}
                         {order.shipping_district} —{" "}
                         {order.shipping_details}
+                      </p>
+
+                      <p>
+                        رقم الفاتورة:{" "}
+                        <span
+                          dir="ltr"
+                          className="font-mono"
+                        >
+                          {order.invoice_number ??
+                            "غير متوفر"}
+                        </span>
+                      </p>
+
+                      <p>
+                        العملة:{" "}
+                        {order.currency ??
+                          "YER"}
                       </p>
 
                       <p>
