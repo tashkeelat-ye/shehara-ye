@@ -2,7 +2,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type InvoiceSettings = {
   id: boolean;
-
   enabled: boolean;
 
   invoice_title: string;
@@ -60,7 +59,6 @@ export type InvoiceSettings = {
 
 export const DEFAULT_INVOICE_SETTINGS: InvoiceSettings = {
   id: true,
-
   enabled: true,
 
   invoice_title: "فاتورة بيع",
@@ -117,15 +115,13 @@ export const DEFAULT_INVOICE_SETTINGS: InvoiceSettings = {
 };
 
 export async function fetchInvoiceSettings(): Promise<InvoiceSettings> {
-  const { data, error } = await supabase
-    .from("invoice_settings")
-    .select("*")
-    .eq("id", true)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc(
+    "get_invoice_settings",
+  );
 
   if (error) {
     console.error("fetchInvoiceSettings:", error);
-    return DEFAULT_INVOICE_SETTINGS;
+    throw error;
   }
 
   return {
@@ -137,26 +133,20 @@ export async function fetchInvoiceSettings(): Promise<InvoiceSettings> {
 export async function updateInvoiceSettings(
   values: Partial<InvoiceSettings>,
 ): Promise<InvoiceSettings> {
-  const payload = {
-    ...values,
-    id: true,
-    updated_at: new Date().toISOString(),
-  };
-
-  const { data, error } = await supabase
-    .from("invoice_settings")
-    .upsert(payload, {
-      onConflict: "id",
-    })
-    .select("*")
-    .single();
+  const { data, error } = await supabase.rpc(
+    "update_invoice_settings",
+    {
+      _settings: values,
+    },
+  );
 
   if (error) {
+    console.error("updateInvoiceSettings:", error);
     throw error;
   }
 
   return {
     ...DEFAULT_INVOICE_SETTINGS,
-    ...data,
+    ...(data ?? {}),
   } as InvoiceSettings;
 }
