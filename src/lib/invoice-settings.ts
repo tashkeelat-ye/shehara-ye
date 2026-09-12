@@ -114,6 +114,37 @@ export const DEFAULT_INVOICE_SETTINGS: InvoiceSettings = {
   updated_at: "",
 };
 
+/*
+ * ملف types.ts الحالي في المشروع لا يحتوي على invoice_settings
+ * رغم أن جدولها موجود في migrations.
+ *
+ * لذلك نستخدم واجهة صغيرة محلية للوصول إلى الجدول،
+ * بدلاً من تعطيل TypeScript أو استخدام any.
+ */
+
+type QueryResult = {
+  data: unknown;
+  error: unknown;
+};
+
+type InvoiceSettingsQuery = {
+  select(columns?: string): InvoiceSettingsQuery;
+  update(values: Record<string, unknown>): InvoiceSettingsQuery;
+  eq(
+    column: string,
+    value: unknown,
+  ): InvoiceSettingsQuery;
+  maybeSingle(): Promise<QueryResult>;
+  single(): Promise<QueryResult>;
+};
+
+type UntypedSupabase = {
+  from(table: string): InvoiceSettingsQuery;
+};
+
+const db =
+  supabase as unknown as UntypedSupabase;
+
 function mergeInvoiceSettings(
   value: unknown,
 ): InvoiceSettings {
@@ -130,20 +161,12 @@ function mergeInvoiceSettings(
   const source =
     value as Partial<InvoiceSettings>;
 
-  const paperSize =
-    source.paper_size === "thermal"
-      ? "thermal"
-      : "A4";
-
   return {
     ...DEFAULT_INVOICE_SETTINGS,
 
     ...source,
 
-    id:
-      source.id === true
-        ? true
-        : DEFAULT_INVOICE_SETTINGS.id,
+    id: true,
 
     enabled:
       typeof source.enabled === "boolean"
@@ -151,61 +174,97 @@ function mergeInvoiceSettings(
         : DEFAULT_INVOICE_SETTINGS.enabled,
 
     paper_size:
-      paperSize,
+      source.paper_size === "thermal"
+        ? "thermal"
+        : "A4",
 
     invoice_prefix:
-      typeof source.invoice_prefix === "string" &&
-      source.invoice_prefix.trim()
+      typeof source.invoice_prefix ===
+        "string" &&
+      source.invoice_prefix.trim().length > 0
         ? source.invoice_prefix.trim()
         : DEFAULT_INVOICE_SETTINGS.invoice_prefix,
+
+    updated_at:
+      typeof source.updated_at ===
+        "string"
+        ? source.updated_at
+        : DEFAULT_INVOICE_SETTINGS.updated_at,
   };
 }
 
-export async function fetchInvoiceSettings(): Promise<InvoiceSettings> {
-  const client =
-    supabase as typeof supabase & {
-      rpc: (
-        functionName: string,
-        args?: Record<string, unknown>,
-      ) => Promise<{
-        data: unknown;
-        error: unknown;
-      }>;
-    };
+function normalizeError(
+  error: unknown,
+): Error {
+  if (error instanceof Error) {
+    return error;
+  }
 
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error
+  ) {
+    return new Error(
+      String(
+        (
+          error as {
+            message?: unknown;
+          }
+        ).message ??
+          "خطأ غير معروف",
+      ),
+    );
+  }
+
+  return new Error(
+    "تعذر الوصول إلى إعدادات الفاتورة.",
+  );
+}
+
+/**
+ * جلب إعدادات الفاتورة مباشرة من قاعدة البيانات.
+ *
+ * لا نعتمد هنا على RPC حتى لا تصبح صفحة إعدادات
+ * المتجر بالكامل رهينة لـ PostgREST RPC schema cache.
+ */
+export async function fetchInvoiceSettings(): Promise<InvoiceSettings> {
   const {
     data,
     error,
-  } = await client.rpc(
-    "get_invoice_settings",
-  );
+  } = await db
+    .from("invoice_settings")
+    .select("*")
+    .eq("id", true)
+    .maybeSingle();
 
   if (error) {
     console.error(
-      "[InvoiceSettings] fetch failed:",
+      "[InvoiceSettings] direct read failed:",
       error,
     );
 
-    throw error;
+    throw normalizeError(error);
+  }
+
+  if (!data) {
+    throw new Error(
+      "لم يتم العثور على سجل إعدادات الفاتورة.",
+    );
   }
 
   return mergeInvoiceSettings(data);
 }
 
+/**
+ * تحديث إعدادات الفاتورة مباشرة في قاعدة البيانات.
+ *
+ * الحماية الفعلية موجودة في RLS:
+ * admin فقط يستطيع UPDATE.
+ */
 export async function updateInvoiceSettings(
   values: Partial<InvoiceSettings>,
 ): Promise<InvoiceSettings> {
-  const client =
-    supabase as typeof supabase & {
-      rpc: (
-        functionName: string,
-        args?: Record<string, unknown>,
-      ) => Promise<{
-        data: unknown;
-        error: unknown;
-      }>;
-    };
-
   const payload: Record<
     string,
     unknown
@@ -215,35 +274,41 @@ export async function updateInvoiceSettings(
     key,
     value,
   ] of Object.entries(values)) {
-    if (key === "id") {
+    if (
+      key === "id" ||
+      key === "updated_at" ||
+      value === undefined ||
+      value === null
+    ) {
       continue;
     }
 
-    if (
-      value !== undefined &&
-      value !== null
-    ) {
-      payload[key] = value;
-    }
+    payload[key] = value;
   }
 
   const {
     data,
     error,
-  } = await client.rpc(
-    "update_invoice_settings",
-    {
-      _settings: payload,
-    },
-  );
+  } = await db
+    .from("invoice_settings")
+    .update(payload)
+    .eq("id", true)
+    .select("*")
+    .single();
 
   if (error) {
     console.error(
-      "[InvoiceSettings] update failed:",
+      "[InvoiceSettings] direct update failed:",
       error,
     );
 
-    throw error;
+    throw normalizeError(error);
+  }
+
+  if (!data) {
+    throw new Error(
+      "تعذر حفظ إعدادات الفاتورة.",
+    );
   }
 
   return mergeInvoiceSettings(data);
