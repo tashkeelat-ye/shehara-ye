@@ -1,15 +1,23 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+} from "@tanstack/react-router";
+
 import { useQuery } from "@tanstack/react-query";
+
 import {
   ArrowRight,
   Share2,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+
 import {
   PAYMENT_STATUS_LABELS,
 } from "@/lib/store";
+
 import {
   InvoiceView,
   type InvoiceData,
@@ -25,11 +33,20 @@ type OrderItem = {
   color: string | null;
 };
 
+type InvoiceRow = {
+  id: string;
+  invoice_number: string;
+  issued_at: string;
+  snapshot: unknown;
+};
+
 type OrderRow = {
   id: string;
   order_number: string;
+
   payment_status: string;
   payment_method_code: string;
+
   subtotal: number;
   delivery_fee: number;
   total: number;
@@ -44,11 +61,13 @@ type OrderRow = {
   notes: string | null;
   created_at: string;
 
-  order_items: OrderItem[] | null;
+  order_items:
+    | OrderItem[]
+    | null;
 
-  invoices: {
-    invoice_number: string;
-  }[] | null;
+  invoices:
+    | InvoiceRow[]
+    | null;
 };
 
 export const Route = createFileRoute(
@@ -58,13 +77,26 @@ export const Route = createFileRoute(
 });
 
 function InvoicePage() {
-  const { id } = Route.useParams();
+  const { id } =
+    Route.useParams();
 
   const query = useQuery({
-    queryKey: ["customer-invoice", id],
+    queryKey: [
+      "customer-invoice",
+      id,
+    ],
 
     queryFn: async (): Promise<OrderRow> => {
-      const { data, error } = await supabase
+      if (!id) {
+        throw new Error(
+          "معرّف الطلب غير صالح.",
+        );
+      }
+
+      const {
+        data,
+        error,
+      } = await supabase
         .from("orders")
         .select(
           [
@@ -84,13 +116,18 @@ function InvoicePage() {
             "notes",
             "created_at",
             "order_items(id,product_name,product_image,quantity,unit_price,size,color)",
-            "invoices(invoice_number)",
+            "invoices(id,invoice_number,issued_at,snapshot)",
           ].join(","),
         )
         .eq("id", id)
         .maybeSingle();
 
       if (error) {
+        console.error(
+          "[InvoicePage] query failed:",
+          error,
+        );
+
         throw error;
       }
 
@@ -105,24 +142,40 @@ function InvoicePage() {
   });
 
   const share = async () => {
-    const url = window.location.href;
+    const url =
+      window.location.href;
+
+    const invoiceNumber =
+      query.data?.invoices?.[0]
+        ?.invoice_number ??
+      "";
 
     try {
       if (
-        typeof navigator.share === "function"
+        typeof navigator.share ===
+        "function"
       ) {
         await navigator.share({
-          title: `فاتورة شهارة`,
-          text: `الفاتورة الإلكترونية للطلب ${
-            query.data?.order_number ?? ""
-          }`,
+          title:
+            invoiceNumber
+              ? `فاتورة شهارة — ${invoiceNumber}`
+              : "فاتورة شهارة",
+
+          text:
+            `الفاتورة الإلكترونية للطلب ${
+              query.data
+                ?.order_number ?? ""
+            }`,
+
           url,
         });
 
         return;
       }
 
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(
+        url,
+      );
 
       toast.success(
         "تم نسخ رابط الفاتورة.",
@@ -130,7 +183,8 @@ function InvoicePage() {
     } catch (error) {
       if (
         error instanceof DOMException &&
-        error.name === "AbortError"
+        error.name ===
+          "AbortError"
       ) {
         return;
       }
@@ -143,15 +197,21 @@ function InvoicePage() {
 
   if (query.isLoading) {
     return (
-      <div className="min-h-screen bg-[#F6F2EE] p-6">
-        <div className="mx-auto max-w-4xl animate-pulse rounded-3xl bg-white p-10">
-          جارٍ تجهيز الفاتورة...
+      <div
+        dir="rtl"
+        className="min-h-screen bg-[#F6F2EE] p-6"
+      >
+        <div className="mx-auto max-w-4xl animate-pulse rounded-3xl bg-white p-10 text-center">
+          جارٍ تجهيز الفاتورة الإلكترونية...
         </div>
       </div>
     );
   }
 
-  if (query.isError || !query.data) {
+  if (
+    query.isError ||
+    !query.data
+  ) {
     return (
       <div
         dir="rtl"
@@ -180,12 +240,14 @@ function InvoicePage() {
     );
   }
 
-  const order = query.data;
+  const order =
+    query.data;
 
-  const invoiceNumber =
-    order.invoices?.[0]?.invoice_number;
+  const issuedInvoice =
+    order.invoices?.[0] ??
+    null;
 
-  if (!invoiceNumber) {
+  if (!issuedInvoice) {
     return (
       <div
         dir="rtl"
@@ -196,27 +258,42 @@ function InvoicePage() {
             الفاتورة غير متاحة
           </h1>
 
-          <p className="mt-2 text-sm text-muted-foreground">
-            لم يتم إصدار فاتورة إلكترونية لهذا الطلب بعد.
+          <p className="mt-2 text-sm leading-7 text-muted-foreground">
+            لم يتم إصدار سجل الفاتورة لهذا الطلب.
+            إذا كان الطلب جديداً، أعد فتح الصفحة بعد
+            لحظات. إذا استمرت المشكلة، فهناك مشكلة
+            في إصدار الفاتورة من قاعدة البيانات.
           </p>
+
+          <Link
+            to="/orders"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0D3B4D] px-5 py-3 text-xs font-bold text-white"
+          >
+            <ArrowRight className="h-4 w-4" />
+            العودة إلى طلباتي
+          </Link>
         </div>
       </div>
     );
   }
 
-  const invoice: Partial<InvoiceData> = {
-    invoiceNumber,
+  const invoice:
+    Partial<InvoiceData> = {
+    invoiceNumber:
+      issuedInvoice.invoice_number,
 
-    invoiceDate: new Date(
-      order.created_at,
-    ).toLocaleDateString("ar-YE"),
+    invoiceDate:
+      issuedInvoice.issued_at,
 
     orderNumber:
       order.order_number,
 
     customerDetails: {
-      name: order.shipping_name,
-      phone: order.shipping_phone,
+      name:
+        order.shipping_name,
+
+      phone:
+        order.shipping_phone,
 
       address: [
         order.shipping_city,
@@ -233,7 +310,8 @@ function InvoicePage() {
       paymentStatus:
         PAYMENT_STATUS_LABELS[
           order.payment_status
-        ] ?? order.payment_status,
+        ] ??
+        order.payment_status,
 
       currency:
         "ريال يمني (YER)",
@@ -251,6 +329,7 @@ function InvoicePage() {
         item.size
           ? `المقاس: ${item.size}`
           : "",
+
         item.color
           ? `اللون: ${item.color}`
           : "",
@@ -259,13 +338,23 @@ function InvoicePage() {
         .join(" · "),
 
       image:
-        item.product_image || undefined,
+        item.product_image ||
+        undefined,
 
       quantity:
         item.quantity,
 
       price:
         item.unit_price,
+
+      currency:
+        "YER",
+
+      size:
+        item.size,
+
+      color:
+        item.color,
     })),
 
     subtotal:
@@ -287,7 +376,9 @@ function InvoicePage() {
       className="min-h-screen bg-[#F6F2EE] py-4 md:py-8"
     >
       <div className="mx-auto max-w-4xl px-2 md:px-4">
+
         <div className="mb-3 flex items-center justify-between gap-2 print:hidden">
+
           <Link
             to="/orders"
             className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-[#0D3B4D] shadow-sm"
@@ -298,17 +389,21 @@ function InvoicePage() {
 
           <button
             type="button"
-            onClick={() => void share()}
+            onClick={() =>
+              void share()
+            }
             className="inline-flex items-center gap-2 rounded-xl bg-[#0D3B4D] px-4 py-2.5 text-xs font-bold text-white"
           >
             <Share2 className="h-4 w-4 text-[#E2723A]" />
             مشاركة الفاتورة
           </button>
+
         </div>
 
         <InvoiceView
           order={invoice}
         />
+
       </div>
     </div>
   );
