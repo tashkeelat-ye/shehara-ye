@@ -114,39 +114,137 @@ export const DEFAULT_INVOICE_SETTINGS: InvoiceSettings = {
   updated_at: "",
 };
 
+function mergeInvoiceSettings(
+  value: unknown,
+): InvoiceSettings {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    return {
+      ...DEFAULT_INVOICE_SETTINGS,
+    };
+  }
+
+  const source =
+    value as Partial<InvoiceSettings>;
+
+  const paperSize =
+    source.paper_size === "thermal"
+      ? "thermal"
+      : "A4";
+
+  return {
+    ...DEFAULT_INVOICE_SETTINGS,
+
+    ...source,
+
+    id:
+      source.id === true
+        ? true
+        : DEFAULT_INVOICE_SETTINGS.id,
+
+    enabled:
+      typeof source.enabled === "boolean"
+        ? source.enabled
+        : DEFAULT_INVOICE_SETTINGS.enabled,
+
+    paper_size:
+      paperSize,
+
+    invoice_prefix:
+      typeof source.invoice_prefix === "string" &&
+      source.invoice_prefix.trim()
+        ? source.invoice_prefix.trim()
+        : DEFAULT_INVOICE_SETTINGS.invoice_prefix,
+  };
+}
+
 export async function fetchInvoiceSettings(): Promise<InvoiceSettings> {
-  const { data, error } = await supabase.rpc(
+  const client =
+    supabase as typeof supabase & {
+      rpc: (
+        functionName: string,
+        args?: Record<string, unknown>,
+      ) => Promise<{
+        data: unknown;
+        error: unknown;
+      }>;
+    };
+
+  const {
+    data,
+    error,
+  } = await client.rpc(
     "get_invoice_settings",
   );
 
   if (error) {
-    console.error("fetchInvoiceSettings:", error);
+    console.error(
+      "[InvoiceSettings] fetch failed:",
+      error,
+    );
+
     throw error;
   }
 
-  return {
-    ...DEFAULT_INVOICE_SETTINGS,
-    ...(data ?? {}),
-  } as InvoiceSettings;
+  return mergeInvoiceSettings(data);
 }
 
 export async function updateInvoiceSettings(
   values: Partial<InvoiceSettings>,
 ): Promise<InvoiceSettings> {
-  const { data, error } = await supabase.rpc(
+  const client =
+    supabase as typeof supabase & {
+      rpc: (
+        functionName: string,
+        args?: Record<string, unknown>,
+      ) => Promise<{
+        data: unknown;
+        error: unknown;
+      }>;
+    };
+
+  const payload: Record<
+    string,
+    unknown
+  > = {};
+
+  for (const [
+    key,
+    value,
+  ] of Object.entries(values)) {
+    if (key === "id") {
+      continue;
+    }
+
+    if (
+      value !== undefined &&
+      value !== null
+    ) {
+      payload[key] = value;
+    }
+  }
+
+  const {
+    data,
+    error,
+  } = await client.rpc(
     "update_invoice_settings",
     {
-      _settings: values,
+      _settings: payload,
     },
   );
 
   if (error) {
-    console.error("updateInvoiceSettings:", error);
+    console.error(
+      "[InvoiceSettings] update failed:",
+      error,
+    );
+
     throw error;
   }
 
-  return {
-    ...DEFAULT_INVOICE_SETTINGS,
-    ...(data ?? {}),
-  } as InvoiceSettings;
+  return mergeInvoiceSettings(data);
 }
