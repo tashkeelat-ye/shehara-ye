@@ -61,6 +61,14 @@ type OrderRow = {
   notes: string | null;
   created_at: string;
 
+  /**
+   * رقم الفاتورة المخزن مباشرة في الطلب.
+   *
+   * يستخدم كمصدر أساسي عند توفره،
+   * مع الاحتفاظ بعلاقة invoices كـ fallback.
+   */
+  invoice_number: string | null;
+
   order_items:
     | OrderItem[]
     | null;
@@ -115,6 +123,7 @@ function InvoicePage() {
             "shipping_landmark",
             "notes",
             "created_at",
+            "invoice_number",
             "order_items(id,product_name,product_image,quantity,unit_price,size,color)",
             "invoices(id,invoice_number,issued_at,snapshot)",
           ].join(","),
@@ -133,7 +142,7 @@ function InvoicePage() {
 
       if (!data) {
         throw new Error(
-          "الفاتورة غير موجودة أو لا تملك صلاحية الوصول إليها.",
+          "الطلب غير موجود أو لا تملك صلاحية الوصول إليه.",
         );
       }
 
@@ -141,14 +150,47 @@ function InvoicePage() {
     },
   });
 
+  /**
+   * الحصول على رقم الفاتورة مع الحفاظ على التوافق
+   * مع كلا المصدرين:
+   *
+   * 1. orders.invoice_number
+   * 2. invoices.invoice_number
+   */
+  const getInvoiceNumber = (
+    order: OrderRow,
+  ): string | null => {
+    return (
+      order.invoice_number ??
+      order.invoices?.[0]?.invoice_number ??
+      null
+    );
+  };
+
+  /**
+   * الحصول على تاريخ إصدار الفاتورة.
+   *
+   * إذا كانت العلاقة invoices متاحة نستخدم issued_at.
+   * وإذا لم تكن العلاقة متاحة، نستخدم created_at
+   * كقيمة احتياطية حتى لا تتوقف صفحة الفاتورة.
+   */
+  const getInvoiceDate = (
+    order: OrderRow,
+  ): string => {
+    return (
+      order.invoices?.[0]?.issued_at ??
+      order.created_at
+    );
+  };
+
   const share = async () => {
     const url =
       window.location.href;
 
     const invoiceNumber =
-      query.data?.invoices?.[0]
-        ?.invoice_number ??
-      "";
+      query.data
+        ? getInvoiceNumber(query.data)
+        : null;
 
     try {
       if (
@@ -189,9 +231,19 @@ function InvoicePage() {
         return;
       }
 
-      toast.error(
-        "تعذر مشاركة الفاتورة.",
-      );
+      try {
+        await navigator.clipboard.writeText(
+          url,
+        );
+
+        toast.success(
+          "تم نسخ رابط الفاتورة.",
+        );
+      } catch {
+        toast.error(
+          "تعذر مشاركة الفاتورة.",
+        );
+      }
     }
   };
 
@@ -243,11 +295,18 @@ function InvoicePage() {
   const order =
     query.data;
 
-  const issuedInvoice =
-    order.invoices?.[0] ??
-    null;
+  /**
+   * المصدر الأساسي هو orders.invoice_number.
+   * invoices هو fallback.
+   */
+  const invoiceNumber =
+    getInvoiceNumber(order);
 
-  if (!issuedInvoice) {
+  /**
+   * إذا لم يوجد رقم فاتورة في أي من المصدرين،
+   * فلا نعتبر الطلب فاتورة صادرة.
+   */
+  if (!invoiceNumber) {
     return (
       <div
         dir="rtl"
@@ -279,11 +338,10 @@ function InvoicePage() {
 
   const invoice:
     Partial<InvoiceData> = {
-    invoiceNumber:
-      issuedInvoice.invoice_number,
+    invoiceNumber,
 
     invoiceDate:
-      issuedInvoice.issued_at,
+      getInvoiceDate(order),
 
     orderNumber:
       order.order_number,
