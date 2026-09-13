@@ -331,10 +331,10 @@ CREATE TABLE IF NOT EXISTS public.wallet_transactions (
     NOT NULL,
 
   balance_before numeric(12,2)
-    NOT NULL,
+    DEFAULT 0,
 
   balance_after numeric(12,2)
-    NOT NULL,
+    DEFAULT 0,
 
   transaction_type text
     NOT NULL,
@@ -350,6 +350,18 @@ CREATE TABLE IF NOT EXISTS public.wallet_transactions (
     NOT NULL DEFAULT now()
 
 );
+
+
+-- ============================================================
+-- 8.1 إصلاح الجداول الموجودة مسبقاً
+-- ============================================================
+-- مهم:
+-- CREATE TABLE IF NOT EXISTS لا يضيف الأعمدة إلى جدول موجود.
+-- لذلك نضيف الأعمدة المطلوبة بشكل صريح.
+
+ALTER TABLE public.wallet_transactions
+  ADD COLUMN IF NOT EXISTS balance_before numeric(12,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS balance_after numeric(12,2) DEFAULT 0;
 
 
 CREATE INDEX IF NOT EXISTS
@@ -441,7 +453,7 @@ SELECT
 
 FROM public.profiles p
 
-WHERE p.wallet_balance <> 0
+WHERE COALESCE(p.wallet_balance, 0) <> 0
 
   AND NOT EXISTS (
 
