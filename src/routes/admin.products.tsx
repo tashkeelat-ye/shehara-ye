@@ -26,6 +26,9 @@ import {
   Trash2,
   Upload,
   X,
+  Store,
+  Phone,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,8 +51,11 @@ import type {
 } from "@/lib/db";
 
 export const Route =
-  createFileRoute("/admin/products")({
-    component: AdminProducts,
+  createFileRoute(
+    "/admin/products",
+  )({
+    component:
+      AdminProducts,
   });
 
 const PRESET_SIZES = [
@@ -78,27 +84,32 @@ const PRESET_COLORS = [
   "ذهبي",
 ];
 
-const numberField = z.preprocess(
-  (value) => {
-    if (
-      value === "" ||
-      value === undefined ||
-      value === null
-    ) {
-      return 0;
-    }
+const numberField =
+  z.preprocess(
+    (value) => {
+      if (
+        value === "" ||
+        value === undefined ||
+        value === null
+      ) {
+        return 0;
+      }
 
-    const number =
-      typeof value === "number"
-        ? value
-        : Number(value);
+      const number =
+        typeof value === "number"
+          ? value
+          : Number(value);
 
-    return Number.isFinite(number)
-      ? number
-      : 0;
-  },
-  z.number().finite().min(0),
-);
+      return Number.isFinite(
+        number,
+      )
+        ? number
+        : 0;
+    },
+    z.number()
+      .finite()
+      .min(0),
+  );
 
 const formSchema = z
   .object({
@@ -121,11 +132,17 @@ const formSchema = z
         "يرجى اختيار الفئة",
       ),
 
+    vendor_id: z
+      .string()
+      .nullable(),
+
     price: numberField,
 
-    old_price: numberField,
+    old_price:
+      numberField,
 
-    price_sar: numberField,
+    price_sar:
+      numberField,
 
     description: z
       .string()
@@ -167,9 +184,11 @@ const formSchema = z
       z.string(),
     ),
 
-    is_local: z.boolean(),
+    is_local:
+      z.boolean(),
 
-    is_active: z.boolean(),
+    is_active:
+      z.boolean(),
 
     total_stock:
       numberField.pipe(
@@ -218,28 +237,50 @@ type FormValues =
 
 type ProductRow =
   Product & {
-    low_stock_threshold?: number | null;
+    low_stock_threshold?:
+      | number
+      | null;
+    vendor_id?:
+      | string
+      | null;
   };
 
-const EMPTY_FORM: FormValues =
-  {
-    name: "",
-    category_id: "",
-    price: 0,
-    old_price: 0,
-    price_sar: 0,
-    description: "",
-    city: "صنعاء",
-    badge: "",
-    images: [],
-    sizes: [],
-    colors: [],
-    is_local: false,
-    is_active: true,
-    total_stock: 0,
-    stock_left: 0,
-    low_stock_threshold: 5,
-  };
+type VendorRow = {
+  id: string;
+  user_id:
+    | string
+    | null;
+  name: string;
+  city: string;
+  phone: string;
+  logo_url:
+    | string
+    | null;
+  description: string;
+  is_active: boolean;
+  account_enabled: boolean;
+};
+
+const EMPTY_FORM:
+  FormValues = {
+  name: "",
+  category_id: "",
+  vendor_id: null,
+  price: 0,
+  old_price: 0,
+  price_sar: 0,
+  description: "",
+  city: "صنعاء",
+  badge: "",
+  images: [],
+  sizes: [],
+  colors: [],
+  is_local: false,
+  is_active: true,
+  total_stock: 0,
+  stock_left: 0,
+  low_stock_threshold: 5,
+};
 
 function toNumber(
   value: unknown,
@@ -247,7 +288,9 @@ function toNumber(
   const number =
     Number(value);
 
-  return Number.isFinite(number)
+  return Number.isFinite(
+    number,
+  )
     ? number
     : 0;
 }
@@ -342,6 +385,9 @@ function productToForm(
     category_id:
       p.category_id ?? "",
 
+    vendor_id:
+      p.vendor_id ?? null,
+
     price:
       p.price,
 
@@ -398,7 +444,8 @@ function getSupabaseErrorMessage(
 ): string {
   if (
     error &&
-    typeof error === "object"
+    typeof error ===
+      "object"
   ) {
     const candidate =
       error as {
@@ -413,7 +460,7 @@ function getSupabaseErrorMessage(
 
     if (
       typeof candidate.message ===
-      "string" &&
+        "string" &&
       candidate.message.trim()
     ) {
       parts.push(
@@ -423,7 +470,7 @@ function getSupabaseErrorMessage(
 
     if (
       typeof candidate.details ===
-      "string" &&
+        "string" &&
       candidate.details.trim()
     ) {
       parts.push(
@@ -433,7 +480,7 @@ function getSupabaseErrorMessage(
 
     if (
       typeof candidate.hint ===
-      "string" &&
+        "string" &&
       candidate.hint.trim()
     ) {
       parts.push(
@@ -443,7 +490,7 @@ function getSupabaseErrorMessage(
 
     if (
       typeof candidate.code ===
-      "string" &&
+        "string" &&
       candidate.code.trim()
     ) {
       parts.push(
@@ -451,7 +498,9 @@ function getSupabaseErrorMessage(
       );
     }
 
-    if (parts.length) {
+    if (
+      parts.length
+    ) {
       return parts.join(
         " — ",
       );
@@ -466,7 +515,8 @@ function getSupabaseErrorMessage(
   }
 
   if (
-    typeof error === "string" &&
+    typeof error ===
+      "string" &&
     error.trim()
   ) {
     return error;
@@ -488,7 +538,9 @@ function Field({
 }: {
   label: string;
   children: ReactNode;
-  error?: string | undefined;
+  error?:
+    | string
+    | undefined;
 }) {
   return (
     <label className="block">
@@ -511,23 +563,30 @@ export function AdminProducts() {
   const [
     products,
     setProducts,
-  ] = useState<ProductRow[]>(
-    [],
-  );
+  ] = useState<
+    ProductRow[]
+  >([]);
 
   const [
     categories,
     setCategories,
-  ] = useState<Category[]>(
-    [],
-  );
+  ] = useState<
+    Category[]
+  >([]);
+
+  const [
+    vendors,
+    setVendors,
+  ] = useState<
+    VendorRow[]
+  >([]);
 
   const [
     editing,
     setEditing,
-  ] = useState<ProductRow | null>(
-    null,
-  );
+  ] = useState<
+    ProductRow | null
+  >(null);
 
   const [
     open,
@@ -578,19 +637,27 @@ export function AdminProducts() {
         zodResolver(
           formSchema,
         ) as unknown as Resolver<FormValues>,
+
       defaultValues:
         EMPTY_FORM,
+
       mode: "onBlur",
     });
 
   const images =
-    form.watch("images");
+    form.watch(
+      "images",
+    );
 
   const sizes =
-    form.watch("sizes");
+    form.watch(
+      "sizes",
+    );
 
   const colors =
-    form.watch("colors");
+    form.watch(
+      "colors",
+    );
 
   const totalStock =
     form.watch(
@@ -607,6 +674,18 @@ export function AdminProducts() {
       "low_stock_threshold",
     );
 
+  const selectedVendorId =
+    form.watch(
+      "vendor_id",
+    );
+
+  const selectedVendor =
+    vendors.find(
+      (vendor) =>
+        vendor.id ===
+        selectedVendorId,
+    ) ?? null;
+
   const load =
     useCallback(
       async () => {
@@ -617,6 +696,7 @@ export function AdminProducts() {
           const [
             productsResult,
             categoriesResult,
+            vendorsResult,
             settings,
           ] =
             await Promise.all([
@@ -624,7 +704,9 @@ export function AdminProducts() {
                 .from(
                   "products",
                 )
-                .select("*")
+                .select(
+                  "*",
+                )
                 .order(
                   "created_at",
                   {
@@ -644,6 +726,17 @@ export function AdminProducts() {
                   "sort_order",
                 ),
 
+              supabase
+                .from(
+                  "vendors",
+                )
+                .select(
+                  "id,user_id,name,city,phone,logo_url,description,is_active,account_enabled",
+                )
+                .order(
+                  "name",
+                ),
+
               fetchSettings().catch(
                 () => null,
               ),
@@ -661,6 +754,12 @@ export function AdminProducts() {
             throw categoriesResult.error;
           }
 
+          if (
+            vendorsResult.error
+          ) {
+            throw vendorsResult.error;
+          }
+
           setProducts(
             (
               (productsResult.data ??
@@ -671,8 +770,17 @@ export function AdminProducts() {
           );
 
           setCategories(
-            (categoriesResult.data ??
-              []) as Category[],
+            (
+              categoriesResult.data ??
+              []
+            ) as Category[],
+          );
+
+          setVendors(
+            (
+              vendorsResult.data ??
+              []
+            ) as VendorRow[],
           );
 
           if (
@@ -694,7 +802,9 @@ export function AdminProducts() {
             message,
           );
         } finally {
-          setLoading(false);
+          setLoading(
+            false,
+          );
         }
       },
       [],
@@ -706,15 +816,21 @@ export function AdminProducts() {
 
   function openNewProduct() {
     setEditing(null);
+
     setActiveTab(
       "basic",
     );
 
     form.reset({
       ...EMPTY_FORM,
+
       category_id:
         categories[0]?.id ??
         "",
+
+      vendor_id:
+        null,
+
       price_sar: 0,
     });
 
@@ -751,7 +867,9 @@ export function AdminProducts() {
     }
 
     setOpen(false);
+
     setEditing(null);
+
     form.reset(
       EMPTY_FORM,
     );
@@ -776,7 +894,8 @@ export function AdminProducts() {
     const next = exists
       ? current.filter(
           (item) =>
-            item !== value,
+            item !==
+            value,
         )
       : [
           ...current,
@@ -789,6 +908,7 @@ export function AdminProducts() {
       {
         shouldDirty:
           true,
+
         shouldValidate:
           true,
       },
@@ -820,6 +940,7 @@ export function AdminProducts() {
       {
         shouldDirty:
           true,
+
         shouldValidate:
           true,
       },
@@ -831,6 +952,7 @@ export function AdminProducts() {
       {
         shouldDirty:
           true,
+
         shouldValidate:
           true,
       },
@@ -859,6 +981,7 @@ export function AdminProducts() {
       {
         shouldDirty:
           true,
+
         shouldValidate:
           true,
       },
@@ -870,6 +993,7 @@ export function AdminProducts() {
       {
         shouldDirty:
           true,
+
         shouldValidate:
           true,
       },
@@ -887,12 +1011,16 @@ export function AdminProducts() {
     }
 
     const remaining =
-      12 - images.length;
+      12 -
+      images.length;
 
-    if (remaining <= 0) {
+    if (
+      remaining <= 0
+    ) {
       toast.error(
         "الحد الأقصى 12 صورة للمنتج",
       );
+
       return;
     }
 
@@ -900,7 +1028,9 @@ export function AdminProducts() {
 
     try {
       const selected =
-        Array.from(files).slice(
+        Array.from(
+          files,
+        ).slice(
           0,
           remaining,
         );
@@ -909,7 +1039,9 @@ export function AdminProducts() {
         await uploadManyMedia(
           "products",
           selected,
-          "admin/products",
+          editing
+            ? `admin/products/${editing.id}`
+            : "admin/products",
         );
 
       if (
@@ -924,6 +1056,7 @@ export function AdminProducts() {
           {
             shouldDirty:
               true,
+
             shouldValidate:
               true,
           },
@@ -950,238 +1083,235 @@ export function AdminProducts() {
         )}`,
       );
     } finally {
-      setUploading(false);
+      setUploading(
+        false,
+      );
     }
   }
 
   const save:
-    SubmitHandler<FormValues> =
-    async (values) => {
-      setSaving(true);
+    SubmitHandler<
+      FormValues
+    > = async (
+    values,
+  ) => {
+    setSaving(true);
 
-      try {
+    try {
+      if (
+        !values.category_id
+      ) {
+        toast.error(
+          "يرجى اختيار فئة المنتج",
+        );
+
+        return;
+      }
+
+      const payload = {
+        name:
+          values.name.trim(),
+
+        category_id:
+          values.category_id,
+
+        vendor_id:
+          values.vendor_id ||
+          null,
+
+        description:
+          values.description.trim(),
+
+        price:
+          Number(
+            values.price,
+          ),
+
+        old_price:
+          values.old_price >
+          0
+            ? Number(
+                values.old_price,
+              )
+            : null,
+
+        city:
+          values.city.trim() ||
+          "صنعاء",
+
+        images:
+          values.images,
+
+        sizes:
+          values.sizes,
+
+        colors:
+          values.colors,
+
+        badge:
+          values.badge.trim() ||
+          null,
+
+        is_local:
+          values.is_local,
+
+        is_active:
+          values.is_active,
+
+        total_stock:
+          Number(
+            values.total_stock,
+          ),
+
+        stock_left:
+          Number(
+            values.stock_left,
+          ),
+
+        low_stock_threshold:
+          Number(
+            values.low_stock_threshold,
+          ),
+      };
+
+      if (editing) {
+        const {
+          error,
+        } =
+          await supabase
+            .from(
+              "products",
+            )
+            .update(
+              payload,
+            )
+            .eq(
+              "id",
+              editing.id,
+            );
+
+        if (error) {
+          throw error;
+        }
+
+        const oldStock =
+          toNumber(
+            editing.stock_left,
+          );
+
+        const newStock =
+          Number(
+            values.stock_left,
+          );
+
+        const difference =
+          newStock -
+          oldStock;
+
         if (
-          !values.category_id
+          difference !== 0
         ) {
-          toast.error(
-            "يرجى اختيار فئة المنتج",
-          );
-          return;
-        }
-
-        const payload = {
-          name:
-            values.name.trim(),
-
-          category_id:
-            values.category_id,
-
-          description:
-            values.description.trim(),
-
-          price:
-            Number(values.price),
-
-          old_price:
-            values.old_price >
-            0
-              ? Number(
-                  values.old_price,
-                )
-              : null,
-
-          city:
-            values.city.trim() ||
-            "صنعاء",
-
-          images:
-            values.images,
-
-          sizes:
-            values.sizes,
-
-          colors:
-            values.colors,
-
-          badge:
-            values.badge.trim() ||
-            null,
-
-          is_local:
-            values.is_local,
-
-          is_active:
-            values.is_active,
-
-          total_stock:
-            Number(
-              values.total_stock,
-            ),
-
-          stock_left:
-            Number(
-              values.stock_left,
-            ),
-
-          low_stock_threshold:
-            Number(
-              values.low_stock_threshold,
-            ),
-        };
-
-        /*
-         * مهم:
-         * لا نرسل price_sar إلى قاعدة البيانات.
-         * هو قيمة محسوبة للعرض فقط.
-         */
-
-        if (editing) {
           const {
-            error,
+            data:
+              sessionData,
+          } =
+            await supabase.auth.getSession();
+
+          const userId =
+            sessionData
+              .session
+              ?.user.id ??
+            null;
+
+          const {
+            error:
+              movementError,
           } =
             await supabase
               .from(
-                "products",
+                "inventory_movements" as never,
               )
-              .update(
-                payload,
-              )
-              .eq(
-                "id",
-                editing.id,
-              );
+              .insert({
+                product_id:
+                  editing.id,
 
-          if (error) {
-            throw error;
-          }
+                quantity:
+                  difference,
 
-          const oldStock =
-            toNumber(
-              editing.stock_left,
-            );
+                movement_type:
+                  difference >
+                  0
+                    ? "purchase"
+                    : "adjustment",
 
-          const newStock =
-            Number(
-              values.stock_left,
-            );
+                note:
+                  "تعديل المخزون من صفحة إدارة المنتجات",
 
-          const difference =
-            newStock -
-            oldStock;
+                created_by:
+                  userId,
+              } as never);
 
-          /*
-           * نسجل حركة المخزون فقط إذا تغيرت الكمية.
-           * فشل سجل الحركة لا يلغي نجاح تحديث المنتج.
-           */
           if (
-            difference !== 0
+            movementError
           ) {
-            const {
-              data:
-                sessionData,
-            } =
-              await supabase.auth.getSession();
-
-            const userId =
-              sessionData
-                .session
-                ?.user.id ??
-              null;
-
-            const {
-              error:
+            toast.warning(
+              `تم تحديث المنتج، لكن تعذر تسجيل حركة المخزون: ${getSupabaseErrorMessage(
                 movementError,
-            } =
-              await supabase
-                .from(
-                  "inventory_movements" as never,
-                )
-                .insert({
-                  product_id:
-                    editing.id,
-
-                  quantity:
-                    difference,
-
-                  movement_type:
-                    difference >
-                    0
-                      ? "purchase"
-                      : "adjustment",
-
-                  note:
-                    "تعديل المخزون من صفحة إدارة المنتجات",
-
-                  created_by:
-                    userId,
-                } as never);
-
-            if (
-              movementError
-            ) {
-              toast.warning(
-                `تم تحديث المنتج، لكن تعذر تسجيل حركة المخزون: ${getSupabaseErrorMessage(
-                  movementError,
-                )}`,
-              );
-            }
+              )}`,
+            );
           }
-
-          toast.success(
-            "تم تحديث المنتج والمخزون بنجاح",
-          );
-        } else {
-          /*
-           * إنشاء المنتج.
-           *
-           * لا نستخدم select().single()
-           * هنا حتى لا يفشل الإنشاء بسبب
-           * مشكلة في سياسة SELECT.
-           */
-          const {
-            error,
-          } =
-            await supabase
-              .from(
-                "products",
-              )
-              .insert(
-                payload,
-              );
-
-          if (error) {
-            throw error;
-          }
-
-          toast.success(
-            "تم إنشاء المنتج والمخزون بنجاح",
-          );
         }
 
-        closeForm();
+        toast.success(
+          "تم تحديث المنتج والمخزون بنجاح",
+        );
+      } else {
+        const {
+          error,
+        } =
+          await supabase
+            .from(
+              "products",
+            )
+            .insert(
+              payload,
+            );
 
-        await load();
-      } catch (error) {
-        const message =
-          getSupabaseErrorMessage(
-            error,
-          );
+        if (error) {
+          throw error;
+        }
 
-        console.error(
-          "AdminProducts save error:",
+        toast.success(
+          "تم إنشاء المنتج والمخزون بنجاح",
+        );
+      }
+
+      closeForm();
+
+      await load();
+    } catch (error) {
+      const message =
+        getSupabaseErrorMessage(
           error,
         );
 
-        toast.error(
-          `تعذر حفظ المنتج: ${message}`,
-          {
-            duration: 9000,
-          },
-        );
-      } finally {
-        setSaving(false);
-      }
-    };
+      console.error(
+        "AdminProducts save error:",
+        error,
+      );
+
+      toast.error(
+        `تعذر حفظ المنتج: ${message}`,
+        {
+          duration: 9000,
+        },
+      );
+    } finally {
+      setSaving(
+        false,
+      );
+    }
+  };
 
   async function removeProduct(
     product: ProductRow,
@@ -1200,7 +1330,9 @@ export function AdminProducts() {
         error,
       } =
         await supabase
-          .from("products")
+          .from(
+            "products",
+          )
           .delete()
           .eq(
             "id",
@@ -1266,7 +1398,9 @@ export function AdminProducts() {
             <p className="mt-1 text-lg font-bold text-amber-700">
               {products
                 .filter(
-                  (product) =>
+                  (
+                    product,
+                  ) =>
                     product.stock_left >
                       0 &&
                     product.stock_left <=
@@ -1287,7 +1421,9 @@ export function AdminProducts() {
             <p className="mt-1 text-lg font-bold text-destructive">
               {products
                 .filter(
-                  (product) =>
+                  (
+                    product,
+                  ) =>
                     product.stock_left <=
                     0,
                 )
@@ -1333,7 +1469,9 @@ export function AdminProducts() {
         ) : (
           <div className="space-y-2">
             {products.map(
-              (product) => {
+              (
+                product,
+              ) => {
                 const limit =
                   product.low_stock_threshold ??
                   5;
@@ -1346,6 +1484,15 @@ export function AdminProducts() {
                         limit
                       ? "منخفض"
                       : "متوفر";
+
+                const vendor =
+                  vendors.find(
+                    (
+                      item,
+                    ) =>
+                      item.id ===
+                      product.vendor_id,
+                  );
 
                 return (
                   <div
@@ -1385,7 +1532,9 @@ export function AdminProducts() {
                                 : "bg-emerald-500/10 text-emerald-700"
                           }`}
                         >
-                          {status}
+                          {
+                            status
+                          }
                         </span>
                       </div>
 
@@ -1406,6 +1555,16 @@ export function AdminProducts() {
                           "ar-EG",
                         )}
                       </p>
+
+                      <div className="mt-1 flex items-center gap-1.5 text-[9px]">
+                        <Store className="h-3 w-3 text-primary" />
+
+                        <span className="truncate text-muted-foreground">
+                          {vendor
+                            ? vendor.name
+                            : "بدون مورد"}
+                        </span>
+                      </div>
                     </div>
 
                     <button
@@ -1453,7 +1612,7 @@ export function AdminProducts() {
                 </h2>
 
                 <p className="mt-0.5 text-[10px] text-muted-foreground">
-                  إدارة المنتج والأسعار والمخزون
+                  إدارة المنتج والأسعار والمخزون والمورد
                 </p>
               </div>
 
@@ -1652,7 +1811,11 @@ export function AdminProducts() {
                         />
                       </Field>
 
-                      <Field label={`السعر بالريال السعودي — 1 ر.س = ${sarRate.toLocaleString("ar-EG")} ر.ي`}>
+                      <Field
+                        label={`السعر بالريال السعودي — 1 ر.س = ${sarRate.toLocaleString(
+                          "ar-EG",
+                        )} ر.ي`}
+                      >
                         <input
                           type="number"
                           min="0"
@@ -1913,6 +2076,25 @@ export function AdminProducts() {
                         </span>
                       </div>
                     </section>
+                  </div>
+                ) : null}
+
+                {activeTab ===
+                "attributes" ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 rounded-xl border border-border bg-secondary/40 p-3">
+                      <Layers className="h-5 w-5 text-primary" />
+
+                      <div>
+                        <p className="text-xs font-bold">
+                          خصائص المنتج
+                        </p>
+
+                        <p className="text-[10px] text-muted-foreground">
+                          حدد المقاسات والألوان المتاحة.
+                        </p>
+                      </div>
+                    </div>
 
                     <Field label="المقاسات / الأحجام">
                       <div className="flex flex-wrap gap-1.5">
@@ -2018,12 +2200,23 @@ export function AdminProducts() {
                                     src={
                                       image
                                     }
-                                    alt=""
+                                    alt={`صورة المنتج ${index + 1}`}
                                     className="h-full w-full object-cover"
                                   />
 
+                                  {index ===
+                                  0 ? (
+                                    <span className="absolute bottom-1 start-1 rounded-full bg-black/65 px-2 py-1 text-[8px] text-white">
+                                      الرئيسية
+                                    </span>
+                                  ) : null}
+
                                   <button
                                     type="button"
+                                    disabled={
+                                      saving ||
+                                      uploading
+                                    }
                                     onClick={() =>
                                       form.setValue(
                                         "images",
@@ -2074,7 +2267,7 @@ export function AdminProducts() {
 
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
                             multiple
                             disabled={
                               uploading ||
@@ -2102,36 +2295,182 @@ export function AdminProducts() {
                 ) : null}
 
                 {activeTab ===
-                "attributes" ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 rounded-xl border border-border bg-secondary/40 p-3">
-                      <Layers className="h-5 w-5 text-primary" />
+                "supplier" ? (
+                  <div className="space-y-4">
+                    <section className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+                      <div className="flex items-start gap-3">
+                        <Store className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
 
-                      <div>
-                        <p className="text-xs font-bold">
-                          خصائص المنتج
+                        <div>
+                          <h3 className="text-sm font-bold text-foreground">
+                            المورد / التاجر
+                          </h3>
+
+                          <p className="mt-1 text-[10px] leading-5 text-muted-foreground">
+                            حدد التاجر المورد لهذا المنتج. سيتم ربط المنتج بالمتجر والطلبات الخاصة به.
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+
+                    <Field
+                      label="اختر التاجر المورد"
+                      error={
+                        form
+                          .formState
+                          .errors
+                          .vendor_id
+                          ?.message
+                      }
+                    >
+                      <select
+                        {...form.register(
+                          "vendor_id",
+                        )}
+                        className={
+                          inputCls
+                        }
+                      >
+                        <option value="">
+                          بدون مورد
+                        </option>
+
+                        {vendors.map(
+                          (
+                            vendor,
+                          ) => {
+                            const active =
+                              vendor.is_active &&
+                              vendor.account_enabled;
+
+                            return (
+                              <option
+                                key={
+                                  vendor.id
+                                }
+                                value={
+                                  vendor.id
+                                }
+                              >
+                                {
+                                  vendor.name
+                                }
+                                {" — "}
+                                {
+                                  vendor.city
+                                }
+                                {!active
+                                  ? " — غير مفعّل"
+                                  : ""}
+                              </option>
+                            );
+                          },
+                        )}
+                      </select>
+                    </Field>
+
+                    {selectedVendor ? (
+                      <section className="rounded-2xl border border-border bg-card p-4">
+                        <div className="flex items-start gap-3">
+                          {selectedVendor.logo_url ? (
+                            <img
+                              src={
+                                selectedVendor.logo_url
+                              }
+                              alt={
+                                selectedVendor.name
+                              }
+                              className="h-14 w-14 shrink-0 rounded-2xl object-cover"
+                            />
+                          ) : (
+                            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                              <Store className="h-6 w-6" />
+                            </div>
+                          )}
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="truncate text-sm font-bold text-foreground">
+                                {
+                                  selectedVendor.name
+                                }
+                              </h3>
+
+                              <span
+                                className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-bold ${
+                                  selectedVendor.is_active &&
+                                  selectedVendor.account_enabled
+                                    ? "bg-emerald-500/10 text-emerald-700"
+                                    : "bg-destructive/10 text-destructive"
+                                }`}
+                              >
+                                {selectedVendor.is_active &&
+                                selectedVendor.account_enabled
+                                  ? "نشط"
+                                  : "غير مفعّل"}
+                              </span>
+                            </div>
+
+                            {selectedVendor.description ? (
+                              <p className="mt-1 text-[10px] leading-5 text-muted-foreground">
+                                {
+                                  selectedVendor.description
+                                }
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                          <div className="flex items-center gap-2 rounded-xl bg-secondary/50 p-3">
+                            <MapPin className="h-4 w-4 text-primary" />
+
+                            <div>
+                              <p className="text-[9px] text-muted-foreground">
+                                المدينة
+                              </p>
+
+                              <p className="text-xs font-semibold">
+                                {
+                                  selectedVendor.city
+                                }
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 rounded-xl bg-secondary/50 p-3">
+                            <Phone className="h-4 w-4 text-primary" />
+
+                            <div>
+                              <p className="text-[9px] text-muted-foreground">
+                                الهاتف
+                              </p>
+
+                              <p
+                                dir="ltr"
+                                className="text-xs font-semibold"
+                              >
+                                {
+                                  selectedVendor.phone
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-border p-7 text-center">
+                        <Store className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
+
+                        <p className="text-xs font-bold text-foreground">
+                          لم يتم تحديد مورد
                         </p>
 
-                        <p className="text-[10px] text-muted-foreground">
-                          يمكن توسيع هذا القسم لاحقًا حسب نوع المنتج.
+                        <p className="mt-1 text-[10px] text-muted-foreground">
+                          اختر التاجر الذي يورد هذا المنتج.
                         </p>
                       </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {activeTab ===
-                "supplier" ? (
-                  <div className="rounded-2xl border border-border bg-secondary/30 p-5 text-center">
-                    <Package className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
-
-                    <p className="text-xs font-bold">
-                      بيانات المورد
-                    </p>
-
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      سيتم ربط هذا القسم بنظام الموردين في المرحلة القادمة.
-                    </p>
+                    )}
                   </div>
                 ) : null}
               </div>
@@ -2149,11 +2488,13 @@ export function AdminProducts() {
                     {saving ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
+
                         جارٍ الحفظ...
                       </>
                     ) : (
                       <>
                         <Check className="h-4 w-4" />
+
                         {editing
                           ? "حفظ التعديلات"
                           : "إنشاء المنتج"}
