@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import type { FormEvent } from "react";
 import { toast } from "sonner";
 import {
   Store,
@@ -20,6 +21,9 @@ import {
   AlertTriangle,
   Save,
   X,
+  Upload,
+  Loader2,
+  ImagePlus,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +32,7 @@ import {
   type Product,
 } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
+import { uploadManyMedia } from "@/lib/media";
 
 export const Route = createFileRoute(
   "/_authenticated/merchant",
@@ -73,7 +78,7 @@ type ProductForm = {
   price: string;
   old_price: string;
   city: string;
-  images: string;
+  images: string[];
   sizes: string;
   colors: string;
   badge: string;
@@ -92,7 +97,7 @@ const emptyProduct: ProductForm = {
   price: "",
   old_price: "",
   city: "",
-  images: "",
+  images: [],
   sizes: "",
   colors: "",
   badge: "",
@@ -105,6 +110,8 @@ const emptyProduct: ProductForm = {
 
 const inputCls =
   "h-11 w-full rounded-2xl border border-border bg-secondary px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/10";
+
+const MAX_PRODUCT_IMAGES = 12;
 
 function MerchantPage() {
   const { user } = useAuth();
@@ -124,6 +131,9 @@ function MerchantPage() {
   const [busy, setBusy] =
     useState(false);
 
+  const [uploadingImages, setUploadingImages] =
+    useState(false);
+
   const [showProductForm, setShowProductForm] =
     useState(false);
 
@@ -135,7 +145,10 @@ function MerchantPage() {
 
   const load = useCallback(
     async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
 
@@ -161,6 +174,10 @@ function MerchantPage() {
 
         if (vendorResult.error) {
           throw vendorResult.error;
+        }
+
+        if (categoryResult.error) {
+          throw categoryResult.error;
         }
 
         setVendor(
@@ -257,7 +274,9 @@ function MerchantPage() {
       const value =
         search.trim().toLowerCase();
 
-      if (!value) return products;
+      if (!value) {
+        return products;
+      }
 
       return products.filter(
         (product) =>
@@ -271,23 +290,33 @@ function MerchantPage() {
     }, [products, search]);
 
   async function saveStoreInfo(
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
-    if (!vendor) return;
+    if (!vendor || !user) {
+      return;
+    }
 
     const form =
-      new FormData(event.currentTarget);
+      new FormData(
+        event.currentTarget,
+      );
 
     const name =
-      String(form.get("name") ?? "").trim();
+      String(
+        form.get("name") ?? "",
+      ).trim();
 
     const city =
-      String(form.get("city") ?? "").trim();
+      String(
+        form.get("city") ?? "",
+      ).trim();
 
     const phone =
-      String(form.get("phone") ?? "").trim();
+      String(
+        form.get("phone") ?? "",
+      ).trim();
 
     const description =
       String(
@@ -314,9 +343,14 @@ function MerchantPage() {
             description,
           })
           .eq("id", vendor.id)
-          .eq("user_id", user?.id ?? "");
+          .eq(
+            "user_id",
+            user.id,
+          );
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       toast.success(
         "تم تحديث بيانات المتجر.",
@@ -340,9 +374,11 @@ function MerchantPage() {
   function openCreateProduct() {
     setEditingProduct({
       ...emptyProduct,
-      city: vendor?.city ?? "",
+      city:
+        vendor?.city ?? "",
       category_id:
         categories[0]?.id ?? "",
+      images: [],
     });
 
     setShowProductForm(true);
@@ -353,33 +389,61 @@ function MerchantPage() {
   ) {
     setEditingProduct({
       id: product.id,
+
       category_id:
         product.category_id,
-      name: product.name,
+
+      name:
+        product.name,
+
       description:
         product.description,
-      price: String(product.price),
+
+      price:
+        String(product.price),
+
       old_price:
         product.old_price === null
           ? ""
-          : String(product.old_price),
-      city: product.city,
+          : String(
+              product.old_price,
+            ),
+
+      city:
+        product.city,
+
       images:
-        product.images.join("\n"),
+        Array.isArray(
+          product.images,
+        )
+          ? [...product.images]
+          : [],
+
       sizes:
         product.sizes.join(", "),
+
       colors:
         product.colors.join(", "),
+
       badge:
         product.badge ?? "",
+
       is_local:
         product.is_local,
+
       is_active:
         product.is_active,
+
       total_stock:
-        String(product.total_stock),
+        String(
+          product.total_stock,
+        ),
+
       stock_left:
-        String(product.stock_left),
+        String(
+          product.stock_left,
+        ),
+
       low_stock_threshold:
         String(
           product.low_stock_threshold,
@@ -389,12 +453,114 @@ function MerchantPage() {
     setShowProductForm(true);
   }
 
+  async function uploadProductImages(
+    files: FileList | null,
+  ) {
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    if (!user) {
+      toast.error(
+        "تعذر تحديد حساب التاجر.",
+      );
+      return;
+    }
+
+    const currentImages =
+      editingProduct.images;
+
+    const remaining =
+      MAX_PRODUCT_IMAGES -
+      currentImages.length;
+
+    if (remaining <= 0) {
+      toast.error(
+        `الحد الأقصى ${MAX_PRODUCT_IMAGES} صورة للمنتج.`,
+      );
+      return;
+    }
+
+    const selected =
+      Array.from(files).slice(
+        0,
+        remaining,
+      );
+
+    setUploadingImages(true);
+
+    try {
+      const result =
+        await uploadManyMedia(
+          "products",
+          selected,
+          `vendors/${user.id}/products`,
+        );
+
+      if (
+        result.urls.length > 0
+      ) {
+        setEditingProduct(
+          (current) => ({
+            ...current,
+            images: [
+              ...current.images,
+              ...result.urls,
+            ],
+          }),
+        );
+
+        toast.success(
+          `تم رفع ${result.urls.length} صورة بنجاح.`,
+        );
+      }
+
+      if (
+        result.errors.length > 0
+      ) {
+        toast.error(
+          result.errors.join(" | "),
+        );
+      }
+    } catch (error) {
+      console.error(
+        "[Merchant] image upload failed:",
+        error,
+      );
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "تعذر رفع الصور.",
+      );
+    } finally {
+      setUploadingImages(false);
+    }
+  }
+
+  function removeProductImage(
+    index: number,
+  ) {
+    setEditingProduct(
+      (current) => ({
+        ...current,
+        images:
+          current.images.filter(
+            (_, imageIndex) =>
+              imageIndex !== index,
+          ),
+      }),
+    );
+  }
+
   async function saveProduct(
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
-    if (!vendor || !user) return;
+    if (!vendor || !user) {
+      return;
+    }
 
     if (!active) {
       toast.error(
@@ -403,50 +569,73 @@ function MerchantPage() {
       return;
     }
 
+    if (uploadingImages) {
+      toast.error(
+        "انتظر حتى يكتمل رفع الصور.",
+      );
+      return;
+    }
+
     const form =
-      new FormData(event.currentTarget);
+      new FormData(
+        event.currentTarget,
+      );
 
     const categoryId =
       String(
-        form.get("category_id") ?? "",
+        form.get(
+          "category_id",
+        ) ?? "",
       );
 
     const name =
-      String(form.get("name") ?? "").trim();
+      String(
+        form.get("name") ?? "",
+      ).trim();
 
     const description =
       String(
-        form.get("description") ?? "",
+        form.get(
+          "description",
+        ) ?? "",
       ).trim();
 
     const price =
-      Number(form.get("price"));
+      Number(
+        form.get("price"),
+      );
 
     const oldPriceRaw =
       String(
-        form.get("old_price") ?? "",
+        form.get(
+          "old_price",
+        ) ?? "",
       ).trim();
 
     const city =
-      String(form.get("city") ?? "").trim();
+      String(
+        form.get("city") ?? "",
+      ).trim();
 
     const badge =
-      String(form.get("badge") ?? "").trim();
+      String(
+        form.get("badge") ?? "",
+      ).trim();
 
     const images =
-      String(
-        form.get("images") ?? "",
-      )
-        .split("\n")
-        .map((value) => value.trim())
-        .filter(Boolean);
+      editingProduct.images.filter(
+        Boolean,
+      );
 
     const sizes =
       String(
         form.get("sizes") ?? "",
       )
         .split(",")
-        .map((value) => value.trim())
+        .map(
+          (value) =>
+            value.trim(),
+        )
         .filter(Boolean);
 
     const colors =
@@ -454,40 +643,54 @@ function MerchantPage() {
         form.get("colors") ?? "",
       )
         .split(",")
-        .map((value) => value.trim())
+        .map(
+          (value) =>
+            value.trim(),
+        )
         .filter(Boolean);
 
-    const totalStock = Math.max(
-      0,
-      Number(
-        form.get("total_stock"),
-      ) || 0,
-    );
-
-    const stockLeft = Math.max(
-      0,
-      Math.min(
-        totalStock,
+    const totalStock =
+      Math.max(
+        0,
         Number(
-          form.get("stock_left"),
+          form.get(
+            "total_stock",
+          ),
         ) || 0,
-      ),
-    );
+      );
 
-    const threshold = Math.max(
-      0,
-      Number(
-        form.get(
-          "low_stock_threshold",
+    const stockLeft =
+      Math.max(
+        0,
+        Math.min(
+          totalStock,
+          Number(
+            form.get(
+              "stock_left",
+            ),
+          ) || 0,
         ),
-      ) || 0,
-    );
+      );
+
+    const threshold =
+      Math.max(
+        0,
+        Number(
+          form.get(
+            "low_stock_threshold",
+          ),
+        ) || 0,
+      );
 
     const isLocal =
-      form.get("is_local") === "on";
+      form.get(
+        "is_local",
+      ) === "on";
 
     const isActive =
-      form.get("is_active") === "on";
+      form.get(
+        "is_active",
+      ) === "on";
 
     if (!categoryId) {
       toast.error(
@@ -503,7 +706,12 @@ function MerchantPage() {
       return;
     }
 
-    if (!Number.isFinite(price) || price <= 0) {
+    if (
+      !Number.isFinite(
+        price,
+      ) ||
+      price <= 0
+    ) {
       toast.error(
         "أدخل سعرًا صحيحًا.",
       );
@@ -520,12 +728,18 @@ function MerchantPage() {
     const oldPrice =
       oldPriceRaw === ""
         ? null
-        : Number(oldPriceRaw);
+        : Number(
+            oldPriceRaw,
+          );
 
     if (
       oldPrice !== null &&
-      (!Number.isFinite(oldPrice) ||
-        oldPrice < 0)
+      (
+        !Number.isFinite(
+          oldPrice,
+        ) ||
+        oldPrice < 0
+      )
     ) {
       toast.error(
         "السعر السابق غير صحيح.",
@@ -537,21 +751,44 @@ function MerchantPage() {
 
     try {
       const payload = {
-        category_id: categoryId,
-        vendor_id: vendor.id,
+        category_id:
+          categoryId,
+
+        vendor_id:
+          vendor.id,
+
         name,
+
         description,
+
         price,
-        old_price: oldPrice,
+
+        old_price:
+          oldPrice,
+
         city,
+
         images,
+
         sizes,
+
         colors,
-        badge: badge || null,
-        is_local: isLocal,
-        is_active: isActive,
-        total_stock: totalStock,
-        stock_left: stockLeft,
+
+        badge:
+          badge || null,
+
+        is_local:
+          isLocal,
+
+        is_active:
+          isActive,
+
+        total_stock:
+          totalStock,
+
+        stock_left:
+          stockLeft,
+
         low_stock_threshold:
           threshold,
       };
@@ -571,7 +808,9 @@ function MerchantPage() {
             vendor.id,
           );
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
         toast.success(
           "تم تحديث المنتج بنجاح.",
@@ -583,7 +822,9 @@ function MerchantPage() {
           .from("products")
           .insert(payload);
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
 
         toast.success(
           "تمت إضافة المنتج وظهر في متجرك.",
@@ -591,6 +832,7 @@ function MerchantPage() {
       }
 
       setShowProductForm(false);
+
       setEditingProduct(
         emptyProduct,
       );
@@ -615,7 +857,9 @@ function MerchantPage() {
   async function toggleProduct(
     product: Product,
   ) {
-    if (!vendor) return;
+    if (!vendor) {
+      return;
+    }
 
     setBusy(true);
 
@@ -628,13 +872,18 @@ function MerchantPage() {
           is_active:
             !product.is_active,
         })
-        .eq("id", product.id)
+        .eq(
+          "id",
+          product.id,
+        )
         .eq(
           "vendor_id",
           vendor.id,
         );
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       toast.success(
         product.is_active
@@ -643,7 +892,12 @@ function MerchantPage() {
       );
 
       await load();
-    } catch {
+    } catch (error) {
+      console.error(
+        "[Merchant] toggle failed:",
+        error,
+      );
+
       toast.error(
         "تعذّر تغيير حالة المنتج.",
       );
@@ -655,14 +909,18 @@ function MerchantPage() {
   async function removeProduct(
     product: Product,
   ) {
-    if (!vendor) return;
+    if (!vendor) {
+      return;
+    }
 
     const confirmed =
       window.confirm(
         `هل أنت متأكد من حذف المنتج «${product.name}»؟`,
       );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     setBusy(true);
 
@@ -672,20 +930,30 @@ function MerchantPage() {
       } = await supabase
         .from("products")
         .delete()
-        .eq("id", product.id)
+        .eq(
+          "id",
+          product.id,
+        )
         .eq(
           "vendor_id",
           vendor.id,
         );
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       toast.success(
         "تم حذف المنتج.",
       );
 
       await load();
-    } catch {
+    } catch (error) {
+      console.error(
+        "[Merchant] delete failed:",
+        error,
+      );
+
       toast.error(
         "تعذّر حذف المنتج.",
       );
@@ -715,7 +983,7 @@ function MerchantPage() {
           <Store className="mx-auto h-12 w-12 text-primary" />
 
           <h1 className="mt-4 text-xl font-bold text-foreground">
-            إنشاء متجرك
+            لا يوجد متجر مرتبط
           </h1>
 
           <p className="mt-2 text-sm text-muted-foreground">
@@ -779,8 +1047,7 @@ function MerchantPage() {
               </h2>
 
               <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                سيتمكن التاجر من إضافة المنتجات وإدارتها
-                بعد اعتماد المتجر من لوحة الإدارة.
+                سيتمكن التاجر من إضافة المنتجات وإدارتها بعد اعتماد المتجر من لوحة الإدارة.
               </p>
             </div>
           </div>
@@ -824,7 +1091,9 @@ function MerchantPage() {
         >
           <input
             name="name"
-            defaultValue={vendor.name}
+            defaultValue={
+              vendor.name
+            }
             className={inputCls}
             placeholder="اسم المتجر"
             maxLength={120}
@@ -832,7 +1101,9 @@ function MerchantPage() {
 
           <input
             name="city"
-            defaultValue={vendor.city}
+            defaultValue={
+              vendor.city
+            }
             className={inputCls}
             placeholder="المدينة"
             maxLength={80}
@@ -840,7 +1111,9 @@ function MerchantPage() {
 
           <input
             name="phone"
-            defaultValue={vendor.phone}
+            defaultValue={
+              vendor.phone
+            }
             className={inputCls}
             dir="ltr"
             placeholder="هاتف المتجر"
@@ -883,8 +1156,13 @@ function MerchantPage() {
 
             <button
               type="button"
-              onClick={openCreateProduct}
-              disabled={busy}
+              onClick={
+                openCreateProduct
+              }
+              disabled={
+                busy ||
+                uploadingImages
+              }
               className="flex h-11 items-center gap-2 rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               <Plus className="h-4 w-4" />
@@ -927,8 +1205,12 @@ function MerchantPage() {
               {filteredProducts.map(
                 (product) => (
                   <ProductCard
-                    key={product.id}
-                    product={product}
+                    key={
+                      product.id
+                    }
+                    product={
+                      product
+                    }
                     busy={busy}
                     onEdit={
                       openEditProduct
@@ -976,17 +1258,37 @@ function MerchantPage() {
 
       {showProductForm ? (
         <ProductModal
-          form={editingProduct}
-          categories={categories}
-          busy={busy}
+          form={
+            editingProduct
+          }
+          categories={
+            categories
+          }
+          busy={
+            busy
+          }
+          uploading={
+            uploadingImages
+          }
           onClose={() => {
-            if (!busy) {
+            if (
+              !busy &&
+              !uploadingImages
+            ) {
               setShowProductForm(
                 false,
               );
             }
           }}
-          onSubmit={saveProduct}
+          onUpload={
+            uploadProductImages
+          }
+          onRemoveImage={
+            removeProductImage
+          }
+          onSubmit={
+            saveProduct
+          }
         />
       ) : null}
     </div>
@@ -1007,7 +1309,9 @@ function Stat({
       <Icon className="h-5 w-5 text-primary" />
 
       <p className="mt-3 text-2xl font-bold text-foreground">
-        {value.toLocaleString("ar-EG")}
+        {value.toLocaleString(
+          "ar-EG",
+        )}
       </p>
 
       <p className="mt-1 text-[11px] text-muted-foreground">
@@ -1037,7 +1341,7 @@ function ProductCard({
   ) => void;
 }) {
   const image =
-    product.images[0] ??
+    product.images?.[0] ??
     "/icon-192.png";
 
   return (
@@ -1045,7 +1349,7 @@ function ProductCard({
       <div className="flex gap-3 p-3">
         <img
           src={image}
-          alt=""
+          alt={product.name}
           loading="lazy"
           className="h-20 w-20 shrink-0 rounded-xl object-cover"
         />
@@ -1113,6 +1417,7 @@ function ProductCard({
           className="flex flex-1 items-center justify-center gap-1.5 border-x border-border py-3 text-xs text-primary"
         >
           <Power className="h-3.5 w-3.5" />
+
           {product.is_active
             ? "إيقاف"
             : "تفعيل"}
@@ -1138,15 +1443,25 @@ function ProductModal({
   form,
   categories,
   busy,
+  uploading,
   onClose,
+  onUpload,
+  onRemoveImage,
   onSubmit,
 }: {
   form: ProductForm;
   categories: Category[];
   busy: boolean;
+  uploading: boolean;
   onClose: () => void;
+  onUpload: (
+    files: FileList | null,
+  ) => void;
+  onRemoveImage: (
+    index: number,
+  ) => void;
   onSubmit: (
-    event: React.FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
   ) => void;
 }) {
   return (
@@ -1168,7 +1483,10 @@ function ProductModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={busy}
+            disabled={
+              busy ||
+              uploading
+            }
             className="grid h-10 w-10 place-items-center rounded-xl border border-border text-muted-foreground"
           >
             <X className="h-5 w-5" />
@@ -1181,6 +1499,7 @@ function ProductModal({
         >
           <label className="block text-xs font-medium text-foreground">
             التصنيف
+
             <select
               name="category_id"
               defaultValue={
@@ -1194,14 +1513,20 @@ function ProductModal({
               </option>
 
               {categories.map(
-                (category) => (
+                (
+                  category,
+                ) => (
                   <option
-                    key={category.id}
+                    key={
+                      category.id
+                    }
                     value={
                       category.id
                     }
                   >
-                    {category.name}
+                    {
+                      category.name
+                    }
                   </option>
                 ),
               )}
@@ -1210,9 +1535,12 @@ function ProductModal({
 
           <label className="block text-xs font-medium text-foreground">
             اسم المنتج
+
             <input
               name="name"
-              defaultValue={form.name}
+              defaultValue={
+                form.name
+              }
               className={`${inputCls} mt-1`}
               maxLength={200}
               required
@@ -1221,6 +1549,7 @@ function ProductModal({
 
           <label className="block text-xs font-medium text-foreground">
             وصف المنتج
+
             <textarea
               name="description"
               defaultValue={
@@ -1234,6 +1563,7 @@ function ProductModal({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-xs font-medium text-foreground">
               السعر
+
               <input
                 name="price"
                 type="number"
@@ -1249,6 +1579,7 @@ function ProductModal({
 
             <label className="block text-xs font-medium text-foreground">
               السعر السابق
+
               <input
                 name="old_price"
                 type="number"
@@ -1264,31 +1595,135 @@ function ProductModal({
 
           <label className="block text-xs font-medium text-foreground">
             المدينة
+
             <input
               name="city"
-              defaultValue={form.city}
+              defaultValue={
+                form.city
+              }
               className={`${inputCls} mt-1`}
               maxLength={80}
               required
             />
           </label>
 
-          <label className="block text-xs font-medium text-foreground">
-            روابط الصور
-            <textarea
-              name="images"
-              defaultValue={form.images}
-              className={`${inputCls} mt-1 h-24 py-2`}
-              dir="ltr"
-              placeholder={
-                "ضع رابط كل صورة في سطر مستقل"
-              }
-            />
-          </label>
+          <section className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+            <div className="flex items-center gap-2">
+              <ImagePlus className="h-5 w-5 text-primary" />
+
+              <div>
+                <h3 className="text-xs font-bold text-foreground">
+                  صور المنتج
+                </h3>
+
+                <p className="text-[10px] text-muted-foreground">
+                  اختر الصور مباشرة من جهازك، ولا حاجة لإدخال روابط.
+                </p>
+              </div>
+            </div>
+
+            {form.images.length >
+            0 ? (
+              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {form.images.map(
+                  (
+                    image,
+                    index,
+                  ) => (
+                    <div
+                      key={`${image}-${index}`}
+                      className="group relative aspect-square overflow-hidden rounded-xl border border-border bg-secondary"
+                    >
+                      <img
+                        src={image}
+                        alt={`صورة المنتج ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+
+                      {index ===
+                      0 ? (
+                        <span className="absolute bottom-1 start-1 rounded-full bg-black/65 px-2 py-1 text-[8px] text-white">
+                          الرئيسية
+                        </span>
+                      ) : null}
+
+                      <button
+                        type="button"
+                        disabled={
+                          busy ||
+                          uploading
+                        }
+                        onClick={() =>
+                          onRemoveImage(
+                            index,
+                          )
+                        }
+                        className="absolute end-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-destructive text-destructive-foreground"
+                        aria-label="حذف الصورة"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ),
+                )}
+              </div>
+            ) : (
+              <div className="mt-3 rounded-xl border border-dashed border-border p-6 text-center">
+                <ImagePlus className="mx-auto h-7 w-7 text-muted-foreground" />
+
+                <p className="mt-2 text-[10px] text-muted-foreground">
+                  لم تتم إضافة صور بعد
+                </p>
+              </div>
+            )}
+
+            <label className="mt-3 flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-xs font-bold text-foreground transition hover:bg-secondary">
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                <Upload className="h-4 w-4 text-primary" />
+              )}
+
+              <span>
+                {uploading
+                  ? "جارٍ رفع الصور..."
+                  : "اختيار صور من الجهاز"}
+              </span>
+
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                multiple
+                disabled={
+                  busy ||
+                  uploading ||
+                  form.images.length >=
+                    MAX_PRODUCT_IMAGES
+                }
+                className="hidden"
+                onChange={(
+                  event,
+                ) => {
+                  void onUpload(
+                    event.target
+                      .files,
+                  );
+
+                  event.target.value =
+                    "";
+                }}
+              />
+            </label>
+
+            <p className="mt-2 text-[9px] text-muted-foreground">
+              الحد الأقصى {MAX_PRODUCT_IMAGES} صورة — حجم الصورة وفق سياسة التخزين الحالية.
+            </p>
+          </section>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-xs font-medium text-foreground">
               المقاسات
+
               <input
                 name="sizes"
                 defaultValue={
@@ -1301,6 +1736,7 @@ function ProductModal({
 
             <label className="block text-xs font-medium text-foreground">
               الألوان
+
               <input
                 name="colors"
                 defaultValue={
@@ -1314,9 +1750,12 @@ function ProductModal({
 
           <label className="block text-xs font-medium text-foreground">
             الشارة
+
             <input
               name="badge"
-              defaultValue={form.badge}
+              defaultValue={
+                form.badge
+              }
               className={`${inputCls} mt-1`}
               placeholder="جديد / عرض / الأكثر مبيعًا"
               maxLength={50}
@@ -1326,6 +1765,7 @@ function ProductModal({
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="block text-xs font-medium text-foreground">
               إجمالي المخزون
+
               <input
                 name="total_stock"
                 type="number"
@@ -1340,6 +1780,7 @@ function ProductModal({
 
             <label className="block text-xs font-medium text-foreground">
               المخزون الحالي
+
               <input
                 name="stock_left"
                 type="number"
@@ -1354,6 +1795,7 @@ function ProductModal({
 
             <label className="block text-xs font-medium text-foreground">
               حد المخزون المنخفض
+
               <input
                 name="low_stock_threshold"
                 type="number"
@@ -1376,6 +1818,7 @@ function ProductModal({
                   form.is_active
                 }
               />
+
               عرض المنتج للعملاء
             </label>
 
@@ -1387,13 +1830,17 @@ function ProductModal({
                   form.is_local
                 }
               />
+
               منتج محلي
             </label>
           </div>
 
           <button
             type="submit"
-            disabled={busy}
+            disabled={
+              busy ||
+              uploading
+            }
             className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-60"
           >
             <Save className="h-4 w-4" />
