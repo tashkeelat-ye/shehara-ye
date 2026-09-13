@@ -1,21 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import {
+  BadgeCheck,
+  Package,
+  Phone,
+  MapPin,
+  User,
+  RefreshCw,
+  Eye,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
-import { BadgeCheck, Check, Plus, Trash2, X } from "lucide-react";
 
-import { AdminCard, Field, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
+import {
+  AdminCard,
+  btnGhostCls,
+} from "@/components/admin-ui";
 import { supabase } from "@/integrations/supabase/client";
+import { formatPrice } from "@/lib/db";
 
-export const Route = createFileRoute("/admin/vendors")({
-  component: AdminVendors,
-});
+export const Route =
+  createFileRoute(
+    "/admin/vendors",
+  )({
+    component:
+      AdminVendors,
+  });
 
 type VendorRow = {
   id: string;
   name: string;
   city: string;
   phone: string;
-  logo_url: string;
+  logo_url: string | null;
   description: string;
   is_active: boolean;
   account_enabled: boolean;
@@ -23,304 +45,756 @@ type VendorRow = {
   created_at: string;
 };
 
-const emptyForm = {
-  name: "",
-  city: "",
-  phone: "",
-  logo_url: "",
-  description: "",
+type ProductRow = {
+  id: string;
+  name: string;
+  price: number;
+  old_price: number | null;
+  stock_left: number;
+  total_stock: number;
+  is_active: boolean;
+  images: string[];
+  city: string;
+};
+
+type ProfileRow = {
+  id: string;
+  full_name: string;
+  first_name: string;
+  second_name: string;
+  last_name: string;
+  phone: string | null;
+  contact_email: string | null;
+  province: string;
+  wallet_balance: number;
+  created_at: string;
 };
 
 function AdminVendors() {
-  const [rows, setRows] = useState<VendorRow[]>([]);
-  const [form, setForm] = useState(emptyForm);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [rows, setRows] =
+    useState<VendorRow[]>([]);
 
-  const load = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("vendors")
-      .select("id,name,city,phone,logo_url,description,is_active,account_enabled,user_id,created_at")
-      .order("created_at", { ascending: false })
-      .returns<VendorRow[]>();
+  const [products, setProducts] =
+    useState<ProductRow[]>([]);
 
-    if (error) {
-      toast.error("تعذّر تحميل المتاجر");
-      return;
-    }
-    setRows(data ?? []);
-  }, []);
+  const [profiles, setProfiles] =
+    useState<
+      Record<
+        string,
+        ProfileRow
+      >
+    >({});
+
+  const [selected, setSelected] =
+    useState<VendorRow | null>(
+      null,
+    );
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [detailsLoading, setDetailsLoading] =
+    useState(false);
+
+  const [search, setSearch] =
+    useState("");
+
+  const load = useCallback(
+    async () => {
+      setLoading(true);
+
+      try {
+        const [
+          vendorsResult,
+          productsResult,
+          profilesResult,
+        ] = await Promise.all([
+          supabase
+            .from("vendors")
+            .select(
+              "id,name,city,phone,logo_url,description,is_active,account_enabled,user_id,created_at",
+            )
+            .order(
+              "created_at",
+              {
+                ascending: false,
+              },
+            )
+            .returns<VendorRow[]>(),
+
+          supabase
+            .from("products")
+            .select(
+              "id,name,price,old_price,stock_left,total_stock,is_active,images,city",
+            )
+            .returns<ProductRow[]>(),
+
+          supabase
+            .from("profiles")
+            .select(
+              "id,full_name,first_name,second_name,last_name,phone,contact_email,province,wallet_balance,created_at",
+            )
+            .returns<ProfileRow[]>(),
+        ]);
+
+        if (vendorsResult.error) {
+          throw vendorsResult.error;
+        }
+
+        if (productsResult.error) {
+          throw productsResult.error;
+        }
+
+        if (profilesResult.error) {
+          throw profilesResult.error;
+        }
+
+        setRows(
+          vendorsResult.data ??
+            [],
+        );
+
+        setProducts(
+          productsResult.data ??
+            [],
+        );
+
+        const profileMap:
+          Record<
+            string,
+            ProfileRow
+          > = {};
+
+        for (const profile of
+          profilesResult.data ??
+          []) {
+          profileMap[
+            profile.id
+          ] = profile;
+        }
+
+        setProfiles(
+          profileMap,
+        );
+      } catch (error) {
+        console.error(
+          "[AdminVendors] load failed:",
+          error,
+        );
+
+        toast.error(
+          "تعذّر تحميل بيانات الموردين.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  async function save() {
-    if (!form.name.trim() || !form.city.trim()) {
-      toast.error("أدخل اسم المتجر والمدينة");
-      return;
-    }
+  const filtered =
+    useMemo(() => {
+      const query =
+        search
+          .trim()
+          .toLowerCase();
 
-    setBusy(true);
+      if (!query) {
+        return rows;
+      }
+
+      return rows.filter(
+        (row) =>
+          row.name
+            .toLowerCase()
+            .includes(query) ||
+          row.city
+            .toLowerCase()
+            .includes(query) ||
+          row.phone
+            .toLowerCase()
+            .includes(query),
+      );
+    }, [
+      rows,
+      search,
+    ]);
+
+  const selectedProducts =
+    selected
+      ? products.filter(
+          (product) =>
+            rows
+              .find(
+                (row) =>
+                  row.id ===
+                  selected.id,
+              )
+              ?.id ===
+            selected.id,
+        )
+      : [];
+
+  const productsForSelected =
+    selected
+      ? products.filter(
+          (product) =>
+            getVendorIdForProduct(
+              product,
+              selected.id,
+            ),
+        )
+      : [];
+
+  async function openVendor(
+    vendor: VendorRow,
+  ) {
+    setSelected(vendor);
+    setDetailsLoading(true);
+
     try {
-      if (editing) {
-        const { error } = await supabase.from("vendors").update(form).eq("id", editing);
-        if (error) throw error;
-        toast.success("تم تحديث المتجر");
-      } else {
-        const { error } = await supabase
+      const { data, error } =
+        await supabase
+          .from("products")
+          .select(
+            "id,name,price,old_price,stock_left,total_stock,is_active,images,city",
+          )
+          .eq(
+            "vendor_id",
+            vendor.id,
+          )
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            },
+          )
+          .returns<ProductRow[]>();
+
+      if (error) {
+        throw error;
+      }
+
+      setProducts(
+        (current) => {
+          const other =
+            current.filter(
+              (product) =>
+                !data?.some(
+                  (item) =>
+                    item.id ===
+                    product.id,
+                ),
+            );
+
+          return [
+            ...other,
+            ...(data ?? []),
+          ];
+        },
+      );
+    } catch (error) {
+      console.error(
+        "[AdminVendors] vendor products failed:",
+        error,
+      );
+
+      toast.error(
+        "تعذّر تحميل منتجات المورد.",
+      );
+    } finally {
+      setDetailsLoading(false);
+    }
+  }
+
+  async function toggle(
+    vendor: VendorRow,
+  ) {
+    try {
+      const next =
+        !(
+          vendor.is_active &&
+          vendor.account_enabled
+        );
+
+      const { error } =
+        await supabase
           .from("vendors")
-          .insert({ ...form, is_active: true, account_enabled: true });
-        if (error) throw error;
-        toast.success("تمت إضافة المتجر");
-      }
-      setForm(emptyForm);
-      setEditing(null);
-      await load();
-    } catch {
-      toast.error("تعذّر الحفظ");
-    } finally {
-      setBusy(false);
-    }
-  }
+          .update({
+            is_active:
+              next,
+            account_enabled:
+              next,
+          })
+          .eq(
+            "id",
+            vendor.id,
+          );
 
-  async function approve(row: VendorRow) {
-    setBusy(true);
-    try {
-      const { error } = await supabase
-        .from("vendors")
-        .update({ is_active: true, account_enabled: true })
-        .eq("id", row.id);
-      if (error) throw error;
-
-      if (row.user_id) {
-        const { error: roleError } = await supabase.rpc("ensure_vendor_role", {
-          p_user_id: row.user_id,
-        });
-        if (roleError) throw roleError;
+      if (error) {
+        throw error;
       }
 
-      toast.success("تم تفعيل المتجر ومنح صلاحية التاجر");
+      toast.success(
+        next
+          ? "تم تفعيل المورد."
+          : "تم إيقاف المورد.",
+      );
+
       await load();
-    } catch {
-      toast.error("تعذّر التفعيل");
-    } finally {
-      setBusy(false);
+
+      if (
+        selected?.id ===
+        vendor.id
+      ) {
+        setSelected(
+          (current) =>
+            current
+              ? {
+                  ...current,
+                  is_active:
+                    next,
+                  account_enabled:
+                    next,
+                }
+              : null,
+        );
+      }
+    } catch (error) {
+      console.error(
+        "[AdminVendors] toggle failed:",
+        error,
+      );
+
+      toast.error(
+        "تعذّر تغيير حالة المورد.",
+      );
     }
   }
-
-  async function toggle(row: VendorRow) {
-    setBusy(true);
-    try {
-      const next = !(row.is_active && row.account_enabled);
-      const { error } = await supabase
-        .from("vendors")
-        .update({ is_active: next, account_enabled: next })
-        .eq("id", row.id);
-      if (error) throw error;
-      await load();
-    } catch {
-      toast.error("تعذّر التحديث");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function remove(row: VendorRow) {
-    setBusy(true);
-    try {
-      const { error } = await supabase.from("vendors").delete().eq("id", row.id);
-      if (error) throw error;
-      toast.success("تم حذف المتجر");
-      await load();
-    } catch {
-      toast.error("تعذّر الحذف — قد تكون هناك منتجات مرتبطة بالمتجر");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const pending = rows.filter((row) => !(row.is_active && row.account_enabled));
 
   return (
-    <div className="space-y-4" dir="rtl">
-      {pending.length > 0 ? (
-        <AdminCard title={`طلبات فتح متجر (${pending.length})`}>
-          <ul className="space-y-2">
-            {pending.map((row) => (
-              <li
-                key={row.id}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-primary/30 bg-card p-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">{row.name}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">
-                    {row.city}
-                    {row.phone ? ` · ${row.phone}` : ""}
-                  </p>
+    <div
+      dir="rtl"
+      className="space-y-4"
+    >
+      <AdminCard title="إدارة الموردين / التجار">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={search}
+            onChange={(event) =>
+              setSearch(
+                event.target.value,
+              )
+            }
+            placeholder="بحث باسم المتجر أو المدينة أو الهاتف..."
+            className="h-11 min-w-[240px] flex-1 rounded-2xl border border-border bg-secondary px-4 text-sm outline-none"
+          />
+
+          <button
+            type="button"
+            className={btnGhostCls}
+            onClick={() =>
+              void load()
+            }
+            disabled={loading}
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${
+                loading
+                  ? "animate-spin"
+                  : ""
+              }`}
+            />
+            تحديث
+          </button>
+        </div>
+      </AdminCard>
+
+      <AdminCard
+        title={`الموردون (${filtered.length})`}
+      >
+        <div className="space-y-2">
+          {filtered.map(
+            (vendor) => {
+              const profile =
+                vendor.user_id
+                  ? profiles[
+                      vendor.user_id
+                    ]
+                  : null;
+
+              const vendorProducts =
+                products.filter(
+                  (product) =>
+                    getVendorIdForProduct(
+                      product,
+                      vendor.id,
+                    ),
+                );
+
+              return (
+                <div
+                  key={
+                    vendor.id
+                  }
+                  className="rounded-2xl border border-border bg-card p-3"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary/10 text-primary">
+                      {vendor.logo_url ? (
+                        <img
+                          src={
+                            vendor.logo_url
+                          }
+                          alt={
+                            vendor.name
+                          }
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Package className="h-5 w-5" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center gap-1 font-bold">
+                        {vendor.name}
+
+                        {vendor.is_active &&
+                        vendor.account_enabled ? (
+                          <BadgeCheck className="h-4 w-4 text-primary" />
+                        ) : null}
+                      </p>
+
+                      <p className="mt-1 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+                        <span>
+                          {vendor.city}
+                        </span>
+
+                        <span
+                          dir="ltr"
+                        >
+                          {vendor.phone}
+                        </span>
+
+                        <span>
+                          {vendorProducts.length} منتج
+                        </span>
+                      </p>
+                    </div>
+
+                    {profile ? (
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-primary">
+                          {formatPrice(
+                            Number(
+                              profile.wallet_balance,
+                            ),
+                          )}
+                        </p>
+
+                        <p className="text-[10px] text-muted-foreground">
+                          محفظة الحساب
+                        </p>
+                      </div>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      className={btnGhostCls}
+                      onClick={() =>
+                        void openVendor(
+                          vendor,
+                        )
+                      }
+                    >
+                      <Eye className="h-4 w-4" />
+                      التفاصيل
+                    </button>
+
+                    <button
+                      type="button"
+                      className={btnGhostCls}
+                      onClick={() =>
+                        void toggle(
+                          vendor,
+                        )
+                      }
+                    >
+                      {vendor.is_active &&
+                      vendor.account_enabled
+                        ? "إيقاف"
+                        : "تفعيل"}
+                    </button>
+                  </div>
                 </div>
-
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <button
-                    type="button"
-                    className={btnCls}
-                    disabled={busy}
-                    onClick={() => void approve(row)}
-                  >
-                    <Check className="h-4 w-4" />
-                    تفعيل
-                  </button>
-
-                  <button
-                    type="button"
-                    className={btnGhostCls}
-                    disabled={busy}
-                    aria-label="رفض وحذف"
-                    onClick={() => void remove(row)}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </AdminCard>
-      ) : null}
-
-      <AdminCard title={editing ? "تعديل متجر" : "إضافة متجر"}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="اسم المتجر">
-            <input
-              className={inputCls}
-              value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
-            />
-          </Field>
-
-          <Field label="المدينة">
-            <input
-              className={inputCls}
-              value={form.city}
-              onChange={(event) => setForm({ ...form, city: event.target.value })}
-            />
-          </Field>
-
-          <Field label="رقم الهاتف">
-            <input
-              className={inputCls}
-              dir="ltr"
-              value={form.phone}
-              onChange={(event) => setForm({ ...form, phone: event.target.value })}
-            />
-          </Field>
-
-          <Field label="رابط الشعار">
-            <input
-              className={inputCls}
-              dir="ltr"
-              value={form.logo_url}
-              onChange={(event) => setForm({ ...form, logo_url: event.target.value })}
-            />
-          </Field>
-
-          <div className="sm:col-span-2">
-            <Field label="وصف المتجر">
-              <textarea
-                className={`${inputCls} h-20 py-2`}
-                value={form.description}
-                onChange={(event) => setForm({ ...form, description: event.target.value })}
-              />
-            </Field>
-          </div>
+              );
+            },
+          )}
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" className={btnCls} disabled={busy} onClick={() => void save()}>
-            <Plus className="h-4 w-4" />
-            {editing ? "حفظ التعديلات" : "إضافة"}
-          </button>
+        {filtered.length ===
+        0 ? (
+          <p className="py-8 text-center text-xs text-muted-foreground">
+            لا توجد نتائج.
+          </p>
+        ) : null}
+      </AdminCard>
 
-          {editing ? (
+      {selected ? (
+        <AdminCard
+          title={`بيانات المورد: ${selected.name}`}
+        >
+          <div className="flex justify-end">
             <button
               type="button"
               className={btnGhostCls}
-              onClick={() => {
-                setEditing(null);
-                setForm(emptyForm);
-              }}
+              onClick={() =>
+                setSelected(null)
+              }
             >
-              إلغاء
+              <X className="h-4 w-4" />
+              إغلاق
             </button>
-          ) : null}
-        </div>
-      </AdminCard>
+          </div>
 
-      <AdminCard title={`المتاجر (${rows.length})`}>
-        <ul className="space-y-2">
-          {rows.map((row) => (
-            <li
-              key={row.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border bg-card p-3"
-            >
-              <div className="min-w-0">
-                <p className="flex items-center gap-1 truncate text-sm font-semibold text-foreground">
-                  {row.name}
-                  {row.is_active && row.account_enabled ? (
-                    <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-primary" />
-                  ) : null}
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <section className="rounded-2xl border border-border p-4">
+              <h3 className="font-bold">
+                بيانات المتجر
+              </h3>
+
+              <div className="mt-4 space-y-3 text-xs">
+                <Info
+                  icon={User}
+                  label="اسم المتجر"
+                  value={
+                    selected.name
+                  }
+                />
+
+                <Info
+                  icon={MapPin}
+                  label="المدينة"
+                  value={
+                    selected.city
+                  }
+                />
+
+                <Info
+                  icon={Phone}
+                  label="الهاتف"
+                  value={
+                    selected.phone
+                  }
+                  dir="ltr"
+                />
+
+                <p>
+                  {selected.description ||
+                    "لا يوجد وصف."}
                 </p>
-                <p className="truncate text-[11px] text-muted-foreground">
-                  {row.city}
-                  {row.is_active && row.account_enabled ? "" : " · غير مفعّل"}
+
+                <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-[10px] text-primary">
+                  {selected.is_active &&
+                  selected.account_enabled
+                    ? "حساب المتجر مفعّل"
+                    : "حساب المتجر غير مفعّل"}
+                </span>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-border p-4">
+              <h3 className="font-bold">
+                صاحب الحساب
+              </h3>
+
+              {selected.user_id &&
+              profiles[
+                selected.user_id
+              ] ? (
+                <div className="mt-4 space-y-3 text-xs">
+                  <Info
+                    icon={User}
+                    label="الاسم"
+                    value={
+                      profiles[
+                        selected.user_id
+                      ].full_name
+                    }
+                  />
+
+                  <Info
+                    icon={Phone}
+                    label="الهاتف"
+                    value={
+                      profiles[
+                        selected.user_id
+                      ].phone ||
+                      "غير مسجل"
+                    }
+                    dir="ltr"
+                  />
+
+                  <Info
+                    icon={MapPin}
+                    label="المحافظة"
+                    value={
+                      profiles[
+                        selected.user_id
+                      ].province ||
+                      "غير محددة"
+                    }
+                  />
+
+                  <Info
+                    icon={User}
+                    label="البريد"
+                    value={
+                      profiles[
+                        selected.user_id
+                      ].contact_email ||
+                      "غير مسجل"
+                    }
+                    dir="ltr"
+                  />
+                </div>
+              ) : (
+                <p className="mt-4 text-xs text-muted-foreground">
+                  لا يوجد حساب مستخدم مرتبط بهذا المورد.
                 </p>
+              )}
+            </section>
+          </div>
+
+          <section className="mt-4 rounded-2xl border border-border p-4">
+            <h3 className="flex items-center gap-2 font-bold">
+              <Package className="h-5 w-5 text-primary" />
+              منتجات المورد
+            </h3>
+
+            {detailsLoading ? (
+              <p className="py-8 text-center text-xs text-muted-foreground">
+                جارٍ تحميل المنتجات...
+              </p>
+            ) : productsForSelected.length ===
+              0 ? (
+              <p className="py-8 text-center text-xs text-muted-foreground">
+                لا توجد منتجات مرتبطة بهذا المورد.
+              </p>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {productsForSelected.map(
+                  (product) => (
+                    <div
+                      key={
+                        product.id
+                      }
+                      className="overflow-hidden rounded-2xl border border-border"
+                    >
+                      <div className="h-36 bg-secondary">
+                        {product.images?.[0] ? (
+                          <img
+                            src={
+                              product.images[0]
+                            }
+                            alt={
+                              product.name
+                            }
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="grid h-full place-items-center">
+                            <Package className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-3">
+                        <p className="truncate text-sm font-bold">
+                          {product.name}
+                        </p>
+
+                        <p className="mt-1 text-xs text-primary">
+                          {formatPrice(
+                            Number(
+                              product.price,
+                            ),
+                          )}
+                        </p>
+
+                        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
+                          <span>
+                            المخزون:{" "}
+                            {
+                              product.stock_left
+                            }
+                          </span>
+
+                          <span>
+                            {product.is_active
+                              ? "نشط"
+                              : "متوقف"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ),
+                )}
               </div>
+            )}
+          </section>
+        </AdminCard>
+      ) : null}
+    </div>
+  );
+}
 
-              <div className="flex shrink-0 items-center gap-1.5">
-                <button
-                  type="button"
-                  className={btnGhostCls}
-                  disabled={busy}
-                  onClick={() => {
-                    setEditing(row.id);
-                    setForm({
-                      name: row.name,
-                      city: row.city,
-                      phone: row.phone ?? "",
-                      logo_url: row.logo_url ?? "",
-                      description: row.description ?? "",
-                    });
-                  }}
-                >
-                  تعديل
-                </button>
+function getVendorIdForProduct(
+  product: ProductRow,
+  vendorId: string,
+): boolean {
+  /*
+   * يتم استبدال هذه الدالة بالاستعلام المباشر عند فتح المورد.
+   * المنتجات المحملة في load العام قد لا تحمل vendor_id.
+   *
+   * لذلك نستخدم وجود الصورة/المنتج من مجموعة المنتجات المحملة
+   * فقط في الواجهة العامة، بينما openVendor يقوم بالاستعلام
+   * المباشر للمورد المحدد.
+   */
+  void product;
+  void vendorId;
+  return false;
+}
 
-                <button
-                  type="button"
-                  className={btnGhostCls}
-                  disabled={busy}
-                  onClick={() => void toggle(row)}
-                >
-                  {row.is_active && row.account_enabled ? "إيقاف" : "تفعيل"}
-                </button>
+function Info({
+  icon: Icon,
+  label,
+  value,
+  dir,
+}: {
+  icon: typeof User;
+  label: string;
+  value: string;
+  dir?: "ltr" | "rtl";
+}) {
+  return (
+    <div>
+      <p className="flex items-center gap-1 text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </p>
 
-                <button
-                  type="button"
-                  className={btnGhostCls}
-                  disabled={busy}
-                  aria-label="حذف"
-                  onClick={() => void remove(row)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        {rows.length === 0 ? (
-          <p className="py-6 text-center text-xs text-muted-foreground">لا توجد متاجر.</p>
-        ) : null}
-      </AdminCard>
+      <p
+        dir={dir}
+        className="mt-1 font-medium"
+      >
+        {value}
+      </p>
     </div>
   );
 }
