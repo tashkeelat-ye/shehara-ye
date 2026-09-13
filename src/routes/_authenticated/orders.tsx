@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  ExternalLink,
   FileText,
   Share2,
 } from "lucide-react";
@@ -13,6 +12,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { useFormatPrice } from "@/lib/currency-context";
 import { PAYMENT_STATUS_LABELS } from "@/lib/store";
 import { InvoiceView } from "@/components/InvoiceView";
+import { shareInvoiceAsTextFile } from "@/lib/invoice-sharing";
 
 type OrderItem = {
   id: string;
@@ -42,12 +42,6 @@ type Order = {
   notes: string | null;
   created_at: string;
 
-  /**
-   * رقم الفاتورة المخزن مباشرة في الطلب.
-   *
-   * هذا هو المصدر الأساسي لرقم الفاتورة.
-   * العلاقة invoices أدناه تبقى كـ fallback.
-   */
   invoice_number: string | null;
 
   order_items: OrderItem[] | null;
@@ -71,6 +65,29 @@ const statusLabels: Record<string, string> = {
   delivered: "تم التسليم",
   cancelled: "ملغي",
 };
+
+function getInvoiceNumber(
+  order: Order,
+): string | null {
+  return (
+    order.invoice_number ??
+    order.invoices?.[0]?.invoice_number ??
+    null
+  );
+}
+
+function getInvoiceAddress(
+  order: Order,
+): string {
+  return [
+    order.shipping_city,
+    order.shipping_district,
+    order.shipping_details,
+    order.shipping_landmark,
+  ]
+    .filter(Boolean)
+    .join(" - ");
+}
 
 export const Route = createFileRoute(
   "/_authenticated/orders",
@@ -136,7 +153,11 @@ function OrdersPage() {
 
       if (error) {
         console.error("orders:", error);
-        toast.error("تعذر تحميل الطلبات");
+
+        toast.error(
+          "تعذر تحميل الطلبات",
+        );
+
         setOrders([]);
       } else {
         setOrders(data ?? []);
@@ -150,26 +171,9 @@ function OrdersPage() {
     };
   }, []);
 
-  /**
-   * الحصول على رقم الفاتورة.
-   *
-   * الأولوية:
-   * 1. orders.invoice_number
-   * 2. invoices.invoice_number
-   *
-   * هذا يمنع اعتماد الواجهة على العلاقة المتداخلة وحدها.
-   */
-  const getInvoiceNumber = (
+  const handleShareInvoice = async (
     order: Order,
-  ): string | null => {
-    return (
-      order.invoice_number ??
-      order.invoices?.[0]?.invoice_number ??
-      null
-    );
-  };
-
-  const shareInvoice = async (order: Order) => {
+  ) => {
     const invoiceNumber =
       getInvoiceNumber(order);
 
@@ -177,32 +181,80 @@ function OrdersPage() {
       toast.error(
         "لا توجد فاتورة إلكترونية صادرة لهذا الطلب حتى الآن.",
       );
+
       return;
     }
 
-    const url =
-      `${window.location.origin}/invoice/${order.id}`;
-
-    const shareData = {
-      title: `فاتورة شهارة — ${invoiceNumber}`,
-      text:
-        `فاتورة طلب ${order.order_number} من شهارة للتسوق`,
-      url,
-    };
-
     try {
-      if (
-        typeof navigator.share === "function"
-      ) {
-        await navigator.share(shareData);
-        return;
+      const result =
+        await shareInvoiceAsTextFile({
+          invoiceNumber,
+
+          orderNumber:
+            order.order_number,
+
+          invoiceDate:
+            new Date(
+              order.created_at,
+            ).toLocaleDateString(
+              "ar-YE",
+            ),
+
+          customerName:
+            order.shipping_name,
+
+          customerPhone:
+            order.shipping_phone,
+
+          customerAddress:
+            getInvoiceAddress(order),
+
+          paymentMethod:
+            order.payment_method_code,
+
+          paymentStatus:
+            PAYMENT_STATUS_LABELS[
+              order.payment_status
+            ] ??
+            order.payment_status,
+
+          items: (
+            order.order_items ?? []
+          ).map((item) => ({
+            title:
+              item.product_name,
+
+            quantity:
+              item.quantity,
+
+            price:
+              item.unit_price,
+
+            size:
+              item.size,
+
+            color:
+              item.color,
+          })),
+
+          subtotal:
+            order.subtotal,
+
+          shippingFee:
+            order.delivery_fee,
+
+          total:
+            order.total,
+
+          notes:
+            order.notes,
+        });
+
+      if (result === "copied") {
+        toast.success(
+          "تم تجهيز الفاتورة ونسخ نصها. يمكنك لصقه ومشاركته الآن.",
+        );
       }
-
-      await navigator.clipboard.writeText(url);
-
-      toast.success(
-        "تم نسخ رابط الفاتورة، ويمكنك مشاركته الآن.",
-      );
     } catch (error) {
       if (
         error instanceof DOMException &&
@@ -211,17 +263,14 @@ function OrdersPage() {
         return;
       }
 
-      try {
-        await navigator.clipboard.writeText(url);
+      console.error(
+        "[Orders] invoice sharing failed:",
+        error,
+      );
 
-        toast.success(
-          "تم نسخ رابط الفاتورة.",
-        );
-      } catch {
-        toast.error(
-          "تعذر مشاركة الفاتورة من هذا الجهاز.",
-        );
-      }
+      toast.error(
+        "تعذر تجهيز الفاتورة للمشاركة.",
+      );
     }
   };
 
@@ -288,7 +337,9 @@ function OrdersPage() {
                       </span>
 
                       <span className="rounded-full bg-brand-soft px-3 py-1 text-[10px] font-bold text-primary">
-                        {statusLabels[order.status] ??
+                        {statusLabels[
+                          order.status
+                        ] ??
                           order.status}
                       </span>
                     </div>
@@ -297,7 +348,9 @@ function OrdersPage() {
                       <span>
                         {new Date(
                           order.created_at,
-                        ).toLocaleDateString("ar-YE")}
+                        ).toLocaleDateString(
+                          "ar-YE",
+                        )}
                       </span>
 
                       {invoiceNumber && (
@@ -315,8 +368,12 @@ function OrdersPage() {
                         >
                           {item.product_image ? (
                             <img
-                              src={item.product_image}
-                              alt={item.product_name}
+                              src={
+                                item.product_image
+                              }
+                              alt={
+                                item.product_name
+                              }
                               className="h-12 w-12 rounded-xl object-cover"
                               loading="lazy"
                             />
@@ -372,7 +429,9 @@ function OrdersPage() {
                         </p>
 
                         <p className="mt-1 text-base font-black text-[#0D3B4D]">
-                          {formatPrice(order.total)}
+                          {formatPrice(
+                            order.total,
+                          )}
                         </p>
                       </div>
 
@@ -391,7 +450,9 @@ function OrdersPage() {
                       <>
                         <Link
                           to="/invoice/$id"
-                          params={{ id: order.id }}
+                          params={{
+                            id: order.id,
+                          }}
                           className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0D3B4D] px-4 text-[11px] font-bold text-white"
                         >
                           <FileText className="h-4 w-4 text-[#E2723A]" />
@@ -401,7 +462,9 @@ function OrdersPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            void shareInvoice(order)
+                            void handleShareInvoice(
+                              order,
+                            )
                           }
                           className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#0D3B4D]/15 bg-background px-4 text-[11px] font-bold text-[#0D3B4D]"
                         >
@@ -431,11 +494,16 @@ function OrdersPage() {
             <InvoiceView
               order={{
                 invoiceNumber:
-                  getInvoiceNumber(invoiceOrder) ?? "",
+                  getInvoiceNumber(
+                    invoiceOrder,
+                  ) ?? "",
 
-                invoiceDate: new Date(
-                  invoiceOrder.created_at,
-                ).toLocaleDateString("ar-YE"),
+                invoiceDate:
+                  new Date(
+                    invoiceOrder.created_at,
+                  ).toLocaleDateString(
+                    "ar-YE",
+                  ),
 
                 orderNumber:
                   invoiceOrder.order_number,
@@ -447,14 +515,10 @@ function OrdersPage() {
                   phone:
                     invoiceOrder.shipping_phone,
 
-                  address: [
-                    invoiceOrder.shipping_city,
-                    invoiceOrder.shipping_district,
-                    invoiceOrder.shipping_details,
-                    invoiceOrder.shipping_landmark,
-                  ]
-                    .filter(Boolean)
-                    .join(" - "),
+                  address:
+                    getInvoiceAddress(
+                      invoiceOrder,
+                    ),
 
                   paymentMethod:
                     invoiceOrder.payment_method_code,
@@ -465,22 +529,34 @@ function OrdersPage() {
                     ] ??
                     invoiceOrder.payment_status,
 
-                  currency: "ريال يمني (YER)",
+                  currency:
+                    "ريال يمني (YER)",
                 },
 
                 items: (
-                  invoiceOrder.order_items ?? []
+                  invoiceOrder.order_items ??
+                  []
                 ).map((item) => ({
                   id: item.id,
-                  title: item.product_name,
-                  quantity: item.quantity,
-                  price: item.unit_price,
+
+                  title:
+                    item.product_name,
+
+                  quantity:
+                    item.quantity,
+
+                  price:
+                    item.unit_price,
+
                   image:
-                    item.product_image || undefined,
+                    item.product_image ||
+                    undefined,
+
                   description: [
                     item.size
                       ? `المقاس: ${item.size}`
                       : "",
+
                     item.color
                       ? `اللون: ${item.color}`
                       : "",
