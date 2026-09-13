@@ -23,6 +23,10 @@ import {
   type InvoiceData,
 } from "@/components/InvoiceView";
 
+import {
+  shareInvoiceAsTextFile,
+} from "@/lib/invoice-sharing";
+
 type OrderItem = {
   id: string;
   product_name: string;
@@ -61,12 +65,6 @@ type OrderRow = {
   notes: string | null;
   created_at: string;
 
-  /**
-   * رقم الفاتورة المخزن مباشرة في الطلب.
-   *
-   * يستخدم كمصدر أساسي عند توفره،
-   * مع الاحتفاظ بعلاقة invoices كـ fallback.
-   */
   invoice_number: string | null;
 
   order_items:
@@ -77,6 +75,38 @@ type OrderRow = {
     | InvoiceRow[]
     | null;
 };
+
+function getInvoiceNumber(
+  order: OrderRow,
+): string | null {
+  return (
+    order.invoice_number ??
+    order.invoices?.[0]?.invoice_number ??
+    null
+  );
+}
+
+function getInvoiceDate(
+  order: OrderRow,
+): string {
+  return (
+    order.invoices?.[0]?.issued_at ??
+    order.created_at
+  );
+}
+
+function getInvoiceAddress(
+  order: OrderRow,
+): string {
+  return [
+    order.shipping_city,
+    order.shipping_district,
+    order.shipping_details,
+    order.shipping_landmark,
+  ]
+    .filter(Boolean)
+    .join(" - ");
+}
 
 export const Route = createFileRoute(
   "/_authenticated/invoice/$id",
@@ -150,100 +180,111 @@ function InvoicePage() {
     },
   });
 
-  /**
-   * الحصول على رقم الفاتورة مع الحفاظ على التوافق
-   * مع كلا المصدرين:
-   *
-   * 1. orders.invoice_number
-   * 2. invoices.invoice_number
-   */
-  const getInvoiceNumber = (
-    order: OrderRow,
-  ): string | null => {
-    return (
-      order.invoice_number ??
-      order.invoices?.[0]?.invoice_number ??
-      null
-    );
-  };
+  const handleShare = async () => {
+    if (!query.data) {
+      toast.error(
+        "بيانات الفاتورة غير متاحة.",
+      );
 
-  /**
-   * الحصول على تاريخ إصدار الفاتورة.
-   *
-   * إذا كانت العلاقة invoices متاحة نستخدم issued_at.
-   * وإذا لم تكن العلاقة متاحة، نستخدم created_at
-   * كقيمة احتياطية حتى لا تتوقف صفحة الفاتورة.
-   */
-  const getInvoiceDate = (
-    order: OrderRow,
-  ): string => {
-    return (
-      order.invoices?.[0]?.issued_at ??
-      order.created_at
-    );
-  };
+      return;
+    }
 
-  const share = async () => {
-    const url =
-      window.location.href;
+    const order =
+      query.data;
 
     const invoiceNumber =
-      query.data
-        ? getInvoiceNumber(query.data)
-        : null;
+      getInvoiceNumber(order);
+
+    if (!invoiceNumber) {
+      toast.error(
+        "لا توجد فاتورة إلكترونية صادرة لهذا الطلب.",
+      );
+
+      return;
+    }
 
     try {
-      if (
-        typeof navigator.share ===
-        "function"
-      ) {
-        await navigator.share({
-          title:
-            invoiceNumber
-              ? `فاتورة شهارة — ${invoiceNumber}`
-              : "فاتورة شهارة",
+      const result =
+        await shareInvoiceAsTextFile({
+          invoiceNumber,
 
-          text:
-            `الفاتورة الإلكترونية للطلب ${
-              query.data
-                ?.order_number ?? ""
-            }`,
+          orderNumber:
+            order.order_number,
 
-          url,
+          invoiceDate:
+            getInvoiceDate(order),
+
+          customerName:
+            order.shipping_name,
+
+          customerPhone:
+            order.shipping_phone,
+
+          customerAddress:
+            getInvoiceAddress(order),
+
+          paymentMethod:
+            order.payment_method_code,
+
+          paymentStatus:
+            PAYMENT_STATUS_LABELS[
+              order.payment_status
+            ] ??
+            order.payment_status,
+
+          items: (
+            order.order_items ?? []
+          ).map((item) => ({
+            title:
+              item.product_name,
+
+            quantity:
+              item.quantity,
+
+            price:
+              item.unit_price,
+
+            size:
+              item.size,
+
+            color:
+              item.color,
+          })),
+
+          subtotal:
+            order.subtotal,
+
+          shippingFee:
+            order.delivery_fee,
+
+          total:
+            order.total,
+
+          notes:
+            order.notes,
         });
 
-        return;
+      if (result === "copied") {
+        toast.success(
+          "تم تجهيز الفاتورة ونسخ نصها. يمكنك لصقه ومشاركته الآن.",
+        );
       }
-
-      await navigator.clipboard.writeText(
-        url,
-      );
-
-      toast.success(
-        "تم نسخ رابط الفاتورة.",
-      );
     } catch (error) {
       if (
         error instanceof DOMException &&
-        error.name ===
-          "AbortError"
+        error.name === "AbortError"
       ) {
         return;
       }
 
-      try {
-        await navigator.clipboard.writeText(
-          url,
-        );
+      console.error(
+        "[InvoicePage] sharing failed:",
+        error,
+      );
 
-        toast.success(
-          "تم نسخ رابط الفاتورة.",
-        );
-      } catch {
-        toast.error(
-          "تعذر مشاركة الفاتورة.",
-        );
-      }
+      toast.error(
+        "تعذر تجهيز الفاتورة للمشاركة.",
+      );
     }
   };
 
@@ -295,17 +336,9 @@ function InvoicePage() {
   const order =
     query.data;
 
-  /**
-   * المصدر الأساسي هو orders.invoice_number.
-   * invoices هو fallback.
-   */
   const invoiceNumber =
     getInvoiceNumber(order);
 
-  /**
-   * إذا لم يوجد رقم فاتورة في أي من المصدرين،
-   * فلا نعتبر الطلب فاتورة صادرة.
-   */
   if (!invoiceNumber) {
     return (
       <div
@@ -353,14 +386,8 @@ function InvoicePage() {
       phone:
         order.shipping_phone,
 
-      address: [
-        order.shipping_city,
-        order.shipping_district,
-        order.shipping_details,
-        order.shipping_landmark,
-      ]
-        .filter(Boolean)
-        .join(" - "),
+      address:
+        getInvoiceAddress(order),
 
       paymentMethod:
         order.payment_method_code,
@@ -448,7 +475,7 @@ function InvoicePage() {
           <button
             type="button"
             onClick={() =>
-              void share()
+              void handleShare()
             }
             className="inline-flex items-center gap-2 rounded-xl bg-[#0D3B4D] px-4 py-2.5 text-xs font-bold text-white"
           >
