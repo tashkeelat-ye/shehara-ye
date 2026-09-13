@@ -783,6 +783,89 @@ USING (
 );
 
 
+-- ============================================================
+-- 12. تعطيل / تفعيل حساب المستخدم بواسطة الإدارة
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.admin_set_user_disabled(
+  p_user_id uuid,
+  p_disabled boolean
+)
+RETURNS public.profiles
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _profile public.profiles;
+BEGIN
+
+  IF auth.uid() IS NULL
+     OR NOT public.has_role(
+       auth.uid(),
+       'admin'
+     )
+  THEN
+    RAISE EXCEPTION 'غير مصرح';
+  END IF;
+
+
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'معرّف المستخدم مطلوب';
+  END IF;
+
+
+  IF p_user_id = auth.uid() THEN
+    RAISE EXCEPTION 'لا يمكنك تعطيل حساب الإدارة الحالي';
+  END IF;
+
+
+  UPDATE public.profiles
+
+  SET
+    is_disabled = COALESCE(
+      p_disabled,
+      false
+    ),
+    updated_at = now()
+
+  WHERE id = p_user_id
+
+  RETURNING *
+  INTO _profile;
+
+
+  IF _profile.id IS NULL THEN
+    RAISE EXCEPTION 'المستخدم غير موجود';
+  END IF;
+
+
+  RETURN _profile;
+
+END;
+$$;
+
+
+REVOKE ALL
+ON FUNCTION public.admin_set_user_disabled(
+  uuid,
+  boolean
+)
+FROM PUBLIC;
+
+
+GRANT EXECUTE
+ON FUNCTION public.admin_set_user_disabled(
+  uuid,
+  boolean
+)
+TO authenticated;
+
+
+-- ============================================================
+-- تحديث PostgREST schema
+-- ============================================================
+
 NOTIFY pgrst, 'reload schema';
 
 COMMIT;
