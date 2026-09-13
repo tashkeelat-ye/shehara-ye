@@ -42,6 +42,14 @@ type Order = {
   notes: string | null;
   created_at: string;
 
+  /**
+   * رقم الفاتورة المخزن مباشرة في الطلب.
+   *
+   * هذا هو المصدر الأساسي لرقم الفاتورة.
+   * العلاقة invoices أدناه تبقى كـ fallback.
+   */
+  invoice_number: string | null;
+
   order_items: OrderItem[] | null;
 
   couriers: {
@@ -64,7 +72,9 @@ const statusLabels: Record<string, string> = {
   cancelled: "ملغي",
 };
 
-export const Route = createFileRoute("/_authenticated/orders")({
+export const Route = createFileRoute(
+  "/_authenticated/orders",
+)({
   head: () => ({
     meta: [
       { title: "طلباتي | شهارة" },
@@ -111,6 +121,7 @@ function OrdersPage() {
             "shipping_landmark",
             "notes",
             "created_at",
+            "invoice_number",
             "order_items(id,product_name,product_image,quantity,unit_price,size,color)",
             "couriers(name,phone)",
             "invoices(invoice_number)",
@@ -139,9 +150,28 @@ function OrdersPage() {
     };
   }, []);
 
+  /**
+   * الحصول على رقم الفاتورة.
+   *
+   * الأولوية:
+   * 1. orders.invoice_number
+   * 2. invoices.invoice_number
+   *
+   * هذا يمنع اعتماد الواجهة على العلاقة المتداخلة وحدها.
+   */
+  const getInvoiceNumber = (
+    order: Order,
+  ): string | null => {
+    return (
+      order.invoice_number ??
+      order.invoices?.[0]?.invoice_number ??
+      null
+    );
+  };
+
   const shareInvoice = async (order: Order) => {
     const invoiceNumber =
-      order.invoices?.[0]?.invoice_number;
+      getInvoiceNumber(order);
 
     if (!invoiceNumber) {
       toast.error(
@@ -241,7 +271,7 @@ function OrdersPage() {
                 order.order_items ?? [];
 
               const invoiceNumber =
-                order.invoices?.[0]?.invoice_number;
+                getInvoiceNumber(order);
 
               return (
                 <li
@@ -401,8 +431,8 @@ function OrdersPage() {
             <InvoiceView
               order={{
                 invoiceNumber:
-                  invoiceOrder.invoices?.[0]
-                    ?.invoice_number ?? "",
+                  getInvoiceNumber(invoiceOrder) ?? "",
+
                 invoiceDate: new Date(
                   invoiceOrder.created_at,
                 ).toLocaleDateString("ar-YE"),
@@ -413,8 +443,10 @@ function OrdersPage() {
                 customerDetails: {
                   name:
                     invoiceOrder.shipping_name,
+
                   phone:
                     invoiceOrder.shipping_phone,
+
                   address: [
                     invoiceOrder.shipping_city,
                     invoiceOrder.shipping_district,
@@ -423,13 +455,16 @@ function OrdersPage() {
                   ]
                     .filter(Boolean)
                     .join(" - "),
+
                   paymentMethod:
                     invoiceOrder.payment_method_code,
+
                   paymentStatus:
                     PAYMENT_STATUS_LABELS[
                       invoiceOrder.payment_status
                     ] ??
                     invoiceOrder.payment_status,
+
                   currency: "ريال يمني (YER)",
                 },
 
