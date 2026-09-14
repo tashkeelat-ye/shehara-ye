@@ -13,13 +13,13 @@ import {
   User,
   Store,
   Ban,
-  CheckCircle2,
   RefreshCw,
   Wallet,
   History,
   MapPin,
   Phone,
   Mail,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -71,13 +71,14 @@ type VendorRow = {
 
 type AddressRow = {
   id: string;
-  label: string;
-  recipient_name: string;
-  phone: string;
-  city: string;
-  district: string;
-  details: string;
-  is_default: boolean;
+  label?: string | null;
+  recipient_name?: string | null;
+  phone?: string | null;
+  city?: string | null;
+  district?: string | null;
+  details?: string | null;
+  is_default?: boolean | null;
+  [key: string]: unknown;
 };
 
 type TransactionRow = {
@@ -142,6 +143,9 @@ function AdminUsers() {
 
   const [loadingDetails, setLoadingDetails] =
     useState(false);
+
+  const [detailsError, setDetailsError] =
+    useState<string | null>(null);
 
   const [walletAmount, setWalletAmount] =
     useState("");
@@ -407,6 +411,7 @@ function AdminUsers() {
 
     setAddresses([]);
     setTransactions([]);
+    setDetailsError(null);
     setLoadingDetails(true);
 
     try {
@@ -451,15 +456,34 @@ function AdminUsers() {
         error,
       );
 
-      toast.error(
+      const message =
         error instanceof Error &&
-          error.message
+        error.message
           ? error.message
-          : "تعذّر تحميل تفاصيل الحساب.",
+          : "تعذّر تحميل تفاصيل الحساب.";
+
+      setDetailsError(
+        message,
+      );
+
+      toast.error(
+        "تعذّر تحميل تفاصيل الحساب.",
       );
     } finally {
       setLoadingDetails(false);
     }
+  }
+
+  function closeDetails() {
+    if (loadingDetails) {
+      return;
+    }
+
+    setSelected(null);
+    setSelectedVendor(null);
+    setAddresses([]);
+    setTransactions([]);
+    setDetailsError(null);
   }
 
   async function adjustWallet() {
@@ -545,6 +569,16 @@ function AdminUsers() {
         );
 
       if (updated) {
+        setSelected(updated);
+
+        setSelectedVendor(
+          vendors.find(
+            (vendor) =>
+              vendor.user_id ===
+              updated.id,
+          ) ?? null,
+        );
+
         await openDetails(
           updated,
         );
@@ -573,7 +607,6 @@ function AdminUsers() {
 
     try {
       const {
-        data,
         error,
       } = await supabase.rpc(
         "admin_set_user_disabled",
@@ -588,8 +621,6 @@ function AdminUsers() {
       if (error) {
         throw error;
       }
-
-      void data;
 
       toast.success(
         row.is_disabled
@@ -612,7 +643,7 @@ function AdminUsers() {
           );
 
         if (refreshed) {
-          await openDetails(
+          setSelected(
             refreshed,
           );
         }
@@ -767,6 +798,7 @@ function AdminUsers() {
                   : ""
               }`}
             />
+
             تحديث
           </button>
         </div>
@@ -903,441 +935,622 @@ function AdminUsers() {
         </div>
       </AdminCard>
 
+      {/* ======================================================
+          نافذة تفاصيل الحساب
+          ====================================================== */}
+
       {selected ? (
-        <AdminCard
-          title={`ملف الحساب: ${
-            selected.full_name ||
-            "بدون اسم"
-          }`}
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="account-details-title"
+          onMouseDown={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              closeDetails();
+            }
+          }}
         >
-          <div className="grid gap-4 lg:grid-cols-2">
-            <section className="rounded-2xl border border-border p-4">
-              <h3 className="font-bold">
-                البيانات الشخصية
-              </h3>
+          <div
+            className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-border bg-background shadow-2xl"
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
+            {/* رأس النافذة */}
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-4 sm:px-6">
+              <div className="min-w-0">
+                <h2
+                  id="account-details-title"
+                  className="truncate text-lg font-black sm:text-xl"
+                >
+                  تفاصيل الحساب
+                </h2>
 
-              <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
-                <Info
-                  icon={User}
-                  label="الاسم الكامل"
-                  value={
-                    selected.full_name
-                  }
-                />
-
-                <Info
-                  icon={Phone}
-                  label="الهاتف"
-                  value={
-                    selected.phone ||
-                    "غير مسجل"
-                  }
-                  dir="ltr"
-                />
-
-                <Info
-                  icon={Mail}
-                  label="البريد"
-                  value={
-                    selected.contact_email ||
-                    "غير مسجل"
-                  }
-                  dir="ltr"
-                />
-
-                <Info
-                  icon={MapPin}
-                  label="المحافظة"
-                  value={
-                    selected.province ||
-                    "غير محددة"
-                  }
-                />
-
-                <Info
-                  icon={User}
-                  label="الاسم الأول"
-                  value={
-                    selected.first_name
-                  }
-                />
-
-                <Info
-                  icon={User}
-                  label="اسم الأب"
-                  value={
-                    selected.second_name
-                  }
-                />
-
-                <Info
-                  icon={User}
-                  label="اسم العائلة"
-                  value={
-                    selected.last_name
-                  }
-                />
-
-                <Info
-                  icon={User}
-                  label="تاريخ التسجيل"
-                  value={new Date(
-                    selected.created_at,
-                  ).toLocaleString(
-                    "ar-YE",
-                  )}
-                />
+                <p className="mt-1 truncate text-xs text-muted-foreground">
+                  {selected.full_name ||
+                    "بدون اسم"}
+                </p>
               </div>
-            </section>
-
-            <section className="rounded-2xl border border-border p-4">
-              <h3 className="font-bold">
-                المحفظة
-              </h3>
-
-              <p className="mt-3 text-2xl font-black text-primary">
-                {formatPrice(
-                  Number(
-                    selected.wallet_balance,
-                  ) || 0,
-                )}
-              </p>
-
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                <label className="text-xs">
-                  <span className="mb-1 block">
-                    نوع العملية
-                  </span>
-
-                  <select
-                    value={
-                      walletMode
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      setWalletMode(
-                        event.target
-                          .value as
-                          | "delta"
-                          | "set",
-                      )
-                    }
-                    className="h-10 w-full rounded-xl border border-border bg-secondary px-3"
-                  >
-                    <option value="delta">
-                      إضافة / خصم
-                    </option>
-
-                    <option value="set">
-                      تحديد رصيد جديد
-                    </option>
-                  </select>
-                </label>
-
-                <label className="text-xs">
-                  <span className="mb-1 block">
-                    القيمة
-                  </span>
-
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={
-                      walletAmount
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      setWalletAmount(
-                        event.target
-                          .value,
-                      )
-                    }
-                    placeholder={
-                      walletMode ===
-                      "set"
-                        ? "الرصيد النهائي"
-                        : "مثال: 1000 أو -500"
-                    }
-                    className="h-10 w-full rounded-xl border border-border bg-secondary px-3"
-                  />
-                </label>
-              </div>
-
-              <label className="mt-2 block text-xs">
-                <span className="mb-1 block">
-                  سبب العملية
-                </span>
-
-                <input
-                  value={
-                    walletReason
-                  }
-                  onChange={(
-                    event,
-                  ) =>
-                    setWalletReason(
-                      event.target
-                        .value,
-                    )
-                  }
-                  placeholder="سبب إضافة أو خصم الرصيد..."
-                  className="h-10 w-full rounded-xl border border-border bg-secondary px-3"
-                />
-              </label>
 
               <button
                 type="button"
-                className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                aria-label="إغلاق"
+                onClick={
+                  closeDetails
+                }
                 disabled={
-                  walletBusy
+                  loadingDetails
                 }
-                onClick={() =>
-                  void adjustWallet()
-                }
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary transition hover:bg-secondary/70 disabled:opacity-50"
               >
-                <Wallet className="h-4 w-4" />
-
-                {walletBusy
-                  ? "جارٍ التنفيذ..."
-                  : "تنفيذ العملية"}
+                <X className="h-5 w-5" />
               </button>
-            </section>
+            </div>
 
-            <section className="rounded-2xl border border-border p-4">
-              <h3 className="font-bold">
-                المتجر المرتبط بالحساب
-              </h3>
+            {/* محتوى النافذة */}
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+              {loadingDetails ? (
+                <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
+                  <RefreshCw className="h-8 w-8 animate-spin text-primary" />
 
-              {selectedVendor ? (
-                <div className="mt-4 space-y-2 text-xs">
-                  <Info
-                    icon={Store}
-                    label="اسم المتجر"
-                    value={
-                      selectedVendor.name
-                    }
-                  />
-
-                  <Info
-                    icon={MapPin}
-                    label="المدينة"
-                    value={
-                      selectedVendor.city
-                    }
-                  />
-
-                  <Info
-                    icon={Phone}
-                    label="الهاتف"
-                    value={
-                      selectedVendor.phone
-                    }
-                    dir="ltr"
-                  />
-
-                  <p>
-                    {selectedVendor.description ||
-                      "لا يوجد وصف."}
+                  <p className="text-sm font-semibold">
+                    جارٍ تحميل تفاصيل الحساب...
                   </p>
-
-                  <div className="flex gap-2">
-                    <span className="rounded-full bg-primary/10 px-2 py-1">
-                      {selectedVendor.is_active &&
-                      selectedVendor.account_enabled
-                        ? "مفعّل"
-                        : "غير مفعّل"}
-                    </span>
-                  </div>
                 </div>
               ) : (
-                <p className="mt-4 text-xs text-muted-foreground">
-                  لا يوجد متجر مرتبط بهذا الحساب.
-                </p>
-              )}
-            </section>
+                <>
+                  {detailsError ? (
+                    <div className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 p-4">
+                      <p className="font-bold text-destructive">
+                        تعذّر تحميل بعض تفاصيل الحساب
+                      </p>
 
-            <section className="rounded-2xl border border-border p-4">
-              <h3 className="font-bold">
-                عناوين العميل
-              </h3>
+                      <p className="mt-2 break-words text-xs text-destructive/80">
+                        {detailsError}
+                      </p>
 
-              {loadingDetails ? (
-                <p className="mt-4 text-xs text-muted-foreground">
-                  جارٍ التحميل...
-                </p>
-              ) : addresses.length ===
-                0 ? (
-                <p className="mt-4 text-xs text-muted-foreground">
-                  لا توجد عناوين مسجلة.
-                </p>
-              ) : (
-                <div className="mt-4 space-y-2">
-                  {addresses.map(
-                    (address) => (
-                      <div
-                        key={
-                          address.id
+                      <button
+                        type="button"
+                        className="mt-3 rounded-xl bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground"
+                        onClick={() =>
+                          void openDetails(
+                            selected,
+                          )
                         }
-                        className="rounded-xl bg-secondary p-3 text-xs"
                       >
-                        <p className="font-bold">
-                          {address.label}
-                          {address.is_default
-                            ? " · الافتراضي"
-                            : ""}
-                        </p>
+                        إعادة المحاولة
+                      </button>
+                    </div>
+                  ) : null}
 
-                        <p className="mt-1">
-                          {
-                            address.recipient_name
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {/* البيانات الشخصية */}
+                    <section className="rounded-2xl border border-border p-4">
+                      <h3 className="font-bold">
+                        البيانات الشخصية
+                      </h3>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <Info
+                          icon={User}
+                          label="الاسم الكامل"
+                          value={
+                            selected.full_name ||
+                            "غير مسجل"
                           }
-                        </p>
+                        />
 
-                        <p
+                        <Info
+                          icon={Phone}
+                          label="الهاتف"
+                          value={
+                            selected.phone ||
+                            "غير مسجل"
+                          }
                           dir="ltr"
-                          className="mt-1"
-                        >
-                          {
-                            address.phone
+                        />
+
+                        <Info
+                          icon={Mail}
+                          label="البريد الإلكتروني"
+                          value={
+                            selected.contact_email ||
+                            "غير مسجل"
                           }
-                        </p>
+                          dir="ltr"
+                        />
 
-                        <p className="mt-1">
-                          {
-                            address.city
+                        <Info
+                          icon={MapPin}
+                          label="المحافظة"
+                          value={
+                            selected.province ||
+                            "غير محددة"
                           }
+                        />
 
-                          {address.district
-                            ? ` · ${address.district}`
-                            : ""}
-                        </p>
+                        <Info
+                          icon={User}
+                          label="الاسم الأول"
+                          value={
+                            selected.first_name ||
+                            "غير مسجل"
+                          }
+                        />
 
-                        <p className="mt-1">
-                          {address.details ||
-                            "لا توجد تفاصيل"}
-                        </p>
+                        <Info
+                          icon={User}
+                          label="اسم الأب"
+                          value={
+                            selected.second_name ||
+                            "غير مسجل"
+                          }
+                        />
+
+                        <Info
+                          icon={User}
+                          label="اسم العائلة"
+                          value={
+                            selected.last_name ||
+                            "غير مسجل"
+                          }
+                        />
+
+                        <Info
+                          icon={User}
+                          label="تاريخ التسجيل"
+                          value={new Date(
+                            selected.created_at,
+                          ).toLocaleString(
+                            "ar-YE",
+                          )}
+                        />
                       </div>
-                    ),
-                  )}
-                </div>
-              )}
-            </section>
+                    </section>
 
-            <section className="rounded-2xl border border-border p-4 lg:col-span-2">
-              <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-primary" />
+                    {/* المحفظة */}
+                    <section className="rounded-2xl border border-border p-4">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-5 w-5 text-primary" />
 
-                <h3 className="font-bold">
-                  سجل معاملات المحفظة
-                </h3>
-              </div>
+                        <h3 className="font-bold">
+                          المحفظة
+                        </h3>
+                      </div>
 
-              {loadingDetails ? (
-                <p className="mt-4 text-xs text-muted-foreground">
-                  جارٍ تحميل السجل...
-                </p>
-              ) : transactions.length ===
-                0 ? (
-                <p className="mt-4 text-xs text-muted-foreground">
-                  لا توجد معاملات مسجلة.
-                </p>
-              ) : (
-                <div className="mt-4 space-y-2">
-                  {transactions.map(
-                    (transaction) => (
-                      <div
-                        key={
-                          transaction.id
+                      <p className="mt-4 text-2xl font-black text-primary">
+                        {formatPrice(
+                          Number(
+                            selected.wallet_balance,
+                          ) || 0,
+                        )}
+                      </p>
+
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        <label className="text-xs">
+                          <span className="mb-1 block">
+                            نوع العملية
+                          </span>
+
+                          <select
+                            value={
+                              walletMode
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setWalletMode(
+                                event
+                                  .target
+                                  .value as
+                                  | "delta"
+                                  | "set",
+                              )
+                            }
+                            className="h-10 w-full rounded-xl border border-border bg-secondary px-3 outline-none"
+                          >
+                            <option value="delta">
+                              إضافة / خصم
+                            </option>
+
+                            <option value="set">
+                              تحديد رصيد جديد
+                            </option>
+                          </select>
+                        </label>
+
+                        <label className="text-xs">
+                          <span className="mb-1 block">
+                            القيمة
+                          </span>
+
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={
+                              walletAmount
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setWalletAmount(
+                                event
+                                  .target
+                                  .value,
+                              )
+                            }
+                            placeholder={
+                              walletMode ===
+                              "set"
+                                ? "الرصيد النهائي"
+                                : "مثال: 1000 أو -500"
+                            }
+                            className="h-10 w-full rounded-xl border border-border bg-secondary px-3 outline-none"
+                          />
+                        </label>
+                      </div>
+
+                      <label className="mt-2 block text-xs">
+                        <span className="mb-1 block">
+                          سبب العملية
+                        </span>
+
+                        <input
+                          value={
+                            walletReason
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            setWalletReason(
+                              event
+                                .target
+                                .value,
+                            )
+                          }
+                          placeholder="سبب إضافة أو خصم الرصيد..."
+                          className="h-10 w-full rounded-xl border border-border bg-secondary px-3 outline-none"
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                        disabled={
+                          walletBusy
                         }
-                        className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3 text-xs"
+                        onClick={() =>
+                          void adjustWallet()
+                        }
                       >
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold">
-                            {transaction.transaction_type ===
-                            "admin_credit"
-                              ? "إضافة من الإدارة"
-                              : transaction.transaction_type ===
-                                  "admin_debit"
-                                ? "خصم من الإدارة"
-                                : transaction.transaction_type ===
-                                    "opening_balance"
-                                  ? "رصيد افتتاحي"
-                                  : transaction.transaction_type}
-                          </p>
+                        <Wallet className="h-4 w-4" />
 
-                          <p className="mt-1 text-muted-foreground">
-                            {transaction.reason ||
-                              "بدون سبب"}
-                          </p>
+                        {walletBusy
+                          ? "جارٍ التنفيذ..."
+                          : "تنفيذ العملية"}
+                      </button>
+                    </section>
 
-                          <p className="mt-1 text-[10px] text-muted-foreground">
-                            {new Date(
-                              transaction.created_at,
-                            ).toLocaleString(
-                              "ar-YE",
-                            )}
-                          </p>
+                    {/* المتجر */}
+                    <section className="rounded-2xl border border-border p-4">
+                      <div className="flex items-center gap-2">
+                        <Store className="h-5 w-5 text-primary" />
+
+                        <h3 className="font-bold">
+                          المتجر المرتبط بالحساب
+                        </h3>
+                      </div>
+
+                      {selectedVendor ? (
+                        <div className="mt-4 space-y-4">
+                          <Info
+                            icon={Store}
+                            label="اسم المتجر"
+                            value={
+                              selectedVendor.name ||
+                              "غير مسجل"
+                            }
+                          />
+
+                          <Info
+                            icon={MapPin}
+                            label="المدينة"
+                            value={
+                              selectedVendor.city ||
+                              "غير محددة"
+                            }
+                          />
+
+                          <Info
+                            icon={Phone}
+                            label="هاتف المتجر"
+                            value={
+                              selectedVendor.phone ||
+                              "غير مسجل"
+                            }
+                            dir="ltr"
+                          />
+
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              وصف المتجر
+                            </p>
+
+                            <p className="mt-1 text-sm">
+                              {selectedVendor.description ||
+                                "لا يوجد وصف."}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <span
+                              className={`rounded-full px-3 py-1 text-[10px] font-bold ${
+                                selectedVendor.is_active &&
+                                selectedVendor.account_enabled
+                                  ? "bg-primary/10 text-primary"
+                                  : "bg-destructive/10 text-destructive"
+                              }`}
+                            >
+                              {selectedVendor.is_active &&
+                              selectedVendor.account_enabled
+                                ? "المتجر مفعّل"
+                                : "المتجر غير مفعّل"}
+                            </span>
+
+                            <span className="rounded-full bg-secondary px-3 py-1 text-[10px] font-bold">
+                              ID:{" "}
+                              {selectedVendor.id}
+                            </span>
+                          </div>
                         </div>
+                      ) : (
+                        <div className="mt-4 rounded-xl bg-secondary p-4 text-center text-xs text-muted-foreground">
+                          لا يوجد متجر مرتبط بهذا الحساب.
+                        </div>
+                      )}
+                    </section>
 
-                        <p
-                          className={`font-black ${
-                            Number(
-                              transaction.amount,
-                            ) >= 0
-                              ? "text-primary"
-                              : "text-destructive"
-                          }`}
-                        >
-                          {Number(
-                            transaction.amount,
-                          ) >= 0
-                            ? "+"
-                            : ""}
+                    {/* العناوين */}
+                    <section className="rounded-2xl border border-border p-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-primary" />
 
-                          {formatPrice(
-                            Number(
-                              transaction.amount,
+                        <h3 className="font-bold">
+                          عناوين العميل
+                        </h3>
+                      </div>
+
+                      {addresses.length ===
+                      0 ? (
+                        <div className="mt-4 rounded-xl bg-secondary p-4 text-center text-xs text-muted-foreground">
+                          لا توجد عناوين مسجلة.
+                        </div>
+                      ) : (
+                        <div className="mt-4 space-y-2">
+                          {addresses.map(
+                            (
+                              address,
+                              index,
+                            ) => (
+                              <div
+                                key={
+                                  String(
+                                    address.id ??
+                                      index,
+                                  )
+                                }
+                                className="rounded-xl bg-secondary p-3 text-xs"
+                              >
+                                {address.label ? (
+                                  <p className="font-bold">
+                                    {
+                                      address.label
+                                    }
+
+                                    {address.is_default
+                                      ? " · الافتراضي"
+                                      : ""}
+                                  </p>
+                                ) : null}
+
+                                {address.recipient_name ? (
+                                  <p className="mt-1">
+                                    {
+                                      address.recipient_name
+                                    }
+                                  </p>
+                                ) : null}
+
+                                {address.phone ? (
+                                  <p
+                                    dir="ltr"
+                                    className="mt-1"
+                                  >
+                                    {
+                                      address.phone
+                                    }
+                                  </p>
+                                ) : null}
+
+                                {address.city ||
+                                address.district ? (
+                                  <p className="mt-1">
+                                    {
+                                      address.city
+                                    }
+
+                                    {address.district
+                                      ? ` · ${address.district}`
+                                      : ""}
+                                  </p>
+                                ) : null}
+
+                                {address.details ? (
+                                  <p className="mt-1">
+                                    {
+                                      address.details
+                                    }
+                                  </p>
+                                ) : null}
+
+                                {!address.label &&
+                                !address.recipient_name &&
+                                !address.phone &&
+                                !address.city &&
+                                !address.district &&
+                                !address.details ? (
+                                  <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-all text-[10px]">
+                                    {JSON.stringify(
+                                      address,
+                                      null,
+                                      2,
+                                    )}
+                                  </pre>
+                                ) : null}
+                              </div>
                             ),
                           )}
-                        </p>
-
-                        <div className="text-left">
-                          <p className="text-[10px] text-muted-foreground">
-                            قبل
-                          </p>
-
-                          <p>
-                            {formatPrice(
-                              Number(
-                                transaction.balance_before,
-                              ),
-                            )}
-                          </p>
                         </div>
+                      )}
+                    </section>
 
-                        <div className="text-left">
-                          <p className="text-[10px] text-muted-foreground">
-                            بعد
-                          </p>
+                    {/* سجل المحفظة */}
+                    <section className="rounded-2xl border border-border p-4 lg:col-span-2">
+                      <div className="flex items-center gap-2">
+                        <History className="h-5 w-5 text-primary" />
 
-                          <p className="font-bold">
-                            {formatPrice(
-                              Number(
-                                transaction.balance_after,
-                              ),
-                            )}
-                          </p>
-                        </div>
+                        <h3 className="font-bold">
+                          سجل معاملات المحفظة
+                        </h3>
                       </div>
-                    ),
-                  )}
-                </div>
+
+                      {transactions.length ===
+                      0 ? (
+                        <div className="mt-4 rounded-xl bg-secondary p-4 text-center text-xs text-muted-foreground">
+                          لا توجد معاملات مسجلة.
+                        </div>
+                      ) : (
+                        <div className="mt-4 space-y-2">
+                          {transactions.map(
+                            (
+                              transaction,
+                            ) => (
+                              <div
+                                key={
+                                  transaction.id
+                                }
+                                className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3 text-xs"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-semibold">
+                                    {transaction.transaction_type ===
+                                    "admin_credit"
+                                      ? "إضافة من الإدارة"
+                                      : transaction.transaction_type ===
+                                          "admin_debit"
+                                        ? "خصم من الإدارة"
+                                        : transaction.transaction_type ===
+                                            "opening_balance"
+                                          ? "رصيد افتتاحي"
+                                          : transaction.transaction_type ||
+                                            "معاملة"}
+                                  </p>
+
+                                  <p className="mt-1 text-muted-foreground">
+                                    {transaction.reason ||
+                                      "بدون سبب"}
+                                  </p>
+
+                                  <p className="mt-1 text-[10px] text-muted-foreground">
+                                    {new Date(
+                                      transaction.created_at,
+                                    ).toLocaleString(
+                                      "ar-YE",
+                                    )}
+                                  </p>
+                                </div>
+
+                                <p
+                                  className={`font-black ${
+                                    Number(
+                                      transaction.amount,
+                                    ) >= 0
+                                      ? "text-primary"
+                                      : "text-destructive"
+                                  }`}
+                                >
+                                  {Number(
+                                    transaction.amount,
+                                  ) >= 0
+                                    ? "+"
+                                    : ""}
+
+                                  {formatPrice(
+                                    Number(
+                                      transaction.amount,
+                                    ),
+                                  )}
+                                </p>
+
+                                <div className="text-left">
+                                  <p className="text-[10px] text-muted-foreground">
+                                    قبل
+                                  </p>
+
+                                  <p>
+                                    {formatPrice(
+                                      Number(
+                                        transaction.balance_before,
+                                      ),
+                                    )}
+                                  </p>
+                                </div>
+
+                                <div className="text-left">
+                                  <p className="text-[10px] text-muted-foreground">
+                                    بعد
+                                  </p>
+
+                                  <p className="font-bold">
+                                    {formatPrice(
+                                      Number(
+                                        transaction.balance_after,
+                                      ),
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      )}
+                    </section>
+                  </div>
+                </>
               )}
-            </section>
+            </div>
+
+            {/* تذييل النافذة */}
+            <div className="flex shrink-0 justify-end border-t border-border bg-card px-4 py-3 sm:px-6">
+              <button
+                type="button"
+                onClick={
+                  closeDetails
+                }
+                disabled={
+                  loadingDetails
+                }
+                className="rounded-xl bg-secondary px-5 py-2.5 text-xs font-bold transition hover:bg-secondary/70 disabled:opacity-50"
+              >
+                إغلاق
+              </button>
+            </div>
           </div>
-        </AdminCard>
+        </div>
       ) : null}
     </div>
   );
@@ -1382,7 +1595,7 @@ function Info({
 }) {
   return (
     <div>
-      <p className="flex items-center gap-1 text-muted-foreground">
+      <p className="flex items-center gap-1 text-xs text-muted-foreground">
         <Icon className="h-3.5 w-3.5" />
 
         {label}
@@ -1390,7 +1603,7 @@ function Info({
 
       <p
         dir={dir}
-        className="mt-1 font-medium"
+        className="mt-1 break-words font-medium"
       >
         {value}
       </p>
