@@ -7,10 +7,18 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
+
+import type {
+  Session,
+  User,
+} from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeYemeniPhone, phoneToEmail } from "@/lib/phone";
+
+import {
+  normalizeYemeniPhone,
+  phoneToEmail,
+} from "@/lib/phone";
 
 export type AccountRole =
   | "customer"
@@ -40,25 +48,10 @@ type AuthContextValue = {
   user: User | null;
   profile: Profile | null;
 
-  /**
-   * الدور الأساسي المستخدم للتوجيه داخل التطبيق.
-   *
-   * الأولوية:
-   * admin → vendor → courier → customer
-   */
   role: AccountRole | null;
 
-  /**
-   * جميع الأدوار المسجلة للمستخدم.
-   */
   roles: AccountRole[];
 
-  /**
-   * هل الحساب مسموح له باستخدام النظام؟
-   *
-   * بالنسبة للعميل يعتمد على profiles.is_disabled.
-   * بالنسبة للتاجر/عامل التوصيل يعتمد أيضاً على account_enabled.
-   */
   accountEnabled: boolean;
 
   loading: boolean;
@@ -67,12 +60,16 @@ type AuthContextValue = {
     phone: string;
     fullName: string;
     password: string;
-  }) => Promise<{ error: string | null }>;
+  }) => Promise<{
+    error: string | null;
+  }>;
 
   signIn: (args: {
     phone: string;
     password: string;
-  }) => Promise<{ error: string | null }>;
+  }) => Promise<{
+    error: string | null;
+  }>;
 
   signOut: () => Promise<void>;
 
@@ -81,7 +78,10 @@ type AuthContextValue = {
   refreshAuthState: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const AuthContext =
+  createContext<
+    AuthContextValue | null
+  >(null);
 
 const ROLE_PRIORITY: AccountRole[] = [
   "admin",
@@ -90,7 +90,9 @@ const ROLE_PRIORITY: AccountRole[] = [
   "customer",
 ];
 
-function isAccountRole(value: unknown): value is AccountRole {
+function isAccountRole(
+  value: unknown,
+): value is AccountRole {
   return (
     value === "customer" ||
     value === "vendor" ||
@@ -99,15 +101,25 @@ function isAccountRole(value: unknown): value is AccountRole {
   );
 }
 
-function resolvePrimaryRole(roles: AccountRole[]): AccountRole {
-  for (const role of ROLE_PRIORITY) {
-    if (roles.includes(role)) return role;
+function resolvePrimaryRole(
+  roles: AccountRole[],
+): AccountRole {
+  for (
+    const role of ROLE_PRIORITY
+  ) {
+    if (
+      roles.includes(role)
+    ) {
+      return role;
+    }
   }
 
   return "customer";
 }
 
-function getAccountDisabledMessage(role: AccountRole): string {
+function getAccountDisabledMessage(
+  role: AccountRole,
+): string {
   switch (role) {
     case "vendor":
       return "حساب التاجر معطل حالياً. يرجى التواصل مع الإدارة.";
@@ -123,312 +135,806 @@ function getAccountDisabledMessage(role: AccountRole): string {
   }
 }
 
+function detectDeviceType(
+  userAgent: string,
+): string {
+  const ua =
+    userAgent.toLowerCase();
+
+  if (
+    /ipad|tablet/.test(
+      ua,
+    )
+  ) {
+    return "Tablet";
+  }
+
+  if (
+    /iphone|ipod/.test(
+      ua,
+    )
+  ) {
+    return "iPhone";
+  }
+
+  if (
+    /android/.test(
+      ua,
+    )
+  ) {
+    return "Android";
+  }
+
+  if (
+    /windows phone/.test(
+      ua,
+    )
+  ) {
+    return "Windows Phone";
+  }
+
+  if (
+    /windows/.test(
+      ua,
+    )
+  ) {
+    return "Windows PC";
+  }
+
+  if (
+    /macintosh|mac os/.test(
+      ua,
+    )
+  ) {
+    return "Mac";
+  }
+
+  if (
+    /linux/.test(
+      ua,
+    )
+  ) {
+    return "Linux PC";
+  }
+
+  return "Unknown";
+}
+
+function detectOperatingSystem(
+  userAgent: string,
+): string {
+  const ua =
+    userAgent.toLowerCase();
+
+  if (
+    /iphone|ipad|ipod/.test(
+      ua,
+    )
+  ) {
+    return "iOS";
+  }
+
+  if (
+    /android/.test(
+      ua,
+    )
+  ) {
+    return "Android";
+  }
+
+  if (
+    /windows/.test(
+      ua,
+    )
+  ) {
+    return "Windows";
+  }
+
+  if (
+    /mac os|macintosh/.test(
+      ua,
+    )
+  ) {
+    return "macOS";
+  }
+
+  if (
+    /linux/.test(
+      ua,
+    )
+  ) {
+    return "Linux";
+  }
+
+  return "Unknown";
+}
+
+function detectBrowser(
+  userAgent: string,
+): string {
+  const ua =
+    userAgent.toLowerCase();
+
+  if (
+    /edg\//.test(
+      ua,
+    )
+  ) {
+    return "Microsoft Edge";
+  }
+
+  if (
+    /opr\//.test(
+      ua,
+    )
+  ) {
+    return "Opera";
+  }
+
+  if (
+    /samsungbrowser\//.test(
+      ua,
+    )
+  ) {
+    return "Samsung Internet";
+  }
+
+  if (
+    /firefox\//.test(
+      ua,
+    )
+  ) {
+    return "Firefox";
+  }
+
+  if (
+    /chrome\//.test(
+      ua,
+    ) &&
+    !/edg\//.test(
+      ua,
+    )
+  ) {
+    return "Google Chrome";
+  }
+
+  if (
+    /safari\//.test(
+      ua,
+    ) &&
+    !/chrome\//.test(
+      ua,
+    )
+  ) {
+    return "Safari";
+  }
+
+  return "Unknown";
+}
+
+async function getGrantedGeolocation(): Promise<{
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+} | null> {
+  if (
+    typeof window ===
+    "undefined" ||
+    !navigator.geolocation
+  ) {
+    return null;
+  }
+
+  try {
+    if (
+      "permissions" in
+      navigator
+    ) {
+      const permission =
+        await navigator.permissions.query(
+          {
+            name: "geolocation",
+          },
+        );
+
+      if (
+        permission.state !==
+        "granted"
+      ) {
+        return null;
+      }
+    }
+
+    return await new Promise(
+      (resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              latitude:
+                position.coords
+                  .latitude,
+
+              longitude:
+                position.coords
+                  .longitude,
+
+              accuracy:
+                position.coords
+                  .accuracy,
+            });
+          },
+          () => {
+            resolve(null);
+          },
+          {
+            enableHighAccuracy:
+              true,
+            maximumAge:
+              5 * 60 * 1000,
+            timeout:
+              10000,
+          },
+        );
+      },
+    );
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] =
+    useState<Session | null>(
+      null,
+    );
 
   const [profile, setProfile] =
-    useState<Profile | null>(null);
+    useState<Profile | null>(
+      null,
+    );
 
   const [role, setRole] =
-    useState<AccountRole | null>(null);
+    useState<AccountRole | null>(
+      null,
+    );
 
   const [roles, setRoles] =
-    useState<AccountRole[]>([]);
+    useState<AccountRole[]>(
+      [],
+    );
 
-  const [accountEnabled, setAccountEnabled] =
-    useState(true);
+  const [
+    accountEnabled,
+    setAccountEnabled,
+  ] = useState(true);
 
   const [loading, setLoading] =
     useState(true);
 
-  /**
-   * =========================================================
-   * تحميل حالة الحساب بالكامل
-   * =========================================================
-   *
-   * لا نعتمد على user_metadata لتحديد صلاحيات المستخدم.
-   *
-   * المصدر الحقيقي للصلاحيات هو:
-   *
-   * user_roles
-   *
-   * وحالة الحساب تراجع من:
-   *
-   * profiles.is_disabled
-   * vendors.account_enabled
-   * couriers.account_enabled
-   */
-  const loadAuthState = useCallback(
-    async (userId: string): Promise<AuthAccountState> => {
-      const [
-        profileResult,
-        rolesResult,
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select(
-            "id,full_name,phone,wallet_balance,preferred_currency,accepted_terms,accepted_order_policy,is_disabled",
-          )
-          .eq("id", userId)
-          .maybeSingle<Profile>(),
+  const loadAuthState =
+    useCallback(
+      async (
+        userId: string,
+      ): Promise<AuthAccountState> => {
+        const [
+          profileResult,
+          rolesResult,
+        ] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select(
+                "id,full_name,phone,wallet_balance,preferred_currency,accepted_terms,accepted_order_policy,is_disabled",
+              )
+              .eq(
+                "id",
+                userId,
+              )
+              .maybeSingle<Profile>(),
 
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId),
-      ]);
+            supabase
+              .from("user_roles")
+              .select(
+                "role",
+              )
+              .eq(
+                "user_id",
+                userId,
+              ),
+          ]);
 
-      const loadedProfile =
-        profileResult.data ?? null;
+        const loadedProfile =
+          profileResult.data ??
+          null;
 
-      if (profileResult.error) {
-        console.error(
-          "[Auth] Failed to load profile:",
-          profileResult.error,
-        );
-      }
-
-      if (rolesResult.error) {
-        console.error(
-          "[Auth] Failed to load user roles:",
-          rolesResult.error,
-        );
-      }
-
-      setProfile(loadedProfile);
-
-      const loadedRoles: AccountRole[] =
-        (rolesResult.data ?? [])
-          .map((row) => row.role)
-          .filter(isAccountRole);
-
-      /**
-       * الحسابات القديمة قد لا يكون لها role
-       * بسبب اختلاف النسخ السابقة من قاعدة البيانات.
-       *
-       * في هذه الحالة نعامل المستخدم كعميل،
-       * وليس كمدير أو تاجر أو عامل توصيل.
-       */
-      const normalizedRoles =
-        loadedRoles.length > 0
-          ? loadedRoles
-          : (["customer"] as AccountRole[]);
-
-      const primaryRole =
-        resolvePrimaryRole(normalizedRoles);
-
-      setRoles(normalizedRoles);
-      setRole(primaryRole);
-
-      let enabled =
-        !Boolean(loadedProfile?.is_disabled);
-
-      /**
-       * التحقق من حالة التاجر.
-       *
-       * نستخدم user_id بدلاً من id لأن id هو معرف
-       * سجل التاجر وليس معرف مستخدم Supabase.
-       */
-      if (primaryRole === "vendor") {
-        const { data, error } = await supabase
-          .from("vendors")
-          .select("account_enabled,is_active")
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (error) {
+        if (
+          profileResult.error
+        ) {
           console.error(
-            "[Auth] Failed to load vendor account state:",
-            error,
+            "[Auth] Failed to load profile:",
+            profileResult.error,
           );
         }
 
-        if (data) {
-          enabled =
-            enabled &&
-            data.account_enabled !== false &&
-            data.is_active !== false;
-        }
-      }
-
-      /**
-       * التحقق من حالة عامل التوصيل.
-       */
-      if (primaryRole === "courier") {
-        const { data, error } = await supabase
-          .from("couriers")
-          .select("account_enabled,is_active")
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (error) {
+        if (
+          rolesResult.error
+        ) {
           console.error(
-            "[Auth] Failed to load courier account state:",
-            error,
+            "[Auth] Failed to load roles:",
+            rolesResult.error,
           );
         }
 
-        if (data) {
-          enabled =
-            enabled &&
-            data.account_enabled !== false &&
-            data.is_active !== false;
+        setProfile(
+          loadedProfile,
+        );
+
+        const loadedRoles: AccountRole[] =
+          (rolesResult.data ??
+            [])
+            .map(
+              (row) =>
+                row.role,
+            )
+            .filter(
+              isAccountRole,
+            );
+
+        const normalizedRoles =
+          loadedRoles.length >
+          0
+            ? loadedRoles
+            : ([
+                "customer",
+              ] as AccountRole[]);
+
+        const primaryRole =
+          resolvePrimaryRole(
+            normalizedRoles,
+          );
+
+        setRoles(
+          normalizedRoles,
+        );
+
+        setRole(
+          primaryRole,
+        );
+
+        let enabled =
+          !Boolean(
+            loadedProfile?.is_disabled,
+          );
+
+        if (
+          primaryRole ===
+          "vendor"
+        ) {
+          const {
+            data,
+            error,
+          } =
+            await supabase
+              .from(
+                "vendors",
+              )
+              .select(
+                "account_enabled,is_active",
+              )
+              .eq(
+                "user_id",
+                userId,
+              )
+              .maybeSingle();
+
+          if (error) {
+            console.error(
+              "[Auth] Vendor state error:",
+              error,
+            );
+          }
+
+          if (data) {
+            enabled =
+              enabled &&
+              data.account_enabled !==
+                false &&
+              data.is_active !==
+                false;
+          }
         }
-      }
 
-      /**
-       * المدير يعتمد حالياً على role + profiles.
-       *
-       * لا نضع account_enabled للمدير لأن جدول
-       * الإدارة الحالي لا يستخدم هذا العمود.
-       */
-      setAccountEnabled(enabled);
+        if (
+          primaryRole ===
+          "courier"
+        ) {
+          const {
+            data,
+            error,
+          } =
+            await supabase
+              .from(
+                "couriers",
+              )
+              .select(
+                "account_enabled,is_active",
+              )
+              .eq(
+                "user_id",
+                userId,
+              )
+              .maybeSingle();
 
-      return {
-        role: primaryRole,
-        roles: normalizedRoles,
-        accountEnabled: enabled,
-      };
-    },
-    [],
-  );
+          if (error) {
+            console.error(
+              "[Auth] Courier state error:",
+              error,
+            );
+          }
 
-  /**
-   * =========================================================
-   * تسجيل الخروج الآمن
-   * =========================================================
-   */
-  const clearAuthState = useCallback(() => {
-    setSession(null);
-    setProfile(null);
-    setRole(null);
-    setRoles([]);
-    setAccountEnabled(true);
-  }, []);
+          if (data) {
+            enabled =
+              enabled &&
+              data.account_enabled !==
+                false &&
+              data.is_active !==
+                false;
+          }
+        }
 
-  /**
-   * =========================================================
-   * مراقبة جلسة Supabase
-   * =========================================================
-   */
+        setAccountEnabled(
+          enabled,
+        );
+
+        return {
+          role:
+            primaryRole,
+          roles:
+            normalizedRoles,
+          accountEnabled:
+            enabled,
+        };
+      },
+      [],
+    );
+
+  const clearAuthState =
+    useCallback(() => {
+      setSession(null);
+      setProfile(null);
+      setRole(null);
+      setRoles([]);
+      setAccountEnabled(
+        true,
+      );
+    }, []);
+
   useEffect(() => {
-    let mounted = true;
+    let mounted =
+      true;
 
     const {
       data: subscription,
-    } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
-        if (!mounted) return;
+    } =
+      supabase.auth.onAuthStateChange(
+        (
+          _event,
+          newSession,
+        ) => {
+          if (!mounted) {
+            return;
+          }
 
-        setSession(newSession);
+          setSession(
+            newSession,
+          );
 
-        if (!newSession) {
-          clearAuthState();
-        }
-      },
-    );
+          if (
+            !newSession
+          ) {
+            clearAuthState();
+          }
+        },
+      );
 
     void supabase.auth
       .getSession()
-      .then(async ({ data }) => {
-        if (!mounted) return;
+      .then(
+        async ({
+          data,
+        }) => {
+          if (!mounted) {
+            return;
+          }
 
-        const currentSession =
-          data.session ?? null;
+          const currentSession =
+            data.session ??
+            null;
 
-        setSession(currentSession);
-
-        if (!currentSession?.user?.id) {
-          setLoading(false);
-          return;
-        }
-
-        try {
-          await loadAuthState(
-            currentSession.user.id,
+          setSession(
+            currentSession,
           );
-        } catch (error) {
+
+          if (
+            !currentSession
+              ?.user?.id
+          ) {
+            setLoading(
+              false,
+            );
+
+            return;
+          }
+
+          try {
+            await loadAuthState(
+              currentSession
+                .user.id,
+            );
+          } catch (error) {
+            console.error(
+              "[Auth] Initialization failed:",
+              error,
+            );
+          } finally {
+            if (mounted) {
+              setLoading(
+                false,
+              );
+            }
+          }
+        },
+      )
+      .catch(
+        (error) => {
           console.error(
-            "[Auth] Failed to initialize auth state:",
+            "[Auth] Session restore failed:",
             error,
           );
-        } finally {
-          if (mounted) {
-            setLoading(false);
-          }
-        }
-      })
-      .catch((error) => {
-        console.error(
-          "[Auth] Failed to restore session:",
-          error,
-        );
 
-        if (mounted) {
-          setLoading(false);
-        }
-      });
+          if (mounted) {
+            setLoading(
+              false,
+            );
+          }
+        },
+      );
 
     return () => {
       mounted = false;
+
       subscription.subscription.unsubscribe();
     };
-  }, [clearAuthState, loadAuthState]);
+  }, [
+    clearAuthState,
+    loadAuthState,
+  ]);
 
-  /**
-   * =========================================================
-   * إعادة تحميل بيانات الحساب عند تغير المستخدم
-   * =========================================================
-   */
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (
+      !session?.user?.id
+    ) {
+      return;
+    }
 
-    void loadAuthState(session.user.id);
+    void loadAuthState(
+      session.user.id,
+    );
   }, [
     session?.user?.id,
     loadAuthState,
   ]);
 
-  /**
+  /*
    * =========================================================
-   * إنشاء حساب عميل
+   * REAL USER ACTIVITY TRACKING
    * =========================================================
    */
+
+  useEffect(() => {
+    const userId =
+      session?.user?.id;
+
+    if (
+      !userId ||
+      typeof window ===
+        "undefined"
+    ) {
+      return;
+    }
+
+    let disposed = false;
+
+    let timer:
+      | number
+      | undefined;
+
+    async function sendActivity() {
+      if (disposed) {
+        return;
+      }
+
+      const userAgent =
+        navigator.userAgent;
+
+      const location =
+        await getGrantedGeolocation();
+
+      if (disposed) {
+        return;
+      }
+
+      try {
+        const {
+          error,
+        } =
+          await supabase.functions.invoke(
+            "track-user-activity",
+            {
+              body: {
+                device_type:
+                  detectDeviceType(
+                    userAgent,
+                  ),
+
+                os_name:
+                  detectOperatingSystem(
+                    userAgent,
+                  ),
+
+                browser_name:
+                  detectBrowser(
+                    userAgent,
+                  ),
+
+                user_agent:
+                  userAgent,
+
+                latitude:
+                  location?.latitude ??
+                  null,
+
+                longitude:
+                  location?.longitude ??
+                  null,
+
+                accuracy:
+                  location?.accuracy ??
+                  null,
+
+                path:
+                  window.location.pathname,
+              },
+            },
+          );
+
+        if (error) {
+          console.warn(
+            "[Activity] Tracking failed:",
+            error,
+          );
+        }
+      } catch (error) {
+        console.warn(
+          "[Activity] Tracking error:",
+          error,
+        );
+      }
+    }
+
+    void sendActivity();
+
+    timer =
+      window.setInterval(
+        () => {
+          void sendActivity();
+        },
+        60 * 1000,
+      );
+
+    const handleFocus =
+      () => {
+        void sendActivity();
+      };
+
+    const handleVisibility =
+      () => {
+        if (
+          document.visibilityState ===
+          "visible"
+        ) {
+          void sendActivity();
+        }
+      };
+
+    window.addEventListener(
+      "focus",
+      handleFocus,
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility,
+    );
+
+    return () => {
+      disposed = true;
+
+      if (
+        timer !==
+        undefined
+      ) {
+        window.clearInterval(
+          timer,
+        );
+      }
+
+      window.removeEventListener(
+        "focus",
+        handleFocus,
+      );
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility,
+      );
+    };
+  }, [
+    session?.user?.id,
+  ]);
+
   const signUp =
-    useCallback<AuthContextValue["signUp"]>(
+    useCallback<
+      AuthContextValue["signUp"]
+    >(
       async ({
         phone,
         fullName,
         password,
       }) => {
         const normalizedPhone =
-          normalizeYemeniPhone(phone);
+          normalizeYemeniPhone(
+            phone,
+          );
 
-        const { error } =
-          await supabase.auth.signUp({
-            email:
-              phoneToEmail(normalizedPhone),
-            password,
-            options: {
-              data: {
-                full_name: fullName,
-                phone: normalizedPhone,
-                account_type: "customer",
+        const {
+          error,
+        } =
+          await supabase.auth.signUp(
+            {
+              email:
+                phoneToEmail(
+                  normalizedPhone,
+                ),
+
+              password,
+
+              options: {
+                data: {
+                  full_name:
+                    fullName,
+
+                  phone:
+                    normalizedPhone,
+
+                  account_type:
+                    "customer",
+                },
+
+                ...(typeof window !==
+                "undefined"
+                  ? {
+                      emailRedirectTo:
+                        window.location.origin,
+                    }
+                  : {}),
               },
-
-              ...(typeof window !==
-              "undefined"
-                ? {
-                    emailRedirectTo:
-                      window.location.origin,
-                  }
-                : {}),
             },
-          });
+          );
 
         if (error) {
           if (
@@ -443,16 +949,14 @@ export function AuthProvider({
           }
 
           return {
-            error: error.message,
+            error:
+              error.message,
           };
         }
 
-        /**
-         * التفعيل تلقائي في إعدادات المشروع الحالية،
-         * لذلك نحاول تسجيل الدخول مباشرة.
-         */
         const {
-          error: signInError,
+          error:
+            signInError,
         } =
           await supabase.auth.signInWithPassword(
             {
@@ -460,6 +964,7 @@ export function AuthProvider({
                 phoneToEmail(
                   normalizedPhone,
                 ),
+
               password,
             },
           );
@@ -478,19 +983,18 @@ export function AuthProvider({
       [],
     );
 
-  /**
-   * =========================================================
-   * تسجيل الدخول
-   * =========================================================
-   */
   const signIn =
-    useCallback<AuthContextValue["signIn"]>(
+    useCallback<
+      AuthContextValue["signIn"]
+    >(
       async ({
         phone,
         password,
       }) => {
         const normalizedPhone =
-          normalizeYemeniPhone(phone);
+          normalizeYemeniPhone(
+            phone,
+          );
 
         const {
           data,
@@ -502,6 +1006,7 @@ export function AuthProvider({
                 phoneToEmail(
                   normalizedPhone,
                 ),
+
               password,
             },
           );
@@ -530,7 +1035,8 @@ export function AuthProvider({
           }
 
           return {
-            error: error.message,
+            error:
+              error.message,
           };
         }
 
@@ -541,22 +1047,16 @@ export function AuthProvider({
           };
         }
 
-        /**
-         * نتحقق من الدور وحالة الحساب مباشرة بعد الدخول.
-         *
-         * هذا مهم جداً للحسابات التي أنشأها المدير:
-         *
-         * vendor
-         * courier
-         * admin
-         */
         const state =
           await loadAuthState(
             data.user.id,
           );
 
-        if (!state.accountEnabled) {
+        if (
+          !state.accountEnabled
+        ) {
           await supabase.auth.signOut();
+
           clearAuthState();
 
           return {
@@ -577,72 +1077,75 @@ export function AuthProvider({
       ],
     );
 
-  /**
-   * =========================================================
-   * تسجيل الخروج
-   * =========================================================
-   */
   const signOut =
-    useCallback(async () => {
-      try {
-        await supabase.auth.signOut();
-      } finally {
-        clearAuthState();
-      }
-    }, [clearAuthState]);
+    useCallback(
+      async () => {
+        try {
+          await supabase.auth.signOut();
+        } finally {
+          clearAuthState();
+        }
+      },
+      [clearAuthState],
+    );
 
-  /**
-   * =========================================================
-   * تحديث بيانات الحساب
-   * =========================================================
-   */
   const refreshAuthState =
-    useCallback(async () => {
-      if (!session?.user?.id) {
-        clearAuthState();
-        return;
-      }
+    useCallback(
+      async () => {
+        if (
+          !session?.user?.id
+        ) {
+          clearAuthState();
 
-      await loadAuthState(
-        session.user.id,
-      );
-    }, [
-      clearAuthState,
-      loadAuthState,
-      session?.user?.id,
-    ]);
+          return;
+        }
 
-  /**
-   * الحفاظ على API القديم:
-   *
-   * refreshProfile()
-   *
-   * مع تحديث حالة الحساب والأدوار أيضاً.
-   */
+        await loadAuthState(
+          session.user.id,
+        );
+      },
+      [
+        clearAuthState,
+        loadAuthState,
+        session?.user?.id,
+      ],
+    );
+
   const refreshProfile =
-    useCallback(async () => {
-      await refreshAuthState();
-    }, [refreshAuthState]);
+    useCallback(
+      async () => {
+        await refreshAuthState();
+      },
+      [refreshAuthState],
+    );
 
   const value =
     useMemo<AuthContextValue>(
       () => ({
         session,
+
         user:
-          session?.user ?? null,
+          session?.user ??
+          null,
+
         profile,
 
         role,
+
         roles,
+
         accountEnabled,
 
         loading,
 
         signUp,
+
         signIn,
+
         signOut,
 
         refreshProfile,
+
         refreshAuthState,
       }),
       [
@@ -671,7 +1174,9 @@ export function AuthProvider({
 
 export function useAuth(): AuthContextValue {
   const ctx =
-    useContext(AuthContext);
+    useContext(
+      AuthContext,
+    );
 
   if (!ctx) {
     throw new Error(
