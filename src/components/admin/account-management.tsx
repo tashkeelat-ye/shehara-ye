@@ -3,6 +3,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from "react";
 
 import {
@@ -15,10 +16,8 @@ import {
   Laptop,
   MapPin,
   Package,
-  Phone,
   RefreshCw,
   Search,
-  Smartphone,
   Store,
   User,
   Wallet,
@@ -32,6 +31,8 @@ import { formatPrice } from "@/lib/db";
 
 type Section = "users" | "vendors";
 
+type Role = string;
+
 type UserRow = {
   id: string;
   full_name: string;
@@ -44,11 +45,8 @@ type UserRow = {
   wallet_balance: number;
   is_disabled: boolean;
   created_at: string;
-};
-
-type RoleRow = {
-  user_id: string;
-  role: string;
+  roles: Role[];
+  vendor?: VendorRow | null;
 };
 
 type VendorRow = {
@@ -62,6 +60,16 @@ type VendorRow = {
   is_active: boolean;
   account_enabled: boolean;
   created_at: string;
+  product_count?: number;
+  owner?: {
+    id: string;
+    full_name: string;
+    phone: string | null;
+    contact_email: string | null;
+    province: string;
+    is_disabled: boolean;
+    created_at: string;
+  } | null;
 };
 
 type Wallet = {
@@ -73,35 +81,34 @@ type Wallet = {
 
 type Transaction = {
   id: string;
-  amount: number;
-  balance_before: number;
-  balance_after: number;
+  wallet_id?: string;
+  user_id?: string;
   currency?: string;
   transaction_type?: string;
   kind?: string;
+  amount: number;
+  balance_before: number;
+  balance_after: number;
   description?: string;
   reason?: string;
   created_at: string;
 };
 
 type Activity = {
-  first_visit_at?: string;
-  last_active_at?: string;
-  last_ip?: string;
-  ip_country?: string;
-  ip_region?: string;
-  ip_city?: string;
-  device_type?: string;
-  os_name?: string;
-  browser_name?: string;
-  user_agent?: string;
-  latitude?: number;
-  longitude?: number;
-  location_accuracy?: number;
-  order_location_latitude?: number;
-  order_location_longitude?: number;
-  order_location_at?: string;
-  last_path?: string;
+  first_visit_at?: string | null;
+  last_active_at?: string | null;
+  last_ip?: string | null;
+  ip_country?: string | null;
+  ip_region?: string | null;
+  ip_city?: string | null;
+  device_type?: string | null;
+  os_name?: string | null;
+  browser_name?: string | null;
+  user_agent?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_accuracy?: number | null;
+  last_path?: string | null;
 };
 
 type WishlistItem = {
@@ -116,7 +123,7 @@ type WishlistItem = {
     images?: string[];
     is_active?: boolean;
     vendor_id?: string | null;
-  };
+  } | null;
 };
 
 type OrderItem = {
@@ -129,9 +136,9 @@ type OrderItem = {
   size?: string | null;
   color?: string | null;
   vendor_id?: string | null;
-  vendor_name?: string;
-  vendor_phone?: string;
-  vendor_city?: string;
+  vendor_name?: string | null;
+  vendor_phone?: string | null;
+  vendor_city?: string | null;
 };
 
 type Order = {
@@ -139,15 +146,15 @@ type Order = {
   order_number: string;
   invoice_number?: string | null;
   status: string;
-  payment_status?: string;
-  payment_method_code?: string;
+  payment_status?: string | null;
+  payment_method_code?: string | null;
   subtotal: number;
   delivery_fee: number;
   total: number;
   currency: string;
-  shipping_city?: string;
-  shipping_district?: string;
-  shipping_details?: string;
+  shipping_city?: string | null;
+  shipping_district?: string | null;
+  shipping_details?: string | null;
   created_at: string;
   updated_at: string;
   latitude?: number | null;
@@ -158,7 +165,7 @@ type Order = {
 type UserDetails = {
   profile: UserRow;
   roles: string[];
-  vendor?: VendorRow;
+  vendor?: VendorRow | null;
   wallets: Wallet[];
   transactions: Transaction[];
   addresses: Record<string, unknown>[];
@@ -176,7 +183,7 @@ type UserDetails = {
 
 type VendorDetails = {
   vendor: VendorRow;
-  profile?: UserRow;
+  profile?: UserRow | null;
   wallets: Wallet[];
   transactions: Transaction[];
   activity: Activity;
@@ -190,35 +197,48 @@ type VendorDetails = {
 };
 
 function formatDate(value?: string | null) {
-  if (!value) return "غير متوفر";
+  if (!value) {
+    return "غير متوفر";
+  }
 
-  try {
-    return new Intl.DateTimeFormat("ar-YE", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(value));
-  } catch {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
     return value;
   }
+
+  return new Intl.DateTimeFormat("ar-YE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function numberValue(value: unknown) {
+  const number = Number(value ?? 0);
+
+  return Number.isFinite(number)
+    ? number
+    : 0;
 }
 
 function formatNumber(value: unknown) {
-  const number = Number(value ?? 0);
-
-  if (!Number.isFinite(number)) return "0";
-
-  return new Intl.NumberFormat("ar-YE").format(number);
+  return new Intl.NumberFormat("ar-YE").format(
+    numberValue(value),
+  );
 }
 
-function money(value: unknown, currency = "YER") {
-  const number = Number(value ?? 0);
-
-  if (!Number.isFinite(number)) return `0 ${currency}`;
-
-  return `${formatPrice(number)} ${currency}`;
+function money(
+  value: unknown,
+  currency = "YER",
+) {
+  return `${formatPrice(
+    numberValue(value),
+  )} ${currency}`;
 }
 
-function statusLabel(status?: string) {
+function orderStatusLabel(
+  status?: string | null,
+) {
   const labels: Record<string, string> = {
     pending: "قيد المراجعة",
     confirmed: "تم التأكيد",
@@ -232,24 +252,9 @@ function statusLabel(status?: string) {
     ready: "جاهز",
   };
 
-  return labels[status ?? ""] ?? status ?? "غير محدد";
-}
-
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-border/50 py-3 last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="max-w-[65%] break-words text-left text-sm font-medium">
-        {value || "غير متوفر"}
-      </span>
-    </div>
-  );
+  return labels[status ?? ""] ??
+    status ??
+    "غير محدد";
 }
 
 function SectionBox({
@@ -258,18 +263,40 @@ function SectionBox({
   children,
 }: {
   title: string;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
+  icon?: ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="rounded-2xl border bg-card p-4 shadow-sm">
       <div className="mb-4 flex items-center gap-2 border-b pb-3">
         {icon}
-        <h3 className="font-bold">{title}</h3>
+        <h3 className="font-bold">
+          {title}
+        </h3>
       </div>
 
       {children}
     </section>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-border/50 py-3 last:border-0">
+      <span className="shrink-0 text-sm text-muted-foreground">
+        {label}
+      </span>
+
+      <span className="max-w-[70%] break-words text-left text-sm font-medium">
+        {value || "غير متوفر"}
+      </span>
+    </div>
   );
 }
 
@@ -279,19 +306,31 @@ function MetricCard({
   icon,
 }: {
   title: string;
-  value: React.ReactNode;
-  icon: React.ReactNode;
+  value: ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <div className="rounded-2xl border bg-card p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{title}</span>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">
+          {title}
+        </span>
+
         {icon}
       </div>
 
-      <div className="text-lg font-bold">{value}</div>
+      <div className="text-lg font-black">
+        {value}
+      </div>
     </div>
   );
+}
+
+function isAdminRole(
+  role: string,
+) {
+  return role === "admin" ||
+    role === "super_admin";
 }
 
 export function AccountManagement({
@@ -300,16 +339,15 @@ export function AccountManagement({
   initialSection: Section;
 }) {
   const [section, setSection] =
-    useState<Section>(initialSection);
+    useState<Section>(
+      initialSection,
+    );
 
   const [users, setUsers] =
     useState<UserRow[]>([]);
 
   const [vendors, setVendors] =
     useState<VendorRow[]>([]);
-
-  const [roles, setRoles] =
-    useState<Record<string, string[]>>({});
 
   const [search, setSearch] =
     useState("");
@@ -321,10 +359,14 @@ export function AccountManagement({
     useState(false);
 
   const [selectedUser, setSelectedUser] =
-    useState<UserDetails | null>(null);
+    useState<UserDetails | null>(
+      null,
+    );
 
   const [selectedVendor, setSelectedVendor] =
-    useState<VendorDetails | null>(null);
+    useState<VendorDetails | null>(
+      null,
+    );
 
   const [walletAmount, setWalletAmount] =
     useState("");
@@ -332,445 +374,557 @@ export function AccountManagement({
   const [walletReason, setWalletReason] =
     useState("");
 
-  const [walletMode, setWalletMode] =
-    useState<"delta" | "set">("delta");
-
   const [walletCurrency, setWalletCurrency] =
     useState("YER");
+
+  const [walletMode, setWalletMode] =
+    useState<"delta" | "set">(
+      "delta",
+    );
 
   const [actionLoading, setActionLoading] =
     useState(false);
 
-  const loadAccounts = useCallback(async () => {
-    setLoading(true);
+  /*
+   * ============================================================
+   * تحميل قوائم الحسابات
+   * ============================================================
+   */
 
-    try {
-      const [
-        usersResult,
-        rolesResult,
-        vendorsResult,
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select(
-            "id,full_name,first_name,second_name,last_name,phone,contact_email,province,wallet_balance,is_disabled,created_at",
-          )
-          .order("created_at", {
-            ascending: false,
-          })
-          .returns<UserRow[]>(),
+  const loadAccounts =
+    useCallback(
+      async () => {
+        setLoading(true);
 
-        supabase
-          .from("user_roles")
-          .select("user_id,role")
-          .returns<RoleRow[]>(),
+        try {
+          const [
+            usersResponse,
+            vendorsResponse,
+          ] = await Promise.all([
+            supabase.rpc(
+              "admin_list_user_accounts",
+            ),
 
-        supabase
-          .from("vendors")
-          .select(
-            "id,user_id,name,city,phone,logo_url,description,is_active,account_enabled,created_at",
-          )
-          .order("created_at", {
-            ascending: false,
-          })
-          .returns<VendorRow[]>(),
-      ]);
+            supabase.rpc(
+              "admin_list_vendor_accounts",
+            ),
+          ]);
 
-      if (usersResult.error) {
-        throw usersResult.error;
-      }
+          if (usersResponse.error) {
+            throw usersResponse.error;
+          }
 
-      if (rolesResult.error) {
-        throw rolesResult.error;
-      }
+          if (vendorsResponse.error) {
+            throw vendorsResponse.error;
+          }
 
-      if (vendorsResult.error) {
-        throw vendorsResult.error;
-      }
+          const usersData =
+            Array.isArray(
+              usersResponse.data,
+            )
+              ? usersResponse.data
+              : [];
 
-      const roleMap: Record<string, string[]> = {};
+          const vendorsData =
+            Array.isArray(
+              vendorsResponse.data,
+            )
+              ? vendorsResponse.data
+              : [];
 
-      for (const row of rolesResult.data ?? []) {
-        roleMap[row.user_id] ??= [];
-        roleMap[row.user_id].push(row.role);
-      }
+          setUsers(
+            usersData
+              .map(
+                (item) =>
+                  item as unknown as UserRow,
+              )
+              .filter(
+                (user) =>
+                  !(
+                    user.roles ?? []
+                  ).some(
+                    isAdminRole,
+                  ),
+              ),
+          );
 
-      setUsers(usersResult.data ?? []);
-      setVendors(vendorsResult.data ?? []);
-      setRoles(roleMap);
-    } catch (error) {
-      console.error(
-        "[AccountManagement] loadAccounts:",
-        error,
-      );
+          setVendors(
+            vendorsData.map(
+              (item) =>
+                item as unknown as VendorRow,
+            ),
+          );
+        } catch (error) {
+          console.error(
+            "[AccountManagement] loadAccounts",
+            error,
+          );
 
-      toast.error(
-        "تعذّر تحميل بيانات الحسابات.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "تعذر تحميل الحسابات.",
+          );
+
+          setUsers([]);
+          setVendors([]);
+        } finally {
+          setLoading(false);
+        }
+      },
+      [],
+    );
 
   useEffect(() => {
     void loadAccounts();
   }, [loadAccounts]);
 
-  const customerUsers = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  /*
+   * ============================================================
+   * البحث
+   * ============================================================
+   */
 
-    return users.filter((user) => {
-      const userRoles = roles[user.id] ?? [];
+  const filteredUsers =
+    useMemo(() => {
+      const query =
+        search
+          .trim()
+          .toLowerCase();
 
-      if (
-        userRoles.includes("admin") ||
-        userRoles.includes("vendor") ||
-        userRoles.includes("courier")
-      ) {
-        return false;
+      if (!query) {
+        return users;
       }
 
-      if (!query) return true;
+      return users.filter(
+        (user) =>
+          [
+            user.full_name,
+            user.first_name,
+            user.second_name,
+            user.last_name,
+            user.phone,
+            user.contact_email,
+            user.province,
+          ]
+            .filter(Boolean)
+            .some(
+              (value) =>
+                String(value)
+                  .toLowerCase()
+                  .includes(query),
+            ),
+      );
+    }, [users, search]);
 
-      return [
-        user.full_name,
-        user.first_name,
-        user.second_name,
-        user.last_name,
-        user.phone,
-        user.contact_email,
-        user.province,
-      ]
-        .filter(Boolean)
-        .some((value) =>
-          String(value)
-            .toLowerCase()
-            .includes(query),
-        );
-    });
-  }, [users, roles, search]);
+  const filteredVendors =
+    useMemo(() => {
+      const query =
+        search
+          .trim()
+          .toLowerCase();
 
-  const filteredVendors = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    if (!query) return vendors;
-
-    return vendors.filter((vendor) =>
-      [
-        vendor.name,
-        vendor.city,
-        vendor.phone,
-        vendor.description,
-      ]
-        .filter(Boolean)
-        .some((value) =>
-          String(value)
-            .toLowerCase()
-            .includes(query),
-        ),
-    );
-  }, [vendors, search]);
-
-  const openUserDetails = async (
-    user: UserRow,
-  ) => {
-    setDetailsLoading(true);
-    setSelectedVendor(null);
-
-    try {
-      const { data, error } =
-        await supabase.rpc(
-          "admin_get_user_account_details",
-          {
-            p_user_id: user.id,
-          },
-        );
-
-      if (error) throw error;
-
-      if (!data) {
-        throw new Error(
-          "لم تُرجع قاعدة البيانات تفاصيل الحساب.",
-        );
+      if (!query) {
+        return vendors;
       }
 
-      setSelectedUser(
-        data as UserDetails,
+      return vendors.filter(
+        (vendor) =>
+          [
+            vendor.name,
+            vendor.city,
+            vendor.phone,
+            vendor.description,
+            vendor.owner?.full_name,
+            vendor.owner?.contact_email,
+          ]
+            .filter(Boolean)
+            .some(
+              (value) =>
+                String(value)
+                  .toLowerCase()
+                  .includes(query),
+            ),
       );
-    } catch (error) {
-      console.error(
-        "[AccountManagement] openUserDetails:",
-        error,
-      );
+    }, [vendors, search]);
 
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذّر تحميل تفاصيل حساب المستخدم.",
-      );
-    } finally {
-      setDetailsLoading(false);
-    }
-  };
+  /*
+   * ============================================================
+   * تفاصيل المستخدم
+   * ============================================================
+   */
 
-  const openVendorDetails = async (
-    vendor: VendorRow,
-  ) => {
-    setDetailsLoading(true);
-    setSelectedUser(null);
+  const openUserDetails =
+    async (
+      user: UserRow,
+    ) => {
+      setDetailsLoading(true);
 
-    try {
-      const { data, error } =
-        await supabase.rpc(
-          "admin_get_vendor_account_details",
-          {
-            p_vendor_id: vendor.id,
-          },
+      try {
+        const {
+          data,
+          error,
+        } =
+          await supabase.rpc(
+            "admin_get_user_account_details",
+            {
+              p_user_id: user.id,
+            },
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data) {
+          throw new Error(
+            "لم تُرجع قاعدة البيانات تفاصيل الحساب.",
+          );
+        }
+
+        setSelectedVendor(null);
+
+        setSelectedUser(
+          data as unknown as UserDetails,
+        );
+      } catch (error) {
+        console.error(
+          "[AccountManagement] openUserDetails",
+          error,
         );
 
-      if (error) throw error;
-
-      if (!data) {
-        throw new Error(
-          "لم تُرجع قاعدة البيانات تفاصيل التاجر.",
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "تعذر تحميل تفاصيل المستخدم.",
         );
+      } finally {
+        setDetailsLoading(false);
       }
+    };
 
-      setSelectedVendor(
-        data as VendorDetails,
-      );
-    } catch (error) {
-      console.error(
-        "[AccountManagement] openVendorDetails:",
-        error,
-      );
+  /*
+   * ============================================================
+   * تفاصيل التاجر
+   * ============================================================
+   */
 
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذّر تحميل تفاصيل حساب التاجر.",
-      );
-    } finally {
-      setDetailsLoading(false);
-    }
-  };
+  const openVendorDetails =
+    async (
+      vendor: VendorRow,
+    ) => {
+      setDetailsLoading(true);
 
-  const closeDetails = () => {
-    setSelectedUser(null);
-    setSelectedVendor(null);
-    setWalletAmount("");
-    setWalletReason("");
-  };
+      try {
+        const {
+          data,
+          error,
+        } =
+          await supabase.rpc(
+            "admin_get_vendor_account_details",
+            {
+              p_vendor_id: vendor.id,
+            },
+          );
 
-  const updateWallet = async (
-    userId: string,
-  ) => {
-    const amount = Number(walletAmount);
+        if (error) {
+          throw error;
+        }
 
-    if (
-      !Number.isFinite(amount)
-    ) {
-      toast.error(
-        "أدخل مبلغاً صحيحاً.",
-      );
-      return;
-    }
+        if (!data) {
+          throw new Error(
+            "لم تُرجع قاعدة البيانات تفاصيل المتجر.",
+          );
+        }
 
-    if (
-      walletMode === "delta" &&
-      amount === 0
-    ) {
-      toast.error(
-        "مبلغ التعديل لا يمكن أن يكون صفراً.",
-      );
-      return;
-    }
+        setSelectedUser(null);
 
-    if (
-      walletMode === "set" &&
-      amount < 0
-    ) {
-      toast.error(
-        "الرصيد النهائي لا يمكن أن يكون سالباً.",
-      );
-      return;
-    }
-
-    setActionLoading(true);
-
-    try {
-      const { error } =
-        await supabase.rpc(
-          "admin_update_wallet_balance",
-          {
-            p_user_id: userId,
-            p_currency: walletCurrency,
-            p_amount: amount,
-            p_mode: walletMode,
-            p_reason:
-              walletReason.trim(),
-          },
+        setSelectedVendor(
+          data as unknown as VendorDetails,
+        );
+      } catch (error) {
+        console.error(
+          "[AccountManagement] openVendorDetails",
+          error,
         );
 
-      if (error) throw error;
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "تعذر تحميل تفاصيل التاجر.",
+        );
+      } finally {
+        setDetailsLoading(false);
+      }
+    };
 
-      toast.success(
-        "تم تحديث رصيد المحفظة بنجاح.",
-      );
+  /*
+   * ============================================================
+   * إغلاق التفاصيل
+   * ============================================================
+   */
+
+  const closeDetails =
+    () => {
+      setSelectedUser(null);
+      setSelectedVendor(null);
 
       setWalletAmount("");
       setWalletReason("");
+    };
 
-      await loadAccounts();
+  /*
+   * ============================================================
+   * تعديل المحفظة
+   * ============================================================
+   */
 
-      if (selectedUser) {
-        await openUserDetails(
-          selectedUser.profile,
+  const updateWallet =
+    async (
+      userId: string,
+    ) => {
+      const amount =
+        Number(walletAmount);
+
+      if (
+        !Number.isFinite(amount)
+      ) {
+        toast.error(
+          "أدخل مبلغاً صحيحاً.",
         );
-      } else if (selectedVendor) {
-        await openVendorDetails(
-          selectedVendor.vendor,
-        );
+
+        return;
       }
-    } catch (error) {
-      console.error(
-        "[AccountManagement] updateWallet:",
-        error,
-      );
 
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذّر تحديث رصيد المحفظة.",
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const toggleUserDisabled = async (
-    user: UserRow,
-  ) => {
-    setActionLoading(true);
-
-    try {
-      const { error } =
-        await supabase.rpc(
-          "admin_set_user_disabled",
-          {
-            p_user_id: user.id,
-            p_disabled:
-              !user.is_disabled,
-          },
+      if (
+        walletMode === "delta" &&
+        amount === 0
+      ) {
+        toast.error(
+          "مبلغ التعديل لا يمكن أن يكون صفراً.",
         );
 
-      if (error) throw error;
-
-      toast.success(
-        user.is_disabled
-          ? "تم تفعيل حساب المستخدم."
-          : "تم تعطيل حساب المستخدم.",
-      );
-
-      await loadAccounts();
-
-      if (selectedUser) {
-        await openUserDetails(
-          selectedUser.profile,
-        );
+        return;
       }
-    } catch (error) {
-      console.error(
-        "[AccountManagement] toggleUserDisabled:",
-        error,
-      );
 
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذّر تحديث حالة الحساب.",
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  };
+      if (
+        walletMode === "set" &&
+        amount < 0
+      ) {
+        toast.error(
+          "لا يمكن تعيين رصيد سالب.",
+        );
 
-  const toggleVendor = async (
-    vendor: VendorRow,
-  ) => {
-    setActionLoading(true);
+        return;
+      }
 
-    try {
+      setActionLoading(true);
+
+      try {
+        const {
+          error,
+        } =
+          await supabase.rpc(
+            "admin_update_wallet_balance",
+            {
+              p_user_id: userId,
+              p_currency:
+                walletCurrency,
+              p_amount: amount,
+              p_mode: walletMode,
+              p_reason:
+                walletReason.trim() ||
+                "تعديل رصيد من الإدارة",
+            },
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        toast.success(
+          "تم تحديث الرصيد بنجاح.",
+        );
+
+        setWalletAmount("");
+        setWalletReason("");
+
+        await loadAccounts();
+
+        if (selectedUser) {
+          await openUserDetails(
+            selectedUser.profile,
+          );
+        }
+
+        if (
+          selectedVendor &&
+          selectedVendor.vendor.user_id
+        ) {
+          await openVendorDetails(
+            selectedVendor.vendor,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[AccountManagement] updateWallet",
+          error,
+        );
+
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "تعذر تحديث الرصيد.",
+        );
+      } finally {
+        setActionLoading(false);
+      }
+    };
+
+  /*
+   * ============================================================
+   * تعطيل / تفعيل المستخدم
+   * ============================================================
+   */
+
+  const toggleUser =
+    async (
+      user: UserRow,
+    ) => {
+      setActionLoading(true);
+
+      try {
+        const {
+          error,
+        } =
+          await supabase.rpc(
+            "admin_set_user_disabled",
+            {
+              p_user_id: user.id,
+              p_disabled:
+                !user.is_disabled,
+            },
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        toast.success(
+          user.is_disabled
+            ? "تم تفعيل الحساب."
+            : "تم تعطيل الحساب.",
+        );
+
+        await loadAccounts();
+
+        if (selectedUser) {
+          await openUserDetails(
+            selectedUser.profile,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[AccountManagement] toggleUser",
+          error,
+        );
+
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "تعذر تغيير حالة الحساب.",
+        );
+      } finally {
+        setActionLoading(false);
+      }
+    };
+
+  /*
+   * ============================================================
+   * تعطيل / تفعيل التاجر
+   * ============================================================
+   */
+
+  const toggleVendor =
+    async (
+      vendor: VendorRow,
+    ) => {
+      setActionLoading(true);
+
       const enabled =
         !(
           vendor.is_active &&
           vendor.account_enabled
         );
 
-      const { error } =
-        await supabase.rpc(
-          "admin_set_vendor_enabled",
-          {
-            p_vendor_id: vendor.id,
-            p_enabled: enabled,
-          },
+      try {
+        const {
+          error,
+        } =
+          await supabase.rpc(
+            "admin_set_vendor_enabled",
+            {
+              p_vendor_id:
+                vendor.id,
+              p_enabled: enabled,
+            },
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        toast.success(
+          enabled
+            ? "تم تفعيل المتجر."
+            : "تم تعطيل المتجر.",
         );
 
-      if (error) throw error;
+        await loadAccounts();
 
-      toast.success(
-        enabled
-          ? "تم تفعيل حساب المتجر."
-          : "تم تعطيل حساب المتجر.",
-      );
-
-      await loadAccounts();
-
-      if (selectedVendor) {
-        await openVendorDetails(
-          selectedVendor.vendor,
+        if (selectedVendor) {
+          await openVendorDetails(
+            vendor,
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[AccountManagement] toggleVendor",
+          error,
         );
+
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "تعذر تغيير حالة المتجر.",
+        );
+      } finally {
+        setActionLoading(false);
       }
-    } catch (error) {
-      console.error(
-        "[AccountManagement] toggleVendor:",
-        error,
-      );
+    };
 
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذّر تحديث حالة المتجر.",
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const currentUser =
-    selectedUser?.profile;
-
-  const currentVendor =
-    selectedVendor?.vendor;
+  /*
+   * ============================================================
+   * واجهة الصفحة
+   * ============================================================
+   */
 
   return (
     <div
       dir="rtl"
       className="space-y-6"
     >
-      {/* ====================================================== */}
       {/* Header */}
-      {/* ====================================================== */}
 
       <div className="flex flex-col gap-4 rounded-3xl border bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-black">
-            إدارة الحسابات
+            إدارة المستخدمين والتجار
           </h1>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            إدارة حسابات المستخدمين والتجار والبيانات
-            الحقيقية المرتبطة بها.
+            إدارة الحسابات والبيانات المالية والتقنية
+            والطلبات من قاعدة البيانات الحقيقية.
           </p>
         </div>
 
@@ -780,7 +934,7 @@ export function AccountManagement({
             void loadAccounts()
           }
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition hover:bg-muted disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold hover:bg-muted disabled:opacity-50"
         >
           <RefreshCw
             className={
@@ -790,47 +944,13 @@ export function AccountManagement({
             }
           />
 
-          تحديث البيانات
+          تحديث
         </button>
       </div>
 
-      {/* ====================================================== */}
       {/* Sections */}
-      {/* ====================================================== */}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <button
-          type="button"
-          onClick={() => {
-            setSection("vendors");
-            setSearch("");
-          }}
-          className={`rounded-3xl border p-6 text-right transition ${
-            section === "vendors"
-              ? "border-primary bg-primary/5 shadow-md"
-              : "bg-card hover:bg-muted/50"
-          }`}
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <div className="rounded-2xl bg-primary/10 p-3">
-              <Store className="h-6 w-6 text-primary" />
-            </div>
-
-            <span className="text-3xl font-black">
-              {vendors.length}
-            </span>
-          </div>
-
-          <div className="text-lg font-bold">
-            إدارة حسابات التجار
-          </div>
-
-          <p className="mt-1 text-sm text-muted-foreground">
-            المتاجر، أصحابها، المنتجات، المحفظة
-            وحالة الحساب.
-          </p>
-        </button>
-
+      <div className="grid gap-4 md:grid-cols-2">
         <button
           type="button"
           onClick={() => {
@@ -843,30 +963,58 @@ export function AccountManagement({
               : "bg-card hover:bg-muted/50"
           }`}
         >
-          <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div className="rounded-2xl bg-primary/10 p-3">
               <User className="h-6 w-6 text-primary" />
             </div>
 
-            <span className="text-3xl font-black">
-              {customerUsers.length}
-            </span>
+            <strong className="text-3xl">
+              {users.length}
+            </strong>
           </div>
 
-          <div className="text-lg font-bold">
+          <h2 className="mt-4 text-lg font-black">
             حسابات المستخدمين
-          </div>
+          </h2>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            العملاء، النشاط، الطلبات، المحفظة
-            والبيانات التقنية.
+            العملاء والطلبات والمحفظة والنشاط والموقع.
+          </p>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSection("vendors");
+            setSearch("");
+          }}
+          className={`rounded-3xl border p-6 text-right transition ${
+            section === "vendors"
+              ? "border-primary bg-primary/5 shadow-md"
+              : "bg-card hover:bg-muted/50"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="rounded-2xl bg-primary/10 p-3">
+              <Store className="h-6 w-6 text-primary" />
+            </div>
+
+            <strong className="text-3xl">
+              {vendors.length}
+            </strong>
+          </div>
+
+          <h2 className="mt-4 text-lg font-black">
+            حسابات التجار
+          </h2>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            المتاجر وأصحابها والمنتجات والمبيعات.
           </p>
         </button>
       </div>
 
-      {/* ====================================================== */}
       {/* Search */}
-      {/* ====================================================== */}
 
       <div className="rounded-2xl border bg-card p-4">
         <div className="relative">
@@ -875,255 +1023,279 @@ export function AccountManagement({
           <input
             value={search}
             onChange={(event) =>
-              setSearch(event.target.value)
+              setSearch(
+                event.target.value,
+              )
             }
             placeholder={
               section === "users"
-                ? "البحث بالاسم أو الهاتف أو البريد..."
-                : "البحث باسم المتجر أو المدينة أو الهاتف..."
+                ? "ابحث بالاسم أو الهاتف أو البريد..."
+                : "ابحث باسم المتجر أو الهاتف أو المدينة..."
             }
-            className="w-full rounded-xl border bg-background py-3 pr-10 pl-4 outline-none ring-primary transition focus:ring-2"
+            className="w-full rounded-xl border bg-background py-3 pr-10 pl-4 outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </div>
 
-      {/* ====================================================== */}
-      {/* Account list */}
-      {/* ====================================================== */}
+      {/* Loading */}
 
       {loading ? (
         <div className="rounded-3xl border bg-card p-12 text-center">
           <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
-          <p className="font-semibold">
-            جاري تحميل الحسابات...
+
+          <p className="font-bold">
+            جاري تحميل البيانات...
           </p>
         </div>
       ) : section === "users" ? (
-        <div className="overflow-hidden rounded-3xl border bg-card shadow-sm">
+        /* ======================================================
+         * USERS
+         * ====================================================== */
+
+        <div className="overflow-hidden rounded-3xl border bg-card">
           <div className="border-b p-5">
-            <h2 className="text-lg font-bold">
+            <h2 className="font-black">
               حسابات المستخدمين
             </h2>
 
-            <p className="text-sm text-muted-foreground">
-              {customerUsers.length} حساب
+            <p className="mt-1 text-sm text-muted-foreground">
+              {filteredUsers.length} حساب
             </p>
           </div>
 
-          {customerUsers.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
-              لا توجد حسابات مطابقة للبحث.
+              لا توجد حسابات.
             </div>
           ) : (
             <div className="divide-y">
-              {customerUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex flex-col gap-4 p-5 transition hover:bg-muted/30 md:flex-row md:items-center md:justify-between"
-                >
-                  <div className="flex min-w-0 items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                      <User className="h-5 w-5 text-primary" />
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="truncate font-bold">
-                        {user.full_name ||
-                          "مستخدم بدون اسم"}
+              {filteredUsers.map(
+                (user) => (
+                  <div
+                    key={user.id}
+                    className="flex flex-col gap-4 p-5 hover:bg-muted/30 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                        <User className="h-5 w-5 text-primary" />
                       </div>
 
-                      <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                        <span>
-                          {user.phone ||
-                            "بدون هاتف"}
-                        </span>
+                      <div>
+                        <div className="font-black">
+                          {user.full_name ||
+                            "بدون اسم"}
+                        </div>
 
-                        {user.province && (
+                        <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
                           <span>
-                            {user.province}
+                            {user.phone ||
+                              "بدون هاتف"}
                           </span>
-                        )}
 
-                        <span>
-                          {money(
-                            user.wallet_balance,
-                            "YER",
-                          )}
-                        </span>
+                          <span>
+                            {user.province ||
+                              "بدون محافظة"}
+                          </span>
+
+                          <span>
+                            {money(
+                              user.wallet_balance,
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-bold ${
-                        user.is_disabled
-                          ? "bg-destructive/10 text-destructive"
-                          : "bg-emerald-500/10 text-emerald-600"
-                      }`}
-                    >
-                      {user.is_disabled
-                        ? "معطل"
-                        : "نشط"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold ${
+                          user.is_disabled
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-emerald-500/10 text-emerald-600"
+                        }`}
+                      >
+                        {user.is_disabled
+                          ? "معطل"
+                          : "نشط"}
+                      </span>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void openUserDetails(
-                          user,
-                        )
-                      }
-                      className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold hover:bg-muted"
-                    >
-                      <Eye className="h-4 w-4" />
-                      عرض التفاصيل
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void openUserDetails(
+                            user,
+                          )
+                        }
+                        className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold hover:bg-muted"
+                      >
+                        <Eye className="h-4 w-4" />
+
+                        التفاصيل
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-3xl border bg-card shadow-sm">
+        /* ======================================================
+         * VENDORS
+         * ====================================================== */
+
+        <div className="overflow-hidden rounded-3xl border bg-card">
           <div className="border-b p-5">
-            <h2 className="text-lg font-bold">
-              إدارة حسابات التجار
+            <h2 className="font-black">
+              حسابات التجار
             </h2>
 
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground">
               {filteredVendors.length} متجر
             </p>
           </div>
 
           {filteredVendors.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
-              لا توجد متاجر مطابقة للبحث.
+              لا توجد متاجر.
             </div>
           ) : (
             <div className="divide-y">
-              {filteredVendors.map((vendor) => {
-                const enabled =
-                  vendor.is_active &&
-                  vendor.account_enabled;
+              {filteredVendors.map(
+                (vendor) => {
+                  const enabled =
+                    vendor.is_active &&
+                    vendor.account_enabled;
 
-                return (
-                  <div
-                    key={vendor.id}
-                    className="flex flex-col gap-4 p-5 transition hover:bg-muted/30 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div className="flex min-w-0 items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10">
-                        {vendor.logo_url ? (
-                          <img
-                            src={vendor.logo_url}
-                            alt={vendor.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <Store className="h-5 w-5 text-primary" />
-                        )}
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="truncate font-bold">
-                          {vendor.name}
+                  return (
+                    <div
+                      key={vendor.id}
+                      className="flex flex-col gap-4 p-5 hover:bg-muted/30 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-primary/10">
+                          {vendor.logo_url ? (
+                            <img
+                              src={
+                                vendor.logo_url
+                              }
+                              alt={
+                                vendor.name
+                              }
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Store className="h-5 w-5 text-primary" />
+                          )}
                         </div>
 
-                        <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                          <span>
-                            {vendor.city}
-                          </span>
+                        <div>
+                          <div className="font-black">
+                            {vendor.name}
+                          </div>
 
-                          <span>
-                            {vendor.phone}
-                          </span>
+                          <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                            <span>
+                              {vendor.city ||
+                                "بدون مدينة"}
+                            </span>
+
+                            <span>
+                              {vendor.phone ||
+                                "بدون هاتف"}
+                            </span>
+
+                            <span>
+                              المنتجات:{" "}
+                              {formatNumber(
+                                vendor.product_count,
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-bold ${
-                          enabled
-                            ? "bg-emerald-500/10 text-emerald-600"
-                            : "bg-destructive/10 text-destructive"
-                        }`}
-                      >
-                        {enabled
-                          ? "نشط"
-                          : "معطل"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-bold ${
+                            enabled
+                              ? "bg-emerald-500/10 text-emerald-600"
+                              : "bg-destructive/10 text-destructive"
+                          }`}
+                        >
+                          {enabled
+                            ? "نشط"
+                            : "معطل"}
+                        </span>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void openVendorDetails(
-                            vendor,
-                          )
-                        }
-                        className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold hover:bg-muted"
-                      >
-                        <Eye className="h-4 w-4" />
-                        عرض التفاصيل
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void openVendorDetails(
+                              vendor,
+                            )
+                          }
+                          className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold hover:bg-muted"
+                        >
+                          <Eye className="h-4 w-4" />
+
+                          التفاصيل
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                },
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* ====================================================== */}
-      {/* Loading overlay */}
-      {/* ====================================================== */}
+      {/* ========================================================
+       * DETAIL LOADING
+       * ======================================================== */}
 
       {detailsLoading && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="rounded-3xl bg-card p-8 text-center shadow-2xl">
             <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
+
             <p className="font-bold">
-              جاري تحميل تفاصيل الحساب...
+              جاري تحميل التفاصيل...
             </p>
           </div>
         </div>
       )}
 
-      {/* ====================================================== */}
-      {/* USER DETAILS MODAL */}
-      {/* ====================================================== */}
+      {/* ========================================================
+       * USER MODAL
+       * ======================================================== */}
 
       {selectedUser && (
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm md:p-6"
+          className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm md:p-6"
           onMouseDown={(event) => {
             if (
-              event.target === event.currentTarget
+              event.target ===
+              event.currentTarget
             ) {
               closeDetails();
             }
           }}
         >
           <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border bg-background shadow-2xl">
-            <div className="flex items-center justify-between border-b bg-card p-4 md:p-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-primary/10 p-3">
-                  <User className="h-6 w-6 text-primary" />
-                </div>
+            <div className="flex items-center justify-between border-b bg-card p-5">
+              <div>
+                <h2 className="text-xl font-black">
+                  تفاصيل المستخدم
+                </h2>
 
-                <div>
-                  <h2 className="text-xl font-black">
-                    تفاصيل حساب العميل
-                  </h2>
-
-                  <p className="text-sm text-muted-foreground">
-                    {currentUser?.full_name ||
-                      "مستخدم"}
-                  </p>
-                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {
+                    selectedUser.profile
+                      .full_name
+                  }
+                </p>
               </div>
 
               <button
@@ -1135,15 +1307,16 @@ export function AccountManagement({
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            <div className="overflow-y-auto p-4 md:p-6">
               <div className="space-y-5">
                 {/* Metrics */}
 
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                   <MetricCard
-                    title="عدد الطلبات"
+                    title="الطلبات"
                     value={formatNumber(
-                      selectedUser.metrics.order_count,
+                      selectedUser.metrics
+                        .order_count,
                     )}
                     icon={
                       <Package className="h-4 w-4 text-primary" />
@@ -1153,8 +1326,8 @@ export function AccountManagement({
                   <MetricCard
                     title="إجمالي الإنفاق"
                     value={money(
-                      selectedUser.metrics.total_spent,
-                      "YER",
+                      selectedUser.metrics
+                        .total_spent,
                     )}
                     icon={
                       <Wallet className="h-4 w-4 text-primary" />
@@ -1164,8 +1337,8 @@ export function AccountManagement({
                   <MetricCard
                     title="متوسط الطلب"
                     value={money(
-                      selectedUser.metrics.average_order_value,
-                      "YER",
+                      selectedUser.metrics
+                        .average_order_value,
                     )}
                     icon={
                       <History className="h-4 w-4 text-primary" />
@@ -1175,7 +1348,8 @@ export function AccountManagement({
                   <MetricCard
                     title="تم التوصيل"
                     value={formatNumber(
-                      selectedUser.metrics.delivered_count,
+                      selectedUser.metrics
+                        .delivered_count,
                     )}
                     icon={
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -1185,7 +1359,8 @@ export function AccountManagement({
                   <MetricCard
                     title="ملغاة"
                     value={formatNumber(
-                      selectedUser.metrics.cancelled_count,
+                      selectedUser.metrics
+                        .cancelled_count,
                     )}
                     icon={
                       <Ban className="h-4 w-4 text-destructive" />
@@ -1193,7 +1368,7 @@ export function AccountManagement({
                   />
                 </div>
 
-                {/* Personal data */}
+                {/* Personal */}
 
                 <SectionBox
                   title="البيانات الشخصية"
@@ -1202,51 +1377,49 @@ export function AccountManagement({
                   }
                 >
                   <DetailRow
-                    label="الاسم الأول"
-                    value={currentUser?.first_name}
-                  />
-
-                  <DetailRow
-                    label="الاسم الثاني"
-                    value={currentUser?.second_name}
-                  />
-
-                  <DetailRow
-                    label="الاسم الأخير"
-                    value={currentUser?.last_name}
-                  />
-
-                  <DetailRow
                     label="الاسم الكامل"
-                    value={currentUser?.full_name}
+                    value={
+                      selectedUser.profile
+                        .full_name
+                    }
                   />
 
                   <DetailRow
-                    label="رقم الهاتف"
-                    value={currentUser?.phone}
+                    label="الهاتف"
+                    value={
+                      selectedUser.profile.phone
+                    }
                   />
 
                   <DetailRow
-                    label="البريد الإلكتروني"
-                    value={currentUser?.contact_email}
+                    label="البريد"
+                    value={
+                      selectedUser.profile
+                        .contact_email
+                    }
                   />
 
                   <DetailRow
                     label="المحافظة"
-                    value={currentUser?.province}
+                    value={
+                      selectedUser.profile
+                        .province
+                    }
                   />
 
                   <DetailRow
-                    label="تاريخ إنشاء الحساب"
+                    label="تاريخ التسجيل"
                     value={formatDate(
-                      currentUser?.created_at,
+                      selectedUser.profile
+                        .created_at,
                     )}
                   />
 
                   <DetailRow
-                    label="حالة الحساب"
+                    label="الحالة"
                     value={
-                      currentUser?.is_disabled
+                      selectedUser.profile
+                        .is_disabled
                         ? "معطل"
                         : "نشط"
                     }
@@ -1255,127 +1428,83 @@ export function AccountManagement({
                   <DetailRow
                     label="الصلاحيات"
                     value={
-                      selectedUser.roles.length
-                        ? selectedUser.roles.join("، ")
-                        : "مستخدم"
+                      selectedUser.roles?.join(
+                        "، ",
+                      ) ||
+                      "مستخدم"
                     }
                   />
                 </SectionBox>
 
-                {/* Technical + location */}
+                {/* Technical */}
 
                 <SectionBox
-                  title="1. البيانات التقنية والجغرافية"
+                  title="1. البيانات التقنية والموقع"
                   icon={
                     <Globe className="h-5 w-5 text-primary" />
                   }
                 >
                   <DetailRow
-                    label="عنوان IP"
+                    label="IP"
                     value={
-                      selectedUser.activity.last_ip
+                      selectedUser.activity
+                        ?.last_ip
                     }
                   />
 
                   <DetailRow
                     label="الدولة"
                     value={
-                      selectedUser.activity.ip_country
+                      selectedUser.activity
+                        ?.ip_country
                     }
                   />
 
                   <DetailRow
                     label="المنطقة"
                     value={
-                      selectedUser.activity.ip_region
+                      selectedUser.activity
+                        ?.ip_region
                     }
                   />
 
                   <DetailRow
                     label="المدينة"
                     value={
-                      selectedUser.activity.ip_city
+                      selectedUser.activity
+                        ?.ip_city
                     }
                   />
 
                   <DetailRow
                     label="نوع الجهاز"
                     value={
-                      selectedUser.activity.device_type
+                      selectedUser.activity
+                        ?.device_type
                     }
                   />
 
                   <DetailRow
                     label="نظام التشغيل"
                     value={
-                      selectedUser.activity.os_name
+                      selectedUser.activity
+                        ?.os_name
                     }
                   />
 
                   <DetailRow
                     label="المتصفح"
                     value={
-                      selectedUser.activity.browser_name
+                      selectedUser.activity
+                        ?.browser_name
                     }
                   />
 
                   <DetailRow
-                    label="User Agent"
-                    value={
-                      selectedUser.activity.user_agent
-                    }
-                  />
-
-                  <DetailRow
-                    label="خط العرض"
-                    value={
-                      selectedUser.activity.latitude
-                    }
-                  />
-
-                  <DetailRow
-                    label="خط الطول"
-                    value={
-                      selectedUser.activity.longitude
-                    }
-                  />
-
-                  <DetailRow
-                    label="دقة الموقع"
-                    value={
-                      selectedUser.activity.location_accuracy
-                        ? `${selectedUser.activity.location_accuracy} متر`
-                        : undefined
-                    }
-                  />
-
-                  {selectedUser.activity.latitude &&
-                    selectedUser.activity.longitude && (
-                      <a
-                        href={`https://www.google.com/maps?q=${selectedUser.activity.latitude},${selectedUser.activity.longitude}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold hover:bg-muted"
-                      >
-                        <MapPin className="h-4 w-4" />
-                        فتح موقع العميل على الخريطة
-                      </a>
-                    )}
-                </SectionBox>
-
-                {/* Visits */}
-
-                <SectionBox
-                  title="2. بيانات الزيارات والتفاعل"
-                  icon={
-                    <Clock3 className="h-5 w-5 text-primary" />
-                  }
-                >
-                  <DetailRow
-                    label="تاريخ أول زيارة"
+                    label="أول زيارة"
                     value={formatDate(
                       selectedUser.activity
-                        .first_visit_at,
+                        ?.first_visit_at,
                     )}
                   />
 
@@ -1383,78 +1512,111 @@ export function AccountManagement({
                     label="آخر نشاط"
                     value={formatDate(
                       selectedUser.activity
-                        .last_active_at,
+                        ?.last_active_at,
                     )}
                   />
 
                   <DetailRow
                     label="آخر صفحة"
                     value={
-                      selectedUser.activity.last_path
+                      selectedUser.activity
+                        ?.last_path
                     }
                   />
 
-                  <div className="mt-5">
-                    <h4 className="mb-3 font-bold">
-                      قائمة الرغبات
-                    </h4>
+                  <DetailRow
+                    label="خط العرض"
+                    value={
+                      selectedUser.activity
+                        ?.latitude
+                    }
+                  />
 
-                    {selectedUser.wishlist.length ===
-                    0 ? (
-                      <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-                        لا توجد منتجات في قائمة الرغبات.
-                      </p>
-                    ) : (
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {selectedUser.wishlist.map(
-                          (item) => (
-                            <div
-                              key={item.id}
-                              className="rounded-xl border p-3"
-                            >
-                              <div className="font-bold">
-                                {item.product?.name ||
-                                  item.product_id}
-                              </div>
+                  <DetailRow
+                    label="خط الطول"
+                    value={
+                      selectedUser.activity
+                        ?.longitude
+                    }
+                  />
 
-                              {item.product && (
-                                <div className="mt-1 text-sm text-muted-foreground">
-                                  {money(
-                                    item.product.price,
-                                    "YER",
-                                  )}
-                                </div>
-                              )}
-
-                              <div className="mt-1 text-xs text-muted-foreground">
-                                أضيفت في{" "}
-                                {formatDate(
-                                  item.created_at,
-                                )}
-                              </div>
-                            </div>
-                          ),
-                        )}
-                      </div>
+                  {selectedUser.activity
+                    ?.latitude != null &&
+                    selectedUser.activity
+                      ?.longitude != null && (
+                      <a
+                        href={`https://www.google.com/maps?q=${selectedUser.activity.latitude},${selectedUser.activity.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold hover:bg-muted"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        فتح الموقع
+                      </a>
                     )}
-                  </div>
+                </SectionBox>
+
+                {/* Wishlist */}
+
+                <SectionBox
+                  title="2. قائمة الرغبات"
+                  icon={
+                    <History className="h-5 w-5 text-primary" />
+                  }
+                >
+                  {selectedUser.wishlist
+                    ?.length ? (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {selectedUser.wishlist.map(
+                        (item) => (
+                          <div
+                            key={item.id}
+                            className="rounded-xl border p-4"
+                          >
+                            <div className="font-bold">
+                              {
+                                item.product
+                                  ?.name
+                              }
+                            </div>
+
+                            <div className="mt-1 text-sm text-muted-foreground">
+                              {item.product
+                                ? money(
+                                    item
+                                      .product
+                                      .price,
+                                  )
+                                : "غير متوفر"}
+                            </div>
+
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              {formatDate(
+                                item.created_at,
+                              )}
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+                      لا توجد منتجات في قائمة الرغبات.
+                    </p>
+                  )}
                 </SectionBox>
 
                 {/* Wallet */}
 
                 <SectionBox
-                  title="المحفظة المالية"
+                  title="المحفظة"
                   icon={
                     <Wallet className="h-5 w-5 text-primary" />
                   }
                 >
                   <div className="grid gap-3 md:grid-cols-2">
-                    {selectedUser.wallets.length ===
-                    0 ? (
-                      <div className="rounded-xl bg-muted p-4 text-sm">
-                        لا توجد محافظ مسجلة.
-                      </div>
-                    ) : (
+                    {selectedUser.wallets
+                      ?.length ? (
                       selectedUser.wallets.map(
                         (wallet) => (
                           <div
@@ -1462,14 +1624,12 @@ export function AccountManagement({
                             className="rounded-2xl border p-4"
                           >
                             <div className="text-xs text-muted-foreground">
-                              العملة
+                              {
+                                wallet.currency
+                              }
                             </div>
 
-                            <div className="mt-1 text-xl font-black">
-                              {wallet.currency}
-                            </div>
-
-                            <div className="mt-2 text-lg font-bold">
+                            <div className="mt-2 text-2xl font-black">
                               {money(
                                 wallet.balance,
                                 wallet.currency,
@@ -1478,18 +1638,26 @@ export function AccountManagement({
                           </div>
                         ),
                       )
+                    ) : (
+                      <p className="rounded-xl bg-muted p-4 text-sm">
+                        لا توجد محفظة.
+                      </p>
                     )}
                   </div>
 
                   <div className="mt-5 rounded-2xl border bg-muted/30 p-4">
-                    <h4 className="mb-4 font-bold">
-                      تعديل رصيد المحفظة
+                    <h4 className="mb-4 font-black">
+                      تعديل الرصيد
                     </h4>
 
                     <div className="grid gap-3 md:grid-cols-2">
                       <select
-                        value={walletMode}
-                        onChange={(event) =>
+                        value={
+                          walletMode
+                        }
+                        onChange={(
+                          event,
+                        ) =>
                           setWalletMode(
                             event.target
                               .value as
@@ -1500,7 +1668,7 @@ export function AccountManagement({
                         className="rounded-xl border bg-background px-3 py-3"
                       >
                         <option value="delta">
-                          إضافة / خصم من الرصيد
+                          إضافة / خصم
                         </option>
 
                         <option value="set">
@@ -1509,10 +1677,15 @@ export function AccountManagement({
                       </select>
 
                       <select
-                        value={walletCurrency}
-                        onChange={(event) =>
+                        value={
+                          walletCurrency
+                        }
+                        onChange={(
+                          event,
+                        ) =>
                           setWalletCurrency(
-                            event.target.value,
+                            event.target
+                              .value,
                           )
                         }
                         className="rounded-xl border bg-background px-3 py-3"
@@ -1528,25 +1701,31 @@ export function AccountManagement({
 
                       <input
                         type="number"
-                        value={walletAmount}
-                        onChange={(event) =>
+                        value={
+                          walletAmount
+                        }
+                        onChange={(
+                          event,
+                        ) =>
                           setWalletAmount(
-                            event.target.value,
+                            event.target
+                              .value,
                           )
                         }
-                        placeholder={
-                          walletMode === "delta"
-                            ? "المبلغ (+ للإضافة / - للخصم)"
-                            : "الرصيد النهائي"
-                        }
+                        placeholder="المبلغ"
                         className="rounded-xl border bg-background px-3 py-3"
                       />
 
                       <input
-                        value={walletReason}
-                        onChange={(event) =>
+                        value={
+                          walletReason
+                        }
+                        onChange={(
+                          event,
+                        ) =>
                           setWalletReason(
-                            event.target.value,
+                            event.target
+                              .value,
                           )
                         }
                         placeholder="سبب العملية"
@@ -1562,30 +1741,28 @@ export function AccountManagement({
                       }
                       onClick={() =>
                         void updateWallet(
-                          currentUser!.id,
+                          selectedUser
+                            .profile.id,
                         )
                       }
-                      className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground disabled:opacity-50"
+                      className="mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground disabled:opacity-50"
                     >
                       {actionLoading && (
                         <RefreshCw className="h-4 w-4 animate-spin" />
                       )}
 
-                      تحديث الرصيد
+                      حفظ الرصيد
                     </button>
                   </div>
 
                   <div className="mt-5">
-                    <h4 className="mb-3 font-bold">
+                    <h4 className="mb-3 font-black">
                       سجل معاملات المحفظة
                     </h4>
 
-                    {selectedUser.transactions.length ===
-                    0 ? (
-                      <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-                        لا توجد معاملات مسجلة.
-                      </p>
-                    ) : (
+                    {selectedUser
+                      .transactions
+                      ?.length ? (
                       <div className="overflow-x-auto rounded-xl border">
                         <table className="w-full text-sm">
                           <thead className="bg-muted/50">
@@ -1593,18 +1770,23 @@ export function AccountManagement({
                               <th className="p-3 text-right">
                                 التاريخ
                               </th>
+
                               <th className="p-3 text-right">
                                 العملية
                               </th>
+
                               <th className="p-3 text-right">
                                 المبلغ
                               </th>
+
                               <th className="p-3 text-right">
                                 قبل
                               </th>
+
                               <th className="p-3 text-right">
                                 بعد
                               </th>
+
                               <th className="p-3 text-right">
                                 السبب
                               </th>
@@ -1613,7 +1795,9 @@ export function AccountManagement({
 
                           <tbody>
                             {selectedUser.transactions.map(
-                              (transaction) => (
+                              (
+                                transaction,
+                              ) => (
                                 <tr
                                   key={
                                     transaction.id
@@ -1656,7 +1840,7 @@ export function AccountManagement({
                                     )}
                                   </td>
 
-                                  <td className="max-w-[240px] p-3">
+                                  <td className="p-3">
                                     {transaction.description ||
                                       transaction.reason ||
                                       "—"}
@@ -1667,57 +1851,24 @@ export function AccountManagement({
                           </tbody>
                         </table>
                       </div>
+                    ) : (
+                      <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+                        لا توجد معاملات.
+                      </p>
                     )}
                   </div>
-                </SectionBox>
-
-                {/* Addresses */}
-
-                <SectionBox
-                  title="عناوين الشحن"
-                  icon={
-                    <MapPin className="h-5 w-5 text-primary" />
-                  }
-                >
-                  {selectedUser.addresses.length ===
-                  0 ? (
-                    <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-                      لا توجد عناوين محفوظة.
-                    </p>
-                  ) : (
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {selectedUser.addresses.map(
-                        (address, index) => (
-                          <pre
-                            key={index}
-                            className="overflow-x-auto rounded-xl bg-muted p-4 text-xs"
-                          >
-                            {JSON.stringify(
-                              address,
-                              null,
-                              2,
-                            )}
-                          </pre>
-                        ),
-                      )}
-                    </div>
-                  )}
                 </SectionBox>
 
                 {/* Orders */}
 
                 <SectionBox
-                  title="3. سجل العمليات والطلبات"
+                  title="3. الطلبات والـCRM"
                   icon={
                     <Package className="h-5 w-5 text-primary" />
                   }
                 >
-                  {selectedUser.orders.length ===
-                  0 ? (
-                    <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-                      لا توجد طلبات لهذا العميل.
-                    </p>
-                  ) : (
+                  {selectedUser.orders
+                    ?.length ? (
                     <div className="space-y-4">
                       {selectedUser.orders.map(
                         (order) => (
@@ -1729,7 +1880,9 @@ export function AccountManagement({
                               <div>
                                 <div className="font-black">
                                   الطلب #
-                                  {order.order_number}
+                                  {
+                                    order.order_number
+                                  }
                                 </div>
 
                                 <div className="mt-1 text-xs text-muted-foreground">
@@ -1741,7 +1894,7 @@ export function AccountManagement({
 
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold">
-                                  {statusLabel(
+                                  {orderStatusLabel(
                                     order.status,
                                   )}
                                 </span>
@@ -1759,17 +1912,15 @@ export function AccountManagement({
                               <DetailRow
                                 label="الفاتورة"
                                 value={
-                                  order.invoice_number ||
-                                  "غير متوفر"
+                                  order.invoice_number
                                 }
                               />
 
                               <DetailRow
-                                label="الدفع"
+                                label="طريقة الدفع"
                                 value={
                                   order.payment_method_code ||
-                                  order.payment_status ||
-                                  "غير متوفر"
+                                  order.payment_status
                                 }
                               />
 
@@ -1782,10 +1933,12 @@ export function AccountManagement({
                             </div>
 
                             <div className="mt-4 space-y-2">
-                              {order.items.map(
+                              {order.items?.map(
                                 (item) => (
                                   <div
-                                    key={item.id}
+                                    key={
+                                      item.id
+                                    }
                                     className="rounded-xl bg-muted/40 p-3"
                                   >
                                     <div className="font-bold">
@@ -1822,41 +1975,83 @@ export function AccountManagement({
                         ),
                       )}
                     </div>
+                  ) : (
+                    <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+                      لا توجد طلبات.
+                    </p>
                   )}
                 </SectionBox>
 
-                {/* Account controls */}
+                {/* Addresses */}
+
+                <SectionBox
+                  title="عناوين العميل"
+                  icon={
+                    <MapPin className="h-5 w-5 text-primary" />
+                  }
+                >
+                  {selectedUser.addresses
+                    ?.length ? (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {selectedUser.addresses.map(
+                        (
+                          address,
+                          index,
+                        ) => (
+                          <pre
+                            key={
+                              index
+                            }
+                            className="overflow-auto rounded-xl bg-muted p-4 text-xs"
+                          >
+                            {JSON.stringify(
+                              address,
+                              null,
+                              2,
+                            )}
+                          </pre>
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+                      لا توجد عناوين محفوظة.
+                    </p>
+                  )}
+                </SectionBox>
+
+                {/* Account state */}
 
                 <SectionBox
                   title="إدارة حالة الحساب"
                   icon={
-                    currentUser?.is_disabled ? (
+                    selectedUser.profile
+                      .is_disabled ? (
                       <Ban className="h-5 w-5 text-destructive" />
                     ) : (
                       <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                     )
                   }
                 >
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    يمكن للإدارة تفعيل أو تعطيل الحساب
-                    مباشرة من قاعدة البيانات.
-                  </p>
-
                   <button
                     type="button"
-                    disabled={actionLoading}
+                    disabled={
+                      actionLoading
+                    }
                     onClick={() =>
-                      void toggleUserDisabled(
-                        currentUser!,
+                      void toggleUser(
+                        selectedUser.profile,
                       )
                     }
                     className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white disabled:opacity-50 ${
-                      currentUser?.is_disabled
+                      selectedUser.profile
+                        .is_disabled
                         ? "bg-emerald-600"
                         : "bg-destructive"
                     }`}
                   >
-                    {currentUser?.is_disabled ? (
+                    {selectedUser.profile
+                      .is_disabled ? (
                       <>
                         <CheckCircle2 className="h-4 w-4" />
                         تفعيل الحساب
@@ -1875,37 +2070,35 @@ export function AccountManagement({
         </div>
       )}
 
-      {/* ====================================================== */}
-      {/* VENDOR DETAILS MODAL */}
-      {/* ====================================================== */}
+      {/* ========================================================
+       * VENDOR MODAL
+       * ======================================================== */}
 
       {selectedVendor && (
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm md:p-6"
+          className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm md:p-6"
           onMouseDown={(event) => {
             if (
-              event.target === event.currentTarget
+              event.target ===
+              event.currentTarget
             ) {
               closeDetails();
             }
           }}
         >
           <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border bg-background shadow-2xl">
-            <div className="flex items-center justify-between border-b bg-card p-4 md:p-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-primary/10 p-3">
-                  <Store className="h-6 w-6 text-primary" />
-                </div>
+            <div className="flex items-center justify-between border-b bg-card p-5">
+              <div>
+                <h2 className="text-xl font-black">
+                  تفاصيل المتجر
+                </h2>
 
-                <div>
-                  <h2 className="text-xl font-black">
-                    تفاصيل حساب التاجر
-                  </h2>
-
-                  <p className="text-sm text-muted-foreground">
-                    {currentVendor?.name}
-                  </p>
-                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {
+                    selectedVendor.vendor
+                      .name
+                  }
+                </p>
               </div>
 
               <button
@@ -1917,15 +2110,16 @@ export function AccountManagement({
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            <div className="overflow-y-auto p-4 md:p-6">
               <div className="space-y-5">
                 {/* Vendor metrics */}
 
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <MetricCard
-                    title="عدد عمليات البيع"
+                    title="عمليات البيع"
                     value={formatNumber(
-                      selectedVendor.metrics
+                      selectedVendor
+                        .metrics
                         .order_item_count,
                     )}
                     icon={
@@ -1936,7 +2130,8 @@ export function AccountManagement({
                   <MetricCard
                     title="الوحدات المباعة"
                     value={formatNumber(
-                      selectedVendor.metrics
+                      selectedVendor
+                        .metrics
                         .units_sold,
                     )}
                     icon={
@@ -1947,9 +2142,9 @@ export function AccountManagement({
                   <MetricCard
                     title="قيمة المبيعات"
                     value={money(
-                      selectedVendor.metrics
+                      selectedVendor
+                        .metrics
                         .sales_value,
-                      "YER",
                     )}
                     icon={
                       <Wallet className="h-4 w-4 text-primary" />
@@ -1959,7 +2154,8 @@ export function AccountManagement({
                   <MetricCard
                     title="طلبات مختلفة"
                     value={formatNumber(
-                      selectedVendor.metrics
+                      selectedVendor
+                        .metrics
                         .distinct_orders,
                     )}
                     icon={
@@ -1968,7 +2164,7 @@ export function AccountManagement({
                   />
                 </div>
 
-                {/* Vendor data */}
+                {/* Vendor */}
 
                 <SectionBox
                   title="بيانات المتجر"
@@ -1978,51 +2174,64 @@ export function AccountManagement({
                 >
                   <DetailRow
                     label="اسم المتجر"
-                    value={currentVendor?.name}
+                    value={
+                      selectedVendor.vendor
+                        .name
+                    }
                   />
 
                   <DetailRow
                     label="المدينة"
-                    value={currentVendor?.city}
+                    value={
+                      selectedVendor.vendor
+                        .city
+                    }
                   />
 
                   <DetailRow
-                    label="رقم الهاتف"
-                    value={currentVendor?.phone}
+                    label="الهاتف"
+                    value={
+                      selectedVendor.vendor
+                        .phone
+                    }
                   />
 
                   <DetailRow
                     label="الوصف"
                     value={
-                      currentVendor?.description
+                      selectedVendor.vendor
+                        .description
                     }
                   />
 
                   <DetailRow
                     label="تاريخ التسجيل"
                     value={formatDate(
-                      currentVendor?.created_at,
+                      selectedVendor.vendor
+                        .created_at,
                     )}
                   />
 
                   <DetailRow
                     label="حالة المتجر"
                     value={
-                      currentVendor?.is_active &&
-                      currentVendor?.account_enabled
+                      selectedVendor.vendor
+                        .is_active &&
+                      selectedVendor.vendor
+                        .account_enabled
                         ? "نشط"
                         : "معطل"
                     }
                   />
 
                   <DetailRow
-                    label="معرّف التاجر"
-                    value={currentVendor?.id}
-                  />
-
-                  <DetailRow
-                    label="معرّف المستخدم"
-                    value={currentVendor?.user_id}
+                    label="عدد المنتجات"
+                    value={formatNumber(
+                      selectedVendor.vendor
+                        .product_count ??
+                        selectedVendor.products
+                          ?.length,
+                    )}
                   />
                 </SectionBox>
 
@@ -2038,7 +2247,8 @@ export function AccountManagement({
                     <DetailRow
                       label="الاسم"
                       value={
-                        selectedVendor.profile
+                        selectedVendor
+                          .profile
                           .full_name
                       }
                     />
@@ -2046,14 +2256,17 @@ export function AccountManagement({
                     <DetailRow
                       label="الهاتف"
                       value={
-                        selectedVendor.profile.phone
+                        selectedVendor
+                          .profile
+                          .phone
                       }
                     />
 
                     <DetailRow
                       label="البريد"
                       value={
-                        selectedVendor.profile
+                        selectedVendor
+                          .profile
                           .contact_email
                       }
                     />
@@ -2061,7 +2274,8 @@ export function AccountManagement({
                     <DetailRow
                       label="المحافظة"
                       value={
-                        selectedVendor.profile
+                        selectedVendor
+                          .profile
                           .province
                       }
                     />
@@ -2071,16 +2285,16 @@ export function AccountManagement({
                 {/* Technical */}
 
                 <SectionBox
-                  title="البيانات التقنية والجغرافية"
+                  title="البيانات التقنية والنشاط"
                   icon={
-                    <Globe className="h-5 w-5 text-primary" />
+                    <Laptop className="h-5 w-5 text-primary" />
                   }
                 >
                   <DetailRow
-                    label="عنوان IP"
+                    label="IP"
                     value={
                       selectedVendor.activity
-                        .last_ip
+                        ?.last_ip
                     }
                   />
 
@@ -2088,15 +2302,7 @@ export function AccountManagement({
                     label="الدولة"
                     value={
                       selectedVendor.activity
-                        .ip_country
-                    }
-                  />
-
-                  <DetailRow
-                    label="المنطقة"
-                    value={
-                      selectedVendor.activity
-                        .ip_region
+                        ?.ip_country
                     }
                   />
 
@@ -2104,7 +2310,7 @@ export function AccountManagement({
                     label="المدينة"
                     value={
                       selectedVendor.activity
-                        .ip_city
+                        ?.ip_city
                     }
                   />
 
@@ -2112,7 +2318,7 @@ export function AccountManagement({
                     label="نوع الجهاز"
                     value={
                       selectedVendor.activity
-                        .device_type
+                        ?.device_type
                     }
                   />
 
@@ -2120,7 +2326,7 @@ export function AccountManagement({
                     label="نظام التشغيل"
                     value={
                       selectedVendor.activity
-                        .os_name
+                        ?.os_name
                     }
                   />
 
@@ -2128,38 +2334,40 @@ export function AccountManagement({
                     label="المتصفح"
                     value={
                       selectedVendor.activity
-                        .browser_name
+                        ?.browser_name
                     }
                   />
 
                   <DetailRow
                     label="أول زيارة"
                     value={formatDate(
-                      selectedVendor.activity
-                        .first_visit_at,
+                      selectedVendor
+                        .activity
+                        ?.first_visit_at,
                     )}
                   />
 
                   <DetailRow
                     label="آخر نشاط"
                     value={formatDate(
-                      selectedVendor.activity
-                        .last_active_at,
+                      selectedVendor
+                        .activity
+                        ?.last_active_at,
                     )}
                   />
 
                   {selectedVendor.activity
-                    .latitude &&
+                    ?.latitude != null &&
                     selectedVendor.activity
-                      .longitude && (
+                      ?.longitude != null && (
                       <a
                         href={`https://www.google.com/maps?q=${selectedVendor.activity.latitude},${selectedVendor.activity.longitude}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold hover:bg-muted"
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold hover:bg-muted"
                       >
                         <MapPin className="h-4 w-4" />
-                        فتح الموقع على الخريطة
+                        فتح الموقع
                       </a>
                     )}
                 </SectionBox>
@@ -2172,24 +2380,24 @@ export function AccountManagement({
                     <Wallet className="h-5 w-5 text-primary" />
                   }
                 >
-                  {selectedVendor.wallets.length ===
-                  0 ? (
-                    <p className="rounded-xl bg-muted p-4 text-sm">
-                      لا توجد محفظة مسجلة.
-                    </p>
-                  ) : (
+                  {selectedVendor.wallets
+                    ?.length ? (
                     <div className="grid gap-3 md:grid-cols-2">
                       {selectedVendor.wallets.map(
                         (wallet) => (
                           <div
-                            key={wallet.id}
+                            key={
+                              wallet.id
+                            }
                             className="rounded-2xl border p-4"
                           >
                             <div className="text-xs text-muted-foreground">
-                              {wallet.currency}
+                              {
+                                wallet.currency
+                              }
                             </div>
 
-                            <div className="mt-2 text-xl font-black">
+                            <div className="mt-2 text-2xl font-black">
                               {money(
                                 wallet.balance,
                                 wallet.currency,
@@ -2199,18 +2407,27 @@ export function AccountManagement({
                         ),
                       )}
                     </div>
+                  ) : (
+                    <p className="rounded-xl bg-muted p-4 text-sm">
+                      لا توجد محفظة.
+                    </p>
                   )}
 
-                  {currentVendor?.user_id && (
+                  {selectedVendor.vendor
+                    .user_id && (
                     <div className="mt-5 rounded-2xl border bg-muted/30 p-4">
-                      <h4 className="mb-4 font-bold">
+                      <h4 className="mb-4 font-black">
                         تعديل رصيد التاجر
                       </h4>
 
                       <div className="grid gap-3 md:grid-cols-2">
                         <select
-                          value={walletMode}
-                          onChange={(event) =>
+                          value={
+                            walletMode
+                          }
+                          onChange={(
+                            event,
+                          ) =>
                             setWalletMode(
                               event.target
                                 .value as
@@ -2230,10 +2447,15 @@ export function AccountManagement({
                         </select>
 
                         <select
-                          value={walletCurrency}
-                          onChange={(event) =>
+                          value={
+                            walletCurrency
+                          }
+                          onChange={(
+                            event,
+                          ) =>
                             setWalletCurrency(
-                              event.target.value,
+                              event.target
+                                .value,
                             )
                           }
                           className="rounded-xl border bg-background px-3 py-3"
@@ -2249,10 +2471,15 @@ export function AccountManagement({
 
                         <input
                           type="number"
-                          value={walletAmount}
-                          onChange={(event) =>
+                          value={
+                            walletAmount
+                          }
+                          onChange={(
+                            event,
+                          ) =>
                             setWalletAmount(
-                              event.target.value,
+                              event.target
+                                .value,
                             )
                           }
                           placeholder="المبلغ"
@@ -2260,10 +2487,15 @@ export function AccountManagement({
                         />
 
                         <input
-                          value={walletReason}
-                          onChange={(event) =>
+                          value={
+                            walletReason
+                          }
+                          onChange={(
+                            event,
+                          ) =>
                             setWalletReason(
-                              event.target.value,
+                              event.target
+                                .value,
                             )
                           }
                           placeholder="سبب العملية"
@@ -2279,7 +2511,9 @@ export function AccountManagement({
                         }
                         onClick={() =>
                           void updateWallet(
-                            currentVendor.user_id!,
+                            selectedVendor
+                              .vendor
+                              .user_id!,
                           )
                         }
                         className="mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground disabled:opacity-50"
@@ -2288,22 +2522,19 @@ export function AccountManagement({
                           <RefreshCw className="h-4 w-4 animate-spin" />
                         )}
 
-                        تحديث الرصيد
+                        حفظ الرصيد
                       </button>
                     </div>
                   )}
 
                   <div className="mt-5">
-                    <h4 className="mb-3 font-bold">
-                      سجل معاملات المحفظة
+                    <h4 className="mb-3 font-black">
+                      سجل المعاملات
                     </h4>
 
-                    {selectedVendor.transactions.length ===
-                    0 ? (
-                      <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-                        لا توجد معاملات.
-                      </p>
-                    ) : (
+                    {selectedVendor
+                      .transactions
+                      ?.length ? (
                       <div className="overflow-x-auto rounded-xl border">
                         <table className="w-full text-sm">
                           <thead className="bg-muted/50">
@@ -2311,18 +2542,23 @@ export function AccountManagement({
                               <th className="p-3 text-right">
                                 التاريخ
                               </th>
+
                               <th className="p-3 text-right">
-                                النوع
+                                العملية
                               </th>
+
                               <th className="p-3 text-right">
                                 المبلغ
                               </th>
+
                               <th className="p-3 text-right">
                                 قبل
                               </th>
+
                               <th className="p-3 text-right">
                                 بعد
                               </th>
+
                               <th className="p-3 text-right">
                                 الوصف
                               </th>
@@ -2331,7 +2567,9 @@ export function AccountManagement({
 
                           <tbody>
                             {selectedVendor.transactions.map(
-                              (transaction) => (
+                              (
+                                transaction,
+                              ) => (
                                 <tr
                                   key={
                                     transaction.id
@@ -2376,6 +2614,7 @@ export function AccountManagement({
 
                                   <td className="p-3">
                                     {transaction.description ||
+                                      transaction.reason ||
                                       "—"}
                                   </td>
                                 </tr>
@@ -2384,6 +2623,10 @@ export function AccountManagement({
                           </tbody>
                         </table>
                       </div>
+                    ) : (
+                      <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+                        لا توجد معاملات.
+                      </p>
                     )}
                   </div>
                 </SectionBox>
@@ -2396,79 +2639,68 @@ export function AccountManagement({
                     <Package className="h-5 w-5 text-primary" />
                   }
                 >
-                  {selectedVendor.products.length ===
-                  0 ? (
-                    <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-                      لا توجد منتجات مرتبطة بهذا المتجر.
-                    </p>
-                  ) : (
+                  {selectedVendor.products
+                    ?.length ? (
                     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                       {selectedVendor.products.map(
-                        (product, index) => {
-                          const productName =
+                        (
+                          product,
+                          index,
+                        ) => {
+                          const id =
+                            String(
+                              product.id ??
+                                index,
+                            );
+
+                          const name =
                             String(
                               product.name ??
-                                `منتج ${index + 1}`,
+                                "منتج بدون اسم",
                             );
 
                           const price =
-                            product.price;
-
-                          const active =
-                            Boolean(
-                              product.is_active,
+                            numberValue(
+                              product.price,
                             );
+
+                          const images =
+                            Array.isArray(
+                              product.images,
+                            )
+                              ? product.images
+                              : [];
 
                           return (
                             <div
-                              key={
-                                String(
-                                  product.id ??
-                                    index,
-                                )
-                              }
+                              key={id}
                               className="overflow-hidden rounded-2xl border"
                             >
-                              {Array.isArray(
-                                product.images,
-                              ) &&
-                                product.images[0] && (
-                                  <img
-                                    src={String(
-                                      product
-                                        .images[0],
-                                    )}
-                                    alt={
-                                      productName
-                                    }
-                                    className="h-40 w-full object-cover"
-                                  />
-                                )}
+                              {images[0] && (
+                                <img
+                                  src={String(
+                                    images[0],
+                                  )}
+                                  alt={name}
+                                  className="h-40 w-full object-cover"
+                                />
+                              )}
 
                               <div className="p-4">
                                 <div className="font-bold">
-                                  {productName}
+                                  {name}
                                 </div>
 
                                 <div className="mt-2 font-black">
                                   {money(
                                     price,
-                                    "YER",
                                   )}
                                 </div>
 
-                                <div className="mt-2">
-                                  <span
-                                    className={`rounded-full px-2 py-1 text-xs font-bold ${
-                                      active
-                                        ? "bg-emerald-500/10 text-emerald-600"
-                                        : "bg-destructive/10 text-destructive"
-                                    }`}
-                                  >
-                                    {active
-                                      ? "نشط"
-                                      : "غير نشط"}
-                                  </span>
+                                <div className="mt-2 text-xs text-muted-foreground">
+                                  {product.is_active
+                                    ? "منتج نشط"
+                                    : "منتج غير نشط"}
                                 </div>
                               </div>
                             </div>
@@ -2476,85 +2708,51 @@ export function AccountManagement({
                         },
                       )}
                     </div>
+                  ) : (
+                    <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+                      لا توجد منتجات مرتبطة بهذا المتجر.
+                    </p>
                   )}
                 </SectionBox>
 
-                {/* Raw vendor account data */}
-
-                <SectionBox
-                  title="بيانات تقنية إضافية"
-                  icon={
-                    <Laptop className="h-5 w-5 text-primary" />
-                  }
-                >
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <DetailRow
-                      label="معرّف المتجر"
-                      value={currentVendor?.id}
-                    />
-
-                    <DetailRow
-                      label="معرّف المستخدم"
-                      value={currentVendor?.user_id}
-                    />
-
-                    <DetailRow
-                      label="آخر مسار"
-                      value={
-                        selectedVendor.activity
-                          .last_path
-                      }
-                    />
-
-                    <DetailRow
-                      label="الموقع الجغرافي"
-                      value={
-                        selectedVendor.activity
-                          .latitude &&
-                        selectedVendor.activity
-                          .longitude
-                          ? `${selectedVendor.activity.latitude}, ${selectedVendor.activity.longitude}`
-                          : undefined
-                      }
-                    />
-                  </div>
-                </SectionBox>
-
-                {/* Vendor controls */}
+                {/* Vendor status */}
 
                 <SectionBox
                   title="إدارة حالة المتجر"
                   icon={
-                    currentVendor?.is_active &&
-                    currentVendor?.account_enabled ? (
+                    selectedVendor.vendor
+                      .is_active &&
+                    selectedVendor.vendor
+                      .account_enabled ? (
                       <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                     ) : (
                       <Ban className="h-5 w-5 text-destructive" />
                     )
                   }
                 >
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    تغيير حالة المتجر يتم مباشرة من خلال
-                    دالة الإدارة الآمنة في قاعدة البيانات.
-                  </p>
-
                   <button
                     type="button"
-                    disabled={actionLoading}
+                    disabled={
+                      actionLoading
+                    }
                     onClick={() =>
                       void toggleVendor(
-                        currentVendor!,
+                        selectedVendor.vendor,
                       )
                     }
                     className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-white disabled:opacity-50 ${
-                      currentVendor?.is_active &&
-                      currentVendor?.account_enabled
+                      selectedVendor.vendor
+                        .is_active &&
+                      selectedVendor.vendor
+                        .account_enabled
                         ? "bg-destructive"
                         : "bg-emerald-600"
                     }`}
                   >
-                    {currentVendor?.is_active &&
-                    currentVendor?.account_enabled ? (
+                    {selectedVendor.vendor
+                      .is_active &&
+                    selectedVendor.vendor
+                      .account_enabled ? (
                       <>
                         <Ban className="h-4 w-4" />
                         تعطيل المتجر
