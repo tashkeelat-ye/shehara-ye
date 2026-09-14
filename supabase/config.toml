@@ -2,3 +2,6 @@ project_id = "qaysrebdryhkiizvexmz"
 
 [functions.send-web-push]
 verify_jwt = false
+
+[functions.track-user-activity]
+verify_jwt = false
