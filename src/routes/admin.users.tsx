@@ -20,7 +20,6 @@ import {
   MapPin,
   Phone,
   Mail,
-  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -91,6 +90,11 @@ type TransactionRow = {
   created_at: string;
 };
 
+type AccountDetailsResponse = {
+  addresses?: AddressRow[];
+  transactions?: TransactionRow[];
+};
+
 type Filter =
   | "all"
   | "customer"
@@ -157,7 +161,7 @@ function AdminUsers() {
     useState<string | null>(null);
 
   const load = useCallback(
-    async () => {
+    async (): Promise<Row[]> => {
       setLoading(true);
 
       try {
@@ -206,24 +210,27 @@ function AdminUsers() {
           throw vendorsResult.error;
         }
 
-        setRows(
+        const nextRows =
           profilesResult.data ??
-            [],
-        );
+          [];
 
-        setVendors(
+        const nextVendors =
           vendorsResult.data ??
-            [],
-        );
+          [];
+
+        setRows(nextRows);
+        setVendors(nextVendors);
 
         const map: Record<
           string,
           string[]
         > = {};
 
-        for (const row of
-          rolesResult.data ??
-          []) {
+        for (
+          const row of
+            rolesResult.data ??
+            []
+        ) {
           map[row.user_id] =
             [
               ...(map[
@@ -234,6 +241,8 @@ function AdminUsers() {
         }
 
         setRoles(map);
+
+        return nextRows;
       } catch (error) {
         console.error(
           "[AdminUsers] load failed:",
@@ -243,6 +252,8 @@ function AdminUsers() {
         toast.error(
           "تعذّر تحميل المستخدمين.",
         );
+
+        return [];
       } finally {
         setLoading(false);
       }
@@ -254,13 +265,16 @@ function AdminUsers() {
     void load();
   }, [load]);
 
-  const roleOf = (
-    id: string,
-  ) => {
-    return roles[id]?.length
-      ? roles[id]
-      : ["customer"];
-  };
+  const roleOf = useCallback(
+    (
+      id: string,
+    ) => {
+      return roles[id]?.length
+        ? roles[id]
+        : ["customer"];
+    },
+    [roles],
+  );
 
   const filteredRows =
     useMemo(() => {
@@ -319,7 +333,7 @@ function AdminUsers() {
       );
     }, [
       rows,
-      roles,
+      roleOf,
       search,
       filter,
     ]);
@@ -375,13 +389,14 @@ function AdminUsers() {
       };
     }, [
       rows,
-      roles,
+      roleOf,
     ]);
 
   async function openDetails(
     row: Row,
   ) {
     setSelected(row);
+
     setSelectedVendor(
       vendors.find(
         (vendor) =>
@@ -395,65 +410,40 @@ function AdminUsers() {
     setLoadingDetails(true);
 
     try {
-      const [
-        addressResult,
-        transactionResult,
-      ] = await Promise.all([
-        supabase
-          .from("addresses")
-          .select(
-            "id,label,recipient_name,phone,city,district,details,is_default",
-          )
-          .eq(
-            "user_id",
+      const {
+        data,
+        error,
+      } = await supabase.rpc(
+        "admin_get_user_account_details",
+        {
+          p_user_id:
             row.id,
-          )
-          .order(
-            "is_default",
-            {
-              ascending: false,
-            },
-          )
-          .returns<AddressRow[]>(),
+        },
+      );
 
-        supabase
-          .from(
-            "wallet_transactions",
-          )
-          .select(
-            "id,amount,balance_before,balance_after,transaction_type,reason,created_at",
-          )
-          .eq(
-            "user_id",
-            row.id,
-          )
-          .order(
-            "created_at",
-            {
-              ascending: false,
-            },
-          )
-          .returns<TransactionRow[]>(),
-      ]);
-
-      if (addressResult.error) {
-        throw addressResult.error;
+      if (error) {
+        throw error;
       }
 
-      if (
-        transactionResult.error
-      ) {
-        throw transactionResult.error;
-      }
+      const result =
+        data as
+          | AccountDetailsResponse
+          | null;
 
       setAddresses(
-        addressResult.data ??
-          [],
+        Array.isArray(
+          result?.addresses,
+        )
+          ? result.addresses
+          : [],
       );
 
       setTransactions(
-        transactionResult.data ??
-          [],
+        Array.isArray(
+          result?.transactions,
+        )
+          ? result.transactions
+          : [],
       );
     } catch (error) {
       console.error(
@@ -462,7 +452,10 @@ function AdminUsers() {
       );
 
       toast.error(
-        "تعذّر تحميل تفاصيل الحساب.",
+        error instanceof Error &&
+          error.message
+          ? error.message
+          : "تعذّر تحميل تفاصيل الحساب.",
       );
     } finally {
       setLoadingDetails(false);
@@ -514,20 +507,21 @@ function AdminUsers() {
     setWalletBusy(true);
 
     try {
-      const { error } =
-        await supabase.rpc(
-          "admin_adjust_user_wallet",
-          {
-            p_user_id:
-              selected.id,
-            p_amount:
-              amount,
-            p_reason:
-              walletReason.trim(),
-            p_mode:
-              walletMode,
-          },
-        );
+      const {
+        error,
+      } = await supabase.rpc(
+        "admin_adjust_user_wallet",
+        {
+          p_user_id:
+            selected.id,
+          p_amount:
+            amount,
+          p_reason:
+            walletReason.trim(),
+          p_mode:
+            walletMode,
+        },
+      );
 
       if (error) {
         throw error;
@@ -540,10 +534,11 @@ function AdminUsers() {
       setWalletAmount("");
       setWalletReason("");
 
-      await load();
+      const refreshedRows =
+        await load();
 
       const updated =
-        rows.find(
+        refreshedRows.find(
           (row) =>
             row.id ===
             selected.id,
@@ -561,7 +556,8 @@ function AdminUsers() {
       );
 
       toast.error(
-        error instanceof Error
+        error instanceof Error &&
+          error.message
           ? error.message
           : "تعذّر تعديل الرصيد.",
       );
@@ -576,16 +572,18 @@ function AdminUsers() {
     setBusyId(row.id);
 
     try {
-      const { data, error } =
-        await supabase.rpc(
-          "admin_set_user_disabled",
-          {
-            p_user_id:
-              row.id,
-            p_disabled:
-              !row.is_disabled,
-          },
-        );
+      const {
+        data,
+        error,
+      } = await supabase.rpc(
+        "admin_set_user_disabled",
+        {
+          p_user_id:
+            row.id,
+          p_disabled:
+            !row.is_disabled,
+        },
+      );
 
       if (error) {
         throw error;
@@ -599,14 +597,15 @@ function AdminUsers() {
           : "تم تعطيل الحساب.",
       );
 
-      await load();
+      const refreshedRows =
+        await load();
 
       if (
         selected?.id ===
         row.id
       ) {
         const refreshed =
-          rows.find(
+          refreshedRows.find(
             (item) =>
               item.id ===
               row.id,
@@ -625,7 +624,8 @@ function AdminUsers() {
       );
 
       toast.error(
-        error instanceof Error
+        error instanceof Error &&
+          error.message
           ? error.message
           : "تعذّر تحديث حالة الحساب.",
       );
@@ -840,6 +840,7 @@ function AdminUsers() {
                           ) || 0,
                         )}
                       </p>
+
                       <p className="text-[10px] text-muted-foreground">
                         المحفظة
                       </p>
@@ -891,6 +892,14 @@ function AdminUsers() {
               );
             },
           )}
+
+          {!loading &&
+          filteredRows.length ===
+            0 ? (
+            <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              لا توجد حسابات مطابقة للبحث أو التصفية.
+            </div>
+          ) : null}
         </div>
       </AdminCard>
 
@@ -907,7 +916,7 @@ function AdminUsers() {
                 البيانات الشخصية
               </h3>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 text-xs">
+              <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
                 <Info
                   icon={User}
                   label="الاسم الكامل"
@@ -1080,7 +1089,7 @@ function AdminUsers() {
 
               <button
                 type="button"
-                className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground"
+                className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50"
                 disabled={
                   walletBusy
                 }
@@ -1089,6 +1098,7 @@ function AdminUsers() {
                 }
               >
                 <Wallet className="h-4 w-4" />
+
                 {walletBusy
                   ? "جارٍ التنفيذ..."
                   : "تنفيذ العملية"}
@@ -1180,18 +1190,25 @@ function AdminUsers() {
                         </p>
 
                         <p className="mt-1">
-                          {address.recipient_name}
+                          {
+                            address.recipient_name
+                          }
                         </p>
 
                         <p
                           dir="ltr"
                           className="mt-1"
                         >
-                          {address.phone}
+                          {
+                            address.phone
+                          }
                         </p>
 
                         <p className="mt-1">
-                          {address.city}
+                          {
+                            address.city
+                          }
+
                           {address.district
                             ? ` · ${address.district}`
                             : ""}
@@ -1208,7 +1225,7 @@ function AdminUsers() {
               )}
             </section>
 
-            <section className="lg:col-span-2 rounded-2xl border border-border p-4">
+            <section className="rounded-2xl border border-border p-4 lg:col-span-2">
               <div className="flex items-center gap-2">
                 <History className="h-5 w-5 text-primary" />
 
@@ -1278,6 +1295,7 @@ function AdminUsers() {
                           ) >= 0
                             ? "+"
                             : ""}
+
                           {formatPrice(
                             Number(
                               transaction.amount,
@@ -1289,6 +1307,7 @@ function AdminUsers() {
                           <p className="text-[10px] text-muted-foreground">
                             قبل
                           </p>
+
                           <p>
                             {formatPrice(
                               Number(
@@ -1302,6 +1321,7 @@ function AdminUsers() {
                           <p className="text-[10px] text-muted-foreground">
                             بعد
                           </p>
+
                           <p className="font-bold">
                             {formatPrice(
                               Number(
@@ -1364,6 +1384,7 @@ function Info({
     <div>
       <p className="flex items-center gap-1 text-muted-foreground">
         <Icon className="h-3.5 w-3.5" />
+
         {label}
       </p>
 
