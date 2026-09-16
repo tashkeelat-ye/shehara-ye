@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { VendorLogoEditor } from "@/components/merchant/vendor-logo-editor";
 import { MerchantDashboard } from "@/components/merchant/merchant-dashboard";
 
 export const Route = createFileRoute(
@@ -13,7 +14,7 @@ export const Route = createFileRoute(
       {
         name: "description",
         content:
-          "لوحة إدارة التاجر في شهارة لإدارة المنتجات والطلبات والمبيعات والمحفظة.",
+          "لوحة إدارة التاجر في شهارة لإدارة المنتجات والطلبات والمبيعات والمحفظة وهوية المتجر.",
       },
     ],
   }),
@@ -22,5 +23,14 @@ export const Route = createFileRoute(
 });
 
 function MerchantDashboardPage() {
-  return <MerchantDashboard />;
+  return (
+    <div
+      dir="rtl"
+      className="mx-auto w-full max-w-7xl space-y-4 p-4 pb-10 sm:p-5"
+    >
+      <VendorLogoEditor />
+
+      <MerchantDashboard />
+    </div>
+  );
 }
