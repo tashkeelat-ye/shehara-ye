@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   BarChart3,
-  Box,
   CheckCircle2,
   ChevronLeft,
   Clock3,
@@ -19,7 +18,8 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { formatPrice, fetchWalletTransactions } from "@/lib/store";
+import { formatPrice } from "@/lib/db";
+import { fetchWalletTransactions } from "@/lib/store";
 
 type Vendor = {
   id: string;
@@ -327,14 +327,16 @@ export function MerchantDashboard({
   const recentOrders = useMemo(() => {
     const seen = new Set<string>();
 
-    return orderItems.filter((item) => {
-      if (seen.has(item.order_id)) {
-        return false;
-      }
+    return orderItems
+      .filter((item) => {
+        if (seen.has(item.order_id)) {
+          return false;
+        }
 
-      seen.add(item.order_id);
-      return true;
-    }).slice(0, 6);
+        seen.add(item.order_id);
+        return true;
+      })
+      .slice(0, 6);
   }, [orderItems]);
 
   const bestSellingProducts = useMemo(() => {
