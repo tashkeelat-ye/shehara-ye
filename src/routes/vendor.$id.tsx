@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, MapPin, Store } from "lucide-react";
+import {
+  ChevronRight,
+  MapPin,
+  Store,
+} from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
@@ -15,6 +19,7 @@ type VendorRow = {
   id: string;
   name: string;
   city: string;
+  logo_url: string | null;
   is_active: boolean;
   account_enabled: boolean;
 };
@@ -22,12 +27,18 @@ type VendorRow = {
 async function fetchVendor(
   id: string,
 ): Promise<VendorRow | null> {
-  const { data, error } = await supabase
+  const {
+    data,
+    error,
+  } = await supabase
     .from("vendors")
     .select(
-      "id,name,city,is_active,account_enabled",
+      "id,name,city,logo_url,is_active,account_enabled",
     )
-    .eq("id", id)
+    .eq(
+      "id",
+      id,
+    )
     .maybeSingle<VendorRow>();
 
   if (error) {
@@ -40,7 +51,8 @@ async function fetchVendor(
 export const Route = createFileRoute(
   "/vendor/$id",
 )({
-  component: VendorPage,
+  component:
+    VendorPage,
 
   head: () => ({
     meta: [
@@ -54,20 +66,26 @@ export const Route = createFileRoute(
           "تعرّف على المتجر وتصفح جميع منتجاته المتوفرة داخل تطبيق شهارة للتسوق الإلكتروني في اليمن.",
       },
       {
-        property: "og:title",
-        content: "متجر في شهارة",
+        property:
+          "og:title",
+        content:
+          "متجر في شهارة",
       },
       {
-        property: "og:description",
+        property:
+          "og:description",
         content:
           "تصفح منتجات المتجر داخل تطبيق شهارة.",
       },
       {
-        property: "og:type",
-        content: "website",
+        property:
+          "og:type",
+        content:
+          "website",
       },
       {
-        name: "twitter:card",
+        name:
+          "twitter:card",
         content:
           "summary_large_image",
       },
@@ -76,24 +94,32 @@ export const Route = createFileRoute(
 });
 
 function VendorPage() {
-  const { id } = Route.useParams();
+  const { id } =
+    Route.useParams();
 
   const {
     data: vendor,
-    isLoading: vendorLoading,
-    isError: vendorError,
+    isLoading:
+      vendorLoading,
+    isError:
+      vendorError,
   } = useQuery({
-    queryKey: ["vendor", id],
+    queryKey: [
+      "vendor",
+      id,
+    ],
 
     queryFn: () =>
       fetchVendor(id),
 
-    staleTime: 5 * 60_000,
+    staleTime:
+      5 * 60_000,
   });
 
   const {
     data: products = [],
-    isLoading: productsLoading,
+    isLoading:
+      productsLoading,
   } = useQuery({
     queryKey: [
       "vendor-products",
@@ -102,11 +128,13 @@ function VendorPage() {
 
     queryFn: () =>
       fetchProducts({
-        vendorId: id,
+        vendorId:
+          id,
         sort: "best",
       }),
 
-    staleTime: 60_000,
+    staleTime:
+      60_000,
   });
 
   const storeUnavailable =
@@ -135,9 +163,29 @@ function VendorPage() {
         </Link>
 
         <section className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary/10 text-primary">
-            <Store className="h-6 w-6" />
-          </span>
+          <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-secondary">
+            {vendor?.logo_url ? (
+              <img
+                src={
+                  vendor.logo_url
+                }
+                alt={
+                  vendor.name
+                    ? `شعار ${vendor.name}`
+                    : "شعار المتجر"
+                }
+                className="h-full w-full object-contain p-1.5"
+                onError={(
+                  event,
+                ) => {
+                  event.currentTarget.style.display =
+                    "none";
+                }}
+              />
+            ) : (
+              <Store className="h-7 w-7 text-primary" />
+            )}
+          </div>
 
           <div className="min-w-0">
             <h1 className="truncate text-base font-bold text-foreground">
@@ -151,7 +199,8 @@ function VendorPage() {
             <p className="flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" />
 
-              {vendor?.city || "اليمن"}
+              {vendor?.city ||
+                "اليمن"}
             </p>
           </div>
         </section>
@@ -187,7 +236,10 @@ function VendorPage() {
                 </div>
 
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                  {products.length} منتج
+                  {
+                    products.length
+                  }{" "}
+                  منتج
                 </span>
               </div>
             </section>
@@ -196,23 +248,37 @@ function VendorPage() {
               {productsLoading
                 ? Array.from({
                     length: 4,
-                  }).map((_, index) => (
-                    <ProductCardSkeleton
-                      key={index}
-                    />
-                  ))
+                  }).map(
+                    (
+                      _,
+                      index,
+                    ) => (
+                      <ProductCardSkeleton
+                        key={
+                          index
+                        }
+                      />
+                    ),
+                  )
                 : products.map(
-                    (product) => (
+                    (
+                      product,
+                    ) => (
                       <ProductCard
-                        key={product.id}
-                        product={product}
+                        key={
+                          product.id
+                        }
+                        product={
+                          product
+                        }
                       />
                     ),
                   )}
             </div>
 
             {!productsLoading &&
-            products.length === 0 ? (
+            products.length ===
+              0 ? (
               <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
                 لا توجد منتجات في هذا المتجر حالياً.
               </p>
