@@ -24,12 +24,6 @@ export const Route = createFileRoute(
       });
     }
 
-    /*
-     * ==========================================================
-     * Role-aware authenticated routing
-     * ==========================================================
-     */
-
     const {
       data: roleRows,
       error: roleError,
@@ -74,11 +68,42 @@ export const Route = createFileRoute(
       location.pathname;
 
     /*
-     * ==========================================================
-     * التاجر يستخدم لوحة التاجر بدلاً من حساب العميل
-     * ==========================================================
+     * عامل التوصيل يدخل دائماً إلى لوحة
+     * عامل التوصيل ولا يتم تحويله إلى
+     * واجهة العميل.
      */
+    if (
+      isCourier &&
+      currentPath === "/account"
+    ) {
+      throw redirect({
+        to: "/courier",
+        replace: true,
+      });
+    }
 
+    /*
+     * منع عامل التوصيل من دخول مسارات
+     * الإدارة والتاجر.
+     */
+    if (
+      isCourier &&
+      (
+        currentPath === "/admin" ||
+        currentPath.startsWith("/admin/") ||
+        currentPath === "/merchant" ||
+        currentPath.startsWith("/merchant/")
+      )
+    ) {
+      throw redirect({
+        to: "/courier",
+        replace: true,
+      });
+    }
+
+    /*
+     * التاجر.
+     */
     if (
       isVendor &&
       currentPath === "/account"
@@ -88,16 +113,6 @@ export const Route = createFileRoute(
         replace: true,
       });
     }
-
-    /*
-     * ==========================================================
-     * حماية صفحة إدارة المنتجات
-     * ==========================================================
-     *
-     * /merchant
-     *
-     * تبقى صفحة إدارة المنتجات الحالية.
-     */
 
     if (
       currentPath === "/merchant" &&
@@ -113,14 +128,6 @@ export const Route = createFileRoute(
       });
     }
 
-    /*
-     * ==========================================================
-     * حماية لوحة التاجر الجديدة
-     * ==========================================================
-     *
-     * /merchant/dashboard
-     */
-
     if (
       currentPath ===
         "/merchant/dashboard" &&
@@ -131,6 +138,24 @@ export const Route = createFileRoute(
           ? "/admin"
           : isCourier
             ? "/courier"
+            : "/account",
+        replace: true,
+      });
+    }
+
+    /*
+     * منع العميل من الوصول إلى لوحة
+     * الإدارة أو التاجر أو عامل التوصيل.
+     */
+    if (
+      currentPath === "/courier" &&
+      !isCourier
+    ) {
+      throw redirect({
+        to: isAdmin
+          ? "/admin"
+          : isVendor
+            ? "/merchant/dashboard"
             : "/account",
         replace: true,
       });
