@@ -75,3 +75,33 @@ export function BannerCarousel4to1() {
 }
 
 export default BannerCarousel4to1;
+
+useEffect(() => {
+  const handleRealtime = (
+    event: CustomEvent<{
+      table: string;
+    }>,
+  ) => {
+    if (event.detail.table !== "site_settings") {
+      return;
+    }
+
+    void (async () => {
+      const data = await fetchSettings();
+      setSettings(data);
+      setCurrentIndex(0);
+    })();
+  };
+
+  window.addEventListener(
+    "shehara:realtime",
+    handleRealtime as EventListener,
+  );
+
+  return () => {
+    window.removeEventListener(
+      "shehara:realtime",
+      handleRealtime as EventListener,
+    );
+  };
+}, []);
