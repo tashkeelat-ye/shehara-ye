@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+
 import { MerchantDashboard } from "@/components/merchant/merchant-dashboard";
 
 export const Route = createFileRoute(
