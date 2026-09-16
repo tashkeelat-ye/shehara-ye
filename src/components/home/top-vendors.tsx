@@ -12,6 +12,7 @@ type TopVendor = {
   id: string;
   name: string;
   city: string;
+  logo_url: string | null;
   is_active: boolean;
   account_enabled: boolean;
   productCount: number;
@@ -26,28 +27,40 @@ async function fetchTopVendors(): Promise<
   } = await supabase
     .from("vendors")
     .select(
-      "id,name,city,is_active,account_enabled",
+      "id,name,city,logo_url,is_active,account_enabled",
     )
-    .eq("is_active", true)
-    .eq("account_enabled", true)
-    .order("created_at", {
-      ascending: false,
-    })
+    .eq(
+      "is_active",
+      true,
+    )
+    .eq(
+      "account_enabled",
+      true,
+    )
+    .order(
+      "created_at",
+      {
+        ascending: false,
+      },
+    )
     .limit(12);
 
   if (vendorsError) {
     throw vendorsError;
   }
 
-  const list = vendors ?? [];
+  const list =
+    vendors ?? [];
 
   if (list.length === 0) {
     return [];
   }
 
-  const vendorIds = list.map(
-    (vendor) => vendor.id,
-  );
+  const vendorIds =
+    list.map(
+      (vendor) =>
+        vendor.id,
+    );
 
   const {
     data: products,
@@ -55,7 +68,10 @@ async function fetchTopVendors(): Promise<
   } = await supabase
     .from("products")
     .select("vendor_id")
-    .eq("is_active", true)
+    .eq(
+      "is_active",
+      true,
+    )
     .in(
       "vendor_id",
       vendorIds,
@@ -69,29 +85,39 @@ async function fetchTopVendors(): Promise<
   }
 
   const counts =
-    new Map<string, number>();
+    new Map<
+      string,
+      number
+    >();
 
-  for (const row of products ?? []) {
+  for (
+    const row of
+      products ?? []
+  ) {
     if (!row.vendor_id) {
       continue;
     }
 
     counts.set(
       row.vendor_id,
-      (counts.get(
-        row.vendor_id,
-      ) ?? 0) + 1,
+      (
+        counts.get(
+          row.vendor_id,
+        ) ?? 0
+      ) + 1,
     );
   }
 
   return list
-    .map((vendor) => ({
-      ...vendor,
-      productCount:
-        counts.get(
-          vendor.id,
-        ) ?? 0,
-    }))
+    .map(
+      (vendor) => ({
+        ...vendor,
+        productCount:
+          counts.get(
+            vendor.id,
+          ) ?? 0,
+      }),
+    )
     .sort(
       (a, b) =>
         b.productCount -
@@ -140,7 +166,9 @@ export function TopVendors() {
         {vendors.map(
           (vendor) => (
             <Link
-              key={vendor.id}
+              key={
+                vendor.id
+              }
               to="/vendor/$id"
               params={{
                 id: vendor.id,
@@ -162,9 +190,26 @@ export function TopVendors() {
                 hover:-translate-y-0.5
               "
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Store className="h-5 w-5" />
-              </span>
+              <div className="grid h-16 w-full place-items-center overflow-hidden rounded-xl bg-secondary">
+                {vendor.logo_url ? (
+                  <img
+                    src={
+                      vendor.logo_url
+                    }
+                    alt={`شعار ${vendor.name}`}
+                    loading="lazy"
+                    className="h-full w-full object-contain p-2"
+                    onError={(
+                      event,
+                    ) => {
+                      event.currentTarget.style.display =
+                        "none";
+                    }}
+                  />
+                ) : (
+                  <Store className="h-7 w-7 text-primary" />
+                )}
+              </div>
 
               <span className="truncate text-sm font-bold text-foreground">
                 {vendor.name}
@@ -178,7 +223,9 @@ export function TopVendors() {
               </span>
 
               <span className="text-[11px] font-semibold text-primary">
-                {vendor.productCount}{" "}
+                {
+                  vendor.productCount
+                }{" "}
                 منتج
               </span>
             </Link>
