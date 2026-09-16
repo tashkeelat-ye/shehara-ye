@@ -15,17 +15,17 @@ type VendorRow = {
   id: string;
   name: string;
   city: string;
-  logo_url: string | null;
-  description: string;
+  is_active: boolean;
+  account_enabled: boolean;
 };
 
 async function fetchVendor(
   id: string,
 ): Promise<VendorRow | null> {
   const { data, error } = await supabase
-    .from("public_vendor_directory")
+    .from("vendors")
     .select(
-      "id,name,city,logo_url,description",
+      "id,name,city,is_active,account_enabled",
     )
     .eq("id", id)
     .maybeSingle<VendorRow>();
@@ -81,9 +81,13 @@ function VendorPage() {
   const {
     data: vendor,
     isLoading: vendorLoading,
+    isError: vendorError,
   } = useQuery({
     queryKey: ["vendor", id],
-    queryFn: () => fetchVendor(id),
+
+    queryFn: () =>
+      fetchVendor(id),
+
     staleTime: 5 * 60_000,
   });
 
@@ -91,14 +95,28 @@ function VendorPage() {
     data: products = [],
     isLoading: productsLoading,
   } = useQuery({
-    queryKey: ["vendor-products", id],
+    queryKey: [
+      "vendor-products",
+      id,
+    ],
+
     queryFn: () =>
       fetchProducts({
         vendorId: id,
         sort: "best",
       }),
+
     staleTime: 60_000,
   });
+
+  const storeUnavailable =
+    !vendorLoading &&
+    (
+      vendorError ||
+      !vendor ||
+      !vendor.is_active ||
+      !vendor.account_enabled
+    );
 
   return (
     <div
@@ -118,23 +136,16 @@ function VendorPage() {
 
         <section className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
           <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary/10 text-primary">
-            {vendor?.logo_url ? (
-              <img
-                src={vendor.logo_url}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <Store className="h-6 w-6" />
-            )}
+            <Store className="h-6 w-6" />
           </span>
 
           <div className="min-w-0">
             <h1 className="truncate text-base font-bold text-foreground">
               {vendorLoading
                 ? "جارٍ التحميل…"
-                : (vendor?.name ??
-                  "متجر غير متاح")}
+                : vendor
+                  ? vendor.name
+                  : "متجر غير متاح"}
             </h1>
 
             <p className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -145,43 +156,68 @@ function VendorPage() {
           </div>
         </section>
 
-        {!vendorLoading && !vendor ? (
-          <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-            هذا المتجر غير متوفر حالياً.
-          </p>
-        ) : null}
+        {storeUnavailable ? (
+          <section className="rounded-2xl border border-border bg-card p-6 text-center">
+            <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-muted text-muted-foreground">
+              <Store className="h-6 w-6" />
+            </div>
 
-        {vendor?.description ? (
-          <section className="rounded-2xl border border-border bg-card p-4 text-sm leading-7 text-muted-foreground">
-            {vendor.description}
+            <h2 className="text-sm font-bold text-foreground">
+              متجر غير متاح
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              هذا المتجر غير متوفر حالياً.
+            </p>
           </section>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {productsLoading
-            ? Array.from({
-                length: 4,
-              }).map((_, index) => (
-                <ProductCardSkeleton
-                  key={index}
-                />
-              ))
-            : products.map(
-                (product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                  />
-                ),
-              )}
-        </div>
+        {!storeUnavailable ? (
+          <>
+            <section className="rounded-2xl border border-border bg-card p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-bold text-foreground">
+                    منتجات المتجر
+                  </h2>
 
-        {!productsLoading &&
-        products.length === 0 &&
-        vendor ? (
-          <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-            لا توجد منتجات في هذا المتجر حالياً.
-          </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    تصفح المنتجات المتوفرة من هذا التاجر
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                  {products.length} منتج
+                </span>
+              </div>
+            </section>
+
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              {productsLoading
+                ? Array.from({
+                    length: 4,
+                  }).map((_, index) => (
+                    <ProductCardSkeleton
+                      key={index}
+                    />
+                  ))
+                : products.map(
+                    (product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                      />
+                    ),
+                  )}
+            </div>
+
+            {!productsLoading &&
+            products.length === 0 ? (
+              <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+                لا توجد منتجات في هذا المتجر حالياً.
+              </p>
+            ) : null}
+          </>
         ) : null}
       </main>
 
