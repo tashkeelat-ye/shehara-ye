@@ -29,11 +29,12 @@ import {
 import { LocalProducts } from "@/components/local-products";
 import { TopVendors } from "@/components/home/top-vendors";
 import { BottomNav } from "@/components/bottom-nav";
+import { DynamicHomeSection } from "@/components/home/DynamicHomeSection";
+import { BannerCarousel4to1 } from "@/components/home/BannerCarousel4to1";
+
 import { fetchCategories, fetchProducts } from "@/lib/db";
 import type { Category } from "@/lib/db";
-import {
-  BannerCarousel4to1,
-} from "@/components/home/BannerCarousel4to1";
+
 import {
   fetchHomeSections,
   type HomeSection,
@@ -254,6 +255,28 @@ function HorizontalProducts({
   );
 }
 
+/**
+ * الأقسام الأساسية التي يتم التحكم بها مباشرة
+ * من خلال مفاتيح home_sections القديمة.
+ *
+ * أي قسم يبدأ بـ custom_ يعتبر قسماً جديداً
+ * تم إنشاؤه من لوحة "ترتيب الصفحة الرئيسية".
+ */
+const BUILT_IN_SECTION_KEYS = new Set([
+  "stories",
+  "hero",
+  "categories",
+  "popular_categories",
+  "flash_sale",
+  "offers",
+  "banners",
+  "best_sellers",
+  "new_arrivals",
+  "brands",
+  "top_vendors",
+  "local_products",
+]);
+
 function Index() {
   const {
     data: bestProducts = [],
@@ -294,11 +317,13 @@ function Index() {
   });
 
   const {
-    data: homeSections,
+    data: homeSections = [],
+    isLoading: homeSectionsLoading,
   } = useQuery({
     queryKey: ["home-sections"],
     queryFn: () => fetchHomeSections(false),
-    staleTime: 5 * 60_000,
+    staleTime: 0,
+    gcTime: 1000 * 60 * 30,
   });
 
   const bestSellers = useMemo(
@@ -306,110 +331,118 @@ function Index() {
     [bestProducts],
   );
 
-  const popularCategories =
-    useMemo<PopularCategory[]>(() => {
-      if (!categories.length) {
-        return [];
+  const popularCategories = useMemo<PopularCategory[]>(() => {
+    if (!categories.length) {
+      return [];
+    }
+
+    const scores = new Map<
+      string,
+      {
+        productCount: number;
+        popularityScore: number;
       }
+    >();
 
-      const scores = new Map<
-        string,
-        {
-          productCount: number;
-          popularityScore: number;
-        }
-      >();
+    for (const product of bestProducts) {
+      const current = scores.get(product.category_id) ?? {
+        productCount: 0,
+        popularityScore: 0,
+      };
 
-      for (const product of bestProducts) {
-        const current =
-          scores.get(product.category_id) ?? {
-            productCount: 0,
-            popularityScore: 0,
-          };
+      current.productCount += 1;
 
-        current.productCount += 1;
-        current.popularityScore +=
-          Number(product.sales_count) || 0;
+      current.popularityScore +=
+        Number(product.sales_count) || 0;
 
-        scores.set(
-          product.category_id,
-          current,
-        );
-      }
+      scores.set(product.category_id, current);
+    }
 
-      const ranked = categories
-        .map((category) => {
-          const score =
-            scores.get(category.id);
+    const ranked = categories
+      .map((category) => {
+        const score = scores.get(category.id);
 
-          return {
-            ...category,
-            productCount:
-              score?.productCount ?? 0,
-            popularityScore:
-              score?.popularityScore ?? 0,
-          };
-        })
-        .filter(
-          (category) =>
-            category.productCount > 0,
-        )
-        .sort((a, b) => {
-          if (
-            b.popularityScore !==
-            a.popularityScore
-          ) {
-            return (
-              b.popularityScore -
-              a.popularityScore
-            );
-          }
-
-          if (
-            b.productCount !==
-            a.productCount
-          ) {
-            return (
-              b.productCount -
-              a.productCount
-            );
-          }
-
-          return (
-            a.sort_order -
-            b.sort_order
-          );
-        })
-        .slice(0, 8);
-
-      if (ranked.length > 0) {
-        return ranked;
-      }
-
-      return categories
-        .slice()
-        .sort(
-          (a, b) =>
-            a.sort_order -
-            b.sort_order,
-        )
-        .slice(0, 8)
-        .map((category) => ({
+        return {
           ...category,
-          productCount: 0,
-          popularityScore: 0,
-        }));
-    }, [bestProducts, categories]);
+          productCount: score?.productCount ?? 0,
+          popularityScore: score?.popularityScore ?? 0,
+        };
+      })
+      .filter((category) => category.productCount > 0)
+      .sort((a, b) => {
+        if (b.popularityScore !== a.popularityScore) {
+          return b.popularityScore - a.popularityScore;
+        }
+
+        if (b.productCount !== a.productCount) {
+          return b.productCount - a.productCount;
+        }
+
+        return a.sort_order - b.sort_order;
+      })
+      .slice(0, 8);
+
+    if (ranked.length > 0) {
+      return ranked;
+    }
+
+    return categories
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .slice(0, 8)
+      .map((category) => ({
+        ...category,
+        productCount: 0,
+        popularityScore: 0,
+      }));
+  }, [bestProducts, categories]);
 
   const sectionMap = useMemo(() => {
     const map: Record<string, HomeSection> = {};
 
-    for (const section of homeSections ?? []) {
+    for (const section of homeSections) {
       map[section.section_key] = section;
     }
 
     return map;
   }, [homeSections]);
+
+  /**
+   * الأقسام الجديدة التي أنشأها المدير.
+   *
+   * يتم استبعاد الأقسام القديمة حتى لا تظهر مرتين.
+   */
+  const customSections = useMemo(() => {
+    return homeSections
+      .filter(
+        (section) =>
+          !BUILT_IN_SECTION_KEYS.has(
+            section.section_key,
+          ) &&
+          section.section_key.startsWith("custom_"),
+      )
+      .sort(
+        (a, b) =>
+          a.sort_order - b.sort_order,
+      );
+  }, [homeSections]);
+
+  /**
+   * يتم استخدام sort_order الخاص بكل قسم.
+   *
+   * الأقسام الأساسية + الأقسام المخصصة كلها
+   * موجودة داخل Flex container واحد، وبالتالي
+   * يمكن للمدير وضع القسم الجديد بين الأقسام
+   * الحالية باستخدام أزرار التحريك في لوحة الإدارة.
+   */
+  const dynamicSectionOrder = useMemo(() => {
+    return new Map(
+      customSections.map((section) => [
+        section.id,
+        section.sort_order,
+      ]),
+    );
+  }, [customSections]);
 
   return (
     <div
@@ -519,7 +552,7 @@ function Index() {
             </section>
           </Sec>
 
-          {/* Hero */}
+          {/* البنر الرئيسي */}
           <Sec
             k="hero"
             cfg={sectionMap}
@@ -552,9 +585,7 @@ function Index() {
             k="categories"
             cfg={sectionMap}
           >
-            <SectionShell
-              className="py-2"
-            >
+            <SectionShell className="py-2">
               <CategoryStrip />
             </SectionShell>
           </Sec>
@@ -807,7 +838,7 @@ function Index() {
             </SectionShell>
           </Sec>
 
-          {/* البنرات */}
+          {/* البنرات الفرعية */}
           <Sec
             k="banners"
             cfg={sectionMap}
@@ -906,42 +937,4 @@ function Index() {
                     لا توجد منتجات جديدة حالياً.
                   </div>
                 )}
-            </SectionShell>
-          </Sec>
-
-          {/* الماركات */}
-          <Sec
-            k="brands"
-            cfg={sectionMap}
-          >
-            <SectionShell>
-              <BrandsSection />
-            </SectionShell>
-          </Sec>
-
-          {/* التجار */}
-          <Sec
-            k="top_vendors"
-            cfg={sectionMap}
-          >
-            <SectionShell>
-              <TopVendors />
-            </SectionShell>
-          </Sec>
-
-          {/* المنتجات اليمنية */}
-          <Sec
-            k="local_products"
-            cfg={sectionMap}
-          >
-            <SectionShell>
-              <LocalProducts />
-            </SectionShell>
-          </Sec>
-        </main>
-
-        <BottomNav />
-      </div>
-    </div>
-  );
-}
+            </
