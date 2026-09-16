@@ -18,10 +18,13 @@ const managedAccountTypeSchema = z.enum([
 ]);
 
 /**
- * تحميل Supabase Admin Client على الخادم فقط.
+ * =========================================================
+ * Supabase Admin Client
+ * =========================================================
  *
- * لا نستورد client.server.ts في أعلى الملف حتى لا يتم
- * تضمين Service Role Client داخل bundle العميل.
+ * يتم تحميل Service Role Client داخل الخادم فقط.
+ * لا يتم استيراده في أعلى الملف حتى لا يدخل Service Role
+ * إلى حزمة المتصفح.
  */
 async function getSupabaseAdmin() {
   const { supabaseAdmin } = await import(
@@ -32,10 +35,13 @@ async function getSupabaseAdmin() {
 }
 
 /**
- * التحقق من أن المستخدم الحالي يملك صلاحية الإدارة.
+ * =========================================================
+ * التحقق من صلاحية الإدارة
+ * =========================================================
  *
- * يتم التنفيذ على الخادم باستخدام Service Role Client،
- * ولا يتم الاعتماد على بيانات يرسلها العميل لتحديد الصلاحية.
+ * لا نعتمد على أي قيمة يرسلها العميل لتحديد الصلاحية.
+ * يتم أخذ userId من middleware بعد التحقق من جلسة المستخدم،
+ * ثم التحقق من user_roles باستخدام Service Role.
  */
 async function assertAdmin(userId: string) {
   if (!userId) {
@@ -77,12 +83,11 @@ async function assertAdmin(userId: string) {
  * إنشاء / تجهيز حساب الإدارة
  * =========================================================
  *
- * هذه العملية حساسة لأنها تستخدم Service Role.
+ * هذه العملية تستخدم Service Role لذلك:
  *
- * لذلك:
  * 1. تتطلب تسجيل دخول.
  * 2. تتطلب أن يكون المستخدم الحالي Admin أو Super Admin.
- * 3. لا يمكن لأي زائر مجهول استدعاؤها.
+ * 3. لا يمكن لزائر مجهول استدعاؤها.
  */
 export const ensureAdminAccount = createServerFn({
   method: "POST",
@@ -451,7 +456,7 @@ export const createManagedAccount =
             "vendor"
           ) {
             /**
-             * ربط حساب جديد بسجل تاجر موجود.
+             * ربط الحساب بسجل تاجر موجود.
              */
             if (data.recordId) {
               const {
@@ -541,7 +546,7 @@ export const createManagedAccount =
             "courier"
           ) {
             /**
-             * ربط حساب جديد بسجل عامل توصيل موجود.
+             * ربط الحساب بسجل عامل توصيل موجود.
              */
             if (data.recordId) {
               const {
@@ -696,7 +701,7 @@ export const setManagedAccountDisabled =
           await getSupabaseAdmin();
 
         /**
-         * تحديث حالة Auth أولاً.
+         * تحديث Auth أولاً.
          */
         const {
           error: authError,
@@ -790,8 +795,8 @@ export const setManagedAccountDisabled =
           }
         } catch (error) {
           /**
-           * محاولة إعادة حالة Auth في حال
-           * فشل تحديث قاعدة البيانات.
+           * محاولة إعادة حالة Auth إذا فشل
+           * تحديث قاعدة البيانات.
            */
           try {
             await supabaseAdmin.auth.admin.updateUserById(
