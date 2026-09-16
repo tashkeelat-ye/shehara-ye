@@ -163,6 +163,14 @@ export function MerchantDashboard({
       }
 
       try {
+        /*
+         * ------------------------------------------------------------
+         * 1. تحميل بيانات التاجر
+         * ------------------------------------------------------------
+         *
+         * بيانات التاجر هي البيانات الأساسية للوحة.
+         * إذا فشل هذا الاستعلام فقط نعرض رسالة خطأ عامة.
+         */
         const vendorResult = await supabase
           .from("vendors")
           .select(
@@ -184,78 +192,186 @@ export function MerchantDashboard({
           return;
         }
 
-        const vendorId = vendorResult.data.id;
+        const vendorData = vendorResult.data;
+        const vendorId = vendorData.id;
 
-        setVendor(vendorResult.data);
+        setVendor(vendorData);
 
-        const [productsResult, itemsResult, walletResult, txResult] =
-          await Promise.all([
-            supabase
-              .from("products")
-              .select(
-                "id,name,price,old_price,stock_left,total_stock,low_stock_threshold,is_active,images,sales_count,created_at",
-              )
-              .eq("vendor_id", vendorId)
-              .order("created_at", {
-                ascending: false,
-              })
-              .returns<Product[]>(),
+        /*
+         * ------------------------------------------------------------
+         * 2. تحميل المنتجات بشكل مستقل
+         * ------------------------------------------------------------
+         *
+         * لا نسمح لفشل المنتجات بإيقاف بقية لوحة التاجر.
+         */
+        try {
+          const { data, error } = await supabase
+            .from("products")
+            .select(
+              "id,name,price,old_price,stock_left,total_stock,low_stock_threshold,is_active,images,sales_count,created_at",
+            )
+            .eq("vendor_id", vendorId)
+            .order("created_at", {
+              ascending: false,
+            })
+            .returns<Product[]>();
 
-            supabase
-              .from("order_items")
-              .select(
-                "id,order_id,product_id,product_name,product_image,unit_price,quantity,vendor_status,vendor_updated_at",
-              )
-              .eq("vendor_id", vendorId)
-              .order("vendor_updated_at", {
-                ascending: false,
-              })
-              .returns<OrderItem[]>(),
+          if (error) {
+            throw error;
+          }
 
-            (supabase as any).rpc("get_wallet", {
+          setProducts(data ?? []);
+        } catch (error) {
+          console.error(
+            "[MerchantDashboard] products load failed:",
+            error,
+          );
+
+          setProducts([]);
+        }
+
+        /*
+         * ------------------------------------------------------------
+         * 3. تحميل طلبات التاجر بشكل مستقل
+         * ------------------------------------------------------------
+         */
+        try {
+          const { data, error } = await supabase
+            .from("order_items")
+            .select(
+              "id,order_id,product_id,product_name,product_image,unit_price,quantity,vendor_status,vendor_updated_at",
+            )
+            .eq("vendor_id", vendorId)
+            .order("vendor_updated_at", {
+              ascending: false,
+            })
+            .returns<OrderItem[]>();
+
+          if (error) {
+            throw error;
+          }
+
+          setOrderItems(data ?? []);
+        } catch (error) {
+          console.error(
+            "[MerchantDashboard] orders load failed:",
+            error,
+          );
+
+          setOrderItems([]);
+        }
+
+        /*
+         * ------------------------------------------------------------
+         * 4. تحميل المحفظة بشكل مستقل
+         * ------------------------------------------------------------
+         *
+         * نستخدم RPC الموجودة أصلًا في النظام بدل افتراض
+         * وجود RPC جديدة.
+         */
+        try {
+          const { data, error } = await (supabase as any).rpc(
+            "get_wallet",
+            {
               requested_currency: "YER",
-            }),
+            },
+          );
 
-            fetchWalletTransactions(user.id, "YER"),
-          ]);
+          if (error) {
+            throw error;
+          }
 
-        if (productsResult.error) {
-          throw productsResult.error;
+          const walletRow = Array.isArray(data) ? data[0] : data;
+
+          setWallet(
+            walletRow
+              ? {
+                  id: String(walletRow.id),
+                  user_id: user.id,
+                  currency: String(walletRow.currency ?? "YER"),
+                  balance: Number(walletRow.balance ?? 0),
+                }
+              : null,
+          );
+        } catch (error) {
+          console.error(
+            "[MerchantDashboard] wallet load failed:",
+            error,
+          );
+
+          setWallet(null);
         }
 
-        if (itemsResult.error) {
-          throw itemsResult.error;
+        /*
+         * ------------------------------------------------------------
+         * 5. تحميل العمليات المالية بشكل مستقل
+         * ------------------------------------------------------------
+         *
+         * نستخدم الدالة الموجودة أصلًا في المشروع:
+         * fetchWalletTransactions
+         *
+         * ولا نجعل فشلها يؤدي إلى ظهور خطأ عام للوحة.
+         */
+        try {
+          const walletTransactions = await fetchWalletTransactions(
+            user.id,
+            "YER",
+          );
+
+          setTransactions(
+            Array.isArray(walletTransactions)
+              ? walletTransactions
+                  .slice(0, 8)
+                  .map((transaction: any) => ({
+                    id: String(transaction.id),
+                    amount: Number(transaction.amount ?? 0),
+                    kind: String(
+                      transaction.kind ??
+                        transaction.transaction_type ??
+                        "adjustment",
+                    ),
+                    transaction_type: String(
+                      transaction.transaction_type ??
+                        transaction.kind ??
+                        "adjustment",
+                    ),
+                    currency: String(
+                      transaction.currency ?? "YER",
+                    ),
+                    description: String(
+                      transaction.description ?? "",
+                    ),
+                    balance_before:
+                      transaction.balance_before == null
+                        ? null
+                        : Number(transaction.balance_before),
+                    balance_after:
+                      transaction.balance_after == null
+                        ? null
+                        : Number(transaction.balance_after),
+                    created_at: String(
+                      transaction.created_at ?? "",
+                    ),
+                  }))
+              : [],
+          );
+        } catch (error) {
+          console.error(
+            "[MerchantDashboard] wallet transactions load failed:",
+            error,
+          );
+
+          setTransactions([]);
         }
-
-        if (walletResult.error) {
-          throw walletResult.error;
-        }
-
-        const walletRow = Array.isArray(walletResult.data)
-          ? walletResult.data[0]
-          : walletResult.data;
-
-        setProducts(productsResult.data ?? []);
-        setOrderItems(itemsResult.data ?? []);
-
-        setWallet(
-          walletRow
-            ? {
-                id: String(walletRow.id),
-                user_id: String(walletRow.user_id),
-                currency: String(walletRow.currency ?? "YER"),
-                balance: Number(walletRow.balance ?? 0),
-              }
-            : null,
-        );
-
-        setTransactions(
-          (txResult ?? []).slice(0, 8) as WalletTransaction[],
-        );
       } catch (error) {
-        console.error("[MerchantDashboard] load failed:", error);
+        console.error(
+          "[MerchantDashboard] critical load failed:",
+          error,
+        );
 
-        toast.error("تعذّر تحميل لوحة إدارة التاجر.");
+        toast.error(
+          "تعذر تحميل بيانات متجر التاجر.",
+        );
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -274,12 +390,15 @@ export function MerchantDashboard({
     );
 
     const totalSales = validItems.reduce(
-      (sum, item) => sum + Number(item.unit_price) * Number(item.quantity),
+      (sum, item) =>
+        sum +
+        Number(item.unit_price) * Number(item.quantity),
       0,
     );
 
     const soldQuantity = validItems.reduce(
-      (sum, item) => sum + Number(item.quantity),
+      (sum, item) =>
+        sum + Number(item.quantity),
       0,
     );
 
@@ -288,39 +407,62 @@ export function MerchantDashboard({
     );
 
     const deliveredSales = deliveredItems.reduce(
-      (sum, item) => sum + Number(item.unit_price) * Number(item.quantity),
+      (sum, item) =>
+        sum +
+        Number(item.unit_price) * Number(item.quantity),
       0,
     );
 
     const pendingItems = orderItems.filter((item) =>
-      ["new", "accepted", "processing"].includes(item.vendor_status),
+      ["new", "accepted", "processing"].includes(
+        item.vendor_status,
+      ),
     );
 
     const shippingItems = orderItems.filter((item) =>
-      ["ready", "shipped"].includes(item.vendor_status),
+      ["ready", "shipped"].includes(
+        item.vendor_status,
+      ),
     );
 
     const activeProducts = products.filter(
       (product) => product.is_active,
     );
 
-    const lowStockProducts = products.filter((product) => {
-      const stock = Number(product.stock_left ?? 0);
-      const threshold = Number(product.low_stock_threshold ?? 0);
+    const lowStockProducts = products.filter(
+      (product) => {
+        const stock = Number(
+          product.stock_left ?? 0,
+        );
 
-      return product.is_active && stock <= threshold;
-    });
+        const threshold = Number(
+          product.low_stock_threshold ?? 0,
+        );
+
+        return (
+          product.is_active &&
+          stock <= threshold
+        );
+      },
+    );
 
     return {
       totalProducts: products.length,
       activeProducts: activeProducts.length,
-      lowStockProducts: lowStockProducts.length,
-      totalOrders: new Set(orderItems.map((item) => item.order_id)).size,
+      lowStockProducts:
+        lowStockProducts.length,
+      totalOrders: new Set(
+        orderItems.map(
+          (item) => item.order_id,
+        ),
+      ).size,
       totalSales,
       deliveredSales,
       soldQuantity,
-      pendingItems: pendingItems.length,
-      shippingItems: shippingItems.length,
+      pendingItems:
+        pendingItems.length,
+      shippingItems:
+        shippingItems.length,
     };
   }, [orderItems, products]);
 
@@ -343,18 +485,23 @@ export function MerchantDashboard({
     return [...products]
       .sort(
         (a, b) =>
-          Number(b.sales_count ?? 0) - Number(a.sales_count ?? 0),
+          Number(b.sales_count ?? 0) -
+          Number(a.sales_count ?? 0),
       )
       .slice(0, 5);
   }, [products]);
 
   const active = Boolean(
-    vendor?.is_active && vendor?.account_enabled,
+    vendor?.is_active &&
+      vendor?.account_enabled,
   );
 
   if (loading) {
     return (
-      <div dir="rtl" className="grid min-h-[60vh] place-items-center p-4">
+      <div
+        dir="rtl"
+        className="grid min-h-[60vh] place-items-center p-4"
+      >
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <RefreshCw className="h-4 w-4 animate-spin" />
           جارٍ تحميل لوحة التاجر...
@@ -365,7 +512,10 @@ export function MerchantDashboard({
 
   if (!vendor) {
     return (
-      <div dir="rtl" className="mx-auto max-w-3xl p-4">
+      <div
+        dir="rtl"
+        className="mx-auto max-w-3xl p-4"
+      >
         <div className="rounded-3xl border border-border bg-card p-8 text-center">
           <Store className="mx-auto h-12 w-12 text-muted-foreground/60" />
 
@@ -408,10 +558,15 @@ export function MerchantDashboard({
                 >
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      active ? "bg-emerald-500" : "bg-destructive"
+                      active
+                        ? "bg-emerald-500"
+                        : "bg-destructive"
                     }`}
                   />
-                  {active ? "المتجر مفعّل" : "المتجر غير مفعّل"}
+
+                  {active
+                    ? "المتجر مفعّل"
+                    : "المتجر غير مفعّل"}
                 </span>
               </div>
 
@@ -427,7 +582,9 @@ export function MerchantDashboard({
               {vendor.city ? (
                 <p className="mt-2 text-xs text-muted-foreground">
                   {vendor.city}
-                  {vendor.phone ? ` • ${vendor.phone}` : ""}
+                  {vendor.phone
+                    ? ` • ${vendor.phone}`
+                    : ""}
                 </p>
               ) : null}
             </div>
@@ -435,15 +592,20 @@ export function MerchantDashboard({
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => void loadDashboard(true)}
+                onClick={() =>
+                  void loadDashboard(true)
+                }
                 disabled={refreshing}
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-border bg-background px-4 text-xs font-bold transition hover:bg-secondary disabled:opacity-60"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${
-                    refreshing ? "animate-spin" : ""
+                    refreshing
+                      ? "animate-spin"
+                      : ""
                   }`}
                 />
+
                 تحديث البيانات
               </button>
 
@@ -480,7 +642,9 @@ export function MerchantDashboard({
         <StatCard
           icon={ShoppingBag}
           label="إجمالي المبيعات"
-          value={formatPrice(statistics.totalSales)}
+          value={formatPrice(
+            statistics.totalSales,
+          )}
           helper={`${statistics.soldQuantity} قطعة مباعة`}
           accent="primary"
         />
@@ -502,7 +666,9 @@ export function MerchantDashboard({
         <StatCard
           icon={Wallet}
           label="رصيد المحفظة"
-          value={formatPrice(wallet?.balance ?? 0)}
+          value={formatPrice(
+            wallet?.balance ?? 0,
+          )}
           helper="بالريال اليمني"
           accent="emerald"
         />
@@ -512,7 +678,10 @@ export function MerchantDashboard({
         <div className="rounded-3xl border border-border bg-card p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-black">مؤشرات المتجر</h2>
+              <h2 className="font-black">
+                مؤشرات المتجر
+              </h2>
+
               <p className="mt-1 text-[10px] text-muted-foreground">
                 ملخص مباشر من بيانات المتجر الحالية
               </p>
@@ -524,21 +693,30 @@ export function MerchantDashboard({
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <MetricBox
               label="مبيعات مكتملة"
-              value={formatPrice(statistics.deliveredSales)}
+              value={formatPrice(
+                statistics.deliveredSales,
+              )}
               icon={CheckCircle2}
             />
 
             <MetricBox
               label="جاهزة/مشحونة"
-              value={statistics.shippingItems}
+              value={
+                statistics.shippingItems
+              }
               icon={Package}
             />
 
             <MetricBox
               label="مخزون منخفض"
-              value={statistics.lowStockProducts}
+              value={
+                statistics.lowStockProducts
+              }
               icon={AlertTriangle}
-              danger={statistics.lowStockProducts > 0}
+              danger={
+                statistics.lowStockProducts >
+                0
+              }
             />
           </div>
         </div>
@@ -560,7 +738,9 @@ export function MerchantDashboard({
           </p>
 
           <p className="mt-1 text-2xl font-black">
-            {formatPrice(wallet?.balance ?? 0)}
+            {formatPrice(
+              wallet?.balance ?? 0,
+            )}
           </p>
 
           <p className="mt-2 text-[10px] leading-5 text-muted-foreground">
@@ -614,7 +794,9 @@ export function MerchantDashboard({
 
                     <p className="mt-1 text-[10px] text-muted-foreground">
                       الكمية: {item.quantity} •{" "}
-                      {formatRelativeDate(item.vendor_updated_at)}
+                      {formatRelativeDate(
+                        item.vendor_updated_at,
+                      )}
                     </p>
                   </div>
 
@@ -624,13 +806,20 @@ export function MerchantDashboard({
                         item.vendor_status,
                       )}`}
                     >
-                      {vendorStatusLabels[item.vendor_status] ??
+                      {vendorStatusLabels[
+                        item.vendor_status
+                      ] ??
                         item.vendor_status}
                     </span>
 
                     <p className="mt-1 text-[10px] font-bold">
                       {formatPrice(
-                        Number(item.unit_price) * Number(item.quantity),
+                        Number(
+                          item.unit_price,
+                        ) *
+                          Number(
+                            item.quantity,
+                          ),
                       )}
                     </p>
                   </div>
@@ -655,44 +844,53 @@ export function MerchantDashboard({
             />
           ) : (
             <div className="space-y-2">
-              {bestSellingProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex items-center gap-3 rounded-2xl border border-border p-3"
-                >
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-secondary">
-                    {getProductImage(product) ? (
-                      <img
-                        src={getProductImage(product)}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <Package className="m-auto mt-3 h-6 w-6 text-muted-foreground" />
-                    )}
+              {bestSellingProducts.map(
+                (product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center gap-3 rounded-2xl border border-border p-3"
+                  >
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-secondary">
+                      {getProductImage(
+                        product,
+                      ) ? (
+                        <img
+                          src={getProductImage(
+                            product,
+                          )}
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Package className="m-auto mt-3 h-6 w-6 text-muted-foreground" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-bold">
+                        {product.name}
+                      </p>
+
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        المخزون:{" "}
+                        {product.stock_left ??
+                          0}
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 text-left">
+                      <p className="text-xs font-black">
+                        {product.sales_count ??
+                          0}
+                      </p>
+
+                      <p className="text-[9px] text-muted-foreground">
+                        مبيعات
+                      </p>
+                    </div>
                   </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-bold">
-                      {product.name}
-                    </p>
-
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      المخزون: {product.stock_left ?? 0}
-                    </p>
-                  </div>
-
-                  <div className="shrink-0 text-left">
-                    <p className="text-xs font-black">
-                      {product.sales_count ?? 0}
-                    </p>
-
-                    <p className="text-[9px] text-muted-foreground">
-                      مبيعات
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           )}
         </DashboardPanel>
@@ -726,8 +924,14 @@ export function MerchantDashboard({
                 .filter(
                   (product) =>
                     product.is_active &&
-                    Number(product.stock_left ?? 0) <=
-                      Number(product.low_stock_threshold ?? 0),
+                    Number(
+                      product.stock_left ??
+                        0,
+                    ) <=
+                      Number(
+                        product.low_stock_threshold ??
+                          0,
+                      ),
                 )
                 .slice(0, 6)
                 .map((product) => (
@@ -744,7 +948,9 @@ export function MerchantDashboard({
                     </div>
 
                     <span className="shrink-0 text-[10px] font-black text-amber-600">
-                      {product.stock_left ?? 0} متبقي
+                      {product.stock_left ??
+                        0}{" "}
+                      متبقي
                     </span>
                   </div>
                 ))}
@@ -767,49 +973,61 @@ export function MerchantDashboard({
             />
           ) : (
             <div className="space-y-2">
-              {transactions.slice(0, 6).map((transaction) => {
-                const credit =
-                  transaction.transaction_type === "credit";
+              {transactions
+                .slice(0, 6)
+                .map((transaction) => {
+                  const credit =
+                    transaction.transaction_type ===
+                    "credit";
 
-                return (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center gap-3 rounded-2xl border border-border p-3"
-                  >
+                  return (
                     <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                        credit
-                          ? "bg-emerald-500/10 text-emerald-600"
-                          : "bg-destructive/10 text-destructive"
-                      }`}
+                      key={transaction.id}
+                      className="flex items-center gap-3 rounded-2xl border border-border p-3"
                     >
-                      <Wallet className="h-4 w-4" />
-                    </div>
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                          credit
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
+                      >
+                        <Wallet className="h-4 w-4" />
+                      </div>
 
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold">
-                        {transaction.description || transaction.kind}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-bold">
+                          {transaction.description ||
+                            transaction.kind}
+                        </p>
+
+                        <p className="mt-1 text-[9px] text-muted-foreground">
+                          {formatRelativeDate(
+                            transaction.created_at,
+                          )}
+                        </p>
+                      </div>
+
+                      <p
+                        dir="ltr"
+                        className={`shrink-0 text-xs font-black ${
+                          credit
+                            ? "text-emerald-600"
+                            : "text-destructive"
+                        }`}
+                      >
+                        {credit ? "+" : "-"}
+                        {formatPrice(
+                          Math.abs(
+                            Number(
+                              transaction.amount,
+                            ),
+                          ),
+                        )}
                       </p>
-
-                      <p className="mt-1 text-[9px] text-muted-foreground">
-                        {formatRelativeDate(transaction.created_at)}
-                      </p>
                     </div>
-
-                    <p
-                      dir="ltr"
-                      className={`shrink-0 text-xs font-black ${
-                        credit
-                          ? "text-emerald-600"
-                          : "text-destructive"
-                      }`}
-                    >
-                      {credit ? "+" : "-"}
-                      {formatPrice(Math.abs(Number(transaction.amount)))}
-                    </p>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           )}
         </DashboardPanel>
@@ -933,7 +1151,9 @@ function MetricBox({
       <div className="flex items-center gap-2">
         <Icon
           className={`h-4 w-4 ${
-            danger ? "text-amber-500" : "text-primary"
+            danger
+              ? "text-amber-500"
+              : "text-primary"
           }`}
         />
 
@@ -942,7 +1162,9 @@ function MetricBox({
         </span>
       </div>
 
-      <p className="mt-2 text-base font-black">{value}</p>
+      <p className="mt-2 text-base font-black">
+        {value}
+      </p>
     </div>
   );
 }
@@ -958,7 +1180,10 @@ function DashboardPanel({
   title: string;
   subtitle: string;
   actionLabel: string;
-  actionTo: "/merchant" | "/merchant/orders" | "/wallet";
+  actionTo:
+    | "/merchant"
+    | "/merchant/orders"
+    | "/wallet";
   icon: typeof Package;
   children: React.ReactNode;
 }) {
@@ -971,7 +1196,9 @@ function DashboardPanel({
           </span>
 
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-black">{title}</h2>
+            <h2 className="truncate text-sm font-black">
+              {title}
+            </h2>
 
             <p className="mt-1 truncate text-[9px] text-muted-foreground">
               {subtitle}
@@ -1006,7 +1233,9 @@ function EmptyState({
     <div className="rounded-2xl border border-dashed border-border p-7 text-center">
       <Icon className="mx-auto h-8 w-8 text-muted-foreground/50" />
 
-      <p className="mt-3 text-xs font-bold">{title}</p>
+      <p className="mt-3 text-xs font-bold">
+        {title}
+      </p>
 
       <p className="mx-auto mt-1 max-w-sm text-[10px] leading-5 text-muted-foreground">
         {description}
@@ -1021,7 +1250,10 @@ function QuickAction({
   title,
   description,
 }: {
-  to: "/merchant" | "/merchant/orders" | "/wallet";
+  to:
+    | "/merchant"
+    | "/merchant/orders"
+    | "/wallet";
   icon: typeof Package;
   title: string;
   description: string;
@@ -1033,7 +1265,9 @@ function QuickAction({
     >
       <Icon className="h-5 w-5 text-primary transition group-hover:scale-105" />
 
-      <p className="mt-4 text-xs font-black">{title}</p>
+      <p className="mt-4 text-xs font-black">
+        {title}
+      </p>
 
       <p className="mt-1 text-[9px] leading-5 text-muted-foreground">
         {description}
