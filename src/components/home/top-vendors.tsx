@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { MapPin, Store } from "lucide-react";
+import {
+  MapPin,
+  Store,
+} from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { SectionHeading } from "@/components/section-heading";
@@ -9,6 +12,8 @@ type TopVendor = {
   id: string;
   name: string;
   city: string;
+  is_active: boolean;
+  account_enabled: boolean;
   productCount: number;
 };
 
@@ -17,14 +22,21 @@ async function fetchTopVendors(): Promise<
 > {
   const {
     data: vendors,
-    error,
+    error: vendorsError,
   } = await supabase
-    .from("public_vendor_directory")
-    .select("id,name,city")
+    .from("vendors")
+    .select(
+      "id,name,city,is_active,account_enabled",
+    )
+    .eq("is_active", true)
+    .eq("account_enabled", true)
+    .order("created_at", {
+      ascending: false,
+    })
     .limit(12);
 
-  if (error) {
-    throw error;
+  if (vendorsError) {
+    throw vendorsError;
   }
 
   const list = vendors ?? [];
@@ -33,25 +45,33 @@ async function fetchTopVendors(): Promise<
     return [];
   }
 
+  const vendorIds = list.map(
+    (vendor) => vendor.id,
+  );
+
   const {
     data: products,
+    error: productsError,
   } = await supabase
     .from("products")
     .select("vendor_id")
     .eq("is_active", true)
     .in(
       "vendor_id",
-      list.map(
-        (vendor) => vendor.id,
-      ),
+      vendorIds,
     );
+
+  if (productsError) {
+    console.warn(
+      "[TopVendors] Failed to load product counts:",
+      productsError,
+    );
+  }
 
   const counts =
     new Map<string, number>();
 
-  for (
-    const row of products ?? []
-  ) {
+  for (const row of products ?? []) {
     if (!row.vendor_id) {
       continue;
     }
@@ -67,7 +87,6 @@ async function fetchTopVendors(): Promise<
   return list
     .map((vendor) => ({
       ...vendor,
-
       productCount:
         counts.get(
           vendor.id,
@@ -85,6 +104,7 @@ export function TopVendors() {
   const {
     data: vendors = [],
     isLoading,
+    isError,
   } = useQuery({
     queryKey: [
       "top-vendors",
@@ -95,10 +115,16 @@ export function TopVendors() {
 
     staleTime:
       5 * 60_000,
+
+    gcTime:
+      30 * 60_000,
+
+    retry: 1,
   });
 
   if (
     isLoading ||
+    isError ||
     vendors.length === 0
   ) {
     return null;
@@ -119,7 +145,22 @@ export function TopVendors() {
               params={{
                 id: vendor.id,
               }}
-              className="flex w-[150px] shrink-0 flex-col gap-2 rounded-2xl border border-border bg-card p-3 shadow-sm transition-transform active:scale-95"
+              className="
+                flex
+                w-[150px]
+                shrink-0
+                flex-col
+                gap-2
+                rounded-2xl
+                border
+                border-border
+                bg-card
+                p-3
+                shadow-sm
+                transition-transform
+                active:scale-95
+                hover:-translate-y-0.5
+              "
             >
               <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
                 <Store className="h-5 w-5" />
