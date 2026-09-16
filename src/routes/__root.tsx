@@ -70,6 +70,10 @@ import {
 } from "@/components/app-splash";
 
 import {
+  RealtimeSync,
+} from "@/components/realtime-sync";
+
+import {
   registerPushNotifications,
 } from "@/lib/push";
 
@@ -1571,6 +1575,8 @@ function RootComponent() {
         queryClient
       }
     >
+      <RealtimeSync />
+
       <AuthProvider>
         <CurrencyProvider>
           <WishlistProvider>
