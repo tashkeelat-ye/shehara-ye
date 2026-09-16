@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { uploadMedia } from "@/lib/media";
+
 import {
   fetchSettings,
   type Banner4to1,
@@ -31,9 +33,19 @@ import {
   inputCls,
 } from "@/components/admin-ui";
 
-type DraftBanner = Banner4to1 & {
-  localPreview?: string;
-  uploading?: boolean;
+type DraftBanner =
+  Banner4to1 & {
+    localPreview?: string;
+    uploading?: boolean;
+  };
+
+type RealtimeDetail = {
+  table: string;
+  eventType?:
+    | "INSERT"
+    | "UPDATE"
+    | "DELETE"
+    | "*";
 };
 
 export function Banners4to1Manager() {
@@ -60,82 +72,178 @@ export function Banners4to1Manager() {
       >
     >({});
 
+  /**
+   * =========================================================
+   * تحميل الشرائح
+   * =========================================================
+   */
+
+  const load = useCallback(
+    async () => {
+      setLoading(true);
+
+      try {
+        const settings =
+          await fetchSettings();
+
+        setBanners(
+          (
+            settings?.custom_banners_4to1 ??
+            []
+          ).map(
+            (banner) => ({
+              image:
+                banner.image ??
+                "",
+              link:
+                banner.link ??
+                "",
+              title:
+                banner.title ??
+                "",
+            }),
+          ),
+        );
+      } catch (error) {
+        console.error(
+          "[Banners4to1Manager] load:",
+          error,
+        );
+
+        toast.error(
+          "تعذر تحميل شرائح 4:1.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  /**
+   * =========================================================
+   * التحميل الأولي
+   * =========================================================
+   */
+
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
-  async function load() {
-    setLoading(true);
+  /**
+   * =========================================================
+   * Realtime
+   *
+   * إذا قام مدير آخر أو جلسة أخرى بتعديل الشرائح،
+   * يتم تحديث هذه الواجهة تلقائياً.
+   * =========================================================
+   */
 
-    try {
-      const settings =
-        await fetchSettings();
+  useEffect(() => {
+    const handleRealtime =
+      (
+        event: Event,
+      ) => {
+        const customEvent =
+          event as CustomEvent<RealtimeDetail>;
 
-      setBanners(
-        (
-          settings?.custom_banners_4to1 ??
-          []
-        ).map((banner) => ({
-          image:
-            banner.image ?? "",
-          link:
-            banner.link ?? "",
-          title:
-            banner.title ?? "",
-        })),
+        if (
+          customEvent.detail?.table !==
+          "site_settings"
+        ) {
+          return;
+        }
+
+        void load();
+      };
+
+    window.addEventListener(
+      "shehara:realtime",
+      handleRealtime,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "shehara:realtime",
+        handleRealtime,
       );
-    } catch (error) {
-      console.error(
-        "[Banners4to1Manager] load:",
-        error,
-      );
+    };
+  }, [load]);
 
-      toast.error(
-        "تعذر تحميل شرائح 4:1.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+  /**
+   * =========================================================
+   * إضافة شريحة
+   * =========================================================
+   */
 
   function addBanner() {
-    setBanners((current) => [
-      ...current,
-      {
-        image: "",
-        link: "",
-        title: "",
-      },
-    ]);
+    setBanners(
+      (current) => [
+        ...current,
+        {
+          image: "",
+          link: "",
+          title: "",
+        },
+      ],
+    );
   }
+
+  /**
+   * =========================================================
+   * حذف شريحة من المسودة
+   * =========================================================
+   */
 
   function removeBanner(
     index: number,
   ) {
-    setBanners((current) =>
-      current.filter(
-        (_, itemIndex) =>
-          itemIndex !== index,
-      ),
+    setBanners(
+      (current) =>
+        current.filter(
+          (
+            _,
+            itemIndex,
+          ) =>
+            itemIndex !==
+            index,
+        ),
     );
   }
+
+  /**
+   * =========================================================
+   * تحديث شريحة
+   * =========================================================
+   */
 
   function updateBanner(
     index: number,
     patch: Partial<DraftBanner>,
   ) {
-    setBanners((current) =>
-      current.map(
-        (banner, itemIndex) =>
-          itemIndex === index
-            ? {
-                ...banner,
-                ...patch,
-              }
-            : banner,
-      ),
+    setBanners(
+      (current) =>
+        current.map(
+          (
+            banner,
+            itemIndex,
+          ) =>
+            itemIndex ===
+            index
+              ? {
+                  ...banner,
+                  ...patch,
+                }
+              : banner,
+        ),
     );
   }
+
+  /**
+   * =========================================================
+   * رفع صورة
+   * =========================================================
+   */
 
   async function handleUpload(
     index: number,
@@ -153,12 +261,19 @@ export function Banners4to1Manager() {
     }
 
     const preview =
-      URL.createObjectURL(file);
+      URL.createObjectURL(
+        file,
+      );
 
-    updateBanner(index, {
-      localPreview: preview,
-      uploading: true,
-    });
+    updateBanner(
+      index,
+      {
+        localPreview:
+          preview,
+        uploading:
+          true,
+      },
+    );
 
     try {
       const url =
@@ -168,20 +283,35 @@ export function Banners4to1Manager() {
           "home/4to1",
         );
 
-      updateBanner(index, {
-        image: url,
-        localPreview: undefined,
-        uploading: false,
-      });
+      updateBanner(
+        index,
+        {
+          image:
+            url,
+          localPreview:
+            undefined,
+          uploading:
+            false,
+        },
+      );
+
+      URL.revokeObjectURL(
+        preview,
+      );
 
       toast.success(
         "تم رفع صورة الشريحة بنجاح.",
       );
     } catch (error) {
-      updateBanner(index, {
-        localPreview: undefined,
-        uploading: false,
-      });
+      updateBanner(
+        index,
+        {
+          localPreview:
+            undefined,
+          uploading:
+            false,
+        },
+      );
 
       URL.revokeObjectURL(
         preview,
@@ -194,6 +324,12 @@ export function Banners4to1Manager() {
       );
     }
   }
+
+  /**
+   * =========================================================
+   * حفظ جميع الشرائح
+   * =========================================================
+   */
 
   async function save() {
     const invalid =
@@ -227,10 +363,13 @@ export function Banners4to1Manager() {
       const {
         data: existing,
         error: findError,
-      } = await supabase
-        .from("site_settings")
-        .select("id")
-        .maybeSingle();
+      } =
+        await supabase
+          .from(
+            "site_settings",
+          )
+          .select("id")
+          .maybeSingle();
 
       if (findError) {
         throw findError;
@@ -246,14 +385,18 @@ export function Banners4to1Manager() {
             image:
               image.trim(),
             link:
-              link?.trim() ?? "",
+              link?.trim() ??
+              "",
             title:
-              title?.trim() ?? "",
+              title?.trim() ??
+              "",
           }),
         );
 
       if (existing) {
-        const { error } =
+        const {
+          error,
+        } =
           await supabase
             .from(
               "site_settings",
@@ -271,7 +414,9 @@ export function Banners4to1Manager() {
           throw error;
         }
       } else {
-        const { error } =
+        const {
+          error,
+        } =
           await supabase
             .from(
               "site_settings",
@@ -289,6 +434,12 @@ export function Banners4to1Manager() {
       toast.success(
         "تم حفظ شرائح 4:1 بنجاح.",
       );
+
+      /*
+       * لا نعتمد على Realtime وحده لتحديث
+       * نفس جلسة الإدارة فوراً.
+       */
+      await load();
     } catch (error) {
       console.error(
         "[Banners4to1Manager] save:",
@@ -305,6 +456,12 @@ export function Banners4to1Manager() {
     }
   }
 
+  /**
+   * =========================================================
+   * حالة التحميل
+   * =========================================================
+   */
+
   if (loading) {
     return (
       <div className="p-8 text-center text-xs text-muted-foreground">
@@ -312,6 +469,12 @@ export function Banners4to1Manager() {
       </div>
     );
   }
+
+  /**
+   * =========================================================
+   * الواجهة
+   * =========================================================
+   */
 
   return (
     <AdminCard
@@ -323,7 +486,9 @@ export function Banners4to1Manager() {
           onClick={() =>
             void save()
           }
-          disabled={saving}
+          disabled={
+            saving
+          }
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -352,7 +517,13 @@ export function Banners4to1Manager() {
             return (
               <div
                 key={index}
-                className="overflow-hidden rounded-2xl border border-border/70 bg-secondary/20"
+                className="
+                  overflow-hidden
+                  rounded-2xl
+                  border
+                  border-border/70
+                  bg-secondary/20
+                "
               >
                 <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
                   <span className="text-xs font-black">
@@ -371,7 +542,17 @@ export function Banners4to1Manager() {
                         index,
                       )
                     }
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-destructive/30 text-destructive"
+                    className="
+                      inline-flex
+                      h-9
+                      w-9
+                      items-center
+                      justify-center
+                      rounded-xl
+                      border
+                      border-destructive/30
+                      text-destructive
+                    "
                     aria-label="حذف الشريحة"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -379,11 +560,13 @@ export function Banners4to1Manager() {
                 </div>
 
                 <div className="p-4">
-                  <div className="mb-4 overflow-hidden rounded-2xl border border-border bg-muted">
+                  <div className="relative mb-4 overflow-hidden rounded-2xl border border-border bg-muted">
                     <div className="aspect-[4/1]">
                       {preview ? (
                         <img
-                          src={preview}
+                          src={
+                            preview
+                          }
                           alt={
                             banner.title ||
                             "معاينة الشريحة"
@@ -394,13 +577,25 @@ export function Banners4to1Manager() {
                         <button
                           type="button"
                           onClick={() =>
-                            fileRefs.current[
-                              index
-                            ]?.click()
+                            fileRefs
+                              .current[
+                                index
+                              ]
+                              ?.click()
                           }
-                          className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground"
+                          className="
+                            flex
+                            h-full
+                            w-full
+                            flex-col
+                            items-center
+                            justify-center
+                            gap-2
+                            text-muted-foreground
+                          "
                         >
                           <ImagePlus className="h-8 w-8" />
+
                           <span className="text-xs font-bold">
                             اختر صورة 4:1
                           </span>
@@ -418,12 +613,16 @@ export function Banners4to1Manager() {
                   <div className="grid gap-3 md:grid-cols-3">
                     <Field label="عنوان الشريحة">
                       <input
-                        className={inputCls}
+                        className={
+                          inputCls
+                        }
                         value={
                           banner.title ||
                           ""
                         }
-                        maxLength={120}
+                        maxLength={
+                          120
+                        }
                         placeholder="عنوان اختياري"
                         onChange={(
                           event,
@@ -444,12 +643,16 @@ export function Banners4to1Manager() {
                     <Field label="رابط الوجهة">
                       <input
                         dir="ltr"
-                        className={inputCls}
+                        className={
+                          inputCls
+                        }
                         value={
                           banner.link ||
                           ""
                         }
-                        maxLength={300}
+                        maxLength={
+                          300
+                        }
                         placeholder="/products"
                         onChange={(
                           event,
@@ -469,10 +672,13 @@ export function Banners4to1Manager() {
 
                     <Field label="الصورة">
                       <input
-                        ref={(element) => {
-                          fileRefs.current[
-                            index
-                          ] =
+                        ref={(
+                          element,
+                        ) => {
+                          fileRefs
+                            .current[
+                              index
+                            ] =
                             element;
                         }}
                         type="file"
@@ -506,9 +712,11 @@ export function Banners4to1Manager() {
                           banner.uploading
                         }
                         onClick={() =>
-                          fileRefs.current[
-                            index
-                          ]?.click()
+                          fileRefs
+                            .current[
+                              index
+                            ]
+                            ?.click()
                         }
                         className={`${btnGhostCls} w-full`}
                       >
@@ -537,15 +745,24 @@ export function Banners4to1Manager() {
                           updateBanner(
                             index,
                             {
-                              image: "",
+                              image:
+                                "",
                               localPreview:
                                 undefined,
                             },
                           )
                         }
-                        className="inline-flex items-center gap-1 text-[10px] font-bold text-destructive"
+                        className="
+                          inline-flex
+                          items-center
+                          gap-1
+                          text-[10px]
+                          font-bold
+                          text-destructive
+                        "
                       >
                         <X className="h-3.5 w-3.5" />
+
                         إزالة
                       </button>
                     </div>
@@ -558,10 +775,28 @@ export function Banners4to1Manager() {
 
         <button
           type="button"
-          onClick={addBanner}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/40 bg-primary/5 text-xs font-bold text-primary"
+          onClick={
+            addBanner
+          }
+          className="
+            flex
+            h-12
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-2xl
+            border
+            border-dashed
+            border-primary/40
+            bg-primary/5
+            text-xs
+            font-bold
+            text-primary
+          "
         >
           <Plus className="h-4 w-4" />
+
           إضافة شريحة جديدة
         </button>
       </div>
