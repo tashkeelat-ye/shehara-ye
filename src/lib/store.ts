@@ -128,6 +128,22 @@ export type PaymentRequest = {
   updated_at: string | null;
 };
 
+export type HomeSectionType =
+  | "banner_sub"
+  | "banner_main_copy"
+  | "best_sellers"
+  | "new_products"
+  | "popular_categories";
+
+export type HomeSection = {
+  id: string;
+  section_key: string;
+  title: string;
+  sort_order: number;
+  is_active: boolean;
+  section_type: HomeSectionType;
+};
+
 const SETTINGS_COLUMNS =
   "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee,sar_rate,is_open,closed_message,announcement_text,announcement_link,announcement_active,custom_banners_4to1";
 
@@ -142,6 +158,9 @@ const WALLET_TRANSACTION_COLUMNS =
 
 const PAYMENT_REQUEST_COLUMNS =
   "id,user_id,purpose,order_id,method_code,amount,currency,sender_name,sender_phone,reference,receipt_path,status,admin_note,reviewed_at,created_at,updated_at";
+
+const HOME_SECTION_COLUMNS =
+  "id,section_key,title,sort_order,is_active,section_type";
 
 export async function fetchSettings(): Promise<SiteSettings | null> {
   const { data } = await supabase
@@ -159,8 +178,12 @@ export async function fetchSettings(): Promise<SiteSettings | null> {
   };
 }
 
-export async function fetchBanners(onlyActive = true): Promise<Banner[]> {
-  let q = supabase.from("banners").select(BANNER_COLUMNS);
+export async function fetchBanners(
+  onlyActive = true,
+): Promise<Banner[]> {
+  let q = supabase
+    .from("banners")
+    .select(BANNER_COLUMNS);
 
   if (onlyActive) {
     q = q.eq("is_active", true);
@@ -254,7 +277,9 @@ export async function fetchPaymentRequests(
   let q = supabase
     .from("payment_requests")
     .select(PAYMENT_REQUEST_COLUMNS)
-    .order("created_at", { ascending: false });
+    .order("created_at", {
+      ascending: false,
+    });
 
   if (userId) {
     q = q.eq("user_id", userId);
@@ -264,7 +289,10 @@ export async function fetchPaymentRequests(
     q = q.eq("purpose", purpose);
   }
 
-  const { data, error } = await q.returns<PaymentRequest[]>();
+  const {
+    data,
+    error,
+  } = await q.returns<PaymentRequest[]>();
 
   if (error) {
     throw error;
@@ -281,13 +309,18 @@ export async function fetchWalletTransactions(
     .from("wallet_transactions")
     .select(WALLET_TRANSACTION_COLUMNS)
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", {
+      ascending: false,
+    });
 
   if (currency) {
     q = q.eq("currency", currency);
   }
 
-  const { data, error } = await q.returns<WalletTransaction[]>();
+  const {
+    data,
+    error,
+  } = await q.returns<WalletTransaction[]>();
 
   if (error) {
     throw error;
@@ -296,7 +329,10 @@ export async function fetchWalletTransactions(
   return data ?? [];
 }
 
-export const ORDER_STATUS_LABELS: Record<string, string> = {
+export const ORDER_STATUS_LABELS: Record<
+  string,
+  string
+> = {
   pending: "بانتظار التأكيد",
   awaiting_payment: "بانتظار تأكيد الدفع",
   confirmed: "تم التأكيد",
@@ -306,20 +342,29 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
   cancelled: "ملغي",
 };
 
-export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+export const PAYMENT_STATUS_LABELS: Record<
+  string,
+  string
+> = {
   unpaid: "غير مدفوع",
   pending: "بانتظار تأكيد الدفع",
   paid: "مدفوع",
   rejected: "تم رفض الدفع",
 };
 
-export const PAYMENT_REQUEST_PURPOSE_LABELS: Record<string, string> = {
+export const PAYMENT_REQUEST_PURPOSE_LABELS: Record<
+  string,
+  string
+> = {
   topup: "شحن رصيد",
   order: "دفع طلب",
   refund: "استرداد",
 };
 
-export const PAYMENT_REQUEST_STATUS_LABELS: Record<string, string> = {
+export const PAYMENT_REQUEST_STATUS_LABELS: Record<
+  string,
+  string
+> = {
   pending: "قيد المراجعة",
   approved: "مقبول",
   rejected: "مرفوض",
@@ -334,47 +379,50 @@ export const WALLET_TRANSACTION_TYPE_LABELS: Record<
 };
 
 export function formatDate(value: string) {
-  return new Date(value).toLocaleDateString("ar-EG", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  return new Date(value).toLocaleDateString(
+    "ar-EG",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    },
+  );
 }
 
 export function formatDateTime(value: string) {
-  return new Date(value).toLocaleString("ar-EG", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Date(value).toLocaleString(
+    "ar-EG",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  );
 }
-
-export type HomeSection = {
-  id: string;
-  section_key: string;
-  title: string;
-  sort_order: number;
-  is_active: boolean;
-};
 
 export async function fetchHomeSections(
   onlyActive = true,
 ): Promise<HomeSection[]> {
   let q = supabase
     .from("home_sections")
-    .select(
-      "id,section_key,title,sort_order,is_active",
-    );
+    .select(HOME_SECTION_COLUMNS);
 
   if (onlyActive) {
     q = q.eq("is_active", true);
   }
 
-  const { data } = await q
+  const {
+    data,
+    error,
+  } = await q
     .order("sort_order")
     .returns<HomeSection[]>();
+
+  if (error) {
+    throw error;
+  }
 
   return data ?? [];
 }
@@ -382,10 +430,18 @@ export async function fetchHomeSections(
 export async function updateHomeSection(
   id: string,
   patch: Partial<
-    Pick<HomeSection, "title" | "sort_order" | "is_active">
+    Pick<
+      HomeSection,
+      | "title"
+      | "sort_order"
+      | "is_active"
+      | "section_type"
+    >
   >,
 ) {
-  const { error } = await supabase
+  const {
+    error,
+  } = await supabase
     .from("home_sections")
     .update(patch)
     .eq("id", id);
