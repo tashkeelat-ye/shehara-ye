@@ -1,5 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import {
+  Bike,
+  CheckCircle2,
+  KeyRound,
+  Pencil,
+  Plus,
+  Search,
+  ShieldCheck,
+  UserCheck,
+  UserX,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -13,14 +30,17 @@ import {
 import { YEMEN_GOVERNORATES } from "@/lib/yemen";
 
 import {
-  createManagedAccount,
-  resetManagedAccountPassword,
-  setManagedAccountDisabled,
-} from "@/lib/admin.functions";
+  createCourierAccount,
+  listCourierAccounts,
+  resetCourierPassword,
+  setCourierAccountEnabled,
+  setCourierActive,
+  updateCourierAccount,
+} from "@/lib/courier-admin.functions";
 
-import { supabase } from "@/integrations/supabase/client";
-
-export const Route = createFileRoute("/admin/couriers")({
+export const Route = createFileRoute(
+  "/admin/couriers",
+)({
   component: AdminCouriers,
 });
 
@@ -32,18 +52,18 @@ type CourierRow = {
   city: string | null;
   is_active: boolean;
   account_enabled: boolean;
-  created_at?: string | null;
+  created_at: string | null;
   orders_count: number;
 };
 
-type CourierForm = {
+type FormState = {
   name: string;
   phone: string;
   city: string;
   password: string;
 };
 
-const EMPTY_FORM: CourierForm = {
+const EMPTY_FORM: FormState = {
   name: "",
   phone: "",
   city: "",
@@ -51,11 +71,9 @@ const EMPTY_FORM: CourierForm = {
 };
 
 function AdminCouriers() {
-  const [rows, setRows] = useState<CourierRow[]>([]);
-  const [form, setForm] =
-    useState<CourierForm>(EMPTY_FORM);
-
-  const [search, setSearch] = useState("");
+  const [rows, setRows] = useState<CourierRow[]>(
+    [],
+  );
 
   const [loading, setLoading] =
     useState(true);
@@ -63,8 +81,19 @@ function AdminCouriers() {
   const [saving, setSaving] =
     useState(false);
 
-  const [actionId, setActionId] =
-    useState<string | null>(null);
+  const [search, setSearch] =
+    useState("");
+
+  const [showForm, setShowForm] =
+    useState(false);
+
+  const [editing, setEditing] =
+    useState<CourierRow | null>(null);
+
+  const [form, setForm] =
+    useState<FormState>(
+      EMPTY_FORM,
+    );
 
   const [resetRow, setResetRow] =
     useState<CourierRow | null>(null);
@@ -72,105 +101,22 @@ function AdminCouriers() {
   const [resetPassword, setResetPassword] =
     useState("");
 
-  const [resettingPassword, setResettingPassword] =
+  const [resetting, setResetting] =
     useState(false);
 
-  /**
-   * =========================================================
-   * تحميل عمال التوصيل
-   * =========================================================
-   */
+  const [actionId, setActionId] =
+    useState<string | null>(null);
 
   const load = useCallback(
     async () => {
       setLoading(true);
 
       try {
-        const {
-          data,
-          error,
-        } = await supabase
-          .from("couriers")
-          .select(
-            "id,user_id,name,phone,city,is_active,account_enabled,created_at",
-          )
-          .order("name");
-
-        if (error) {
-          throw error;
-        }
-
-        const courierRows =
-          (data ?? []) as Array<
-            Omit<
-              CourierRow,
-              "orders_count"
-            >
-          >;
-
-        /**
-         * orders يحتوي على courier_id بالفعل.
-         *
-         * لا نفترض وجود أعمدة أخرى داخل orders.
-         */
-        const {
-          data: orders,
-          error:
-            ordersError,
-        } = await supabase
-          .from("orders")
-          .select("courier_id")
-          .not(
-            "courier_id",
-            "is",
-            null,
-          );
-
-        if (ordersError) {
-          /**
-           * في حال تعذر تحميل إحصائيات الطلبات،
-           * لا نفشل صفحة المندوبين بالكامل.
-           */
-          console.error(
-            "[AdminCouriers] Orders statistics error:",
-            ordersError,
-          );
-        }
-
-        const counts =
-          new Map<
-            string,
-            number
-          >();
-
-        for (
-          const order of
-            orders ?? []
-        ) {
-          if (
-            !order.courier_id
-          ) {
-            continue;
-          }
-
-          counts.set(
-            order.courier_id,
-            (counts.get(
-              order.courier_id,
-            ) ?? 0) + 1,
-          );
-        }
+        const result =
+          await listCourierAccounts();
 
         setRows(
-          courierRows.map(
-            (courier) => ({
-              ...courier,
-              orders_count:
-                counts.get(
-                  courier.id,
-                ) ?? 0,
-            }),
-          ),
+          result.couriers as CourierRow[],
         );
       } catch (error) {
         console.error(
@@ -194,77 +140,95 @@ function AdminCouriers() {
     void load();
   }, [load]);
 
+  const filteredRows = useMemo(() => {
+    const q = search
+      .trim()
+      .toLowerCase();
 
-  /**
-   * =========================================================
-   * البحث
-   * =========================================================
-   */
+    if (!q) {
+      return rows;
+    }
 
-  const filteredRows =
-    useMemo(() => {
-      const query =
-        search
-          .trim()
-          .toLowerCase();
+    return rows.filter(
+      (row) =>
+        row.name
+          .toLowerCase()
+          .includes(q) ||
+        (row.phone ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        (row.city ?? "")
+          .toLowerCase()
+          .includes(q),
+    );
+  }, [rows, search]);
 
-      if (!query) {
-        return rows;
-      }
+  const total = rows.length;
 
-      return rows.filter(
-        (row) =>
-          row.name
-            .toLowerCase()
-            .includes(query) ||
-          (row.phone ?? "")
-            .toLowerCase()
-            .includes(query) ||
-          (row.city ?? "")
-            .toLowerCase()
-            .includes(query),
-      );
-    }, [
-      rows,
-      search,
-    ]);
+  const active = rows.filter(
+    (row) => row.is_active,
+  ).length;
 
+  const enabledAccounts =
+    rows.filter(
+      (row) =>
+        row.account_enabled &&
+        Boolean(row.user_id),
+    ).length;
 
-  /**
-   * =========================================================
-   * إنشاء عامل توصيل + حساب Auth
-   * =========================================================
-   */
+  const assignedOrders =
+    rows.reduce(
+      (sum, row) =>
+        sum + row.orders_count,
+      0,
+    );
 
-  async function addCourier() {
-    if (
-      !form.name.trim()
-    ) {
-      toast.error(
-        "أدخل اسم عامل التوصيل.",
-      );
+  function openCreate() {
+    setEditing(null);
+    setForm(EMPTY_FORM);
+    setShowForm(true);
+  }
+
+  function openEdit(row: CourierRow) {
+    setEditing(row);
+
+    setForm({
+      name: row.name,
+      phone: row.phone ?? "",
+      city: row.city ?? "",
+      password: "",
+    });
+
+    setShowForm(true);
+  }
+
+  function closeForm() {
+    if (saving) {
       return;
     }
 
-    if (
-      !form.phone.trim()
-    ) {
-      toast.error(
-        "أدخل رقم الهاتف.",
-      );
+    setShowForm(false);
+    setEditing(null);
+    setForm(EMPTY_FORM);
+  }
+
+  async function saveCourier() {
+    if (!form.name.trim()) {
+      toast.error("أدخل اسم عامل التوصيل.");
+      return;
+    }
+
+    if (!form.phone.trim()) {
+      toast.error("أدخل رقم الهاتف.");
       return;
     }
 
     if (!form.city) {
-      toast.error(
-        "اختر المحافظة.",
-      );
+      toast.error("اختر المحافظة.");
       return;
     }
 
-    if (
-      form.password.length < 8
-    ) {
+    if (!editing && form.password.length < 8) {
       toast.error(
         "كلمة المرور يجب أن تكون 8 أحرف على الأقل.",
       );
@@ -274,129 +238,94 @@ function AdminCouriers() {
     setSaving(true);
 
     try {
-      const result =
-        await createManagedAccount({
+      if (editing) {
+        await updateCourierAccount({
           data: {
-            accountType:
-              "courier",
-            name:
-              form.name.trim(),
-            phone:
-              form.phone.trim(),
-            city:
-              form.city,
-            password:
-              form.password,
-            recordId:
-              null,
+            courierId: editing.id,
+            name: form.name.trim(),
+            phone: form.phone.trim(),
+            city: form.city,
           },
         });
 
-      if (
-        !result?.ok
-      ) {
-        throw new Error(
-          "تعذر إنشاء حساب عامل التوصيل.",
+        toast.success(
+          "تم تعديل بيانات عامل التوصيل بنجاح.",
+        );
+      } else {
+        await createCourierAccount({
+          data: {
+            name: form.name.trim(),
+            phone: form.phone.trim(),
+            city: form.city,
+            password: form.password,
+          },
+        });
+
+        toast.success(
+          "تم إنشاء عامل التوصيل وحساب الدخول بنجاح.",
         );
       }
 
-      toast.success(
-        "تم إنشاء عامل التوصيل وحساب الدخول بنجاح.",
-      );
-
-      setForm(
-        EMPTY_FORM,
-      );
-
+      closeForm();
       await load();
     } catch (error) {
       console.error(
-        "[AdminCouriers] Create error:",
+        "[AdminCouriers] Save error:",
         error,
       );
 
       toast.error(
         error instanceof Error
           ? error.message
-          : "تعذر إنشاء عامل التوصيل.",
+          : "تعذر حفظ بيانات عامل التوصيل.",
       );
     } finally {
       setSaving(false);
     }
   }
 
-
-  /**
-   * =========================================================
-   * تفعيل / تعطيل حالة المندوب
-   * =========================================================
-   *
-   * is_active = حالة المندوب التشغيلية.
-   *
-   * account_enabled = حالة حساب الدخول.
-   *
-   * لا نخلط بينهما.
-   */
-
-  async function toggleAvailability(
+  async function toggleActive(
     row: CourierRow,
   ) {
     setActionId(row.id);
 
     try {
-      const {
-        error,
-      } = await supabase
-        .from("couriers")
-        .update({
-          is_active:
-            !row.is_active,
-        })
-        .eq(
-          "id",
-          row.id,
-        );
-
-      if (error) {
-        throw error;
-      }
+      await setCourierActive({
+        data: {
+          courierId: row.id,
+          active: !row.is_active,
+        },
+      });
 
       toast.success(
         row.is_active
-          ? "تم جعل المندوب غير متاح."
-          : "تم تفعيل المندوب.",
+          ? "تم إيقاف العامل عن استقبال الطلبات."
+          : "تم تفعيل العامل.",
       );
 
       await load();
     } catch (error) {
       console.error(
-        "[AdminCouriers] Availability error:",
+        "[AdminCouriers] Active status error:",
         error,
       );
 
       toast.error(
         error instanceof Error
           ? error.message
-          : "تعذر تحديث حالة المندوب.",
+          : "تعذر تحديث حالة العامل.",
       );
     } finally {
       setActionId(null);
     }
   }
 
-
-  /**
-   * =========================================================
-   * تفعيل / تعطيل حساب الدخول
-   * =========================================================
-   */
-
   async function toggleAccount(
     row: CourierRow,
   ) {
     if (!row.user_id) {
       toast.error(
-        "هذا المندوب لا يملك حساب دخول مرتبطاً بعد.",
+        "هذا العامل لا يملك حساب دخول مرتبطاً.",
       );
       return;
     }
@@ -404,12 +333,11 @@ function AdminCouriers() {
     setActionId(row.id);
 
     try {
-      await setManagedAccountDisabled({
+      await setCourierAccountEnabled({
         data: {
-          userId:
-            row.user_id,
-          disabled:
-            row.account_enabled,
+          courierId: row.id,
+          enabled:
+            !row.account_enabled,
         },
       });
 
@@ -436,45 +364,32 @@ function AdminCouriers() {
     }
   }
 
-
-  /**
-   * =========================================================
-   * إعادة تعيين كلمة المرور
-   * =========================================================
-   */
-
   async function submitPasswordReset() {
     if (!resetRow) {
       return;
     }
 
-    if (!resetRow.user_id) {
+    if (!resetPassword.trim()) {
       toast.error(
-        "هذا المندوب لا يملك حساب دخول.",
+        "أدخل كلمة المرور الجديدة.",
       );
       return;
     }
 
-    if (
-      resetPassword.length < 8
-    ) {
+    if (resetPassword.length < 8) {
       toast.error(
         "كلمة المرور يجب أن تكون 8 أحرف على الأقل.",
       );
       return;
     }
 
-    setResettingPassword(
-      true,
-    );
+    setResetting(true);
 
     try {
-      await resetManagedAccountPassword({
+      await resetCourierPassword({
         data: {
-          userId:
-            resetRow.user_id,
-          password:
-            resetPassword,
+          courierId: resetRow.id,
+          password: resetPassword,
         },
       });
 
@@ -496,628 +411,532 @@ function AdminCouriers() {
           : "تعذر تغيير كلمة المرور.",
       );
     } finally {
-      setResettingPassword(
-        false,
-      );
+      setResetting(false);
     }
   }
-
-
-  /**
-   * =========================================================
-   * حذف المندوب
-   * =========================================================
-   *
-   * إذا كان مرتبطاً بحساب Auth، لا نحذفه.
-   * نحتفظ بالسجل التاريخي للطلبات والحساب.
-   */
-
-  async function remove(
-    row: CourierRow,
-  ) {
-    if (row.user_id) {
-      toast.error(
-        "لا يمكن حذف مندوب مرتبط بحساب دخول. عطّل الحساب والمندوب بدلاً من حذفه.",
-      );
-      return;
-    }
-
-    if (
-      row.orders_count > 0
-    ) {
-      toast.error(
-        "لا يمكن حذف مندوب لديه طلبات مسجلة. عطّل المندوب بدلاً من حذفه.",
-      );
-      return;
-    }
-
-    const confirmed =
-      window.confirm(
-        `هل تريد حذف ${row.name}؟`,
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setActionId(row.id);
-
-    try {
-      const {
-        error,
-      } = await supabase
-        .from("couriers")
-        .delete()
-        .eq(
-          "id",
-          row.id,
-        );
-
-      if (error) {
-        throw error;
-      }
-
-      toast.success(
-        "تم حذف عامل التوصيل.",
-      );
-
-      await load();
-    } catch (error) {
-      console.error(
-        "[AdminCouriers] Delete error:",
-        error,
-      );
-
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذر حذف عامل التوصيل.",
-      );
-    } finally {
-      setActionId(null);
-    }
-  }
-
-
-  /**
-   * =========================================================
-   * إحصائيات الصفحة
-   * =========================================================
-   */
-
-  const total =
-    rows.length;
-
-  const active =
-    rows.filter(
-      (row) =>
-        row.is_active,
-    ).length;
-
-  const accounts =
-    rows.filter(
-      (row) =>
-        row.user_id &&
-        row.account_enabled,
-    ).length;
-
-  const assignedOrders =
-    rows.reduce(
-      (
-        totalOrders,
-        row,
-      ) =>
-        totalOrders +
-        row.orders_count,
-      0,
-    );
-
 
   return (
     <div
       dir="rtl"
-      className="space-y-4"
+      className="space-y-5"
     >
-      {/* =====================================================
-          العنوان
-      ===================================================== */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold">
+            إدارة عمال التوصيل
+          </h1>
 
-      <div className="space-y-1">
-        <h1 className="text-xl font-bold text-foreground">
-          إدارة عمال التوصيل
-        </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            إنشاء وإدارة حسابات عمال التوصيل وربطها
+            مباشرة بنظام الطلبات.
+          </p>
+        </div>
 
-        <p className="text-sm text-muted-foreground">
-          إدارة المندوبين وحسابات الدخول والطلبات المسندة
-          إليهم.
-        </p>
+        <button
+          type="button"
+          onClick={openCreate}
+          className={btnCls}
+        >
+          <Plus className="h-4 w-4" />
+          إضافة عامل توصيل
+        </button>
       </div>
-
-
-      {/* =====================================================
-          الإحصائيات
-      ===================================================== */}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
-          label="إجمالي المندوبين"
+          icon={<Bike className="h-5 w-5" />}
+          label="إجمالي العمال"
           value={total}
         />
 
         <StatCard
-          label="المتاحون"
+          icon={
+            <CheckCircle2 className="h-5 w-5" />
+          }
+          label="العاملون"
           value={active}
         />
 
         <StatCard
-          label="حسابات مفعّلة"
-          value={accounts}
+          icon={
+            <ShieldCheck className="h-5 w-5" />
+          }
+          label="حسابات الدخول"
+          value={enabledAccounts}
         />
 
         <StatCard
-          label="الطلبات المسندة"
+          icon={
+            <UserCheck className="h-5 w-5" />
+          }
+          label="طلبات مسندة"
           value={assignedOrders}
         />
       </div>
 
+      <AdminCard>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-bold">
+              العمال المسجلون
+            </h2>
 
-      {/* =====================================================
-          إضافة مندوب
-      ===================================================== */}
+            <p className="mt-1 text-xs text-muted-foreground">
+              البيانات محفوظة في قاعدة البيانات وحساب
+              الدخول مرتبط بحساب العامل.
+            </p>
+          </div>
 
-      <AdminCard title="إضافة عامل توصيل">
-        <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="الاسم">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+            <input
+              value={search}
+              onChange={(event) =>
+                setSearch(
+                  event.target.value,
+                )
+              }
+              className={`${inputCls} pr-9`}
+              placeholder="بحث بالاسم أو الهاتف أو المحافظة"
+            />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">
+            جارٍ تحميل عمال التوصيل...
+          </div>
+        ) : filteredRows.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border py-12 text-center">
+            <Bike className="mx-auto h-10 w-10 text-muted-foreground" />
+
+            <p className="mt-3 text-sm font-semibold">
+              لا يوجد عمال توصيل
+            </p>
+
+            <p className="mt-1 text-xs text-muted-foreground">
+              أضف أول عامل توصيل من زر «إضافة عامل توصيل».
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredRows.map((row) => (
+              <div
+                key={row.id}
+                className="rounded-2xl border border-border bg-secondary/30 p-4"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                      <Bike className="h-5 w-5" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-bold">
+                          {row.name}
+                        </h3>
+
+                        <StatusBadge
+                          active={row.is_active}
+                          label={
+                            row.is_active
+                              ? "نشط"
+                              : "متوقف"
+                          }
+                        />
+
+                        <StatusBadge
+                          active={
+                            row.account_enabled
+                          }
+                          label={
+                            row.account_enabled
+                              ? "دخول مفعل"
+                              : "دخول معطل"
+                          }
+                        />
+                      </div>
+
+                      <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-3">
+                        <span>
+                          الهاتف:{" "}
+                          {row.phone ?? "—"}
+                        </span>
+
+                        <span>
+                          المحافظة:{" "}
+                          {row.city ?? "—"}
+                        </span>
+
+                        <span>
+                          الطلبات:{" "}
+                          {row.orders_count}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openEdit(row)
+                      }
+                      className={btnGhostCls}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      تعديل
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={
+                        actionId === row.id
+                      }
+                      onClick={() =>
+                        void toggleActive(
+                          row,
+                        )
+                      }
+                      className={btnGhostCls}
+                    >
+                      {row.is_active ? (
+                        <UserX className="h-4 w-4" />
+                      ) : (
+                        <UserCheck className="h-4 w-4" />
+                      )}
+
+                      {row.is_active
+                        ? "إيقاف"
+                        : "تفعيل"}
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={
+                        actionId === row.id
+                      }
+                      onClick={() =>
+                        void toggleAccount(
+                          row,
+                        )
+                      }
+                      className={btnGhostCls}
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+
+                      {row.account_enabled
+                        ? "تعطيل الدخول"
+                        : "تفعيل الدخول"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetRow(row);
+                        setResetPassword("");
+                      }}
+                      className={btnGhostCls}
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      كلمة المرور
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </AdminCard>
+
+      {showForm ? (
+        <Modal
+          title={
+            editing
+              ? "تعديل عامل التوصيل"
+              : "إضافة عامل توصيل"
+          }
+          onClose={closeForm}
+        >
+          <div className="space-y-4">
+            <Field
+              label="اسم عامل التوصيل"
+              htmlFor="courier-name"
+            >
               <input
-                className={inputCls}
-                value={
-                  form.name
-                }
-                maxLength={100}
-                autoComplete="name"
-                placeholder="اسم عامل التوصيل"
+                id="courier-name"
+                value={form.name}
                 onChange={(event) =>
-                  setForm({
-                    ...form,
-                    name:
-                      event.target
-                        .value,
-                  })
+                  setForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
                 }
+                className={inputCls}
+                placeholder="مثال: محمد أحمد"
               />
             </Field>
 
-            <Field label="رقم الهاتف">
+            <Field
+              label="رقم الهاتف"
+              htmlFor="courier-phone"
+            >
               <input
+                id="courier-phone"
+                value={form.phone}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    phone: event.target.value.replace(
+                      /[^\d]/g,
+                      "",
+                    ),
+                  }))
+                }
+                inputMode="numeric"
                 dir="ltr"
-                inputMode="tel"
+                maxLength={9}
                 className={inputCls}
-                value={
-                  form.phone
-                }
-                maxLength={20}
-                autoComplete="tel"
-                placeholder="77xxxxxxx"
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    phone:
-                      event.target
-                        .value,
-                  })
-                }
+                placeholder="7XXXXXXXX"
               />
             </Field>
 
-            <Field label="المحافظة">
+            <Field
+              label="المحافظة"
+              htmlFor="courier-city"
+            >
               <select
-                className={inputCls}
-                value={
-                  form.city
-                }
+                id="courier-city"
+                value={form.city}
                 onChange={(event) =>
-                  setForm({
-                    ...form,
-                    city:
-                      event.target
-                        .value,
-                  })
+                  setForm((current) => ({
+                    ...current,
+                    city: event.target.value,
+                  }))
                 }
+                className={inputCls}
               >
                 <option value="">
                   اختر المحافظة
                 </option>
 
                 {YEMEN_GOVERNORATES.map(
-                  (city) => (
+                  (governorate) => (
                     <option
-                      key={city}
-                      value={city}
+                      key={governorate}
+                      value={governorate}
                     >
-                      {city}
+                      {governorate}
                     </option>
                   ),
                 )}
               </select>
             </Field>
 
-            <Field label="كلمة مرور الدخول">
-              <input
-                dir="ltr"
-                type="password"
-                className={inputCls}
-                value={
-                  form.password
-                }
-                maxLength={72}
-                autoComplete="new-password"
-                placeholder="8 أحرف على الأقل"
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    password:
-                      event.target
-                        .value,
-                  })
-                }
-              />
-            </Field>
-          </div>
-
-          <div className="rounded-xl border border-border/70 bg-muted/30 p-3 text-xs leading-6 text-muted-foreground">
-            سيتم إنشاء حساب دخول حقيقي لعامل التوصيل
-            وربطه تلقائياً بسجله. يمكن للمندوب استخدام
-            رقم هاتفه لتسجيل الدخول بالطريقة المعتمدة
-            في نظام المصادقة.
-          </div>
-
-          <button
-            type="button"
-            className={btnCls}
-            disabled={saving}
-            onClick={() =>
-              void addCourier()
-            }
-          >
-            {saving
-              ? "جاري إنشاء الحساب..."
-              : "إضافة عامل التوصيل"}
-          </button>
-        </div>
-      </AdminCard>
-
-
-      {/* =====================================================
-          القائمة
-      ===================================================== */}
-
-      <AdminCard
-        title={`عمال التوصيل (${filteredRows.length.toLocaleString(
-          "ar-EG",
-        )})`}
-      >
-        <div className="mb-4">
-          <input
-            className={inputCls}
-            value={search}
-            placeholder="بحث بالاسم أو الهاتف أو المحافظة..."
-            onChange={(event) =>
-              setSearch(
-                event.target.value,
-              )
-            }
-          />
-        </div>
-
-        {loading ? (
-          <div className="rounded-xl border border-border/70 p-6 text-center text-sm text-muted-foreground">
-            جاري تحميل عمال التوصيل...
-          </div>
-        ) : filteredRows.length ===
-          0 ? (
-          <div className="rounded-xl border border-dashed border-border p-8 text-center">
-            <p className="text-sm font-medium text-foreground">
-              لا يوجد عمال توصيل
-            </p>
-
-            <p className="mt-1 text-xs text-muted-foreground">
-              أضف أول عامل توصيل من النموذج أعلاه.
-            </p>
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {filteredRows.map(
-              (row) => {
-                const busy =
-                  actionId ===
-                  row.id;
-
-                return (
-                  <li
-                    key={row.id}
-                    className="rounded-2xl border border-border/70 bg-card p-4"
-                  >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-                      {/* المعلومات الأساسية */}
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate font-semibold text-foreground">
-                            {row.name}
-                          </p>
-
-                          <StatusBadge
-                            active={
-                              row.is_active
-                            }
-                            activeLabel="متاح"
-                            inactiveLabel="غير متاح"
-                          />
-
-                          <StatusBadge
-                            active={
-                              Boolean(
-                                row.user_id,
-                              ) &&
-                              row.account_enabled
-                            }
-                            activeLabel="حساب مفعّل"
-                            inactiveLabel={
-                              row.user_id
-                                ? "حساب معطل"
-                                : "بدون حساب"
-                            }
-                          />
-                        </div>
-
-                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <span dir="ltr">
-                            {row.phone ||
-                              "لا يوجد هاتف"}
-                          </span>
-
-                          <span>
-                            {row.city ||
-                              "لا توجد محافظة"}
-                          </span>
-
-                          <span>
-                            {row.orders_count.toLocaleString(
-                              "ar-EG",
-                            )}{" "}
-                            طلب مسند
-                          </span>
-                        </div>
-                      </div>
-
-
-                      {/* الإجراءات */}
-
-                      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                        <button
-                          type="button"
-                          className={btnGhostCls}
-                          disabled={busy}
-                          onClick={() =>
-                            void toggleAvailability(
-                              row,
-                            )
-                          }
-                        >
-                          {row.is_active
-                            ? "جعل غير متاح"
-                            : "تفعيل المندوب"}
-                        </button>
-
-                        {row.user_id ? (
-                          <>
-                            <button
-                              type="button"
-                              className={btnGhostCls}
-                              disabled={busy}
-                              onClick={() =>
-                                void toggleAccount(
-                                  row,
-                                )
-                              }
-                            >
-                              {row.account_enabled
-                                ? "تعطيل الحساب"
-                                : "تفعيل الحساب"}
-                            </button>
-
-                            <button
-                              type="button"
-                              className={btnGhostCls}
-                              disabled={busy}
-                              onClick={() => {
-                                setResetRow(
-                                  row,
-                                );
-                                setResetPassword(
-                                  "",
-                                );
-                              }}
-                            >
-                              تغيير كلمة المرور
-                            </button>
-                          </>
-                        ) : null}
-
-                        <button
-                          type="button"
-                          className={btnGhostCls}
-                          disabled={
-                            busy ||
-                            Boolean(
-                              row.user_id,
-                            ) ||
-                            row.orders_count >
-                              0
-                          }
-                          onClick={() =>
-                            void remove(
-                              row,
-                            )
-                          }
-                        >
-                          حذف
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                );
-              },
-            )}
-          </ul>
-        )}
-      </AdminCard>
-
-
-      {/* =====================================================
-          نافذة تغيير كلمة المرور
-      ===================================================== */}
-
-      {resetRow ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl"
-          >
-            <div className="space-y-1">
-              <h2 className="text-lg font-bold text-foreground">
-                تغيير كلمة المرور
-              </h2>
-
-              <p className="text-sm text-muted-foreground">
-                تغيير كلمة مرور حساب:
-                {" "}
-                {resetRow.name}
-              </p>
-            </div>
-
-            <div className="mt-5">
-              <Field label="كلمة المرور الجديدة">
+            {!editing ? (
+              <Field
+                label="كلمة المرور"
+                htmlFor="courier-password"
+              >
                 <input
-                  dir="ltr"
+                  id="courier-password"
                   type="password"
-                  autoFocus
-                  className={inputCls}
-                  value={
-                    resetPassword
+                  value={form.password}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      password:
+                        event.target.value,
+                    }))
                   }
                   maxLength={72}
-                  autoComplete="new-password"
+                  className={inputCls}
                   placeholder="8 أحرف على الأقل"
-                  onChange={(event) =>
-                    setResetPassword(
-                      event.target
-                        .value,
-                    )
-                  }
                 />
               </Field>
-            </div>
+            ) : (
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 text-xs leading-6 text-muted-foreground">
+                لتغيير كلمة المرور استخدم زر
+                «كلمة المرور» من بطاقة العامل.
+              </div>
+            )}
 
-            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
               <button
                 type="button"
+                onClick={closeForm}
                 className={btnGhostCls}
-                disabled={
-                  resettingPassword
-                }
-                onClick={() => {
-                  setResetRow(
-                    null,
-                  );
-                  setResetPassword(
-                    "",
-                  );
-                }}
               >
                 إلغاء
               </button>
 
               <button
                 type="button"
-                className={btnCls}
-                disabled={
-                  resettingPassword
-                }
+                disabled={saving}
                 onClick={() =>
-                  void submitPasswordReset()
+                  void saveCourier()
                 }
+                className={btnCls}
               >
-                {resettingPassword
-                  ? "جاري الحفظ..."
-                  : "حفظ كلمة المرور"}
+                {saving
+                  ? "جارٍ الحفظ..."
+                  : editing
+                    ? "حفظ التعديلات"
+                    : "إنشاء الحساب"}
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
+      ) : null}
+
+      {resetRow ? (
+        <Modal
+          title={`تغيير كلمة مرور ${resetRow.name}`}
+          onClose={() => {
+            if (!resetting) {
+              setResetRow(null);
+              setResetPassword("");
+            }
+          }}
+        >
+          <div className="space-y-4">
+            <Field
+              label="كلمة المرور الجديدة"
+              htmlFor="reset-courier-password"
+            >
+              <input
+                id="reset-courier-password"
+                type="password"
+                value={resetPassword}
+                onChange={(event) =>
+                  setResetPassword(
+                    event.target.value,
+                  )
+                }
+                maxLength={72}
+                className={inputCls}
+                placeholder="8 أحرف على الأقل"
+              />
+            </Field>
+
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
+              <button
+                type="button"
+                disabled={resetting}
+                onClick={() => {
+                  setResetRow(null);
+                  setResetPassword("");
+                }}
+                className={btnGhostCls}
+              >
+                إلغاء
+              </button>
+
+              <button
+                type="button"
+                disabled={resetting}
+                onClick={() =>
+                  void submitPasswordReset()
+                }
+                className={btnCls}
+              >
+                {resetting
+                  ? "جارٍ التغيير..."
+                  : "تغيير كلمة المرور"}
+              </button>
+            </div>
+          </div>
+        </Modal>
       ) : null}
     </div>
   );
 }
 
-
-/**
- * =========================================================
- * بطاقة إحصائية
- * =========================================================
- */
-
 function StatCard({
+  icon,
   label,
   value,
 }: {
+  icon: React.ReactNode;
   label: string;
   value: number;
 }) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-4">
-      <p className="text-xs text-muted-foreground">
-        {label}
-      </p>
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-primary">
+        {icon}
 
-      <p className="mt-2 text-2xl font-bold text-foreground">
-        {value.toLocaleString(
-          "ar-EG",
-        )}
+        <span className="text-xs text-muted-foreground">
+          {label}
+        </span>
+      </div>
+
+      <p className="mt-2 text-2xl font-bold">
+        {value}
       </p>
     </div>
   );
 }
 
-
-/**
- * =========================================================
- * Badge
- * =========================================================
- */
-
 function StatusBadge({
   active,
-  activeLabel,
-  inactiveLabel,
+  label,
 }: {
   active: boolean;
-  activeLabel: string;
-  inactiveLabel: string;
+  label: string;
 }) {
   return (
     <span
-      className={
+      className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
         active
-          ? "rounded-full bg-brand-soft px-2 py-0.5 text-xs text-primary"
-          : "rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive"
-      }
+          ? "bg-emerald-500/10 text-emerald-600"
+          : "bg-destructive/10 text-destructive"
+      }`}
     >
-      {active
-        ? activeLabel
-        : inactiveLabel}
+      {label}
     </span>
+  );
+}
+
+function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      onMouseDown={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-3xl border border-border bg-card p-5 shadow-2xl"
+        onMouseDown={(event) =>
+          event.stopPropagation()
+        }
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="font-bold">
+            {title}
+          </h2>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 place-items-center rounded-xl bg-secondary text-muted-foreground"
+            aria-label="إغلاق"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {children}
+      </div>
+    </div>
   );
 }
