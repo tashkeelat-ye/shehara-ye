@@ -148,13 +148,11 @@ const NAV = [
     icon: Image,
   },
 
-
   {
     to: "/admin/home-sections",
     label: "ترتيب الصفحة الرئيسية",
     icon: LayoutGrid,
   },
-
 
   {
     to: "/admin/stories",
@@ -211,17 +209,16 @@ const NAV = [
   },
 
   {
-    {
-  to: "/admin/settings",
-  label: "إعدادات المتجر",
-  icon: Settings,
-},
+    to: "/admin/settings",
+    label: "إعدادات المتجر",
+    icon: Settings,
+  },
 
-{
-  to: "/admin/branding",
-  label: "الهوية والمظهر",
-  icon: Settings,
-},
+  {
+    to: "/admin/branding",
+    label: "الهوية والمظهر",
+    icon: Settings,
+  },
 ] as const;
 
 
