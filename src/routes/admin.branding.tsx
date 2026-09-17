@@ -64,70 +64,89 @@ const IMAGE_FIELDS: {
     label: "أيقونة تطبيق PWA",
     description:
       "الأيقونة العامة للتطبيق.",
-    accept: "image/png,image/webp,image/jpeg",
+    accept:
+      "image/png,image/webp,image/jpeg",
   },
   {
     key: "pwa_icon_192_url",
-    label: "أيقونة PWA — 192×192",
+    label:
+      "أيقونة PWA — 192×192",
     description:
       "أيقونة تثبيت التطبيق للأجهزة.",
-    accept: "image/png,image/webp",
+    accept:
+      "image/png,image/webp",
   },
   {
     key: "pwa_icon_512_url",
-    label: "أيقونة PWA — 512×512",
+    label:
+      "أيقونة PWA — 512×512",
     description:
       "الأيقونة عالية الدقة للتطبيق.",
-    accept: "image/png,image/webp",
+    accept:
+      "image/png,image/webp",
   },
   {
     key: "splash_logo_url",
-    label: "شعار شاشة البداية",
+    label:
+      "شعار شاشة البداية",
     description:
       "الشعار الظاهر عند بدء فتح التطبيق.",
-    accept: "image/png,image/webp,image/jpeg",
+    accept:
+      "image/png,image/webp,image/jpeg",
   },
   {
     key: "splash_background_url",
-    label: "خلفية شاشة البداية",
+    label:
+      "خلفية شاشة البداية",
     description:
       "الصورة الخلفية لشاشة Splash.",
-    accept: "image/png,image/webp,image/jpeg",
+    accept:
+      "image/png,image/webp,image/jpeg",
   },
   {
     key: "header_logo_url",
-    label: "شعار القائمة العلوية",
+    label:
+      "شعار القائمة العلوية",
     description:
       "الشعار المستخدم في Header.",
-    accept: "image/png,image/webp,image/jpeg",
+    accept:
+      "image/png,image/webp,image/jpeg",
   },
   {
     key: "sidebar_logo_url",
-    label: "شعار القائمة الجانبية",
+    label:
+      "شعار القائمة الجانبية",
     description:
       "الشعار المستخدم في القائمة الجانبية.",
-    accept: "image/png,image/webp,image/jpeg",
+    accept:
+      "image/png,image/webp,image/jpeg",
   },
   {
     key: "auth_logo_url",
-    label: "شعار الدخول وإنشاء الحساب",
+    label:
+      "شعار الدخول وإنشاء الحساب",
     description:
       "الشعار المستخدم في واجهة المصادقة.",
-    accept: "image/png,image/webp,image/jpeg",
+    accept:
+      "image/png,image/webp,image/jpeg",
   },
   {
     key: "app_background_url",
-    label: "خلفية التطبيق بالكامل",
+    label:
+      "خلفية التطبيق بالكامل",
     description:
       "الخلفية العامة لكل واجهات المتجر.",
-    accept: "image/png,image/webp,image/jpeg",
+    accept:
+      "image/png,image/webp,image/jpeg",
   },
   {
     key: "seo_icon_url",
-    label: "أيقونة الموقع لمحركات البحث",
+    label:
+      "أيقونة الموقع لمحركات البحث",
     description:
       "الأيقونة المستخدمة كـ favicon وبيانات الموقع.",
-    accept: "image/png,image/webp",
+    accept:
+      "image/png,image/webp",
   },
 ];
 
@@ -162,7 +181,9 @@ function AdminBranding() {
         );
 
         toast.error(
-          "تعذر تحميل إعدادات الهوية.",
+          error instanceof Error
+            ? error.message
+            : "تعذر تحميل إعدادات الهوية.",
         );
       });
   }, []);
@@ -207,7 +228,7 @@ function AdminBranding() {
       );
 
       toast.success(
-        "تم رفع الصورة بنجاح.",
+        "تم رفع الصورة بنجاح. اضغط حفظ لتثبيت التغيير.",
       );
     } catch (error) {
       console.error(
@@ -227,6 +248,13 @@ function AdminBranding() {
 
   async function save() {
     if (!branding) {
+      return;
+    }
+
+    if (uploading) {
+      toast.warning(
+        "انتظر حتى يكتمل رفع الصورة الحالية.",
+      );
       return;
     }
 
@@ -252,12 +280,15 @@ function AdminBranding() {
       toast.error(
         error instanceof Error
           ? error.message
-          : "تعذر حفظ الإعدادات.",
+          : "تعذر حفظ إعدادات الهوية.",
       );
     } finally {
       setSaving(false);
     }
   }
+
+  const busy =
+    saving || Boolean(uploading);
 
   if (!branding) {
     return (
@@ -433,7 +464,9 @@ function AdminBranding() {
                     {value ? (
                       <img
                         src={value}
-                        alt={field.label}
+                        alt={
+                          field.label
+                        }
                         className="
                           max-h-32
                           max-w-full
@@ -488,9 +521,15 @@ function AdminBranding() {
                         field.accept
                       }
                       className="hidden"
-                      onChange={(event) => {
+                      disabled={
+                        saving
+                      }
+                      onChange={(
+                        event,
+                      ) => {
                         const file =
-                          event.target
+                          event
+                            .currentTarget
                             .files?.[0];
 
                         void handleUpload(
@@ -512,10 +551,14 @@ function AdminBranding() {
                       text-[10px]
                     `}
                     value={value}
-                    onChange={(event) =>
+                    disabled={busy}
+                    onChange={(
+                      event,
+                    ) =>
                       setValue(
                         field.key,
-                        event.target.value,
+                        event.target
+                          .value,
                       )
                     }
                     placeholder="رابط الصورة"
@@ -538,7 +581,7 @@ function AdminBranding() {
           onClick={() => {
             void save();
           }}
-          disabled={saving}
+          disabled={busy}
         >
           <Save className="h-4 w-4" />
 
@@ -622,6 +665,7 @@ function AdminBranding() {
                 branding.seo_name
               }
               maxLength={150}
+              disabled={saving}
               onChange={(event) =>
                 setValue(
                   "seo_name",
@@ -644,6 +688,7 @@ function AdminBranding() {
                 branding.seo_description
               }
               maxLength={500}
+              disabled={saving}
               onChange={(event) =>
                 setValue(
                   "seo_description",
@@ -662,6 +707,7 @@ function AdminBranding() {
               value={
                 branding.seo_icon_url
               }
+              disabled={saving}
               onChange={(event) =>
                 setValue(
                   "seo_icon_url",
@@ -684,11 +730,13 @@ function AdminBranding() {
           onClick={() => {
             void save();
           }}
-          disabled={saving}
+          disabled={busy}
         >
           <Save className="h-4 w-4" />
 
-          حفظ بيانات البحث
+          {saving
+            ? "جارٍ الحفظ..."
+            : "حفظ بيانات البحث"}
         </button>
       </AdminCard>
     </div>
