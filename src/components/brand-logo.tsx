@@ -1,10 +1,33 @@
-import { LOGO_ALT, LOGO_URL } from "@/lib/logo";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  getBranding,
+  subscribeBranding,
+  type BrandingSettings,
+} from "@/lib/branding";
 
 type BrandLogoProps = {
   size?: number;
   className?: string;
   decorative?: boolean;
   priority?: boolean;
+
+  /**
+   * نوع الشعار المطلوب.
+   *
+   * header  = القائمة العلوية
+   * sidebar = القائمة الجانبية
+   * auth    = الدخول / التسجيل
+   * default = الشعار العام
+   */
+  variant?:
+    | "default"
+    | "header"
+    | "sidebar"
+    | "auth";
 };
 
 export function BrandLogo({
@@ -12,12 +35,51 @@ export function BrandLogo({
   className = "",
   decorative = false,
   priority = false,
+  variant = "default",
 }: BrandLogoProps) {
+  const [
+    branding,
+    setBranding,
+  ] =
+    useState<BrandingSettings>(
+      getBranding(),
+    );
+
+  useEffect(() => {
+    return subscribeBranding(
+      setBranding,
+    );
+  }, []);
+
   const safeSize =
     Math.max(
       24,
       Math.round(size),
     );
+
+  let src =
+    branding.header_logo_url;
+
+  if (
+    variant === "sidebar"
+  ) {
+    src =
+      branding.sidebar_logo_url;
+  }
+
+  if (
+    variant === "auth"
+  ) {
+    src =
+      branding.auth_logo_url;
+  }
+
+  if (
+    variant === "default"
+  ) {
+    src =
+      branding.header_logo_url;
+  }
 
   return (
     <span
@@ -45,8 +107,8 @@ export function BrandLogo({
       ) : null}
 
       <img
-        src={LOGO_URL}
-        alt={LOGO_ALT}
+        src={src}
+        alt="شعار شهارة SHEHARA"
         width={safeSize}
         height={safeSize}
         loading={
@@ -61,14 +123,10 @@ export function BrandLogo({
         }
         decoding="async"
         draggable={false}
-        onContextMenu={(
-          event,
-        ) => {
+        onContextMenu={(event) => {
           event.preventDefault();
         }}
-        onDragStart={(
-          event,
-        ) => {
+        onDragStart={(event) => {
           event.preventDefault();
         }}
         className="
