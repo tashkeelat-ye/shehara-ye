@@ -211,10 +211,17 @@ const NAV = [
   },
 
   {
-    to: "/admin/settings",
-    label: "إعدادات المتجر",
-    icon: Settings,
-  },
+    {
+  to: "/admin/settings",
+  label: "إعدادات المتجر",
+  icon: Settings,
+},
+
+{
+  to: "/admin/branding",
+  label: "الهوية والمظهر",
+  icon: Settings,
+},
 ] as const;
 
 
