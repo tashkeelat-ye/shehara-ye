@@ -611,7 +611,6 @@ export type Database = {
           courier_id: string | null
           created_at: string
           currency: string
-          created_at: string
           delivery_fee: number
           id: string
           invoice_number: string | null
@@ -1114,6 +1113,8 @@ export type Database = {
           announcement_active: boolean
           announcement_link: string
           announcement_text: string
+          app_background_url: string
+          auth_logo_url: string
           closed_message: string
           created_at: string
           custom_banners_4to1: Json | null
@@ -1122,12 +1123,22 @@ export type Database = {
           facebook: string
           footer_copyright: string
           footer_note: string
+          header_logo_url: string
           id: boolean
           instagram: string
           is_open: boolean
           logo_url: string
           phone: string
+          pwa_icon_192_url: string
+          pwa_icon_512_url: string
+          pwa_icon_url: string
           sar_rate: number
+          seo_description: string
+          seo_icon_url: string
+          seo_name: string
+          sidebar_logo_url: string
+          splash_background_url: string
+          splash_logo_url: string
           store_name: string
           tagline: string
           telegram: string
@@ -1141,6 +1152,8 @@ export type Database = {
           announcement_active?: boolean
           announcement_link?: string
           announcement_text?: string
+          app_background_url?: string
+          auth_logo_url?: string
           closed_message?: string
           created_at?: string
           custom_banners_4to1?: Json | null
@@ -1149,12 +1162,22 @@ export type Database = {
           facebook?: string
           footer_copyright?: string
           footer_note?: string
+          header_logo_url?: string
           id?: boolean
           instagram?: string
           is_open?: boolean
           logo_url?: string
           phone?: string
+          pwa_icon_192_url?: string
+          pwa_icon_512_url?: string
+          pwa_icon_url?: string
           sar_rate?: number
+          seo_description?: string
+          seo_icon_url?: string
+          seo_name?: string
+          sidebar_logo_url?: string
+          splash_background_url?: string
+          splash_logo_url?: string
           store_name?: string
           tagline?: string
           telegram?: string
@@ -1168,6 +1191,8 @@ export type Database = {
           announcement_active?: boolean
           announcement_link?: string
           announcement_text?: string
+          app_background_url?: string
+          auth_logo_url?: string
           closed_message?: string
           created_at?: string
           custom_banners_4to1?: Json | null
@@ -1176,12 +1201,22 @@ export type Database = {
           facebook?: string
           footer_copyright?: string
           footer_note?: string
+          header_logo_url?: string
           id?: boolean
           instagram?: string
           is_open?: boolean
           logo_url?: string
           phone?: string
+          pwa_icon_192_url?: string
+          pwa_icon_512_url?: string
+          pwa_icon_url?: string
           sar_rate?: number
+          seo_description?: string
+          seo_icon_url?: string
+          seo_name?: string
+          sidebar_logo_url?: string
+          splash_background_url?: string
+          splash_logo_url?: string
           store_name?: string
           tagline?: string
           telegram?: string
@@ -1335,7 +1370,6 @@ export type Database = {
           subscription?: Json
           updated_at?: string
           user_agent?: string
-          user_id?: string
         }
         Relationships: []
       }
