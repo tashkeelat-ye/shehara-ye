@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.track-user-activity]
 verify_jwt = false
+
+[functions.send-order-sms]
+verify_jwt = false
