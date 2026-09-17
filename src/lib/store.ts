@@ -11,6 +11,24 @@ export type SiteSettings = {
   store_name: string;
   tagline: string;
   logo_url: string;
+
+  pwa_icon_url: string;
+  pwa_icon_192_url: string;
+  pwa_icon_512_url: string;
+
+  splash_logo_url: string;
+  splash_background_url: string;
+
+  header_logo_url: string;
+  sidebar_logo_url: string;
+  auth_logo_url: string;
+
+  app_background_url: string;
+
+  seo_name: string;
+  seo_description: string;
+  seo_icon_url: string;
+
   phone: string;
   whatsapp: string;
   email: string;
@@ -145,7 +163,7 @@ export type HomeSection = {
 };
 
 const SETTINGS_COLUMNS =
-  "id,store_name,tagline,logo_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee,sar_rate,is_open,closed_message,announcement_text,announcement_link,announcement_active,custom_banners_4to1";
+  "id,store_name,tagline,logo_url,pwa_icon_url,pwa_icon_192_url,pwa_icon_512_url,splash_logo_url,splash_background_url,header_logo_url,sidebar_logo_url,auth_logo_url,app_background_url,seo_name,seo_description,seo_icon_url,phone,whatsapp,email,address,facebook,instagram,telegram,tiktok,twitter,footer_note,footer_copyright,delivery_fee,sar_rate,is_open,closed_message,announcement_text,announcement_link,announcement_active,custom_banners_4to1";
 
 const BANNER_COLUMNS =
   "id,title,subtitle,cta_label,link_url,image_url,sort_order,is_active";
