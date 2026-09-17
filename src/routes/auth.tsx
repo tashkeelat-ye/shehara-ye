@@ -12,9 +12,9 @@ import {
 import {
   User,
   Store,
+  Bike,
   Eye,
   EyeOff,
-  CheckCircle2,
   Mail,
   MapPin,
   Phone,
@@ -35,7 +35,8 @@ type Search = {
 
 type AccountType =
   | "customer"
-  | "vendor";
+  | "vendor"
+  | "courier";
 
 export const Route = createFileRoute(
   "/auth",
@@ -59,7 +60,7 @@ export const Route = createFileRoute(
       {
         name: "description",
         content:
-          "أنشئ حساب عميل أو تاجر في منصة شهارة.",
+          "أنشئ حساب عميل أو تاجر في منصة شهارة، أو سجل الدخول كعامل توصيل.",
       },
     ],
   }),
@@ -129,8 +130,10 @@ function AuthPage() {
   const [storeCity, setStoreCity] =
     useState("");
 
-  const [storeDescription, setStoreDescription] =
-    useState("");
+  const [
+    storeDescription,
+    setStoreDescription,
+  ] = useState("");
 
   const [showPassword, setShowPassword] =
     useState(false);
@@ -144,15 +147,19 @@ function AuthPage() {
     useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
 
     const destination =
       redirect ??
-      (role === "vendor"
-        ? "/merchant"
-        : role === "admin"
-          ? "/admin"
-          : "/account");
+      (role === "courier"
+        ? "/courier"
+        : role === "vendor"
+          ? "/merchant"
+          : role === "admin"
+            ? "/admin"
+            : "/account");
 
     void navigate({
       to: destination,
@@ -178,6 +185,8 @@ function AuthPage() {
     setStoreName("");
     setStoreCity("");
     setStoreDescription("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   }
 
   function switchMode(
@@ -187,10 +196,14 @@ function AuthPage() {
   ) {
     setMode(next);
 
-    if (next === "login") {
-      setAccountType(
-        "customer",
-      );
+    /*
+     * عامل التوصيل متاح لتسجيل الدخول فقط.
+     * عند الانتقال إلى التسجيل نعود تلقائياً
+     * إلى حساب العميل حتى لا يتم إنشاء حساب
+     * Courier من الواجهة العامة.
+     */
+    if (next === "signup") {
+      setAccountType("customer");
     }
 
     resetForm();
@@ -210,6 +223,11 @@ function AuthPage() {
   ) {
     event.preventDefault();
 
+    /*
+     * =====================================================
+     * التحقق من بيانات التسجيل
+     * =====================================================
+     */
     if (
       mode === "signup"
     ) {
@@ -241,6 +259,30 @@ function AuthPage() {
       }
     }
 
+    /*
+     * عامل التوصيل لا يستطيع التسجيل من الواجهة
+     * العامة بأي شكل.
+     */
+    if (
+      mode === "signup" &&
+      accountType === "courier"
+    ) {
+      toast.error(
+        "إنشاء حساب عامل التوصيل متاح من لوحة الإدارة فقط.",
+      );
+
+      setAccountType(
+        "customer",
+      );
+
+      return;
+    }
+
+    /*
+     * =====================================================
+     * التحقق من الهاتف
+     * =====================================================
+     */
     if (
       !isValidYemeniPhone(
         phone,
@@ -249,9 +291,15 @@ function AuthPage() {
       toast.error(
         "رقم الهاتف يجب أن يتكون من 9 أرقام ويبدأ بـ 77 أو 78 أو 71 أو 73 أو 70.",
       );
+
       return;
     }
 
+    /*
+     * =====================================================
+     * بيانات التسجيل
+     * =====================================================
+     */
     if (
       mode === "signup" &&
       !province
@@ -259,6 +307,7 @@ function AuthPage() {
       toast.error(
         "اختر المحافظة.",
       );
+
       return;
     }
 
@@ -269,6 +318,7 @@ function AuthPage() {
       toast.error(
         "كلمة المرور يجب أن تكون 6 أحرف على الأقل.",
       );
+
       return;
     }
 
@@ -279,6 +329,7 @@ function AuthPage() {
       toast.error(
         "كلمتا المرور غير متطابقتين.",
       );
+
       return;
     }
 
@@ -289,9 +340,15 @@ function AuthPage() {
       toast.error(
         "يجب الموافقة على الشروط والأحكام.",
       );
+
       return;
     }
 
+    /*
+     * =====================================================
+     * بيانات التاجر
+     * =====================================================
+     */
     if (
       mode === "signup" &&
       accountType === "vendor"
@@ -302,6 +359,7 @@ function AuthPage() {
         toast.error(
           "اسم المتجر مطلوب.",
         );
+
         return;
       }
 
@@ -311,6 +369,7 @@ function AuthPage() {
         toast.error(
           "مدينة المتجر مطلوبة.",
         );
+
         return;
       }
 
@@ -321,10 +380,16 @@ function AuthPage() {
         toast.error(
           "وصف المتجر يجب ألا يتجاوز 500 حرف.",
         );
+
         return;
       }
     }
 
+    /*
+     * =====================================================
+     * بدء العملية
+     * =====================================================
+     */
     setBusy(true);
 
     try {
@@ -333,14 +398,26 @@ function AuthPage() {
           phone,
         );
 
+      /*
+       * ===================================================
+       * تسجيل الدخول
+       * ===================================================
+       *
+       * العميل والتاجر وعامل التوصيل يستخدمون
+       * نفس نظام Auth.
+       *
+       * تحديد الوجهة يتم بعد قراءة role من auth-context.
+       */
       const result =
         mode === "login"
           ? await signIn({
-              phone: cleanPhone,
+              phone:
+                cleanPhone,
               password,
             })
           : await signUp({
-              phone: cleanPhone,
+              phone:
+                cleanPhone,
               fullName:
                 `${firstName.trim()} ${secondName.trim()} ${lastName.trim()}`,
               password,
@@ -350,12 +427,23 @@ function AuthPage() {
         toast.error(
           result.error,
         );
+
         return;
       }
 
+      /*
+       * =====================================================
+       * التسجيل
+       * =====================================================
+       */
       if (
         mode === "signup"
       ) {
+        /*
+         * ===================================================
+         * تسجيل التاجر
+         * ===================================================
+         */
         if (
           accountType ===
           "vendor"
@@ -370,23 +458,32 @@ function AuthPage() {
               {
                 p_store_name:
                   storeName.trim(),
+
                 p_city:
                   storeCity.trim(),
+
                 p_phone:
                   cleanPhone,
+
                 p_description:
                   storeDescription.trim(),
+
                 p_first_name:
                   firstName.trim(),
+
                 p_second_name:
                   secondName.trim(),
+
                 p_last_name:
                   lastName.trim(),
+
                 p_province:
                   province,
+
                 p_contact_email:
                   email.trim() ||
                   null,
+
                 p_accepted_terms:
                   true,
               },
@@ -415,28 +512,42 @@ function AuthPage() {
           return;
         }
 
+        /*
+         * ===================================================
+         * تسجيل العميل
+         * ===================================================
+         */
         const {
           error,
         } =
           await (
             supabase as any
           )
-            .from("profiles")
+            .from(
+              "profiles",
+            )
             .update({
               first_name:
                 firstName.trim(),
+
               second_name:
                 secondName.trim(),
+
               last_name:
                 lastName.trim(),
+
               full_name:
                 `${firstName.trim()} ${secondName.trim()} ${lastName.trim()}`,
+
               phone:
                 cleanPhone,
+
               province,
+
               contact_email:
                 email.trim() ||
                 null,
+
               accepted_terms:
                 true,
             })
@@ -463,13 +574,34 @@ function AuthPage() {
         toast.success(
           "تم إنشاء حساب العميل بنجاح.",
         );
-      } else {
-        await refreshAuthState();
 
-        toast.success(
-          "تم تسجيل الدخول بنجاح.",
-        );
+        return;
       }
+
+      /*
+       * =====================================================
+       * تسجيل الدخول
+       * =====================================================
+       */
+      await refreshAuthState();
+
+      /*
+       * لا نقوم بالتوجيه يدوياً هنا.
+       *
+       * useEffect في أعلى الصفحة يقرأ:
+       *
+       * admin   -> /admin
+       * vendor  -> /merchant
+       * courier -> /courier
+       * customer -> /account
+       *
+       * وهذا يمنع وجود مسارات مختلفة ومتعارضة.
+       */
+      toast.success(
+        role === "courier"
+          ? "تم تسجيل دخول عامل التوصيل بنجاح."
+          : "تم تسجيل الدخول بنجاح.",
+      );
     } catch (error) {
       console.error(
         "[Auth] submit failed:",
@@ -493,7 +625,10 @@ function AuthPage() {
     >
       <div className="mx-auto w-full max-w-lg">
         <div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-brand">
-          {/* شعار شهارة أعلى النموذج */}
+          {/* =================================================
+              شعار شهارة
+              ================================================= */}
+
           <div className="flex flex-col items-center border-b border-border bg-white px-5 py-6">
             <img
               src="/shehara-logo.png"
@@ -507,6 +642,10 @@ function AuthPage() {
           </div>
 
           <div className="p-5 sm:p-7">
+            {/* =================================================
+                العنوان
+                ================================================= */}
+
             <div className="text-center">
               <h1 className="text-xl font-bold text-foreground">
                 {mode === "login"
@@ -520,6 +659,10 @@ function AuthPage() {
                   : "أنشئ حسابك كعميل أو تاجر وابدأ الآن."}
               </p>
             </div>
+
+            {/* =================================================
+                نوع الحساب
+                ================================================= */}
 
             {mode === "signup" ? (
               <div className="mt-6">
@@ -563,12 +706,62 @@ function AuthPage() {
                   />
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <div className="mt-6">
+                <p className="mb-2 text-xs font-semibold text-foreground">
+                  تسجيل الدخول إلى
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <AccountTypeButton
+                    active={
+                      accountType ===
+                      "customer"
+                    }
+                    icon={
+                      <User className="mx-auto h-6 w-6" />
+                    }
+                    title="حساب عميل"
+                    description="التسوق والطلبات"
+                    onClick={() =>
+                      setAccountType(
+                        "customer",
+                      )
+                    }
+                  />
+
+                  <AccountTypeButton
+                    active={
+                      accountType ===
+                      "courier"
+                    }
+                    icon={
+                      <Bike className="mx-auto h-6 w-6" />
+                    }
+                    title="عامل توصيل"
+                    description="إدارة وتسليم الطلبات"
+                    onClick={() =>
+                      setAccountType(
+                        "courier",
+                      )
+                    }
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* =================================================
+                النموذج
+                ================================================= */}
 
             <form
               onSubmit={submit}
               className="mt-6 space-y-4"
             >
+              {/* =================================================
+                  بيانات الاسم - التسجيل فقط
+                  ================================================= */}
+
               {mode === "signup" ? (
                 <>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -578,14 +771,21 @@ function AuthPage() {
                     >
                       <input
                         id="firstName"
-                        value={firstName}
-                        onChange={(event) =>
+                        value={
+                          firstName
+                        }
+                        onChange={(
+                          event,
+                        ) =>
                           setFirstName(
-                            event.target.value,
+                            event.target
+                              .value,
                           )
                         }
                         maxLength={50}
-                        className={inputCls}
+                        className={
+                          inputCls
+                        }
                         placeholder="مثال: أمير"
                         autoComplete="given-name"
                       />
@@ -597,14 +797,21 @@ function AuthPage() {
                     >
                       <input
                         id="secondName"
-                        value={secondName}
-                        onChange={(event) =>
+                        value={
+                          secondName
+                        }
+                        onChange={(
+                          event,
+                        ) =>
                           setSecondName(
-                            event.target.value,
+                            event.target
+                              .value,
                           )
                         }
                         maxLength={50}
-                        className={inputCls}
+                        className={
+                          inputCls
+                        }
                         placeholder="مثال: غمدان"
                       />
                     </Field>
@@ -616,14 +823,21 @@ function AuthPage() {
                   >
                     <input
                       id="lastName"
-                      value={lastName}
-                      onChange={(event) =>
+                      value={
+                        lastName
+                      }
+                      onChange={(
+                        event,
+                      ) =>
                         setLastName(
-                          event.target.value,
+                          event.target
+                            .value,
                         )
                       }
                       maxLength={60}
-                      className={inputCls}
+                      className={
+                        inputCls
+                      }
                       placeholder="مثال: الصبري"
                       autoComplete="family-name"
                     />
@@ -631,11 +845,18 @@ function AuthPage() {
                 </>
               ) : null}
 
+              {/* =================================================
+                  رقم الهاتف
+                  ================================================= */}
+
               <Field
                 label={
                   mode === "signup"
                     ? "رقم الهاتف *"
-                    : "رقم الهاتف"
+                    : accountType ===
+                        "courier"
+                      ? "رقم هاتف عامل التوصيل"
+                      : "رقم الهاتف"
                 }
                 htmlFor="phone"
               >
@@ -645,10 +866,13 @@ function AuthPage() {
                   <input
                     id="phone"
                     value={phone}
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setPhone(
                         normalizePhoneInput(
-                          event.target.value,
+                          event.target
+                            .value,
                         ),
                       )
                     }
@@ -661,13 +885,14 @@ function AuthPage() {
                   />
                 </div>
 
-                {mode ===
-                "signup" ? (
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    يجب أن يبدأ بـ 77 أو 78 أو 71 أو 73 أو 70 ويتكون من 9 أرقام.
-                  </p>
-                ) : null}
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  يجب أن يبدأ بـ 77 أو 78 أو 71 أو 73 أو 70 ويتكون من 9 أرقام.
+                </p>
               </Field>
+
+              {/* =================================================
+                  بيانات التسجيل الإضافية
+                  ================================================= */}
 
               {mode === "signup" ? (
                 <>
@@ -682,9 +907,12 @@ function AuthPage() {
                         id="email"
                         type="email"
                         value={email}
-                        onChange={(event) =>
+                        onChange={(
+                          event,
+                        ) =>
                           setEmail(
-                            event.target.value,
+                            event.target
+                              .value,
                           )
                         }
                         dir="ltr"
@@ -705,10 +933,15 @@ function AuthPage() {
 
                       <select
                         id="province"
-                        value={province}
-                        onChange={(event) =>
+                        value={
+                          province
+                        }
+                        onChange={(
+                          event,
+                        ) =>
                           setProvince(
-                            event.target.value,
+                            event.target
+                              .value,
                           )
                         }
                         className={`${inputCls} pr-10`}
@@ -718,12 +951,20 @@ function AuthPage() {
                         </option>
 
                         {YEMEN_GOVERNORATES.map(
-                          (item) => (
+                          (
+                            item,
+                          ) => (
                             <option
-                              key={item}
-                              value={item}
+                              key={
+                                item
+                              }
+                              value={
+                                item
+                              }
                             >
-                              {item}
+                              {
+                                item
+                              }
                             </option>
                           ),
                         )}
@@ -733,23 +974,43 @@ function AuthPage() {
                 </>
               ) : null}
 
+              {/* =================================================
+                  كلمة المرور
+                  ================================================= */}
+
               <Field
                 label="كلمة المرور *"
                 htmlFor="password"
               >
                 <PasswordInput
                   id="password"
-                  value={password}
-                  show={showPassword}
-                  onChange={setPassword}
+                  value={
+                    password
+                  }
+                  show={
+                    showPassword
+                  }
+                  onChange={
+                    setPassword
+                  }
                   onToggle={() =>
                     setShowPassword(
-                      (value) =>
+                      (
+                        value,
+                      ) =>
                         !value,
                     )
                   }
+                  isLogin={
+                    mode ===
+                    "login"
+                  }
                 />
               </Field>
+
+              {/* =================================================
+                  تأكيد كلمة المرور
+                  ================================================= */}
 
               {mode === "signup" ? (
                 <Field
@@ -769,15 +1030,23 @@ function AuthPage() {
                     }
                     onToggle={() =>
                       setShowConfirmPassword(
-                        (value) =>
+                        (
+                          value,
+                        ) =>
                           !value,
                       )
                     }
+                    isLogin={false}
                   />
                 </Field>
               ) : null}
 
-              {mode === "signup" &&
+              {/* =================================================
+                  بيانات المتجر
+                  ================================================= */}
+
+              {mode ===
+                "signup" &&
               accountType ===
                 "vendor" ? (
                 <div className="space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
@@ -801,14 +1070,21 @@ function AuthPage() {
                   >
                     <input
                       id="storeName"
-                      value={storeName}
-                      onChange={(event) =>
+                      value={
+                        storeName
+                      }
+                      onChange={(
+                        event,
+                      ) =>
                         setStoreName(
-                          event.target.value,
+                          event.target
+                            .value,
                         )
                       }
                       maxLength={120}
-                      className={inputCls}
+                      className={
+                        inputCls
+                      }
                       placeholder="مثال: متجر الأناقة"
                     />
                   </Field>
@@ -819,14 +1095,21 @@ function AuthPage() {
                   >
                     <input
                       id="storeCity"
-                      value={storeCity}
-                      onChange={(event) =>
+                      value={
+                        storeCity
+                      }
+                      onChange={(
+                        event,
+                      ) =>
                         setStoreCity(
-                          event.target.value,
+                          event.target
+                            .value,
                         )
                       }
                       maxLength={80}
-                      className={inputCls}
+                      className={
+                        inputCls
+                      }
                       placeholder="صنعاء"
                     />
                   </Field>
@@ -840,9 +1123,12 @@ function AuthPage() {
                       value={
                         storeDescription
                       }
-                      onChange={(event) =>
+                      onChange={(
+                        event,
+                      ) =>
                         setStoreDescription(
-                          event.target.value,
+                          event.target
+                            .value,
                         )
                       }
                       maxLength={500}
@@ -861,6 +1147,10 @@ function AuthPage() {
                 </div>
               ) : null}
 
+              {/* =================================================
+                  الشروط والأحكام
+                  ================================================= */}
+
               {mode === "signup" ? (
                 <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border bg-secondary/50 p-3">
                   <input
@@ -868,9 +1158,12 @@ function AuthPage() {
                     checked={
                       acceptedTerms
                     }
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setAcceptedTerms(
-                        event.target.checked,
+                        event.target
+                          .checked,
                       )
                     }
                     className="mt-0.5 h-4 w-4 accent-primary"
@@ -884,7 +1177,9 @@ function AuthPage() {
                         slug: "terms",
                       }}
                       className="font-bold text-primary underline"
-                      onClick={(event) =>
+                      onClick={(
+                        event,
+                      ) =>
                         event.stopPropagation()
                       }
                     >
@@ -895,17 +1190,26 @@ function AuthPage() {
                 </label>
               ) : null}
 
+              {/* =================================================
+                  زر الدخول / التسجيل
+                  ================================================= */}
+
               <button
                 type="submit"
                 disabled={
-                  busy || loading
+                  busy ||
+                  loading
                 }
                 className="h-12 w-full rounded-2xl bg-primary text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
               >
                 {busy
                   ? "جارٍ المعالجة..."
-                  : mode === "login"
-                    ? "تسجيل الدخول"
+                  : mode ===
+                      "login"
+                    ? accountType ===
+                      "courier"
+                      ? "دخول عامل التوصيل"
+                      : "تسجيل الدخول"
                     : accountType ===
                         "vendor"
                       ? "إنشاء حساب التاجر"
@@ -913,47 +1217,62 @@ function AuthPage() {
               </button>
             </form>
 
-            <div className="my-5 flex items-center gap-2">
-              <span className="h-px flex-1 bg-border" />
+            {/* =================================================
+                Google
+                ================================================= */}
 
-              <span className="text-[11px] text-muted-foreground">
-                أو
-              </span>
+            {mode === "login" &&
+            accountType !==
+              "courier" ? (
+              <>
+                <div className="my-5 flex items-center gap-2">
+                  <span className="h-px flex-1 bg-border" />
 
-              <span className="h-px flex-1 bg-border" />
-            </div>
+                  <span className="text-[11px] text-muted-foreground">
+                    أو
+                  </span>
 
-            <button
-              type="button"
-              onClick={async () => {
-                const result =
-                  await lovable.auth.signInWithOAuth(
-                    "google",
-                    {
-                      redirect_uri:
-                        window.location
-                          .origin,
-                    },
-                  );
+                  <span className="h-px flex-1 bg-border" />
+                </div>
 
-                if (
-                  result.error
-                ) {
-                  toast.error(
-                    "تعذر الدخول بحساب جوجل.",
-                  );
-                }
-              }}
-              className="flex h-12 w-full items-center justify-center rounded-2xl border border-border bg-card text-sm text-foreground"
-            >
-              الدخول بحساب جوجل
-            </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const result =
+                      await lovable.auth.signInWithOAuth(
+                        "google",
+                        {
+                          redirect_uri:
+                            window.location
+                              .origin,
+                        },
+                      );
+
+                    if (
+                      result.error
+                    ) {
+                      toast.error(
+                        "تعذر الدخول بحساب جوجل.",
+                      );
+                    }
+                  }}
+                  className="flex h-12 w-full items-center justify-center rounded-2xl border border-border bg-card text-sm text-foreground"
+                >
+                  الدخول بحساب جوجل
+                </button>
+              </>
+            ) : null}
+
+            {/* =================================================
+                التحويل بين الدخول والتسجيل
+                ================================================= */}
 
             <button
               type="button"
               onClick={() =>
                 switchMode(
-                  mode === "login"
+                  mode ===
+                    "login"
                     ? "signup"
                     : "login",
                 )
@@ -964,6 +1283,25 @@ function AuthPage() {
                 ? "ليس لديك حساب؟ إنشاء حساب جديد"
                 : "لديك حساب بالفعل؟ تسجيل الدخول"}
             </button>
+
+            {/* =================================================
+                ملاحظة عامل التوصيل
+                ================================================= */}
+
+            {mode === "login" &&
+            accountType ===
+              "courier" ? (
+              <div className="mt-4 flex items-start gap-2 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+
+                <p className="text-[10px] leading-5 text-muted-foreground">
+                  حسابات عمال التوصيل يتم إنشاؤها
+                  وإدارتها من لوحة الإدارة فقط.
+                  إذا كان لديك حساب، استخدم رقم
+                  الهاتف وكلمة المرور المخصصة لك.
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -1040,6 +1378,7 @@ function PasswordInput({
   show,
   onChange,
   onToggle,
+  isLogin,
 }: {
   id: string;
   value: string;
@@ -1048,6 +1387,7 @@ function PasswordInput({
     value: string,
   ) => void;
   onToggle: () => void;
+  isLogin: boolean;
 }) {
   return (
     <div className="relative">
@@ -1065,7 +1405,11 @@ function PasswordInput({
           )
         }
         maxLength={72}
-        autoComplete="new-password"
+        autoComplete={
+          isLogin
+            ? "current-password"
+            : "new-password"
+        }
         className={`${inputCls} pl-12`}
       />
 
