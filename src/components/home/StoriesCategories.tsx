@@ -1,1220 +1,161 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
-  X,
-} from "lucide-react";
-import {
-  Skeleton,
-} from "@/components/ui/skeleton";
-import {
-  supabase,
-} from "@/integrations/supabase/client";
-
-
-/**
- * =========================================================
- * شهارة للتسوق
- * نظام القصص Stories
- * =========================================================
- *
- * هذا المكون مسؤول عن:
- *
- * 1. تحميل القصص النشطة من Supabase.
- * 2. عرض شريط القصص أعلى الصفحة الرئيسية.
- * 3. فتح القصة في عارض Full Screen.
- * 4. التنقل التلقائي واليدوي بين القصص.
- * 5. احترام تاريخ بداية وانتهاء القصة.
- *
- * =========================================================
- */
-
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, ExternalLink, Pause, Play, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 type Story = {
-  id: string;
-
-  title: string;
-
-  image_url: string;
-
-  link_url: string | null;
-
-  sort_order: number;
-
-  is_active: boolean;
-
-  starts_at: string | null;
-
-  expires_at: string | null;
-
-  created_at: string;
+  id: string; title: string; image_url: string; link_url: string | null;
+  sort_order: number; is_active: boolean; starts_at: string | null;
+  expires_at: string | null; created_at: string;
 };
 
+const DURATION = 5000;
 
-/**
- * مدة عرض كل قصة بالمللي ثانية.
- */
-const STORY_DURATION =
-  5000;
-
-
-/**
- * =========================================================
- * جلب القصص
- * =========================================================
- */
 async function fetchStories(): Promise<Story[]> {
-  /**
-   * ملاحظة:
-   *
-   * ملف Supabase types.ts الموجود في المشروع تم توليده
-   * قبل إنشاء جدول stories، لذلك نستخدم cast محلياً هنا
-   * حتى لا نضطر لتعديل الملف المولد يدوياً.
-   *
-   * عند إعادة توليد Types من Supabase مستقبلاً يمكن
-   * إزالة هذا الـ cast.
-   */
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const storiesTable = (supabase as any).from(
-    "stories",
-  );
-
-
-  const now =
-    new Date().toISOString();
-
-
-  const {
-    data,
-    error,
-  } = await storiesTable
-    .select(
-      [
-        "id",
-        "title",
-        "image_url",
-        "link_url",
-        "sort_order",
-        "is_active",
-        "starts_at",
-        "expires_at",
-        "created_at",
-      ].join(","),
-    )
-    .eq(
-      "is_active",
-      true,
-    )
-    .or(
-      `starts_at.is.null,starts_at.lte.${now}`,
-    )
-    .or(
-      `expires_at.is.null,expires_at.gt.${now}`,
-    )
-    .order(
-      "sort_order",
-      {
-        ascending: true,
-      },
-    )
-    .order(
-      "created_at",
-      {
-        ascending: false,
-      });
-
-
-  if (error) {
-    throw error;
-  }
-
-
-  return (
-    (data as Story[] | null) ??
-    []
-  );
+  const table = (supabase as any).from("stories");
+  const now = new Date().toISOString();
+  const { data, error } = await table
+    .select("id,title,image_url,link_url,sort_order,is_active,starts_at,expires_at,created_at")
+    .eq("is_active", true)
+    .or(`starts_at.is.null,starts_at.lte.${now}`)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as Story[] | null) ?? [];
 }
 
-
-/**
- * =========================================================
- * المكون الرئيسي
- * =========================================================
- */
 export function StoriesCategories() {
-  const [
-    stories,
-    setStories,
-  ] =
-    useState<Story[]>(
-      [],
-    );
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const touchStart = useRef<number | null>(null);
 
-
-  const [
-    loading,
-    setLoading,
-  ] =
-    useState(true);
-
-
-  const [
-    selectedStory,
-    setSelectedStory,
-  ] =
-    useState<number | null>(
-      null,
-    );
-
-
-  const [
-    progress,
-    setProgress,
-  ] =
-    useState(0);
-
-
-  /**
-   * =======================================================
-   * تحميل القصص
-   * =======================================================
-   */
   useEffect(() => {
-    let mounted =
-      true;
-
-
-    async function loadStories() {
-      try {
-        const result =
-          await fetchStories();
-
-
-        if (
-          mounted
-        ) {
-          setStories(
-            result,
-          );
-        }
-      } catch (
-        error
-      ) {
-        console.warn(
-          "[Stories] تعذر تحميل القصص:",
-          error,
-        );
-
-
-        if (
-          mounted
-        ) {
-          setStories(
-            [],
-          );
-        }
-      } finally {
-        if (
-          mounted
-        ) {
-          setLoading(
-            false,
-          );
-        }
-      }
-    }
-
-
-    void loadStories();
-
-
-    return () => {
-      mounted =
-        false;
-    };
+    let mounted = true;
+    void fetchStories()
+      .then((data) => mounted && setStories(data))
+      .catch((e) => console.warn("[Stories]", e))
+      .finally(() => mounted && setLoading(false));
+    return () => { mounted = false; };
   }, []);
 
+  const current = useMemo(() => selected == null ? null : stories[selected] ?? null, [selected, stories]);
+  const close = useCallback(() => { setSelected(null); setProgress(0); setPaused(false); }, []);
+  const next = useCallback(() => {
+    if (selected == null) return;
+    if (selected < stories.length - 1) {
+      setSelected(selected + 1); setProgress(0); setPaused(false);
+    } else close();
+  }, [selected, stories.length, close]);
+  const prev = useCallback(() => {
+    if (selected == null) return;
+    if (selected > 0) { setSelected(selected - 1); setProgress(0); setPaused(false); }
+    else setProgress(0);
+  }, [selected]);
 
-  /**
-   * =======================================================
-   * القصة الحالية
-   * =======================================================
-   */
-  const currentStory =
-    useMemo(
-      () => {
-        if (
-          selectedStory ===
-            null ||
-          !stories[
-            selectedStory
-          ]
-        ) {
-          return null;
-        }
-
-
-        return stories[
-          selectedStory
-        ];
-      },
-      [
-        selectedStory,
-        stories,
-      ],
-    );
-
-
-  /**
-   * =======================================================
-   * إغلاق العارض
-   * =======================================================
-   */
-  const closeViewer =
-    () => {
-      setSelectedStory(
-        null,
-      );
-
-      setProgress(
-        0,
-      );
-    };
-
-
-  /**
-   * =======================================================
-   * فتح قصة
-   * =======================================================
-   */
-  const openStory =
-    (
-      index: number,
-    ) => {
-      setSelectedStory(
-        index,
-      );
-
-      setProgress(
-        0,
-      );
-    };
-
-
-  /**
-   * =======================================================
-   * القصة التالية
-   * =======================================================
-   */
-  const nextStory =
-    () => {
-      if (
-        selectedStory ===
-          null
-      ) {
-        return;
-      }
-
-
-      if (
-        selectedStory <
-        stories.length - 1
-      ) {
-        setSelectedStory(
-          selectedStory + 1,
-        );
-
-        setProgress(
-          0,
-        );
-
-        return;
-      }
-
-
-      closeViewer();
-    };
-
-
-  /**
-   * =======================================================
-   * القصة السابقة
-   * =======================================================
-   */
-  const previousStory =
-    () => {
-      if (
-        selectedStory ===
-          null
-      ) {
-        return;
-      }
-
-
-      if (
-        selectedStory >
-        0
-      ) {
-        setSelectedStory(
-          selectedStory - 1,
-        );
-
-        setProgress(
-          0,
-        );
-      } else {
-        setProgress(
-          0,
-        );
-      }
-    };
-
-
-  /**
-   * =======================================================
-   * التحكم بالـ Keyboard
-   * =======================================================
-   */
   useEffect(() => {
-    if (
-      selectedStory ===
-      null
-    ) {
-      return;
-    }
+    if (selected == null || !current || paused) return;
+    const started = Date.now() - (progress / 100) * DURATION;
+    const timer = window.setInterval(() => {
+      const value = Math.min(100, ((Date.now() - started) / DURATION) * 100);
+      setProgress(value);
+      if (value >= 100) { window.clearInterval(timer); next(); }
+    }, 40);
+    return () => window.clearInterval(timer);
+  }, [selected, current, paused, progress, next]);
 
-
-    const handleKeyDown =
-      (
-        event: KeyboardEvent,
-      ) => {
-        if (
-          event.key ===
-          "Escape"
-        ) {
-          closeViewer();
-
-          return;
-        }
-
-
-        if (
-          event.key ===
-          "ArrowLeft"
-        ) {
-          nextStory();
-
-          return;
-        }
-
-
-        if (
-          event.key ===
-          "ArrowRight"
-        ) {
-          previousStory();
-        }
-      };
-
-
-    window.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
-
-
-    return () => {
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
-    };
-  }, [
-    selectedStory,
-    stories.length,
-  ]);
-
-
-  /**
-   * =======================================================
-   * منع تمرير الصفحة أثناء فتح القصة
-   * =======================================================
-   */
   useEffect(() => {
-    if (
-      selectedStory ===
-      null
-    ) {
-      return;
-    }
-
-
-    const previousOverflow =
-      document.body.style
-        .overflow;
-
-
-    document.body.style.overflow =
-      "hidden";
-
-
-    return () => {
-      document.body.style.overflow =
-        previousOverflow;
+    if (selected == null) return;
+    const old = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+      if (e.key === "ArrowLeft") next();
+      if (e.key === "ArrowRight") prev();
+      if (e.key === " ") { e.preventDefault(); setPaused(v => !v); }
     };
-  }, [
-    selectedStory,
-  ]);
+    window.addEventListener("keydown", key);
+    return () => { document.body.style.overflow = old; window.removeEventListener("keydown", key); };
+  }, [selected, close, next, prev]);
 
-
-  /**
-   * =======================================================
-   * التقدم التلقائي
-   * =======================================================
-   */
-  useEffect(() => {
-    if (
-      selectedStory ===
-        null ||
-      !currentStory
-    ) {
-      return;
-    }
-
-
-    setProgress(
-      0,
-    );
-
-
-    const startedAt =
-      Date.now();
-
-
-    const interval =
-      window.setInterval(
-        () => {
-          const elapsed =
-            Date.now() -
-            startedAt;
-
-
-          const percentage =
-            Math.min(
-              100,
-              (
-                elapsed /
-                STORY_DURATION
-              ) *
-                100,
-            );
-
-
-          setProgress(
-            percentage,
-          );
-
-
-          if (
-            percentage >=
-            100
-          ) {
-            clearInterval(
-              interval,
-            );
-
-
-            if (
-              selectedStory <
-              stories.length - 1
-            ) {
-              setSelectedStory(
-                selectedStory + 1,
-              );
-
-              setProgress(
-                0,
-              );
-            } else {
-              closeViewer();
-            }
-          }
-        },
-        50,
-      );
-
-
-    return () => {
-      clearInterval(
-        interval,
-      );
-    };
-  }, [
-    selectedStory,
-    currentStory,
-    stories.length,
-  ]);
-
-
-  /**
-   * =======================================================
-   * حالة التحميل
-   * =======================================================
-   */
-  if (
-    loading
-  ) {
-    return (
-      <section
-        dir="rtl"
-        className="
-          border-b
-          border-[#0E4D64]/5
-          bg-background
-          py-4
-        "
-      >
-        <div
-          className="
-            no-scrollbar
-            flex
-            gap-4
-            overflow-x-auto
-            px-4
-          "
-        >
-          {Array.from({
-            length: 6,
-          }).map(
-            (
-              _,
-              index,
-            ) => (
-              <div
-                key={index}
-                className="
-                  flex
-                  shrink-0
-                  flex-col
-                  items-center
-                  gap-2
-                "
-              >
-                <Skeleton
-                  className="
-                    h-[68px]
-                    w-[68px]
-                    rounded-full
-                  "
-                />
-
-                <Skeleton
-                  className="
-                    h-3
-                    w-12
-                  "
-                />
-              </div>
-            ),
-          )}
-        </div>
-      </section>
-    );
-  }
-
-
-  /**
-   * =======================================================
-   * لا توجد قصص
-   * =======================================================
-   */
-  if (
-    stories.length ===
-    0
-  ) {
-    return null;
-  }
-
+  if (loading) return (
+    <section dir="rtl" className="border-b border-[#0E4D64]/5 bg-background py-4">
+      <div className="flex gap-4 overflow-x-auto px-4">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="flex w-[76px] shrink-0 flex-col items-center gap-2">
+            <Skeleton className="h-[70px] w-[70px] rounded-full" />
+            <Skeleton className="h-3 w-12 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+  if (!stories.length) return null;
 
   return (
     <>
-      {/* ===================================================
-          شريط القصص
-          =================================================== */}
-
-      <section
-        dir="rtl"
-        aria-label="قصص شهارة"
-        className="
-          border-b
-          border-[#0E4D64]/5
-          bg-background
-          py-3
-        "
-      >
-        <div
-          className="
-            no-scrollbar
-            flex
-            gap-4
-            overflow-x-auto
-            px-4
-            pb-1
-          "
-        >
-          {stories.map(
-            (
-              story,
-              index,
-            ) => (
-              <button
-                key={
-                  story.id
-                }
-                type="button"
-                onClick={() =>
-                  openStory(
-                    index,
-                  )
-                }
-                className="
-                  group
-                  flex
-                  w-[72px]
-                  shrink-0
-                  flex-col
-                  items-center
-                  gap-1.5
-                  outline-none
-                "
-                aria-label={`فتح قصة ${story.title || "شهارة"}`}
-              >
-                {/* =========================================
-                    الحلقة الخارجية
-                    ========================================= */}
-
-                <span
-                  className="
-                    relative
-                    block
-                    h-[68px]
-                    w-[68px]
-                    rounded-full
-                    bg-gradient-to-tr
-                    from-[#0E4D64]
-                    via-[#B74624]
-                    to-[#E7C66A]
-                    p-[2.5px]
-                    shadow-[0_3px_12px_rgba(74,21,37,0.12)]
-                    transition-transform
-                    duration-200
-                    group-active:scale-90
-                    group-hover:scale-105
-                  "
-                >
-                  {/* =======================================
-                      الإطار الداخلي
-                      ======================================= */}
-
-                  <span
-                    className="
-                      block
-                      h-full
-                      w-full
-                      rounded-full
-                      bg-background
-                      p-[2px]
-                    "
-                  >
-                    <img
-                      src={
-                        story.image_url
-                      }
-                      alt={
-                        story.title ||
-                        "قصة من شهارة"
-                      }
-                      loading={
-                        index <
-                        4
-                          ? "eager"
-                          : "lazy"
-                      }
-                      className="
-                        h-full
-                        w-full
-                        rounded-full
-                        object-cover
-                      "
-                      onError={(
-                        event,
-                      ) => {
-                        event.currentTarget.style.visibility =
-                          "hidden";
-                      }}
-                    />
-                  </span>
-
-
-                  {/* =====================================
-                      النقطة الذهبية
-                      ===================================== */}
-
-                  <span
-                    className="
-                      absolute
-                      bottom-0
-                      left-1/2
-                      h-2
-                      w-2
-                      -translate-x-1/2
-                      rounded-full
-                      border
-                      border-background
-                      bg-[#D65A31]
-                    "
-                    aria-hidden="true"
-                  />
+      <section dir="rtl" aria-label="قصص شهارة" className="border-b border-[#0E4D64]/[0.07] bg-background/95 py-3 backdrop-blur">
+        <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-4 pb-1">
+          {stories.map((story, i) => (
+            <button key={story.id} type="button" onClick={() => { setSelected(i); setProgress(0); setPaused(false); }}
+              className="group flex w-[76px] shrink-0 flex-col items-center gap-1.5 outline-none">
+              <span className="relative block h-[72px] w-[72px] rounded-full bg-gradient-to-tr from-[#0E4D64] via-[#D65A31] to-[#E7C66A] p-[2.5px] shadow-lg transition duration-300 group-hover:scale-105 group-active:scale-90">
+                <span className="block h-full w-full rounded-full bg-background p-[2.5px]">
+                  <img src={story.image_url} alt={story.title || "قصة من شهارة"} loading={i < 4 ? "eager" : "lazy"}
+                    className="h-full w-full rounded-full object-cover" />
                 </span>
-
-
-                {/* =========================================
-                    اسم القصة
-                    ========================================= */}
-
-                <span
-                  className="
-                    w-full
-                    truncate
-                    px-0.5
-                    text-center
-                    text-[11px]
-                    font-semibold
-                    leading-4
-                    text-[#0E4D64]
-                  "
-                >
-                  {story.title ||
-                    "شهارة"}
-                </span>
-              </button>
-            ),
-          )}
+                <span className="absolute bottom-0 start-1/2 h-2.5 w-2.5 -translate-x-1/2 rounded-full border-2 border-background bg-[#D65A31]" />
+              </span>
+              <span className="w-full truncate text-center text-[10px] font-black text-[#0E4D64] dark:text-white">{story.title || "شهارة"}</span>
+            </button>
+          ))}
         </div>
       </section>
 
-
-      {/* ===================================================
-          عارض القصص
-          =================================================== */}
-
-      {currentStory && (
-        <div
-          dir="rtl"
-          className="
-            fixed
-            inset-0
-            z-[20000]
-            flex
-            items-center
-            justify-center
-            bg-black/95
-            px-2
-            py-4
-            backdrop-blur-sm
-          "
-          role="dialog"
-          aria-modal="true"
-          aria-label={
-            currentStory.title ||
-            "قصة شهارة"
-          }
-          onClick={(
-            event,
-          ) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              closeViewer();
-            }
-          }}
-        >
-          {/* ===============================================
-              الحاوية الرئيسية
-              =============================================== */}
-
-          <div
-            className="
-              relative
-              h-full
-              w-full
-              max-w-[480px]
-              overflow-hidden
-              rounded-2xl
-              bg-[#16070D]
-              shadow-2xl
-            "
-          >
-            {/* =============================================
-                شريط التقدم
-                ============================================= */}
-
-            <div
-              className="
-                absolute
-                inset-x-3
-                top-3
-                z-30
-                flex
-                gap-1
-              "
-              dir="ltr"
-            >
-              {stories.map(
-                (
-                  story,
-                  index,
-                ) => {
-                  const width =
-                    index <
-                    (selectedStory ??
-                      0)
-                      ? 100
-                      : index ===
-                          selectedStory
-                        ? progress
-                        : 0;
-
-
-                  return (
-                    <div
-                      key={
-                        story.id
-                      }
-                      className="
-                        h-1
-                        flex-1
-                        overflow-hidden
-                        rounded-full
-                        bg-white/30
-                      "
-                    >
-                      <div
-                        className="
-                          h-full
-                          rounded-full
-                          bg-white
-                          transition-[width]
-                          duration-75
-                        "
-                        style={{
-                          width: `${width}%`,
-                        }}
-                      />
-                    </div>
-                  );
-                },
-              )}
+      {current && selected != null ? (
+        <div dir="rtl" className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/95 p-2 backdrop-blur-xl"
+          role="dialog" aria-modal="true"
+          onTouchStart={e => { touchStart.current = e.touches[0]?.clientX ?? null; }}
+          onTouchEnd={e => {
+            if (touchStart.current == null) return;
+            const delta = (e.changedTouches[0]?.clientX ?? touchStart.current) - touchStart.current;
+            touchStart.current = null;
+            if (Math.abs(delta) > 50) delta > 0 ? prev() : next();
+          }}>
+          <div className="relative h-[min(92vh,900px)] w-full max-w-[500px] overflow-hidden rounded-[30px] bg-[#081D27] shadow-2xl ring-1 ring-white/10">
+            <img src={current.image_url} alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/80" />
+            <div className="absolute inset-x-3 top-3 z-30 flex gap-1" dir="ltr">
+              {stories.map((s, i) => (
+                <div key={s.id} className="h-1 flex-1 overflow-hidden rounded-full bg-white/25">
+                  <div className="h-full rounded-full bg-white transition-[width] duration-75" style={{ width: `${i < selected ? 100 : i === selected ? progress : 0}%` }} />
+                </div>
+              ))}
             </div>
-
-
-            {/* =============================================
-                زر الإغلاق
-                ============================================= */}
-
-            <button
-              type="button"
-              onClick={
-                closeViewer
-              }
-              className="
-                absolute
-                right-3
-                top-8
-                z-40
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-full
-                bg-black/40
-                text-white
-                backdrop-blur-md
-                transition
-                hover:bg-black/60
-                active:scale-90
-              "
-              aria-label="إغلاق القصة"
-            >
-              <X
-                className="h-5 w-5"
-              />
-            </button>
-
-
-            {/* =============================================
-                عنوان القصة
-                ============================================= */}
-
-            <div
-              className="
-                absolute
-                left-4
-                right-16
-                top-7
-                z-30
-                pointer-events-none
-              "
-            >
-              <p
-                className="
-                  truncate
-                  text-right
-                  text-sm
-                  font-bold
-                  text-white
-                  drop-shadow-md
-                "
-              >
-                {currentStory.title ||
-                  "شهارة للتسوق"}
-              </p>
-            </div>
-
-
-            {/* =============================================
-                الصورة
-                ============================================= */}
-
-            <img
-              src={
-                currentStory.image_url
-              }
-              alt={
-                currentStory.title ||
-                "قصة شهارة"
-              }
-              className="
-                absolute
-                inset-0
-                h-full
-                w-full
-                object-cover
-                select-none
-              "
-              draggable={false}
-            />
-
-
-            {/* =============================================
-                طبقة تدرج أسفل الصورة
-                ============================================= */}
-
-            <div
-              className="
-                pointer-events-none
-                absolute
-                inset-x-0
-                bottom-0
-                z-10
-                h-40
-                bg-gradient-to-t
-                from-black/80
-                via-black/25
-                to-transparent
-              "
-            />
-
-
-            {/* =============================================
-                زر السابق
-                ============================================= */}
-
-            <button
-              type="button"
-              onClick={
-                previousStory
-              }
-              className="
-                absolute
-                right-1
-                top-1/2
-                z-30
-                -translate-y-1/2
-                flex
-                h-14
-                w-12
-                items-center
-                justify-center
-                rounded-l-2xl
-                bg-black/15
-                text-white
-                transition
-                hover:bg-black/30
-                active:scale-95
-              "
-              aria-label="القصة السابقة"
-            >
-              <ChevronRight
-                className="
-                  h-7
-                  w-7
-                  drop-shadow
-                "
-              />
-            </button>
-
-
-            {/* =============================================
-                زر التالي
-                ============================================= */}
-
-            <button
-              type="button"
-              onClick={
-                nextStory
-              }
-              className="
-                absolute
-                left-1
-                top-1/2
-                z-30
-                -translate-y-1/2
-                flex
-                h-14
-                w-12
-                items-center
-                justify-center
-                rounded-r-2xl
-                bg-black/15
-                text-white
-                transition
-                hover:bg-black/30
-                active:scale-95
-              "
-              aria-label="القصة التالية"
-            >
-              <ChevronLeft
-                className="
-                  h-7
-                  w-7
-                  drop-shadow
-                "
-              />
-            </button>
-
-
-            {/* =============================================
-                معلومات القصة + الرابط
-                ============================================= */}
-
-            {currentStory.link_url && (
-              <div
-                className="
-                  absolute
-                  inset-x-0
-                  bottom-5
-                  z-30
-                  flex
-                  justify-center
-                  px-5
-                "
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (
-                      currentStory.link_url
-                    ) {
-                      window.location.assign(
-                        currentStory.link_url,
-                      );
-                    }
-                  }}
-                  className="
-                    inline-flex
-                    min-h-11
-                    items-center
-                    gap-2
-                    rounded-full
-                    border
-                    border-[#D65A31]/60
-                    bg-[#0E4D64]/95
-                    px-6
-                    text-sm
-                    font-bold
-                    text-white
-                    shadow-lg
-                    backdrop-blur-md
-                    transition
-                    hover:bg-[#5A1A2D]
-                    active:scale-95
-                  "
-                >
-                  <span>
-                    اكتشف المزيد
-                  </span>
-
-                  <ExternalLink
-                    className="
-                      h-4
-                      w-4
-                      text-[#D65A31]
-                    "
-                  />
-                </button>
+            <div className="absolute inset-x-4 top-8 z-30 flex items-center justify-between gap-3">
+              <div><p className="truncate text-sm font-black text-white">{current.title || "شهارة"}</p><p className="text-[9px] text-white/60">قصة {selected + 1} من {stories.length}</p></div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setPaused(v => !v)} className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white">{paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}</button>
+                <button type="button" onClick={close} className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white"><X className="h-4 w-4" /></button>
               </div>
-            )}
-
-
-            {/* =============================================
-                منطقة لمس يسار/يمين
-                ============================================= */}
-
-            <button
-              type="button"
-              aria-label="التالي"
-              onClick={
-                nextStory
-              }
-              className="
-                absolute
-                inset-y-20
-                left-0
-                z-20
-                w-1/3
-                cursor-pointer
-                opacity-0
-              "
-            />
-
-            <button
-              type="button"
-              aria-label="السابق"
-              onClick={
-                previousStory
-              }
-              className="
-                absolute
-                inset-y-20
-                right-0
-                z-20
-                w-1/3
-                cursor-pointer
-                opacity-0
-              "
-            />
+            </div>
+            <button type="button" onClick={prev} aria-label="السابق" className="absolute inset-y-24 start-0 z-20 w-1/4" />
+            <button type="button" onClick={next} aria-label="التالي" className="absolute inset-y-24 end-0 z-20 w-1/4" />
+            <div className="absolute bottom-0 inset-x-0 z-30 p-5">
+              <h2 className="text-lg font-black text-white">{current.title || "شهارة"}</h2>
+              {current.link_url ? <a href={current.link_url} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-white px-5 text-xs font-black text-[#0E4D64] shadow-xl">اكتشف الآن <ExternalLink className="h-4 w-4" /></a> : null}
+            </div>
+            <button type="button" onClick={prev} className="absolute start-2 top-1/2 z-40 hidden -translate-y-1/2 rounded-full bg-black/35 p-2 text-white sm:block"><ChevronRight className="h-5 w-5" /></button>
+            <button type="button" onClick={next} className="absolute end-2 top-1/2 z-40 hidden -translate-y-1/2 rounded-full bg-black/35 p-2 text-white sm:block"><ChevronLeft className="h-5 w-5" /></button>
           </div>
         </div>
-      )}
+      ) : null}
     </>
   );
 }
+
+export default StoriesCategories;
