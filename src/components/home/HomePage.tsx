@@ -1180,21 +1180,8 @@ export function HomePage() {
             sectionKey="hero"
             sections={sectionMap}
           >
-            <SectionSurface
-              className="
-                overflow-hidden
-                border-[#D65A31]/20
-                bg-[#0E4D64]
-                p-1
-              "
-            >
-              <div className="overflow-hidden rounded-[1.45rem]">
-                <PromoSlider />
-              </div>
-            </SectionSurface>
+            <PromoSlider />
           </SectionWrapper>
-
-          <ServiceHighlights />
 
           <SectionWrapper
             sectionKey="categories"
@@ -1217,6 +1204,8 @@ export function HomePage() {
               products={bestProducts}
             />
           </SectionWrapper>
+
+          <ServiceHighlights />
 
           <SectionWrapper
             sectionKey="flash_sale"
