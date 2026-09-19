@@ -14,6 +14,7 @@ export function SiteHeader() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(THEME_STORAGE_KEY);
+
       if (saved === "dark" || saved === "light") {
         document.documentElement.classList.toggle("dark", saved === "dark");
         document.documentElement.style.colorScheme = saved;
@@ -50,6 +51,7 @@ export function SiteHeader() {
 
   const toggleTheme = () => {
     const next = !darkMode;
+
     document.documentElement.classList.toggle("dark", next);
     document.documentElement.style.colorScheme = next ? "dark" : "light";
     document.documentElement.dataset.theme = next ? "dark" : "light";
@@ -78,7 +80,8 @@ export function SiteHeader() {
               </button>
             </div>
 
-            {/* شريط البحث في الوسط */}
+            {/* شريط البحث في المنتصف
+                left-1/2 مهم هنا لأن start-1/2 مع RTL كان يزيح الشريط خارج الشاشة. */}
             <button
               ref={searchRef}
               type="button"
@@ -86,13 +89,19 @@ export function SiteHeader() {
               aria-label="البحث عن المنتجات"
               aria-haspopup="dialog"
               aria-expanded={searchOpen}
-              className="absolute start-1/2 top-1/2 flex h-10 w-[calc(100%-120px)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 items-center gap-2.5 rounded-2xl border border-[color:var(--border)]/80 bg-[color:var(--card)]/85 px-3.5 text-start shadow-[0_8px_24px_-20px_rgba(14,77,100,.7)] transition-all hover:border-[#0E4D64]/20 hover:bg-[color:var(--card)] hover:shadow-[0_10px_28px_-18px_rgba(14,77,100,.24)] active:scale-[.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]/25 sm:h-11 sm:px-4"
+              className="absolute left-1/2 top-1/2 flex h-10 w-[calc(100%-168px)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 items-center gap-2.5 overflow-hidden rounded-2xl border border-[color:var(--border)]/80 bg-[color:var(--card)]/90 px-3.5 text-start shadow-[0_8px_24px_-20px_rgba(14,77,100,.7)] transition-all hover:border-[#0E4D64]/20 hover:bg-[color:var(--card)] hover:shadow-[0_10px_28px_-18px_rgba(14,77,100,.24)] active:scale-[.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]/25 sm:h-11 sm:px-4"
             >
-              <Search className="h-[18px] w-[18px] shrink-0 text-[#0E4D64] dark:text-[#DDECF0]" strokeWidth={2.15} />
+              <Search
+                className="h-[18px] w-[18px] shrink-0 text-[#0E4D64] dark:text-[#DDECF0]"
+                strokeWidth={2.15}
+              />
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[color:var(--muted-foreground)] sm:text-sm">
                 ابحث عن المنتجات...
               </span>
-              <span className="hidden shrink-0 rounded-lg border border-[color:var(--border)] px-1.5 py-0.5 text-[10px] font-semibold text-[color:var(--muted-foreground)] sm:inline-flex" dir="ltr">
+              <span
+                className="hidden shrink-0 rounded-lg border border-[color:var(--border)] px-1.5 py-0.5 text-[10px] font-semibold text-[color:var(--muted-foreground)] sm:inline-flex"
+                dir="ltr"
+              >
                 Ctrl K
               </span>
             </button>
