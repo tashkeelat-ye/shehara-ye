@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Bell, Check, ChevronLeft, MapPin, ShieldCheck, X } from "lucide-react";
+import { registerPushNotifications } from "@/lib/push";
 
 const KEY = "shehara:permissions:v2";
 
@@ -19,7 +20,9 @@ function getLocationState(): PermissionState {
   return "default";
 }
 
-export function PermissionPrompt() {
+type PermissionPromptProps = { enabled?: boolean };
+
+export function PermissionPrompt({ enabled = true }: PermissionPromptProps) {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notificationState, setNotificationState] =
@@ -28,6 +31,7 @@ export function PermissionPrompt() {
     useState<PermissionState>("default");
 
   useEffect(() => {
+    if (!enabled) return;
     if (typeof window === "undefined") return;
     if (window.self !== window.top) return;
     if (localStorage.getItem(KEY)) return;
@@ -37,7 +41,7 @@ export function PermissionPrompt() {
 
     const timer = window.setTimeout(() => setShow(true), 1800);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [enabled]);
 
   const needsPermission = useMemo(
     () =>
@@ -94,17 +98,27 @@ export function PermissionPrompt() {
       }
 
       localStorage.setItem(KEY, "done");
+
+      // لا نطلب الإشعار خارج هذه النافذة. بعد منح الإذن،
+      // نسجل Web Push فعليًا باستخدام اشتراك المستخدم الحالي.
+      if (
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        void registerPushNotifications();
+      }
+
       setShow(false);
     } finally {
       setBusy(false);
     }
   }
 
-  if (!show || !needsPermission) return null;
+  if (!enabled || !show || !needsPermission) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[9990] flex items-center justify-center p-5"
+      className="fixed inset-0 z-[11000] flex items-center justify-center p-5"
       role="dialog"
       aria-modal="true"
       aria-labelledby="shehara-permission-title"
@@ -252,7 +266,7 @@ function PermissionItem({
   description,
   state,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
   state: PermissionState;
