@@ -677,7 +677,7 @@ export function HomePage() {
         <main
           className="
             mx-auto flex w-full max-w-7xl flex-col gap-4 px-3
-            pb-28 pt-[126px] sm:gap-5 sm:px-4 sm:pt-[132px] lg:px-5
+            pb-28 pt-2 sm:gap-5 sm:px-4 sm:pt-2 lg:px-5
           "
         >
           {/*
