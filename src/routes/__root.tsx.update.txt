@@ -1,0 +1,236 @@
+# تحديث src/routes/__root.tsx
+# لا تستبدل الملف كاملًا؛ نفّذ الاستبدالات التالية على النسخة الحالية.
+
+## 1) أضف useState إلى React imports
+
+استبدل:
+
+import {
+  useEffect,
+  type ReactNode,
+} from "react";
+
+بـ:
+
+import {
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+
+---
+
+## 2) أضف useLocation إلى TanStack Router imports
+
+استبدل:
+
+  HeadContent,
+  Scripts,
+} from "@tanstack/react-router";
+
+بـ:
+
+  HeadContent,
+  Scripts,
+  useLocation,
+} from "@tanstack/react-router";
+
+---
+
+## 3) استبدل بداية AppContent الحالية
+
+ابحث عن:
+
+function AppContent() {
+  const {
+    user,
+  } = useAuth();
+
+واستبدلها بـ:
+
+function AppContent({
+  startupReady,
+}: {
+  startupReady: boolean;
+}) {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  const isAuthRoute =
+    location.pathname === "/auth" ||
+    location.pathname.startsWith("/auth/");
+
+  /*
+   * لا نعرض نافذة الصلاحيات إلا:
+   * 1. بعد انتهاء Splash.
+   * 2. بعد وجود جلسة مستخدم.
+   * 3. خارج صفحة تسجيل الدخول.
+   */
+  const permissionsReady =
+    startupReady &&
+    Boolean(user) &&
+    !isAuthRoute;
+
+---
+
+## 4) استبدل PermissionPrompt
+
+ابحث عن:
+
+<PermissionPrompt />
+
+واستبدله بـ:
+
+<PermissionPrompt
+  enabled={permissionsReady}
+/>
+
+---
+
+## 5) امنع طلب الإشعارات التلقائي قبل نافذة الصلاحيات
+
+داخل AppContent ابحث عن:
+
+  useEffect(() => {
+    void registerPushNotifications();
+  }, []);
+
+واستبدله بـ:
+
+  useEffect(() => {
+    if (!startupReady || !user || isAuthRoute) {
+      return;
+    }
+
+    /*
+     * مهم جدًا:
+     * لا نطلب Notification.permission هنا.
+     * نافذة PermissionPrompt هي التي تطلب الإذن
+     * بعد انتهاء Splash ووجود جلسة مستخدم.
+     */
+    if (
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
+      void registerPushNotifications();
+    }
+  }, [
+    startupReady,
+    user,
+    isAuthRoute,
+  ]);
+
+---
+
+## 6) أضف startupReady داخل RootComponent
+
+بعد:
+
+  const queryClient =
+    context?.queryClient ??
+    defaultQueryClient;
+
+أضف:
+
+  const [startupReady, setStartupReady] =
+    useState(false);
+
+---
+
+## 7) اربط AppSplash بـ AppContent
+
+ابحث عن:
+
+              <AppSplash
+                duration={
+                  2200
+                }
+              />
+
+              <AppContent />
+
+واستبدله بـ:
+
+              <AppSplash
+                duration={2200}
+                onFinished={() => {
+                  setStartupReady(true);
+                }}
+              />
+
+              <AppContent
+                startupReady={startupReady}
+              />
+
+---
+
+## 8) مهم: أوقف التسجيل التلقائي لـ Push من Service Worker
+
+داخل RootComponent ابحث عن:
+
+              void registerPushNotifications();
+
+الموجود داخل:
+
+.then(
+  (
+    registration,
+  ) => {
+    console.log(
+      "Shehara Service Worker active:",
+      registration.scope,
+    );
+
+    void registerPushNotifications();
+  },
+)
+
+واستبدله بـ:
+
+.then(
+  (
+    registration,
+  ) => {
+    console.log(
+      "Shehara Service Worker active:",
+      registration.scope,
+    );
+  },
+)
+
+الـ Service Worker نفسه يستمر بالعمل؛ الذي يتغير فقط هو عدم طلب إذن الإشعارات تلقائيًا قبل موافقة المستخدم.
+
+---
+
+## النتيجة النهائية
+
+التسلسل يصبح:
+
+Splash
+  ↓
+انتهاء Splash
+  ↓
+إذا لم يوجد مستخدم → Auth بدون Permission Modal
+  ↓
+تسجيل الدخول / إنشاء الحساب
+  ↓
+وجود user
+  ↓
+الخروج من /auth
+  ↓
+Permission Modal في منتصف الشاشة
+  ↓
+الموافقة على الإشعارات والموقع
+  ↓
+تسجيل Web Push فعليًا
+  ↓
+متابعة استخدام التطبيق
+
+طبقات الواجهة:
+
+Splash             z-[12000]
+Permission Modal   z-[11000]
+Global Loader      z-[9990]
+App Content        z-[10]
+
+وبذلك لا يمكن لنافذة الصلاحيات أن تظهر فوق شاشة تسجيل الدخول، ولا أن تظهر قبل انتهاء شاشة البداية.
