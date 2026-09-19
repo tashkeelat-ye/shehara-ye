@@ -8,7 +8,7 @@ import { Link } from "@tanstack/react-router";
 
 import {
   Check,
-  Heart,
+  ChevronLeft,
   Plus,
   ShoppingBag,
   Star,
@@ -63,7 +63,8 @@ export const ProductCard = memo(
       Number(product.reviews_count) || 0;
 
     const hasRating =
-      rating > 0 && reviews > 0;
+      rating > 0 &&
+      reviews > 0;
 
     const currentPrice =
       Number(product.price) || 0;
@@ -97,7 +98,6 @@ export const ProductCard = memo(
           toast.error(
             "عذراً، هذا المنتج نفد من المخزون.",
           );
-
           return;
         }
 
@@ -142,7 +142,6 @@ export const ProductCard = memo(
       ) => {
         event.preventDefault();
         event.stopPropagation();
-
         setDrawerOpen(true);
       },
       [setDrawerOpen],
@@ -151,23 +150,15 @@ export const ProductCard = memo(
     return (
       <article
         className="
-          group
-          relative
-          flex
-          min-w-0
-          flex-col
-          overflow-hidden
-          rounded-[1.25rem]
-          border
-          border-[#0D3B4D]/[0.08]
+          group relative flex min-w-0 flex-col
+          overflow-hidden rounded-[1.5rem]
+          border border-[#0E4D64]/[0.08]
           bg-white
-          shadow-[0_12px_35px_-27px_rgba(13,59,77,0.55)]
-          transition-all
-          duration-300
+          shadow-[0_10px_35px_-25px_rgba(14,77,100,0.55)]
+          transition-all duration-300
           hover:-translate-y-1
-          hover:border-[#E2723A]/25
-          hover:shadow-[0_22px_42px_-27px_rgba(13,59,77,0.7)]
-          active:scale-[0.985]
+          hover:border-[#D65A31]/25
+          hover:shadow-[0_22px_48px_-28px_rgba(14,77,100,0.72)]
           dark:border-white/[0.07]
           dark:bg-[#0A2A38]
         "
@@ -175,26 +166,20 @@ export const ProductCard = memo(
         {/* صورة المنتج */}
         <Link
           to="/product/$id"
-          params={{
-            id: product.id,
-          }}
+          params={{ id: product.id }}
           aria-label={`عرض ${product.name}`}
           className="
-            relative
-            block
-            overflow-hidden
-            outline-none
-            focus-visible:ring-2
+            relative block overflow-hidden
+            outline-none focus-visible:ring-2
             focus-visible:ring-inset
-            focus-visible:ring-[#E2723A]
+            focus-visible:ring-[#D65A31]
           "
         >
           <div
             className="
-              relative
-              aspect-square
+              relative aspect-[0.94]
               overflow-hidden
-              bg-[#F3F5F5]
+              bg-[#F5F7F7]
               dark:bg-[#103847]
             "
           >
@@ -202,145 +187,134 @@ export const ProductCard = memo(
               src={product.images[0]}
               alt={product.name}
               className="
-                h-full
-                w-full
-                transition-transform
-                duration-700
+                h-full w-full object-cover
+                transition-transform duration-700
                 ease-out
-                group-hover:scale-[1.06]
+                group-hover:scale-[1.045]
               "
             />
 
-            {/* طبقة فخامة خفيفة */}
+            {/* تدرج سفلي يحافظ على وضوح المعلومات فوق الصورة */}
             <div
               aria-hidden="true"
               className="
-                pointer-events-none
-                absolute
-                inset-0
-                bg-gradient-to-t
-                from-[#0D3B4D]/[0.12]
-                via-transparent
-                to-transparent
-                opacity-0
-                transition-opacity
-                duration-300
-                group-hover:opacity-100
+                pointer-events-none absolute inset-x-0 bottom-0
+                h-24 bg-gradient-to-t
+                from-[#082B39]/20 to-transparent
               "
             />
 
             {/* الخصم */}
-            {discount > 0 && (
+            {discount > 0 ? (
               <span
                 className="
-                  absolute
-                  start-2.5
-                  top-2.5
+                  absolute start-2.5 top-2.5
+                  inline-flex items-center gap-1
                   rounded-full
-                  bg-[#E2723A]
-                  px-2.5
-                  py-1.5
-                  text-[9px]
-                  font-extrabold
-                  leading-none
+                  bg-[#D65A31] px-2.5 py-1.5
+                  text-[9px] font-black leading-none
                   text-white
-                  shadow-[0_5px_15px_-8px_rgba(226,114,58,0.9)]
+                  shadow-[0_7px_18px_-9px_rgba(214,90,49,0.95)]
                 "
               >
-                خصم {discount}%
+                <span>خصم</span>
+                <span>{discount}%</span>
               </span>
-            )}
+            ) : null}
 
-            {/* Badge */}
-            {product.badge && (
+            {/* شارة المنتج */}
+            {product.badge ? (
               <span
                 className="
-                  absolute
-                  end-2.5
-                  top-2.5
-                  max-w-[58%]
-                  truncate
+                  absolute end-2.5 top-2.5
+                  max-w-[55%] truncate
                   rounded-full
-                  border
-                  border-white/80
-                  bg-white/90
-                  px-2.5
-                  py-1.5
-                  text-[9px]
-                  font-bold
-                  text-[#0D3B4D]
-                  shadow-sm
-                  backdrop-blur-md
+                  border border-white/80
+                  bg-white/92 px-2.5 py-1.5
+                  text-[9px] font-extrabold
+                  text-[#0E4D64]
+                  shadow-sm backdrop-blur-md
                   dark:border-white/10
-                  dark:bg-[#0D3B4D]/90
+                  dark:bg-[#0A2A38]/90
                   dark:text-white
                 "
               >
                 {product.badge}
               </span>
-            )}
+            ) : null}
+
+            {/* مؤشر المخزون المنخفض */}
+            {lowStock ? (
+              <span
+                className="
+                  absolute bottom-2.5 start-2.5
+                  inline-flex items-center gap-1
+                  rounded-full
+                  border border-white/70
+                  bg-white/90 px-2.5 py-1.5
+                  text-[8px] font-black
+                  text-[#D65A31]
+                  shadow-sm backdrop-blur-md
+                "
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-[#D65A31]" />
+                متبقي {stockLeft.toLocaleString("ar-EG")}
+              </span>
+            ) : null}
 
             {/* نفاد المخزون */}
-            {outOfStock && (
+            {outOfStock ? (
               <div
                 className="
-                  absolute
-                  inset-0
-                  flex
-                  items-center
-                  justify-center
-                  bg-[#0D3B4D]/45
-                  backdrop-blur-[2px]
+                  absolute inset-0 grid place-items-center
+                  bg-[#0E4D64]/45 backdrop-blur-[2px]
                 "
               >
                 <span
                   className="
                     rounded-full
-                    border
-                    border-white/20
-                    bg-[#0D3B4D]/95
-                    px-4
-                    py-2
-                    text-[10px]
-                    font-extrabold
-                    text-white
+                    border border-white/20
+                    bg-[#0E4D64]/95
+                    px-4 py-2
+                    text-[10px] font-black text-white
                     shadow-xl
                   "
                 >
                   نفد المخزون
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
         </Link>
 
-        {/* معلومات المنتج */}
+        {/* تفاصيل المنتج */}
         <div
           className="
-            flex
-            min-h-[158px]
-            flex-1
-            flex-col
-            p-3
+            flex flex-1 flex-col
+            px-3 py-3.5
+            sm:px-3.5
           "
         >
           <Link
             to="/product/$id"
-            params={{
-              id: product.id,
-            }}
-            className="min-w-0"
+            params={{ id: product.id }}
+            className="
+              min-w-0 outline-none
+              focus-visible:rounded-lg
+              focus-visible:ring-2
+              focus-visible:ring-[#D65A31]
+            "
           >
             <h3
               className="
                 line-clamp-2
-                min-h-[2.7rem]
-                text-[12px]
-                font-bold
+                min-h-[2.8rem]
+                text-[12px] font-black
                 leading-[1.55]
-                text-[#102F3A]
+                tracking-[-0.01em]
+                text-[#17333D]
                 transition-colors
-                group-hover:text-[#0D3B4D]
+                group-hover:text-[#0E4D64]
                 dark:text-white
               "
             >
@@ -349,243 +323,180 @@ export const ProductCard = memo(
           </Link>
 
           {/* التقييم */}
-          <div className="mt-2 min-h-4">
+          <div className="mt-2.5 min-h-[18px]">
             {hasRating ? (
               <div
                 className="
-                  flex
-                  items-center
-                  gap-1
+                  inline-flex items-center gap-1.5
+                  rounded-full
+                  bg-[#F8F5F1]
+                  px-2 py-1
                   text-[9px]
+                  dark:bg-white/[0.045]
                 "
               >
                 <Star
-                  className="
-                    h-3.5
-                    w-3.5
-                    fill-[#E2723A]
-                    text-[#E2723A]
-                  "
+                  className="h-3.5 w-3.5 fill-[#D65A31] text-[#D65A31]"
                   aria-hidden="true"
                 />
 
-                <span
-                  className="
-                    font-extrabold
-                    text-[#0D3B4D]
-                    dark:text-white
-                  "
-                >
+                <span className="font-black text-[#0E4D64] dark:text-white">
                   {rating.toLocaleString(
                     "ar-EG",
-                    {
-                      maximumFractionDigits: 1,
-                    },
+                    { maximumFractionDigits: 1 },
                   )}
                 </span>
 
                 <span className="text-muted-foreground">
-                  (
-                  {reviews.toLocaleString(
-                    "ar-EG",
-                  )}
-                  )
+                  {reviews.toLocaleString("ar-EG")} تقييم
                 </span>
               </div>
             ) : (
-              <div className="h-4" />
+              <div className="h-[18px]" />
             )}
           </div>
 
-          {/* المخزون */}
-          <div className="mt-1 min-h-4">
-            {lowStock && (
-              <p
-                className="
-                  flex
-                  items-center
-                  gap-1
-                  text-[9px]
-                  font-bold
-                  text-[#E2723A]
-                "
-              >
-                <span
-                  className="
-                    h-1.5
-                    w-1.5
-                    rounded-full
-                    bg-[#E2723A]
-                  "
-                />
-
-                متبقي{" "}
-                {stockLeft.toLocaleString(
-                  "ar-EG",
-                )}{" "}
-                فقط
-              </p>
-            )}
-          </div>
-
-          {/* السعر والإضافة */}
+          {/* السعر */}
           <div
             className="
-              mt-auto
-              flex
-              items-end
-              justify-between
-              gap-2
-              pt-2
+              mt-2.5 flex items-end
+              justify-between gap-2
             "
           >
             <div className="min-w-0">
               <p
                 className="
-                  truncate
-                  text-[14px]
-                  font-extrabold
-                  leading-tight
-                  text-[#0D3B4D]
+                  truncate text-[15px]
+                  font-black leading-none
+                  text-[#0E4D64]
                   dark:text-[#E2723A]
-                  sm:text-[15px]
+                  sm:text-[16px]
                 "
               >
                 {formatPrice(currentPrice)}
               </p>
 
-              {hasDiscount && (
+              {hasDiscount ? (
                 <p
                   className="
-                    mt-1
-                    truncate
-                    text-[9px]
-                    font-medium
+                    mt-1.5 truncate
+                    text-[9px] font-medium
                     text-muted-foreground
                     line-through
                   "
                 >
                   {formatPrice(oldPrice)}
                 </p>
-              )}
+              ) : null}
             </div>
 
-            {/* زر السلة */}
-            <button
-              type="button"
-              disabled={outOfStock}
-              aria-label={
-                outOfStock
-                  ? `${product.name} غير متوفر`
-                  : `إضافة ${product.name} إلى السلة`
-              }
-              onClick={quickAdd}
-              className="
-                relative
-                grid
-                h-10
-                w-10
-                shrink-0
-                place-items-center
-                rounded-xl
-                bg-[#E2723A]
-                text-white
-                shadow-[0_8px_18px_-10px_rgba(226,114,58,0.9)]
-                transition-all
-                duration-200
-                hover:scale-105
-                hover:bg-[#D35F2C]
-                active:scale-90
-                disabled:cursor-not-allowed
-                disabled:opacity-40
-              "
-            >
-              {cartQuantity > 0 ? (
-                <>
-                  <Check
-                    className="h-4 w-4"
-                    strokeWidth={2.8}
-                  />
-
-                  <span
-                    className="
-                      absolute
-                      -end-1.5
-                      -top-1.5
-                      grid
-                      min-h-5
-                      min-w-5
-                      place-items-center
-                      rounded-full
-                      border-2
-                      border-white
-                      bg-[#0D3B4D]
-                      px-1
-                      text-[8px]
-                      font-extrabold
-                      text-white
-                      dark:border-[#0A2A38]
-                    "
-                  >
-                    {cartQuantity > 99
-                      ? "99+"
-                      : cartQuantity.toLocaleString(
-                          "ar-EG",
-                        )}
-                  </span>
-                </>
-              ) : (
-                <Plus
-                  className="h-4 w-4"
-                  strokeWidth={2.7}
-                />
-              )}
-            </button>
+            {hasDiscount ? (
+              <span
+                className="
+                  shrink-0 rounded-lg
+                  bg-[#D65A31]/[0.08]
+                  px-2 py-1
+                  text-[8px] font-black
+                  text-[#D65A31]
+                "
+              >
+                وفر {formatPrice(oldPrice - currentPrice)}
+              </span>
+            ) : null}
           </div>
-        </div>
 
-        {/* حالة المنتج في السلة */}
-        {cartQuantity > 0 &&
-          !outOfStock && (
+          {/* زر الإضافة إلى السلة */}
+          <button
+            type="button"
+            disabled={outOfStock}
+            aria-label={
+              outOfStock
+                ? `${product.name} غير متوفر`
+                : cartQuantity > 0
+                  ? `إضافة قطعة أخرى من ${product.name}`
+                  : `إضافة ${product.name} إلى السلة`
+            }
+            onClick={quickAdd}
+            className="
+              mt-3 flex min-h-11 w-full
+              items-center justify-center gap-2
+              rounded-xl
+              bg-[#0E4D64]
+              px-3 py-2
+              text-[10px] font-black
+              text-white
+              shadow-[0_9px_22px_-13px_rgba(14,77,100,0.9)]
+              transition-all duration-200
+              hover:bg-[#0A3D50]
+              hover:shadow-[0_13px_26px_-13px_rgba(14,77,100,0.95)]
+              active:scale-[0.97]
+              disabled:cursor-not-allowed
+              disabled:bg-[#94A4A9]
+              disabled:shadow-none
+              dark:bg-[#D65A31]
+              dark:hover:bg-[#C94F29]
+            "
+          >
+            {cartQuantity > 0 ? (
+              <>
+                <span
+                  className="
+                    grid h-6 w-6 place-items-center
+                    rounded-full bg-white/15
+                  "
+                >
+                  <Check
+                    className="h-3.5 w-3.5"
+                    strokeWidth={3}
+                  />
+                </span>
+
+                <span>
+                  في السلة · {cartQuantity.toLocaleString("ar-EG")}
+                </span>
+
+                <Plus
+                  className="ms-auto h-3.5 w-3.5 opacity-80"
+                  strokeWidth={2.8}
+                />
+              </>
+            ) : (
+              <>
+                <ShoppingBag
+                  className="h-4 w-4"
+                  strokeWidth={2.3}
+                />
+
+                <span>أضف إلى السلة</span>
+
+                <Plus
+                  className="ms-auto h-3.5 w-3.5 opacity-80"
+                  strokeWidth={2.8}
+                />
+              </>
+            )}
+          </button>
+
+          {/* فتح السلة عند وجود المنتج فيها */}
+          {cartQuantity > 0 && !outOfStock ? (
             <button
               type="button"
               onClick={openCart}
               className="
-                mx-3
-                mb-3
-                flex
-                min-h-8
-                items-center
-                justify-center
-                gap-1
-                rounded-xl
-                border
-                border-[#0D3B4D]/[0.07]
-                bg-[#0D3B4D]/[0.045]
-                px-2
-                py-1.5
-                text-[9px]
-                font-bold
-                text-[#0D3B4D]
-                transition-all
-                hover:border-[#E2723A]/20
-                hover:bg-[#E2723A]/[0.07]
-                dark:border-white/[0.06]
-                dark:bg-white/[0.035]
-                dark:text-white
+                mt-2 inline-flex items-center
+                justify-center gap-1
+                py-1 text-[9px] font-bold
+                text-muted-foreground
+                transition-colors
+                hover:text-[#0E4D64]
+                dark:hover:text-[#D65A31]
               "
             >
-              <ShoppingBag
-                className="h-3 w-3"
-                strokeWidth={2}
-              />
-
-              في السلة ·{" "}
-              {cartQuantity.toLocaleString(
-                "ar-EG",
-              )}
+              عرض السلة
+              <ChevronLeft className="h-3 w-3" />
             </button>
-          )}
+          ) : null}
+        </div>
       </article>
     );
   },
@@ -597,32 +508,27 @@ export function ProductCardSkeleton() {
   return (
     <div
       className="
-        overflow-hidden
-        rounded-[1.25rem]
-        border
-        border-border
-        bg-card
+        overflow-hidden rounded-[1.5rem]
+        border border-border bg-card
       "
     >
       <div
         className="
-          aspect-square
-          w-full
-          animate-pulse
-          bg-muted
+          aspect-[0.94] w-full
+          animate-pulse bg-muted
         "
       />
 
-      <div className="space-y-3 p-3">
+      <div className="space-y-3 p-3.5">
         <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
-
         <div className="h-3 w-2/5 animate-pulse rounded bg-muted" />
 
-        <div className="flex items-center justify-between gap-2 pt-2">
+        <div className="flex items-center justify-between gap-2 pt-1">
           <div className="h-5 w-1/3 animate-pulse rounded bg-muted" />
-
-          <div className="h-10 w-10 animate-pulse rounded-xl bg-muted" />
+          <div className="h-5 w-1/4 animate-pulse rounded bg-muted" />
         </div>
+
+        <div className="h-11 w-full animate-pulse rounded-xl bg-muted" />
       </div>
     </div>
   );
