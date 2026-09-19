@@ -101,15 +101,15 @@ export function BottomNav() {
           </div>
 
           <div className="relative z-10 grid h-[82px] grid-cols-[1fr_1fr_82px_1fr_1fr] items-end">
-            {/* حسابي */}
-            <NavItem active={isAccount} label="حسابي">
+            {/* الرئيسية — أقصى اليمين */}
+            <NavItem active={isHome} label="الرئيسية">
               <Link
-                to="/account"
-                aria-current={isAccount ? "page" : undefined}
-                aria-label="حسابي"
+                to="/"
+                aria-current={isHome ? "page" : undefined}
+                aria-label="الرئيسية"
                 className="absolute inset-0 z-20 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]"
               />
-              <User className="h-5 w-5" strokeWidth={isAccount ? 2.6 : 2} />
+              <Home className="h-5 w-5" strokeWidth={isHome ? 2.6 : 2} />
             </NavItem>
 
             {/* السلة */}
@@ -157,15 +157,15 @@ export function BottomNav() {
               <Tag className="h-5 w-5" strokeWidth={offersOpen ? 2.6 : 2} />
             </NavItem>
 
-            {/* الرئيسية */}
-            <NavItem active={isHome} label="الرئيسية">
+            {/* حسابي — أقصى اليسار */}
+            <NavItem active={isAccount} label="حسابي">
               <Link
-                to="/"
-                aria-current={isHome ? "page" : undefined}
-                aria-label="الرئيسية"
+                to="/account"
+                aria-current={isAccount ? "page" : undefined}
+                aria-label="حسابي"
                 className="absolute inset-0 z-20 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]"
               />
-              <Home className="h-5 w-5" strokeWidth={isHome ? 2.6 : 2} />
+              <User className="h-5 w-5" strokeWidth={isAccount ? 2.6 : 2} />
             </NavItem>
           </div>
         </div>
