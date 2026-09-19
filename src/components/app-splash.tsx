@@ -44,7 +44,7 @@ export function AppSplash({
       aria-label={BRAND_NAME}
       role="status"
       className={[
-        "fixed inset-0 z-[10000] overflow-hidden",
+        "fixed inset-0 z-[12000] overflow-hidden",
         "flex items-center justify-center",
         "bg-[#071E28]",
         "transition-opacity duration-500 ease-out",
