@@ -1,6 +1,8 @@
 import {
+  BadgeCheck,
   ImagePlus,
   Loader2,
+  ShieldCheck,
   Store,
   Upload,
 } from "lucide-react";
@@ -9,185 +11,251 @@ import {
   useEffect,
   useRef,
   useState,
+  type ChangeEvent,
 } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { uploadMedia } from "@/lib/media";
+
+type ImageField =
+  | "brand"
+  | "logo"
+  | "cover";
 
 type Vendor = {
   id: string;
   user_id: string;
   name: string;
   logo_url: string | null;
+  profile_logo_url: string | null;
+  cover_image_url: string | null;
+  is_verified: boolean;
 };
+
+const IMAGE_RULES: Record<
+  ImageField,
+  {
+    label: string;
+    dbField: "logo_url" | "profile_logo_url" | "cover_image_url";
+    width: number;
+    height: number;
+    maxBytes: number;
+    description: string;
+  }
+> = {
+  brand: {
+    label: "الصورة الرئيسية للعلامة",
+    dbField: "logo_url",
+    width: 800,
+    height: 800,
+    maxBytes: 5 * 1024 * 1024,
+    description:
+      "تظهر في «أبرز التجار» على الصفحة الرئيسية. استخدم صورة مربعة واضحة للعلامة.",
+  },
+  logo: {
+    label: "شعار صفحة التاجر",
+    dbField: "profile_logo_url",
+    width: 600,
+    height: 600,
+    maxBytes: 5 * 1024 * 1024,
+    description:
+      "يظهر داخل بطاقة التاجر وصفحة المتجر. يفضّل أن يكون الشعار في منتصف الصورة مع مساحة آمنة حوله.",
+  },
+  cover: {
+    label: "غلاف صفحة التاجر",
+    dbField: "cover_image_url",
+    width: 1600,
+    height: 700,
+    maxBytes: 5 * 1024 * 1024,
+    description:
+      "يظهر أعلى صفحة المتجر. ضع العناصر المهمة بعيدًا عن الحواف لأن الغلاف يُقصّ على الهواتف.",
+  },
+};
+
+function readImageSize(file: File): Promise<{
+  width: number;
+  height: number;
+}> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("تعذر قراءة أبعاد الصورة."));
+    };
+
+    image.src = url;
+  });
+}
 
 export function VendorLogoEditor() {
   const { user } = useAuth();
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const inputRef =
-    useRef<HTMLInputElement | null>(null);
+  const [vendor, setVendor] = useState<Vendor | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState<ImageField | null>(null);
+  const [activeField, setActiveField] = useState<ImageField>("brand");
 
-  const [vendor, setVendor] =
-    useState<Vendor | null>(null);
+  const loadVendor = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
-  const [loading, setLoading] =
-    useState(true);
+    setLoading(true);
 
-  const [uploading, setUploading] =
-    useState(false);
+    try {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle<Vendor>();
 
-  const [imageError, setImageError] =
-    useState(false);
+      if (error) throw error;
 
-  const loadVendor = useCallback(
-    async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        const {
-          data,
-          error,
-        } = await supabase
-          .from("vendors")
-          .select(
-            "id,user_id,name,logo_url",
-          )
-          .eq(
-            "user_id",
-            user.id,
-          )
-          .maybeSingle<Vendor>();
-
-        if (error) {
-          throw error;
-        }
-
-        setVendor(data ?? null);
-        setImageError(false);
-      } catch (error) {
-        console.error(
-          "[VendorLogoEditor] load failed:",
-          error,
-        );
-
-        toast.error(
-          "تعذر تحميل بيانات شعار المتجر.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [user?.id],
-  );
+      setVendor(data ?? null);
+    } catch (error) {
+      console.error("[VendorBranding] load failed:", error);
+      toast.error("تعذر تحميل هوية المتجر.");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     void loadVendor();
   }, [loadVendor]);
 
-  async function handleFileChange(
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) {
-    const file =
-      event.target.files?.[0];
+  function chooseImage(field: ImageField) {
+    setActiveField(field);
+    inputRef.current?.click();
+  }
 
+  async function handleFileChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
     event.target.value = "";
 
-    if (!file) {
-      return;
-    }
+    if (!file || !vendor || !user?.id) return;
 
-    if (!user?.id || !vendor) {
-      toast.error(
-        "تعذر تحديد حساب التاجر.",
-      );
-      return;
-    }
+    const rule = IMAGE_RULES[activeField];
 
     if (
-      !file.type.startsWith("image/")
+      ![
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/avif",
+      ].includes(file.type)
     ) {
-      toast.error(
-        "يرجى اختيار ملف صورة فقط.",
-      );
+      toast.error("الصيغ المسموحة: JPG أو PNG أو WEBP أو AVIF.");
       return;
     }
 
-    if (
-      file.size >
-      8 * 1024 * 1024
-    ) {
+    if (file.size > rule.maxBytes) {
       toast.error(
-        "حجم الشعار يجب ألا يتجاوز 8 ميجابايت.",
+        `حجم الصورة يجب ألا يتجاوز ${rule.maxBytes / 1024 / 1024} ميجابايت.`,
       );
       return;
     }
-
-    setUploading(true);
 
     try {
-      const logoUrl =
-        await uploadMedia(
-          "products",
-          file,
-          `vendors/${user.id}/branding`,
-        );
+      const dimensions = await readImageSize(file);
 
-      const {
-        error,
-      } = await supabase
-        .from("vendors")
-        .update({
-          logo_url: logoUrl,
-        })
-        .eq(
-          "id",
-          vendor.id,
-        )
-        .eq(
-          "user_id",
-          user.id,
+      if (
+        dimensions.width !== rule.width ||
+        dimensions.height !== rule.height
+      ) {
+        toast.error(
+          `أبعاد الصورة غير صحيحة. المطلوب بالضبط ${rule.width} × ${rule.height} بكسل.`,
         );
-
-      if (error) {
-        throw error;
+        return;
       }
-
-      setVendor(
-        (current) =>
-          current
-            ? {
-                ...current,
-                logo_url:
-                  logoUrl,
-              }
-            : current,
-      );
-
-      setImageError(false);
-
-      toast.success(
-        "تم تحديث شعار المتجر بنجاح.",
-      );
     } catch (error) {
-      console.error(
-        "[VendorLogoEditor] upload failed:",
-        error,
-      );
-
       toast.error(
         error instanceof Error
           ? error.message
-          : "تعذر رفع شعار المتجر.",
+          : "تعذر التحقق من أبعاد الصورة.",
+      );
+      return;
+    }
+
+    setUploading(activeField);
+
+    try {
+      const extension =
+        file.type === "image/jpeg"
+          ? "jpg"
+          : file.type.split("/")[1] || "webp";
+
+      const path =
+        `vendors/${user.id}/${activeField}-${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("vendor-branding")
+        .upload(path, file, {
+          contentType: file.type,
+          cacheControl: "31536000",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("vendor-branding")
+        .getPublicUrl(path);
+
+      const publicUrl = publicUrlData.publicUrl;
+
+      const { error: updateError } = await (
+        supabase as unknown as {
+          rpc: (
+            functionName: string,
+            args: Record<string, unknown>,
+          ) => Promise<{
+            data: unknown;
+            error: { message: string } | null;
+          }>;
+        }
+      ).rpc("update_vendor_branding", {
+        p_vendor_id: vendor.id,
+        p_field: rule.dbField,
+        p_url: publicUrl,
+      });
+
+      if (updateError) throw updateError;
+
+      setVendor((current) =>
+        current
+          ? {
+              ...current,
+              [rule.dbField]: publicUrl,
+            }
+          : current,
+      );
+
+      toast.success(`تم تحديث ${rule.label} بنجاح.`);
+    } catch (error) {
+      console.error("[VendorBranding] upload failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : `تعذر رفع ${rule.label}.`,
       );
     } finally {
-      setUploading(false);
+      setUploading(null);
     }
   }
 
@@ -195,9 +263,9 @@ export function VendorLogoEditor() {
     return (
       <section
         dir="rtl"
-        className="rounded-3xl border border-border bg-card p-5"
+        className="rounded-[2rem] border border-border bg-card p-5"
       >
-        <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           جارٍ تحميل هوية المتجر...
         </div>
@@ -205,115 +273,166 @@ export function VendorLogoEditor() {
     );
   }
 
-  if (!vendor) {
-    return null;
-  }
+  if (!vendor) return null;
 
-  const showLogo =
-    Boolean(
-      vendor.logo_url &&
-        !imageError,
-    );
+  const fields: Array<{
+    key: ImageField;
+    image: string | null;
+  }> = [
+    { key: "brand", image: vendor.logo_url },
+    { key: "logo", image: vendor.profile_logo_url },
+    { key: "cover", image: vendor.cover_image_url },
+  ];
 
   return (
     <section
       dir="rtl"
-      className="overflow-hidden rounded-3xl border border-border bg-card"
+      className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm"
     >
-      <div className="p-5 sm:p-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div className="relative shrink-0">
-            <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-3xl border border-border bg-secondary shadow-sm">
-              {showLogo ? (
-                <img
-                  src={vendor.logo_url ?? ""}
-                  alt={`شعار ${vendor.name}`}
-                  className="h-full w-full object-contain p-2"
-                  onError={() =>
-                    setImageError(true)
-                  }
-                />
-              ) : (
-                <Store className="h-12 w-12 text-primary" />
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                inputRef.current?.click()
-              }
-              disabled={uploading}
-              aria-label="رفع شعار المتجر"
-              className="absolute -bottom-2 -left-2 grid h-10 w-10 place-items-center rounded-full border-4 border-card bg-primary text-primary-foreground shadow-md disabled:opacity-60"
-            >
-              {uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ImagePlus className="h-4 w-4" />
-              )}
-            </button>
-
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/avif"
-              className="hidden"
-              onChange={
-                handleFileChange
-              }
-            />
-          </div>
-
-          <div className="min-w-0 flex-1">
+      <div className="border-b border-border bg-gradient-to-l from-[#0E4D64]/[0.07] via-transparent to-[#D65A31]/[0.06] p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-black text-foreground">
-                هوية المتجر
+                هوية صفحة المتجر
               </h2>
 
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
-                شعار المتجر
-              </span>
+              {vendor.is_verified ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#168BFF]/10 px-2.5 py-1 text-[10px] font-black text-[#168BFF]">
+                  <BadgeCheck className="h-3.5 w-3.5 fill-[#168BFF] text-white" />
+                  موثّق
+                </span>
+              ) : null}
             </div>
 
-            <h3 className="mt-2 truncate text-lg font-bold text-foreground">
+            <h3 className="mt-1.5 text-lg font-black text-[#0E4D64] dark:text-white">
               {vendor.name}
             </h3>
 
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">
-              ارفع شعار متجرك ليظهر للعملاء في
-              «أبرز التجار» وصفحة متجرك داخل شهارة.
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                inputRef.current?.click()
-              }
-              disabled={uploading}
-              className="mt-4 inline-flex h-10 items-center gap-2 rounded-2xl bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-60"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  جارٍ رفع الشعار...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  {vendor.logo_url
-                    ? "تغيير الشعار"
-                    : "رفع شعار المتجر"}
-                </>
-              )}
-            </button>
-
-            <p className="mt-2 text-[10px] text-muted-foreground">
-              PNG أو JPG أو WEBP أو AVIF — حتى 8 ميجابايت.
+            <p className="mt-1.5 max-w-2xl text-xs leading-6 text-muted-foreground">
+              ارفع الصور الثلاث ليظهر متجرك بصورة احترافية في «أبرز التجار»
+              وصفحة التاجر. الصور عامة لأنها أصول المتجر التي يشاهدها العملاء.
             </p>
           </div>
+
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#0E4D64]/10 text-[#0E4D64] dark:text-[#D65A31]">
+            <Store className="h-6 w-6" />
+          </div>
         </div>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif"
+        className="hidden"
+        onChange={(event) => void handleFileChange(event)}
+      />
+
+      <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
+        {fields.map(({ key, image }) => {
+          const rule = IMAGE_RULES[key];
+          const isUploading = uploading === key;
+
+          return (
+            <article
+              key={key}
+              className="overflow-hidden rounded-[1.5rem] border border-border bg-background"
+            >
+              <div
+                className={`relative overflow-hidden bg-secondary ${
+                  key === "cover"
+                    ? "aspect-[16/7]"
+                    : "aspect-square"
+                }`}
+              >
+                {image ? (
+                  <img
+                    src={image}
+                    alt={rule.label}
+                    className={
+                      key === "cover"
+                        ? "h-full w-full object-cover"
+                        : "h-full w-full object-contain p-5"
+                    }
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <div className="grid h-full min-h-32 place-items-center text-muted-foreground">
+                    {key === "cover" ? (
+                      <div className="text-center">
+                        <ImagePlus className="mx-auto h-9 w-9" />
+                        <p className="mt-2 text-[10px]">
+                          غلاف المتجر
+                        </p>
+                      </div>
+                    ) : (
+                      <Store className="h-12 w-12" />
+                    )}
+                  </div>
+                )}
+
+                <span className="absolute start-3 top-3 rounded-full bg-black/65 px-2.5 py-1 text-[9px] font-black text-white backdrop-blur">
+                  {key === "brand"
+                    ? "أبرز التجار"
+                    : key === "logo"
+                      ? "صفحة التاجر"
+                      : "غلاف الصفحة"}
+                </span>
+              </div>
+
+              <div className="p-4">
+                <h4 className="text-sm font-black text-foreground">
+                  {rule.label}
+                </h4>
+
+                <p className="mt-1.5 text-[10px] leading-5 text-muted-foreground">
+                  {rule.description}
+                </p>
+
+                <div className="mt-3 rounded-xl border border-[#0E4D64]/10 bg-[#0E4D64]/[0.035] p-3 text-[10px] leading-5 text-[#0E4D64] dark:text-[#DDECF0]">
+                  <strong>المطلوب:</strong>{" "}
+                  {rule.width} × {rule.height} بكسل
+                  <br />
+                  <strong>الحد الأقصى:</strong> 5 ميجابايت
+                  <br />
+                  <strong>الصيغ:</strong> JPG / PNG / WEBP / AVIF
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => chooseImage(key)}
+                  disabled={uploading !== null}
+                  className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0E4D64] px-4 text-xs font-black text-white transition hover:bg-[#0A3D50] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      جارٍ الرفع...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      {image ? "تغيير الصورة" : "رفع الصورة"}
+                    </>
+                  )}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="border-t border-border bg-muted/30 px-5 py-4">
+        <p className="flex items-start gap-2 text-[10px] leading-5 text-muted-foreground">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0E4D64]" />
+          سيتم رفض الصورة تلقائيًا إذا لم تطابق الأبعاد المحددة. هذا يمنع
+          تشوه الصور أو قصها بشكل غير مناسب على شاشات الهاتف.
+        </p>
       </div>
     </section>
   );
 }
+
+export default VendorLogoEditor;
