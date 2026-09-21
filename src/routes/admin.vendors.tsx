@@ -40,8 +40,8 @@ type VendorRow = {
   is_active: boolean;
   account_enabled: boolean;
   user_id: string | null;
-  created_at: string;
-  is_verified: boolean;
+  created_at?: string;
+  is_verified?: boolean;
 };
 
 type ProductRow = {
@@ -54,6 +54,8 @@ type ProductRow = {
   is_active: boolean;
   images: string[];
   city: string;
+  vendor_id?: string | null;
+  created_at?: string;
 };
 
 type ProfileRow = {
@@ -89,24 +91,17 @@ function AdminVendors() {
         await Promise.all([
           supabase
             .from("vendors")
-            .select(
-              "id,name,city,phone,logo_url,description,is_active,account_enabled,user_id,created_at,is_verified",
-            )
-            .order("created_at", { ascending: false })
+            .select("*")
             .returns<VendorRow[]>(),
 
           supabase
             .from("products")
-            .select(
-              "id,name,price,old_price,stock_left,total_stock,is_active,images,city",
-            )
+            .select("*")
             .returns<ProductRow[]>(),
 
           supabase
             .from("profiles")
-            .select(
-              "id,full_name,first_name,second_name,last_name,phone,contact_email,province,wallet_balance,created_at",
-            )
+            .select("*")
             .returns<ProfileRow[]>(),
         ]);
 
@@ -114,7 +109,13 @@ function AdminVendors() {
       if (productsResult.error) throw productsResult.error;
       if (profilesResult.error) throw profilesResult.error;
 
-      setRows(vendorsResult.data ?? []);
+      const vendorRows = [...(vendorsResult.data ?? [])].sort(
+        (a, b) =>
+          new Date(b.created_at ?? 0).getTime() -
+          new Date(a.created_at ?? 0).getTime(),
+      );
+
+      setRows(vendorRows);
       setProducts(productsResult.data ?? []);
 
       const profileMap: Record<string, ProfileRow> = {};
@@ -136,7 +137,6 @@ function AdminVendors() {
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-
     if (!query) return rows;
 
     return rows.filter(
@@ -160,11 +160,8 @@ function AdminVendors() {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select(
-          "id,name,price,old_price,stock_left,total_stock,is_active,images,city",
-        )
+        .select("*")
         .eq("vendor_id", vendor.id)
-        .order("created_at", { ascending: false })
         .returns<ProductRow[]>();
 
       if (error) throw error;
@@ -174,7 +171,6 @@ function AdminVendors() {
           (product) =>
             !data?.some((item) => item.id === product.id),
         );
-
         return [...other, ...(data ?? [])];
       });
     } catch (error) {
@@ -380,9 +376,7 @@ function AdminVendors() {
 
                     <p className="mt-1 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
                       <span>{vendor.city}</span>
-
                       <span dir="ltr">{vendor.phone}</span>
-
                       <span>{vendorProducts.length} منتج</span>
 
                       {vendor.is_verified ? (
@@ -654,9 +648,7 @@ function getVendorIdForProduct(
   product: ProductRow,
   vendorId: string,
 ): boolean {
-  void product;
-  void vendorId;
-  return false;
+  return product.vendor_id === vendorId;
 }
 
 function Info({
