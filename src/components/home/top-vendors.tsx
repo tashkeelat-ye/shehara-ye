@@ -27,12 +27,20 @@ async function fetchTopVendors(): Promise<TopVendor[]> {
     .select("*")
     .eq("is_active", true)
     .eq("account_enabled", true)
-    .order("created_at", { ascending: false })
     .limit(20);
 
   if (vendorsError) throw vendorsError;
 
-  const list = vendors ?? [];
+  const list = [...(vendors ?? [])].sort(
+    (a, b) =>
+      new Date(
+        String((b as unknown as { created_at?: string }).created_at ?? 0),
+      ).getTime() -
+      new Date(
+        String((a as unknown as { created_at?: string }).created_at ?? 0),
+      ).getTime(),
+  );
+
   if (!list.length) return [];
 
   const vendorIds = list.map((vendor) => vendor.id);
@@ -131,7 +139,6 @@ function VendorCard({
     >
       <div className="relative">
         <VendorLogo vendor={vendor} />
-
         <span className="absolute start-2 top-2 grid h-6 min-w-6 place-items-center rounded-full border border-white/80 bg-white/90 px-1 text-[8px] font-black text-[#0E4D64] shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-[#0A2A38]/90 dark:text-[#D65A31]">
           {String(index + 1).padStart(2, "0")}
         </span>
@@ -156,7 +163,6 @@ function VendorCard({
             {vendor.productCount.toLocaleString("ar-EG")}
             <span className="font-bold text-muted-foreground">منتج</span>
           </span>
-
           <ArrowLeft className="h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:-translate-x-0.5" />
         </div>
       </div>
@@ -195,14 +201,12 @@ export function TopVendors() {
             <Store className="h-3.5 w-3.5" />
             متاجر مختارة
           </div>
-
           <h2
             id="top-vendors-title"
             className="text-lg font-black tracking-tight text-[#0E4D64] dark:text-white sm:text-xl"
           >
             أبرز التجار
           </h2>
-
           <p className="mt-1 text-[10px] leading-5 text-muted-foreground">
             اكتشف متاجر نشطة ومنتجات متنوعة
           </p>
