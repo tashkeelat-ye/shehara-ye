@@ -142,7 +142,9 @@ function VendorPage() {
     >
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-5xl pb-32 pt-[calc(62px+env(safe-area-inset-top))] sm:pt-[calc(66px+env(safe-area-inset-top))]">
+      {/* SiteHeader already reserves its own fixed-header + safe-area space.
+          Do not add another header-height padding here. */}
+      <main className="mx-auto w-full max-w-5xl pb-32">
         {storeUnavailable ? (
           <section className="mx-3 mt-4 rounded-[1.75rem] border border-border bg-card p-8 text-center shadow-sm sm:mx-5">
             <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary">
@@ -173,7 +175,6 @@ function VendorPage() {
             </div>
 
             <section className="relative mt-1 overflow-hidden sm:mx-5 sm:rounded-[2rem]">
-              {/* غلاف التاجر الحقيقي */}
               <div className="relative aspect-[16/7] max-h-[260px] min-h-[165px] overflow-hidden bg-[radial-gradient(circle_at_70%_25%,rgba(214,90,49,.38),transparent_28%),linear-gradient(135deg,#082B39,#0E4D64_55%,#D65A31)]">
                 {vendor?.cover_image_url ? (
                   <img
@@ -226,7 +227,6 @@ function VendorPage() {
                 </div>
               </div>
 
-              {/* بطاقة الحساب */}
               <div className="relative mx-3 -mt-9 rounded-[1.5rem] border border-white/[0.08] bg-[#202020] p-3.5 shadow-[0_20px_55px_-25px_rgba(0,0,0,.8)] sm:mx-6 sm:-mt-12 sm:rounded-[1.75rem] sm:p-5">
                 <div className="flex items-start gap-3 sm:items-center sm:gap-4">
                   <div className="relative grid h-[68px] w-[68px] shrink-0 place-items-center overflow-hidden rounded-[1.25rem] border-4 border-[#202020] bg-white shadow-xl sm:h-[92px] sm:w-[92px] sm:rounded-2xl">
@@ -384,7 +384,7 @@ function VendorPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 px-3 sm:px-5 sm:mt-5">
+                <div className="mt-4 px-3 sm:mt-5 sm:px-5">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <h2 className="text-[15px] font-black text-[#17333D] dark:text-white sm:text-lg">
                       منتجات المتجر
