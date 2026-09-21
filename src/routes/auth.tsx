@@ -32,7 +32,6 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/lib/auth-context";
 import { isValidYemeniPhone } from "@/lib/phone";
-import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { YEMEN_GOVERNORATES } from "@/lib/yemen";
 import { BrandLogo } from "@/components/brand-logo";
@@ -179,6 +178,36 @@ function AuthPage() {
     redirect,
     navigate,
   ]);
+
+  async function handleGoogleAuth() {
+    if (mode === "signup" && accountType === "vendor") {
+      toast.error("إنشاء حساب التاجر بواسطة جوجل غير متاح حالياً. استخدم نموذج إنشاء حساب التاجر.");
+      return;
+    }
+
+    try {
+      const callback = new URL("/auth", window.location.origin);
+
+      if (redirect) {
+        callback.searchParams.set("redirect", redirect);
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callback.toString(),
+        },
+      });
+
+      if (error) {
+        console.error("[Auth] Google OAuth failed:", error);
+        toast.error(error.message || "تعذر الاتصال بحساب جوجل.");
+      }
+    } catch (error) {
+      console.error("[Auth] Google OAuth error:", error);
+      toast.error("تعذر بدء تسجيل الدخول بحساب جوجل. حاول مرة أخرى.");
+    }
+  }
 
   function resetForm() {
     setFirstName("");
@@ -1228,9 +1257,8 @@ function AuthPage() {
                 </button>
               </form>
 
-              {mode === "login" &&
-              accountType !==
-                "courier" ? (
+              {accountType !== "courier" &&
+              !(mode === "signup" && accountType === "vendor") ? (
                 <>
                   <div className="my-5 flex items-center gap-3">
                     <span className="h-px flex-1 bg-black/[0.07]" />
@@ -1242,31 +1270,15 @@ function AuthPage() {
 
                   <button
                     type="button"
-                    onClick={async () => {
-                      const result =
-                        await lovable.auth.signInWithOAuth(
-                          "google",
-                          {
-                            redirect_uri:
-                              window.location
-                                .origin,
-                          },
-                        );
-
-                      if (
-                        result.error
-                      ) {
-                        toast.error(
-                          "تعذر الدخول بحساب جوجل.",
-                        );
-                      }
-                    }}
+                    onClick={handleGoogleAuth}
                     className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-black/[0.07] bg-white text-sm font-bold text-foreground shadow-sm transition hover:border-[#0E4D64]/20 hover:bg-[#0E4D64]/[0.03]"
                   >
                     <span className="flex h-7 w-7 items-center justify-center rounded-full border border-black/[0.06] bg-white text-sm font-black">
                       G
                     </span>
-                    الدخول بحساب جوجل
+                    {mode === "login"
+                      ? "الدخول بحساب جوجل"
+                      : "إنشاء حساب بواسطة جوجل"}
                   </button>
                 </>
               ) : null}
