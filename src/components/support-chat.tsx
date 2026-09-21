@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Bot, Headphones, Loader2, MessageCircle, Send, X } from "lucide-react";
@@ -88,7 +88,7 @@ export function SupportChat() {
   );
 }
 
-function Bubble({ mine, children }: { mine: boolean; children: React.ReactNode }) {
+function Bubble({ mine, children }: { mine: boolean; children: ReactNode }) {
   return (
     <div className={mine ? "flex justify-start" : "flex justify-end"}>
       <p
@@ -117,39 +117,51 @@ function AiChat() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
   useEffect(() => {
-    boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight });
+    boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     const text = input.trim();
     if (!text || busy) return;
+
     const next = [...messages, { role: "user" as const, content: text }];
     setMessages(next);
     setInput("");
     setBusy(true);
+
     try {
       const context = products
         .slice(0, 25)
         .map((p) => `- ${p.name} | ${p.price} ريال يمني | ${p.city}`)
         .join("\n");
-      const res = await fetch("/api/chat", {
+
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next.slice(1), context }),
+        body: JSON.stringify({ messages: next.slice(-20), context }),
       });
-      const data = (await res.json()) as { reply?: string; error?: string };
-      if (!res.ok || !data.reply) {
-        throw new Error(data.error ?? "failed");
+
+      const contentType = response.headers.get("content-type") ?? "";
+      const data = contentType.includes("application/json")
+        ? ((await response.json()) as { reply?: string; error?: string })
+        : { reply: "", error: `HTTP ${response.status}` };
+
+      if (!response.ok || !data.reply?.trim()) {
+        throw new Error(data.error ?? `HTTP ${response.status}`);
       }
-      setMessages([...next, { role: "assistant", content: data.reply }]);
-    } catch {
+
+      setMessages([...next, { role: "assistant", content: data.reply.trim() }]);
+    } catch (error) {
+      console.error("[Shehara Assistant] Client request failed:", error);
       setMessages([
         ...next,
         {
           role: "assistant",
-          content: "تعذّر الوصول للمساعد الآن. جرّب مرة أخرى أو تواصل مع خدمة العملاء من التبويب الآخر.",
+          content:
+            "تعذّر الوصول للمساعد الآن. يمكنك المحاولة مرة أخرى أو الانتقال إلى تبويب خدمة العملاء للتواصل مع فريق شهارة.",
         },
       ]);
     } finally {
@@ -162,7 +174,7 @@ function AiChat() {
     <>
       <div ref={boxRef} className="flex-1 space-y-2 overflow-y-auto px-3 pb-2">
         {messages.map((m, i) => (
-          <Bubble key={i} mine={m.role === "user"}>
+          <Bubble key={`${m.role}-${i}`} mine={m.role === "user"}>
             {m.content}
           </Bubble>
         ))}
@@ -175,14 +187,7 @@ function AiChat() {
           </div>
         ) : null}
       </div>
-      <Composer
-        value={input}
-        onChange={setInput}
-        onSubmit={submit}
-        disabled={busy}
-        inputRef={inputRef}
-        placeholder="اكتب سؤالك..."
-      />
+      <Composer value={input} onChange={setInput} onSubmit={submit} disabled={busy} inputRef={inputRef} placeholder="اكتب سؤالك..." />
     </>
   );
 }
@@ -198,25 +203,36 @@ function HumanChat() {
 
   useEffect(() => {
     if (!user?.id) return;
+
     void (async () => {
-      const t = await ensureThread(user.id);
-      setThreadId(t.id);
-      setItems(await fetchMessages(t.id));
-      await markThreadRead(t.id, "admin");
-      inputRef.current?.focus();
+      try {
+        const t = await ensureThread(user.id);
+        setThreadId(t.id);
+        setItems(await fetchMessages(t.id));
+        await markThreadRead(t.id, "admin");
+        inputRef.current?.focus();
+      } catch (error) {
+        console.error("[Support] initialization failed:", error);
+      }
     })();
   }, [user?.id]);
 
   useEffect(() => {
     if (!threadId) return;
+
     const timer = window.setInterval(async () => {
-      setItems(await fetchMessages(threadId));
+      try {
+        setItems(await fetchMessages(threadId));
+      } catch (error) {
+        console.warn("[Support] refresh failed:", error);
+      }
     }, 8000);
+
     return () => window.clearInterval(timer);
   }, [threadId]);
 
   useEffect(() => {
-    boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight });
+    boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight, behavior: "smooth" });
   }, [items]);
 
   if (!user) {
@@ -232,15 +248,18 @@ function HumanChat() {
     );
   }
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     const text = input.trim();
     if (!text || !threadId || busy) return;
+
     setBusy(true);
     try {
       await sendMessage(threadId, text, "user");
       setInput("");
       setItems(await fetchMessages(threadId));
+    } catch (error) {
+      console.error("[Support] send failed:", error);
     } finally {
       setBusy(false);
       inputRef.current?.focus();
@@ -262,14 +281,7 @@ function HumanChat() {
           ))
         )}
       </div>
-      <Composer
-        value={input}
-        onChange={setInput}
-        onSubmit={submit}
-        disabled={busy || !threadId}
-        inputRef={inputRef}
-        placeholder="اكتب رسالتك لخدمة العملاء..."
-      />
+      <Composer value={input} onChange={setInput} onSubmit={submit} disabled={busy || !threadId} inputRef={inputRef} placeholder="اكتب رسالتك لخدمة العملاء..." />
     </>
   );
 }
@@ -284,9 +296,9 @@ function Composer({
 }: {
   value: string;
   onChange: (v: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: FormEvent) => void;
   disabled: boolean;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: RefObject<HTMLInputElement | null>;
   placeholder: string;
 }) {
   return (
