@@ -426,7 +426,7 @@ function AdminVendors() {
                         ? "جارٍ التحديث..."
                         : vendor.is_verified
                           ? "إلغاء التوثيق"
-                          : "توثيق التاجر"}
+                          : "توثيق الحساب"}
                     </button>
 
                     <button
@@ -493,7 +493,7 @@ function AdminVendors() {
                 )}
                 {selected.is_verified
                   ? "إلغاء التوثيق"
-                  : "توثيق التاجر"}
+                  : "توثيق الحساب"}
               </button>
             </div>
 
@@ -581,6 +581,42 @@ function AdminVendors() {
               )}
             </section>
           </div>
+
+          <section className="mt-4 rounded-2xl border border-[#168BFF]/20 bg-[#168BFF]/[0.04] p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="flex items-center gap-2 font-black">
+                  <ShieldCheck className="h-5 w-5 text-[#168BFF]" />
+                  توثيق حساب التاجر
+                </h3>
+                <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
+                  حالة التوثيق التي تظهر للعملاء بجانب اسم المتجر وفي صفحة التاجر.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void toggleVerification(selected)}
+                disabled={verificationLoading.has(selected.id)}
+                className={
+                  selected.is_verified
+                    ? "inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#168BFF]/25 bg-white px-5 text-xs font-black text-[#168BFF] shadow-sm transition hover:bg-[#168BFF]/5 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    : "inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#168BFF] px-5 text-xs font-black text-white shadow-[0_10px_25px_-12px_rgba(22,139,255,.8)] transition hover:bg-[#0E7FEF] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                }
+              >
+                {verificationLoading.has(selected.id) ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <BadgeCheck className="h-4 w-4" />
+                )}
+                {verificationLoading.has(selected.id)
+                  ? "جارٍ حفظ حالة التوثيق..."
+                  : selected.is_verified
+                    ? "إلغاء توثيق الحساب"
+                    : "توثيق الحساب الآن"}
+              </button>
+            </div>
+          </section>
 
           <section className="mt-4 rounded-2xl border border-border p-4">
             <h3 className="flex items-center gap-2 font-bold">
