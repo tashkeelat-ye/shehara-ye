@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BadgeCheck, Bike, Check, Loader2, RefreshCw, ShieldOff, Store, UserRound, X } from "lucide-react";
+import { BadgeCheck, Bike, Check, Loader2, RefreshCw, ShieldOff, Store, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AdminCard, btnCls, btnGhostCls, inputCls } from "@/components/admin-ui";
@@ -32,14 +32,15 @@ function AdminTeam() {
     setLoading(true);
     try {
       const [vendors, couriers] = await Promise.all([
-        supabase.from("vendors").select("id,name,phone,city,is_active,account_enabled,is_verified").order("name").returns<Omit<TeamRow, "kind">[]>(),
-        supabase.from("couriers").select("id,name,phone,city,is_active,account_enabled").order("name").returns<Array<Omit<TeamRow, "kind" | "is_verified">>>(),
+        supabase.from("vendors").select("id,name,phone,city,is_active,account_enabled,is_verified").order("name"),
+        supabase.from("couriers").select("id,name,phone,city,is_active,account_enabled").order("name"),
       ]);
       if (vendors.error) throw vendors.error;
       if (couriers.error) throw couriers.error;
+
       setRows([
-        ...(vendors.data ?? []).map((r) => ({ ...r, kind: "vendor" as const, is_verified: r.is_verified ?? null })),
-        ...(couriers.data ?? []).map((r) => ({ ...r, kind: "courier" as const, is_verified: null })),
+        ...((vendors.data ?? []) as Array<Omit<TeamRow, "kind">>).map((r) => ({ ...r, kind: "vendor" as const, is_verified: r.is_verified ?? null })),
+        ...((couriers.data ?? []) as Array<Omit<TeamRow, "kind" | "is_verified">>).map((r) => ({ ...r, kind: "courier" as const, is_verified: null })),
       ]);
     } catch (e) {
       console.error("[AdminTeam]", e);
@@ -53,7 +54,10 @@ function AdminTeam() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return rows.filter((r) => (kind === "all" || r.kind === kind) && (!q || `${r.name} ${r.phone ?? ""} ${r.city ?? ""}`.toLowerCase().includes(q)));
+    return rows.filter((r) =>
+      (kind === "all" || r.kind === kind) &&
+      (!q || `${r.name} ${r.phone ?? ""} ${r.city ?? ""}`.toLowerCase().includes(q)),
+    );
   }, [rows, kind, search]);
 
   async function toggle(row: TeamRow, field: "is_active" | "account_enabled") {
@@ -79,10 +83,11 @@ function AdminTeam() {
     const key = `verify:${row.id}`;
     setBusy(key);
     try {
-      const { error } = await supabase.from("vendors").update({ is_verified: !row.is_verified }).eq("id", row.id);
+      const next = !row.is_verified;
+      const { error } = await supabase.from("vendors").update({ is_verified: next }).eq("id", row.id);
       if (error) throw error;
-      setRows((current) => current.map((item) => item.id === row.id && item.kind === "vendor" ? { ...item, is_verified: !row.is_verified } : item));
-      toast.success(row.is_verified ? "تم إلغاء توثيق التاجر." : "تم توثيق التاجر.");
+      setRows((current) => current.map((item) => item.id === row.id && item.kind === "vendor" ? { ...item, is_verified: next } : item));
+      toast.success(next ? "تم توثيق التاجر." : "تم إلغاء توثيق التاجر.");
     } catch (e) {
       console.error("[AdminTeam] verify", e);
       toast.error("تعذر تحديث حالة التوثيق.");
@@ -112,11 +117,13 @@ function AdminTeam() {
         <Metric icon={Check} label="حسابات نشطة" value={enabled} />
       </div>
 
-      <AdminCard>
+      <AdminCard title="إدارة الحسابات">
         <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto]">
           <input value={search} onChange={(e) => setSearch(e.target.value)} className={inputCls} placeholder="بحث بالاسم أو الهاتف أو المحافظة" />
           <div className="flex gap-2">
-            {([['all', 'الكل'], ['vendor', 'التجار'], ['courier', 'التوصيل']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => setKind(value)} className={kind === value ? btnCls : btnGhostCls}>{label}</button>)}
+            {([['all', 'الكل'], ['vendor', 'التجار'], ['courier', 'التوصيل']] as const).map(([value, label]) => (
+              <button key={value} type="button" onClick={() => setKind(value)} className={kind === value ? btnCls : btnGhostCls}>{label}</button>
+            ))}
           </div>
         </div>
 
