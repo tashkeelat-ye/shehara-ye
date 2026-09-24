@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AdminOperationsCenter } from "@/components/admin/admin-operations-center";
 
-import { AdminOverview } from "@/components/admin/admin-overview";
-
-export const Route = createFileRoute(
-  "/admin/",
-)({
-  component: AdminOverview,
+export const Route = createFileRoute("/admin/")({
+  component: AdminOperationsCenter,
 });
