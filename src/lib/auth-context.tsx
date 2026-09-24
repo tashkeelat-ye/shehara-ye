@@ -47,41 +47,29 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
-
   role: AccountRole | null;
-
   roles: AccountRole[];
-
   accountEnabled: boolean;
-
   loading: boolean;
 
   signUp: (args: {
     phone: string;
     fullName: string;
     password: string;
-  }) => Promise<{
-    error: string | null;
-  }>;
+  }) => Promise<{ error: string | null }>;
 
   signIn: (args: {
     phone: string;
     password: string;
-  }) => Promise<{
-    error: string | null;
-  }>;
+  }) => Promise<{ error: string | null }>;
 
   signOut: () => Promise<void>;
-
   refreshProfile: () => Promise<void>;
-
   refreshAuthState: () => Promise<void>;
 };
 
 const AuthContext =
-  createContext<
-    AuthContextValue | null
-  >(null);
+  createContext<AuthContextValue | null>(null);
 
 const ROLE_PRIORITY: AccountRole[] = [
   "admin",
@@ -104,12 +92,8 @@ function isAccountRole(
 function resolvePrimaryRole(
   roles: AccountRole[],
 ): AccountRole {
-  for (
-    const role of ROLE_PRIORITY
-  ) {
-    if (
-      roles.includes(role)
-    ) {
+  for (const role of ROLE_PRIORITY) {
+    if (roles.includes(role)) {
       return role;
     }
   }
@@ -123,79 +107,25 @@ function getAccountDisabledMessage(
   switch (role) {
     case "vendor":
       return "حساب التاجر معطل حالياً. يرجى التواصل مع الإدارة.";
-
     case "courier":
       return "حساب عامل التوصيل معطل حالياً. يرجى التواصل مع الإدارة.";
-
     case "admin":
       return "حساب الإدارة معطل حالياً. يرجى التواصل مع الإدارة.";
-
     default:
       return "حسابك معطل حالياً. يرجى التواصل مع الإدارة.";
   }
 }
 
-function detectDeviceType(
-  userAgent: string,
-): string {
-  const ua =
-    userAgent.toLowerCase();
+function detectDeviceType(userAgent: string): string {
+  const ua = userAgent.toLowerCase();
 
-  if (
-    /ipad|tablet/.test(
-      ua,
-    )
-  ) {
-    return "Tablet";
-  }
-
-  if (
-    /iphone|ipod/.test(
-      ua,
-    )
-  ) {
-    return "iPhone";
-  }
-
-  if (
-    /android/.test(
-      ua,
-    )
-  ) {
-    return "Android";
-  }
-
-  if (
-    /windows phone/.test(
-      ua,
-    )
-  ) {
-    return "Windows Phone";
-  }
-
-  if (
-    /windows/.test(
-      ua,
-    )
-  ) {
-    return "Windows PC";
-  }
-
-  if (
-    /macintosh|mac os/.test(
-      ua,
-    )
-  ) {
-    return "Mac";
-  }
-
-  if (
-    /linux/.test(
-      ua,
-    )
-  ) {
-    return "Linux PC";
-  }
+  if (/ipad|tablet/.test(ua)) return "Tablet";
+  if (/iphone|ipod/.test(ua)) return "iPhone";
+  if (/android/.test(ua)) return "Android";
+  if (/windows phone/.test(ua)) return "Windows Phone";
+  if (/windows/.test(ua)) return "Windows PC";
+  if (/macintosh|mac os/.test(ua)) return "Mac";
+  if (/linux/.test(ua)) return "Linux PC";
 
   return "Unknown";
 }
@@ -203,109 +133,28 @@ function detectDeviceType(
 function detectOperatingSystem(
   userAgent: string,
 ): string {
-  const ua =
-    userAgent.toLowerCase();
+  const ua = userAgent.toLowerCase();
 
-  if (
-    /iphone|ipad|ipod/.test(
-      ua,
-    )
-  ) {
-    return "iOS";
-  }
-
-  if (
-    /android/.test(
-      ua,
-    )
-  ) {
-    return "Android";
-  }
-
-  if (
-    /windows/.test(
-      ua,
-    )
-  ) {
-    return "Windows";
-  }
-
-  if (
-    /mac os|macintosh/.test(
-      ua,
-    )
-  ) {
-    return "macOS";
-  }
-
-  if (
-    /linux/.test(
-      ua,
-    )
-  ) {
-    return "Linux";
-  }
+  if (/iphone|ipad|ipod/.test(ua)) return "iOS";
+  if (/android/.test(ua)) return "Android";
+  if (/windows/.test(ua)) return "Windows";
+  if (/mac os|macintosh/.test(ua)) return "macOS";
+  if (/linux/.test(ua)) return "Linux";
 
   return "Unknown";
 }
 
-function detectBrowser(
-  userAgent: string,
-): string {
-  const ua =
-    userAgent.toLowerCase();
+function detectBrowser(userAgent: string): string {
+  const ua = userAgent.toLowerCase();
 
-  if (
-    /edg\//.test(
-      ua,
-    )
-  ) {
-    return "Microsoft Edge";
-  }
-
-  if (
-    /opr\//.test(
-      ua,
-    )
-  ) {
-    return "Opera";
-  }
-
-  if (
-    /samsungbrowser\//.test(
-      ua,
-    )
-  ) {
-    return "Samsung Internet";
-  }
-
-  if (
-    /firefox\//.test(
-      ua,
-    )
-  ) {
-    return "Firefox";
-  }
-
-  if (
-    /chrome\//.test(
-      ua,
-    ) &&
-    !/edg\//.test(
-      ua,
-    )
-  ) {
+  if (/edg\//.test(ua)) return "Microsoft Edge";
+  if (/opr\//.test(ua)) return "Opera";
+  if (/samsungbrowser\//.test(ua)) return "Samsung Internet";
+  if (/firefox\//.test(ua)) return "Firefox";
+  if (/chrome\//.test(ua) && !/edg\//.test(ua)) {
     return "Google Chrome";
   }
-
-  if (
-    /safari\//.test(
-      ua,
-    ) &&
-    !/chrome\//.test(
-      ua,
-    )
-  ) {
+  if (/safari\//.test(ua) && !/chrome\//.test(ua)) {
     return "Safari";
   }
 
@@ -318,65 +167,41 @@ async function getGrantedGeolocation(): Promise<{
   accuracy: number;
 } | null> {
   if (
-    typeof window ===
-    "undefined" ||
+    typeof window === "undefined" ||
     !navigator.geolocation
   ) {
     return null;
   }
 
   try {
-    if (
-      "permissions" in
-      navigator
-    ) {
+    if ("permissions" in navigator) {
       const permission =
-        await navigator.permissions.query(
-          {
-            name: "geolocation",
-          },
-        );
+        await navigator.permissions.query({
+          name: "geolocation",
+        });
 
-      if (
-        permission.state !==
-        "granted"
-      ) {
+      if (permission.state !== "granted") {
         return null;
       }
     }
 
-    return await new Promise(
-      (resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              latitude:
-                position.coords
-                  .latitude,
-
-              longitude:
-                position.coords
-                  .longitude,
-
-              accuracy:
-                position.coords
-                  .accuracy,
-            });
-          },
-          () => {
-            resolve(null);
-          },
-          {
-            enableHighAccuracy:
-              true,
-            maximumAge:
-              5 * 60 * 1000,
-            timeout:
-              10000,
-          },
-        );
-      },
-    );
+    return await new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          });
+        },
+        () => resolve(null),
+        {
+          enableHighAccuracy: true,
+          maximumAge: 5 * 60 * 1000,
+          timeout: 10000,
+        },
+      );
+    });
   } catch {
     return null;
   }
@@ -388,24 +213,16 @@ export function AuthProvider({
   children: ReactNode;
 }) {
   const [session, setSession] =
-    useState<Session | null>(
-      null,
-    );
+    useState<Session | null>(null);
 
   const [profile, setProfile] =
-    useState<Profile | null>(
-      null,
-    );
+    useState<Profile | null>(null);
 
   const [role, setRole] =
-    useState<AccountRole | null>(
-      null,
-    );
+    useState<AccountRole | null>(null);
 
   const [roles, setRoles] =
-    useState<AccountRole[]>(
-      [],
-    );
+    useState<AccountRole[]>([]);
 
   const [
     accountEnabled,
@@ -423,113 +240,68 @@ export function AuthProvider({
         const [
           profileResult,
           rolesResult,
-        ] =
-          await Promise.all([
-            supabase
-              .from("profiles")
-              .select(
-                "id,full_name,phone,wallet_balance,preferred_currency,accepted_terms,accepted_order_policy,is_disabled",
-              )
-              .eq(
-                "id",
-                userId,
-              )
-              .maybeSingle<Profile>(),
+        ] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select(
+              "id,full_name,phone,wallet_balance,preferred_currency,accepted_terms,accepted_order_policy,is_disabled",
+            )
+            .eq("id", userId)
+            .maybeSingle<Profile>(),
 
-            supabase
-              .from("user_roles")
-              .select(
-                "role",
-              )
-              .eq(
-                "user_id",
-                userId,
-              ),
-          ]);
+          supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId),
+        ]);
 
         const loadedProfile =
-          profileResult.data ??
-          null;
+          profileResult.data ?? null;
 
-        if (
-          profileResult.error
-        ) {
+        if (profileResult.error) {
           console.error(
             "[Auth] Failed to load profile:",
             profileResult.error,
           );
         }
 
-        if (
-          rolesResult.error
-        ) {
+        if (rolesResult.error) {
           console.error(
             "[Auth] Failed to load roles:",
             rolesResult.error,
           );
         }
 
-        setProfile(
-          loadedProfile,
-        );
+        setProfile(loadedProfile);
 
         const loadedRoles: AccountRole[] =
-          (rolesResult.data ??
-            [])
-            .map(
-              (row) =>
-                row.role,
-            )
-            .filter(
-              isAccountRole,
-            );
+          (rolesResult.data ?? [])
+            .map((row) => row.role)
+            .filter(isAccountRole);
 
         const normalizedRoles =
-          loadedRoles.length >
-          0
+          loadedRoles.length > 0
             ? loadedRoles
-            : ([
-                "customer",
-              ] as AccountRole[]);
+            : (["customer"] as AccountRole[]);
 
         const primaryRole =
-          resolvePrimaryRole(
-            normalizedRoles,
-          );
+          resolvePrimaryRole(normalizedRoles);
 
-        setRoles(
-          normalizedRoles,
-        );
-
-        setRole(
-          primaryRole,
-        );
+        setRoles(normalizedRoles);
+        setRole(primaryRole);
 
         let enabled =
-          !Boolean(
-            loadedProfile?.is_disabled,
-          );
+          !Boolean(loadedProfile?.is_disabled);
 
-        if (
-          primaryRole ===
-          "vendor"
-        ) {
+        if (primaryRole === "vendor") {
           const {
             data,
             error,
-          } =
-            await supabase
-              .from(
-                "vendors",
-              )
-              .select(
-                "account_enabled,is_active",
-              )
-              .eq(
-                "user_id",
-                userId,
-              )
-              .maybeSingle();
+          } = await supabase
+            .from("vendors")
+            .select("account_enabled,is_active")
+            .eq("user_id", userId)
+            .maybeSingle();
 
           if (error) {
             console.error(
@@ -541,33 +313,20 @@ export function AuthProvider({
           if (data) {
             enabled =
               enabled &&
-              data.account_enabled !==
-                false &&
-              data.is_active !==
-                false;
+              data.account_enabled !== false &&
+              data.is_active !== false;
           }
         }
 
-        if (
-          primaryRole ===
-          "courier"
-        ) {
+        if (primaryRole === "courier") {
           const {
             data,
             error,
-          } =
-            await supabase
-              .from(
-                "couriers",
-              )
-              .select(
-                "account_enabled,is_active",
-              )
-              .eq(
-                "user_id",
-                userId,
-              )
-              .maybeSingle();
+          } = await supabase
+            .from("couriers")
+            .select("account_enabled,is_active")
+            .eq("user_id", userId)
+            .maybeSingle();
 
           if (error) {
             console.error(
@@ -579,24 +338,17 @@ export function AuthProvider({
           if (data) {
             enabled =
               enabled &&
-              data.account_enabled !==
-                false &&
-              data.is_active !==
-                false;
+              data.account_enabled !== false &&
+              data.is_active !== false;
           }
         }
 
-        setAccountEnabled(
-          enabled,
-        );
+        setAccountEnabled(enabled);
 
         return {
-          role:
-            primaryRole,
-          roles:
-            normalizedRoles,
-          accountEnabled:
-            enabled,
+          role: primaryRole,
+          roles: normalizedRoles,
+          accountEnabled: enabled,
         };
       },
       [],
@@ -608,125 +360,115 @@ export function AuthProvider({
       setProfile(null);
       setRole(null);
       setRoles([]);
-      setAccountEnabled(
-        true,
-      );
+      setAccountEnabled(true);
     }, []);
 
+  /*
+   * مهم:
+   * لا نكشف session/user للتطبيق قبل الانتهاء
+   * من تحميل role وحالة الحساب. هذا يمنع auth.tsx
+   * من تنفيذ redirect مبكر إلى /account.
+   */
+  const hydrateSession =
+    useCallback(
+      async (
+        nextSession: Session | null,
+      ) => {
+        if (!nextSession?.user?.id) {
+          clearAuthState();
+          setLoading(false);
+          return;
+        }
+
+        setLoading(true);
+
+        try {
+          const state =
+            await loadAuthState(
+              nextSession.user.id,
+            );
+
+          if (!state.accountEnabled) {
+            await supabase.auth.signOut();
+            clearAuthState();
+            return;
+          }
+
+          setSession(nextSession);
+        } catch (error) {
+          console.error(
+            "[Auth] Session hydration failed:",
+            error,
+          );
+          clearAuthState();
+        } finally {
+          setLoading(false);
+        }
+      },
+      [
+        clearAuthState,
+        loadAuthState,
+      ],
+    );
+
   useEffect(() => {
-    let mounted =
-      true;
+    let mounted = true;
 
     const {
       data: subscription,
-    } =
-      supabase.auth.onAuthStateChange(
-        (
-          _event,
-          newSession,
-        ) => {
+    } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        if (!mounted) {
+          return;
+        }
+
+        /*
+         * Supabase يطلق SIGNED_IN قبل أن تكون بيانات
+         * الدور/التاجر/العامل جاهزة. نؤجل hydration
+         * إلى دورة لاحقة ونبقي loading=true حتى تكتمل.
+         */
+        window.setTimeout(() => {
           if (!mounted) {
             return;
           }
 
-          setSession(
+          void hydrateSession(
             newSession,
           );
-
-          if (
-            !newSession
-          ) {
-            clearAuthState();
-          }
-        },
-      );
+        }, 0);
+      },
+    );
 
     void supabase.auth
       .getSession()
-      .then(
-        async ({
-          data,
-        }) => {
-          if (!mounted) {
-            return;
-          }
+      .then(async ({ data }) => {
+        if (!mounted) {
+          return;
+        }
 
-          const currentSession =
-            data.session ??
-            null;
+        await hydrateSession(
+          data.session ?? null,
+        );
+      })
+      .catch((error) => {
+        console.error(
+          "[Auth] Session restore failed:",
+          error,
+        );
 
-          setSession(
-            currentSession,
-          );
-
-          if (
-            !currentSession
-              ?.user?.id
-          ) {
-            setLoading(
-              false,
-            );
-
-            return;
-          }
-
-          try {
-            await loadAuthState(
-              currentSession
-                .user.id,
-            );
-          } catch (error) {
-            console.error(
-              "[Auth] Initialization failed:",
-              error,
-            );
-          } finally {
-            if (mounted) {
-              setLoading(
-                false,
-              );
-            }
-          }
-        },
-      )
-      .catch(
-        (error) => {
-          console.error(
-            "[Auth] Session restore failed:",
-            error,
-          );
-
-          if (mounted) {
-            setLoading(
-              false,
-            );
-          }
-        },
-      );
+        if (mounted) {
+          clearAuthState();
+          setLoading(false);
+        }
+      });
 
     return () => {
       mounted = false;
-
       subscription.subscription.unsubscribe();
     };
   }, [
     clearAuthState,
-    loadAuthState,
-  ]);
-
-  useEffect(() => {
-    if (
-      !session?.user?.id
-    ) {
-      return;
-    }
-
-    void loadAuthState(
-      session.user.id,
-    );
-  }, [
-    session?.user?.id,
-    loadAuthState,
+    hydrateSession,
   ]);
 
   /*
@@ -736,31 +478,24 @@ export function AuthProvider({
    */
 
   useEffect(() => {
-    const userId =
-      session?.user?.id;
+    const userId = session?.user?.id;
 
     if (
       !userId ||
-      typeof window ===
-        "undefined"
+      typeof window === "undefined"
     ) {
       return;
     }
 
     let disposed = false;
-
-    let timer:
-      | number
-      | undefined;
+    let timer: number | undefined;
 
     async function sendActivity() {
       if (disposed) {
         return;
       }
 
-      const userAgent =
-        navigator.userAgent;
-
+      const userAgent = navigator.userAgent;
       const location =
         await getGrantedGeolocation();
 
@@ -769,9 +504,7 @@ export function AuthProvider({
       }
 
       try {
-        const {
-          error,
-        } =
+        const { error } =
           await supabase.functions.invoke(
             "track-user-activity",
             {
@@ -780,32 +513,21 @@ export function AuthProvider({
                   detectDeviceType(
                     userAgent,
                   ),
-
                 os_name:
                   detectOperatingSystem(
                     userAgent,
                   ),
-
                 browser_name:
                   detectBrowser(
                     userAgent,
                   ),
-
-                user_agent:
-                  userAgent,
-
+                user_agent: userAgent,
                 latitude:
-                  location?.latitude ??
-                  null,
-
+                  location?.latitude ?? null,
                 longitude:
-                  location?.longitude ??
-                  null,
-
+                  location?.longitude ?? null,
                 accuracy:
-                  location?.accuracy ??
-                  null,
-
+                  location?.accuracy ?? null,
                 path:
                   window.location.pathname,
               },
@@ -836,20 +558,18 @@ export function AuthProvider({
         60 * 1000,
       );
 
-    const handleFocus =
-      () => {
-        void sendActivity();
-      };
+    const handleFocus = () => {
+      void sendActivity();
+    };
 
-    const handleVisibility =
-      () => {
-        if (
-          document.visibilityState ===
-          "visible"
-        ) {
-          void sendActivity();
-        }
-      };
+    const handleVisibility = () => {
+      if (
+        document.visibilityState ===
+        "visible"
+      ) {
+        void sendActivity();
+      }
+    };
 
     window.addEventListener(
       "focus",
@@ -864,13 +584,8 @@ export function AuthProvider({
     return () => {
       disposed = true;
 
-      if (
-        timer !==
-        undefined
-      ) {
-        window.clearInterval(
-          timer,
-        );
+      if (timer !== undefined) {
+        window.clearInterval(timer);
       }
 
       window.removeEventListener(
@@ -883,9 +598,7 @@ export function AuthProvider({
         handleVisibility,
       );
     };
-  }, [
-    session?.user?.id,
-  ]);
+  }, [session?.user?.id]);
 
   const signUp =
     useCallback<
@@ -897,44 +610,32 @@ export function AuthProvider({
         password,
       }) => {
         const normalizedPhone =
-          normalizeYemeniPhone(
-            phone,
-          );
+          normalizeYemeniPhone(phone);
 
         const {
           error,
         } =
-          await supabase.auth.signUp(
-            {
-              email:
-                phoneToEmail(
-                  normalizedPhone,
-                ),
-
-              password,
-
-              options: {
-                data: {
-                  full_name:
-                    fullName,
-
-                  phone:
-                    normalizedPhone,
-
-                  account_type:
-                    "customer",
-                },
-
-                ...(typeof window !==
-                "undefined"
-                  ? {
-                      emailRedirectTo:
-                        window.location.origin,
-                    }
-                  : {}),
+          await supabase.auth.signUp({
+            email:
+              phoneToEmail(
+                normalizedPhone,
+              ),
+            password,
+            options: {
+              data: {
+                full_name: fullName,
+                phone: normalizedPhone,
+                account_type: "customer",
               },
+              ...(typeof window !==
+              "undefined"
+                ? {
+                    emailRedirectTo:
+                      window.location.origin,
+                  }
+                : {}),
             },
-          );
+          });
 
         if (error) {
           if (
@@ -949,38 +650,37 @@ export function AuthProvider({
           }
 
           return {
-            error:
-              error.message,
+            error: error.message,
           };
         }
 
         const {
-          error:
-            signInError,
+          data,
+          error: signInError,
         } =
-          await supabase.auth.signInWithPassword(
-            {
-              email:
-                phoneToEmail(
-                  normalizedPhone,
-                ),
-
-              password,
-            },
-          );
+          await supabase.auth.signInWithPassword({
+            email:
+              phoneToEmail(
+                normalizedPhone,
+              ),
+            password,
+          });
 
         if (signInError) {
           return {
-            error:
-              signInError.message,
+            error: signInError.message,
           };
+        }
+
+        if (data.session) {
+          await hydrateSession(data.session);
         }
 
         return {
           error: null,
         };
       },
-      [],
+      [hydrateSession],
     );
 
   const signIn =
@@ -991,27 +691,26 @@ export function AuthProvider({
         phone,
         password,
       }) => {
+        setLoading(true);
+
         const normalizedPhone =
-          normalizeYemeniPhone(
-            phone,
-          );
+          normalizeYemeniPhone(phone);
 
         const {
           data,
           error,
         } =
-          await supabase.auth.signInWithPassword(
-            {
-              email:
-                phoneToEmail(
-                  normalizedPhone,
-                ),
-
-              password,
-            },
-          );
+          await supabase.auth.signInWithPassword({
+            email:
+              phoneToEmail(
+                normalizedPhone,
+              ),
+            password,
+          });
 
         if (error) {
+          setLoading(false);
+
           if (
             /invalid login credentials/i.test(
               error.message,
@@ -1035,41 +734,62 @@ export function AuthProvider({
           }
 
           return {
-            error:
-              error.message,
+            error: error.message,
           };
         }
 
-        if (!data.user) {
+        if (!data.user || !data.session) {
+          setLoading(false);
+
           return {
             error:
               "تعذر إنشاء جلسة تسجيل الدخول.",
           };
         }
 
-        const state =
-          await loadAuthState(
-            data.user.id,
+        try {
+          const state =
+            await loadAuthState(
+              data.user.id,
+            );
+
+          if (!state.accountEnabled) {
+            await supabase.auth.signOut();
+            clearAuthState();
+
+            return {
+              error:
+                getAccountDisabledMessage(
+                  state.role,
+                ),
+            };
+          }
+
+          /*
+           * لا نضع session في context إلا بعد أن
+           * يصبح role وحالة الحساب جاهزين.
+           */
+          setSession(data.session);
+
+          return {
+            error: null,
+          };
+        } catch (error) {
+          console.error(
+            "[Auth] Sign-in hydration failed:",
+            error,
           );
 
-        if (
-          !state.accountEnabled
-        ) {
           await supabase.auth.signOut();
-
           clearAuthState();
 
           return {
             error:
-              getAccountDisabledMessage(
-                state.role,
-              ),
+              "تم تسجيل الدخول لكن تعذر تحميل صلاحيات الحساب. حاول مرة أخرى.",
           };
+        } finally {
+          setLoading(false);
         }
-
-        return {
-          error: null,
-        };
       },
       [
         clearAuthState,
@@ -1084,6 +804,7 @@ export function AuthProvider({
           await supabase.auth.signOut();
         } finally {
           clearAuthState();
+          setLoading(false);
         }
       },
       [clearAuthState],
@@ -1092,17 +813,31 @@ export function AuthProvider({
   const refreshAuthState =
     useCallback(
       async () => {
-        if (
-          !session?.user?.id
-        ) {
-          clearAuthState();
+        const userId =
+          session?.user?.id;
 
+        if (!userId) {
+          clearAuthState();
+          setLoading(false);
           return;
         }
 
-        await loadAuthState(
-          session.user.id,
-        );
+        setLoading(true);
+
+        try {
+          const state =
+            await loadAuthState(
+              userId,
+            );
+
+          if (!state.accountEnabled) {
+            await supabase.auth.signOut();
+            clearAuthState();
+            return;
+          }
+        } finally {
+          setLoading(false);
+        }
       },
       [
         clearAuthState,
@@ -1123,29 +858,16 @@ export function AuthProvider({
     useMemo<AuthContextValue>(
       () => ({
         session,
-
-        user:
-          session?.user ??
-          null,
-
+        user: session?.user ?? null,
         profile,
-
         role,
-
         roles,
-
         accountEnabled,
-
         loading,
-
         signUp,
-
         signIn,
-
         signOut,
-
         refreshProfile,
-
         refreshAuthState,
       }),
       [
@@ -1174,9 +896,7 @@ export function AuthProvider({
 
 export function useAuth(): AuthContextValue {
   const ctx =
-    useContext(
-      AuthContext,
-    );
+    useContext(AuthContext);
 
   if (!ctx) {
     throw new Error(
