@@ -261,15 +261,10 @@ export function AdminOperationsCenter() {
               )
               .eq("is_active", true)
               .gt("stock_left", 0)
-              .filter(
-                "stock_left",
-                "lte",
-                "low_stock_threshold",
-              )
               .order("stock_left", {
                 ascending: true,
               })
-              .limit(8),
+              .limit(100),
             queryErrors,
           ),
 
@@ -548,7 +543,12 @@ export function AdminOperationsCenter() {
               : Array.isArray(
                   lowStockResult.data,
                 )
-                ? lowStockResult.data.length
+                ? lowStockResult.data.filter(
+                    (row) =>
+                      Number(row.stock_left) > 0 &&
+                      Number(row.stock_left) <=
+                        Number(row.low_stock_threshold),
+                  ).length
                 : 0,
 
           outOfStock:
@@ -656,7 +656,14 @@ export function AdminOperationsCenter() {
             : Array.isArray(
                 lowStockResult.data,
               )
-              ? lowStockResult.data as LowStockProduct[]
+              ? (lowStockResult.data as LowStockProduct[])
+                  .filter(
+                    (row) =>
+                      Number(row.stock_left) > 0 &&
+                      Number(row.stock_left) <=
+                        Number(row.low_stock_threshold),
+                  )
+                  .slice(0, 8)
               : [],
         );
 
