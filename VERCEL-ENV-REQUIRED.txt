@@ -1,0 +1,31 @@
+Shehara production deployment note — 2026-09-24
+
+1) The login/redirect race is fixed in src/lib/auth-context.tsx.
+   The app now resolves role + account status before exposing the session to route components.
+   Vendor login should land directly in /merchant/dashboard.
+   Courier login should land directly in /courier.
+   A manual page refresh is no longer required.
+
+2) The admin team route is type-safe and keeps direct database updates.
+   The admin overview route remains a clean TanStack route.
+
+3) IMPORTANT FOR VERCEL:
+   The screenshot showing:
+   "Missing Supabase environment variable(s): SUPABASE_URL, SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY"
+   is coming from the server-side courier administration functions, not from admin.index.tsx.
+
+   Vercel must have these server environment variables:
+   SUPABASE_URL
+   SUPABASE_SECRET_KEY
+
+   SUPABASE_SECRET_KEY is a server-only secret and must NOT be placed in VITE_* variables,
+   frontend code, or committed source.
+
+   The browser-side app only needs the existing public variables:
+   VITE_SUPABASE_URL
+   VITE_SUPABASE_PUBLISHABLE_KEY
+
+4) Do not replace SUPABASE_SECRET_KEY with the publishable key. That would break secure
+   auth-admin operations and would weaken the security model.
+
+No SQL migration is required for the login race fix.
