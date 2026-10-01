@@ -62,30 +62,21 @@ async function fetchVendor(id: string): Promise<VendorRow | null> {
 
 export const Route = createFileRoute("/vendor/$id")({
   component: VendorPage,
-  head: () => ({
-    meta: [
-      {
-        title: "متجر في شهارة | تسوق بلا حدود",
-      },
-      {
-        name: "description",
-        content:
-          "تعرّف على المتجر وتصفح جميع منتجاته المتوفرة داخل تطبيق شهارة.",
-      },
-      {
-        property: "og:title",
-        content: "متجر في شهارة",
-      },
-      {
-        property: "og:description",
-        content: "تصفح منتجات المتجر داخل تطبيق شهارة.",
-      },
-      {
-        property: "og:type",
-        content: "website",
-      },
-    ],
-  }),
+  loader: ({ params }) => getVendorSeo({ data: { id: params.id } }).catch(() => null),
+  head: ({ loaderData, params }) => {
+    const name = loaderData?.title ?? "متجر";
+    const path = `/vendor/${params.id}`;
+    return buildHead({
+      path,
+      title: `${name} | شهارة`,
+      description: loaderData?.description ?? "تعرّف على المتجر وتصفح جميع منتجاته المتوفرة داخل تطبيق شهارة.",
+      image: loaderData?.image ?? null,
+      jsonLd: [
+        { "@type": "Store", name, url: `https://www.shehara.store${path}`, ...(loaderData?.image ? { image: loaderData.image } : {}) },
+        breadcrumb([{ name: "الرئيسية", path: "/" }, { name, path }]),
+      ],
+    });
+  },
 });
 
 function VendorPage() {

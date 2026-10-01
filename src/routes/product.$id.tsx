@@ -46,8 +46,23 @@ import {
   isFavorite,
   removeFavorite,
 } from "@/lib/favorites";
+import { getProductSeo } from "@/lib/seo.functions";
+import { buildHead, breadcrumb, productLd } from "@/lib/seo";
 
 export const Route = createFileRoute("/product/$id")({
+  loader: ({ params }) => getProductSeo({ data: { id: params.id } }).catch(() => null),
+  head: ({ loaderData, params }) => {
+    const d = loaderData;
+    if (!d) return buildHead({ path: `/product/${params.id}`, title: "منتج | شهارة", description: "تفاصيل المنتج في متجر شهارة." });
+    return buildHead({
+      path: `/product/${params.id}`,
+      title: `${d.title} | شهارة`,
+      description: d.description,
+      image: d.image,
+      type: "product",
+      jsonLd: [productLd(params.id, d), breadcrumb([{ name: "الرئيسية", path: "/" }, { name: d.title, path: `/product/${params.id}` }])],
+    });
+  },
   component: ProductDetail,
 });
 
