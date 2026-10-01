@@ -530,6 +530,33 @@ export function NotificationListener({
           notification.body ||
           "لديك إشعار جديد من شهارة.";
 
+        try {
+          navigator.vibrate?.([200, 100, 200]);
+        } catch {
+          // تجاهل.
+        }
+
+        if (
+          document.visibilityState !== "visible" &&
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
+          try {
+            const reg = await navigator.serviceWorker?.getRegistration();
+            const opts = {
+              body,
+              icon: "/icon-192.png",
+              badge: "/icon-192.png",
+              tag: notificationId,
+              data: { url: notification.link_url || "/" },
+            };
+            if (reg) await reg.showNotification(title, opts);
+            else new Notification(title, opts);
+          } catch {
+            // تجاهل.
+          }
+        }
+
         toast(
           title,
           {

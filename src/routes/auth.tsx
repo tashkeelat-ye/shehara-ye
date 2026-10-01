@@ -158,15 +158,23 @@ function AuthPage() {
       return;
     }
 
-    const destination =
-      redirect ??
-      (role === "courier"
+    const roleHome =
+      role === "courier"
         ? "/courier"
         : role === "vendor"
-          ? "/merchant"
+          ? "/merchant/dashboard"
           : role === "admin"
             ? "/admin"
-            : "/account");
+            : "/account";
+    const safeRedirect =
+      redirect &&
+      redirect.startsWith("/") &&
+      !redirect.startsWith("//") &&
+      !redirect.startsWith("/auth") &&
+      (role === "customer" || !role)
+        ? redirect
+        : null;
+    const destination = safeRedirect ?? roleHome;
 
     void navigate({
       to: destination,
@@ -737,39 +745,27 @@ function AuthPage() {
                     الدخول إلى
                   </p>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                     <AccountTypeButton
-                      active={
-                        accountType ===
-                        "customer"
-                      }
-                      icon={
-                        <User className="h-5 w-5" />
-                      }
-                      title="حساب عميل"
+                      active={accountType === "customer"}
+                      icon={<User className="h-5 w-5" />}
+                      title="عميل"
                       description="التسوق والطلبات"
-                      onClick={() =>
-                        setAccountType(
-                          "customer",
-                        )
-                      }
+                      onClick={() => setAccountType("customer")}
                     />
-
                     <AccountTypeButton
-                      active={
-                        accountType ===
-                        "courier"
-                      }
-                      icon={
-                        <Bike className="h-5 w-5" />
-                      }
-                      title="عامل توصيل"
-                      description="إدارة وتسليم الطلبات"
-                      onClick={() =>
-                        setAccountType(
-                          "courier",
-                        )
-                      }
+                      active={accountType === "vendor"}
+                      icon={<Store className="h-5 w-5" />}
+                      title="تاجر"
+                      description="إدارة متجرك"
+                      onClick={() => setAccountType("vendor")}
+                    />
+                    <AccountTypeButton
+                      active={accountType === "courier"}
+                      icon={<Bike className="h-5 w-5" />}
+                      title="توصيل"
+                      description="تسليم الطلبات"
+                      onClick={() => setAccountType("courier")}
                     />
                   </div>
                 </div>

@@ -28,24 +28,25 @@ import {
   type ProductFilters,
   type SortKey,
 } from "@/lib/db";
+import { getCategorySeo } from "@/lib/seo.functions";
+import { buildHead, breadcrumb } from "@/lib/seo";
 
 export const Route =
   createFileRoute(
     "/category/$slug",
   )({
-    head: () => ({
-      meta: [
-        {
-          title:
-            "تصفح الفئة | شهارة",
-        },
-        {
-          name: "description",
-          content:
-            "تصفح منتجات الفئة في متجر شهارة مع خيارات الترتيب والفلاتر.",
-        },
-      ],
-    }),
+    loader: ({ params }) => getCategorySeo({ data: { id: params.slug } }).catch(() => null),
+    head: ({ loaderData, params }) => {
+      const name = loaderData?.title ?? "تصفح الفئة";
+      const path = `/category/${params.slug}`;
+      return buildHead({
+        path,
+        title: `${name} | شهارة`,
+        description: loaderData?.description ?? "تصفح منتجات الفئة في متجر شهارة مع خيارات الترتيب والفلاتر.",
+        image: loaderData?.image ?? null,
+        jsonLd: [breadcrumb([{ name: "الرئيسية", path: "/" }, { name: "الأقسام", path: "/products" }, { name, path }])],
+      });
+    },
 
     component:
       CategoryPage,
