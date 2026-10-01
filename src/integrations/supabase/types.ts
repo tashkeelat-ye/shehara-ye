@@ -7,10 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-
   public: {
     Tables: {
       addresses: {
@@ -61,7 +62,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       banners: {
         Row: {
           created_at: string
@@ -101,7 +101,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       bottom_nav_items: {
         Row: {
           created_at: string | null
@@ -135,7 +134,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       brands: {
         Row: {
           created_at: string
@@ -150,7 +148,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
-          logo_url?: string
+          logo_url?: string | null
           name: string
           slug?: string | null
           sort_order?: number | null
@@ -159,14 +157,13 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
-          logo_url?: string
+          logo_url?: string | null
           name?: string
           slug?: string | null
           sort_order?: number | null
         }
         Relationships: []
       }
-
       cart_items: {
         Row: {
           color: string | null
@@ -205,7 +202,6 @@ export type Database = {
           },
         ]
       }
-
       categories: {
         Row: {
           created_at: string
@@ -236,7 +232,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       couriers: {
         Row: {
           account_enabled: boolean
@@ -273,7 +268,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       faqs: {
         Row: {
           answer: string
@@ -304,7 +298,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       flash_sales: {
         Row: {
           created_at: string
@@ -346,13 +339,13 @@ export type Database = {
           },
         ]
       }
-
       home_sections: {
         Row: {
           created_at: string
           id: string
           is_active: boolean
           section_key: string
+          section_type: string | null
           sort_order: number
           title: string
           updated_at: string
@@ -362,6 +355,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           section_key: string
+          section_type?: string | null
           sort_order?: number
           title?: string
           updated_at?: string
@@ -371,13 +365,13 @@ export type Database = {
           id?: string
           is_active?: boolean
           section_key?: string
+          section_type?: string | null
           sort_order?: number
           title?: string
           updated_at?: string
         }
         Relationships: []
       }
-
       inventory_movements: {
         Row: {
           created_at: string
@@ -419,7 +413,132 @@ export type Database = {
           },
         ]
       }
-
+      invoice_settings: {
+        Row: {
+          accent_color: string
+          commercial_registration: string
+          enabled: boolean
+          footer_note: string
+          header_note: string
+          id: boolean
+          invoice_footer_enabled: boolean
+          invoice_prefix: string
+          invoice_subtitle: string
+          invoice_title: string
+          logo_url: string
+          paper_size: string
+          primary_color: string
+          secondary_color: string
+          show_commercial_registration: boolean
+          show_customer_address: boolean
+          show_customer_details: boolean
+          show_customer_phone: boolean
+          show_delivery_fee: boolean
+          show_discount: boolean
+          show_invoice_date: boolean
+          show_invoice_number: boolean
+          show_notes: boolean
+          show_order_number: boolean
+          show_payment_method: boolean
+          show_payment_status: boolean
+          show_product_description: boolean
+          show_product_images: boolean
+          show_qr_code: boolean
+          show_store_details: boolean
+          show_tax_number: boolean
+          store_address: string
+          store_email: string
+          store_name: string
+          store_phone: string
+          store_tagline: string
+          tax_number: string
+          thank_you_message: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string
+          commercial_registration?: string
+          enabled?: boolean
+          footer_note?: string
+          header_note?: string
+          id?: boolean
+          invoice_footer_enabled?: boolean
+          invoice_prefix?: string
+          invoice_subtitle?: string
+          invoice_title?: string
+          logo_url?: string
+          paper_size?: string
+          primary_color?: string
+          secondary_color?: string
+          show_commercial_registration?: boolean
+          show_customer_address?: boolean
+          show_customer_details?: boolean
+          show_customer_phone?: boolean
+          show_delivery_fee?: boolean
+          show_discount?: boolean
+          show_invoice_date?: boolean
+          show_invoice_number?: boolean
+          show_notes?: boolean
+          show_order_number?: boolean
+          show_payment_method?: boolean
+          show_payment_status?: boolean
+          show_product_description?: boolean
+          show_product_images?: boolean
+          show_qr_code?: boolean
+          show_store_details?: boolean
+          show_tax_number?: boolean
+          store_address?: string
+          store_email?: string
+          store_name?: string
+          store_phone?: string
+          store_tagline?: string
+          tax_number?: string
+          thank_you_message?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string
+          commercial_registration?: string
+          enabled?: boolean
+          footer_note?: string
+          header_note?: string
+          id?: boolean
+          invoice_footer_enabled?: boolean
+          invoice_prefix?: string
+          invoice_subtitle?: string
+          invoice_title?: string
+          logo_url?: string
+          paper_size?: string
+          primary_color?: string
+          secondary_color?: string
+          show_commercial_registration?: boolean
+          show_customer_address?: boolean
+          show_customer_details?: boolean
+          show_customer_phone?: boolean
+          show_delivery_fee?: boolean
+          show_discount?: boolean
+          show_invoice_date?: boolean
+          show_invoice_number?: boolean
+          show_notes?: boolean
+          show_order_number?: boolean
+          show_payment_method?: boolean
+          show_payment_status?: boolean
+          show_product_description?: boolean
+          show_product_images?: boolean
+          show_qr_code?: boolean
+          show_store_details?: boolean
+          show_tax_number?: boolean
+          store_address?: string
+          store_email?: string
+          store_name?: string
+          store_phone?: string
+          store_tagline?: string
+          tax_number?: string
+          thank_you_message?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           id: string
@@ -452,7 +571,6 @@ export type Database = {
           },
         ]
       }
-
       nav_items: {
         Row: {
           created_at: string
@@ -486,7 +604,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       notification_preferences: {
         Row: {
           created_at: string
@@ -503,6 +620,7 @@ export type Database = {
           promos?: boolean
           push_enabled?: boolean
           system?: boolean
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -511,11 +629,11 @@ export type Database = {
           promos?: boolean
           push_enabled?: boolean
           system?: boolean
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
-
       notifications: {
         Row: {
           body: string
@@ -549,7 +667,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       order_items: {
         Row: {
           color: string | null
@@ -576,7 +693,7 @@ export type Database = {
           unit_price: number
         }
         Update: {
-          color?: string
+          color?: string | null
           currency?: string
           id?: string
           order_id?: string
@@ -604,7 +721,6 @@ export type Database = {
           },
         ]
       }
-
       orders: {
         Row: {
           checkout_token: string | null
@@ -620,7 +736,6 @@ export type Database = {
           order_number: string
           payment_method_code: string
           payment_status: string
-          refunded_amount: number
           shipping_city: string
           shipping_details: string
           shipping_district: string
@@ -647,7 +762,6 @@ export type Database = {
           order_number?: string
           payment_method_code?: string
           payment_status?: string
-          refunded_amount?: number
           shipping_city?: string
           shipping_details?: string
           shipping_district?: string
@@ -696,7 +810,6 @@ export type Database = {
           },
         ]
       }
-
       pages: {
         Row: {
           content: string
@@ -727,7 +840,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       payment_methods: {
         Row: {
           account_name: string
@@ -773,13 +885,12 @@ export type Database = {
         }
         Relationships: []
       }
-
       payment_requests: {
         Row: {
           admin_note: string
           amount: number
           created_at: string
-          currency: string
+          currency: string | null
           id: string
           method_code: string
           order_id: string | null
@@ -797,7 +908,7 @@ export type Database = {
           admin_note?: string
           amount: number
           created_at?: string
-          currency?: string
+          currency?: string | null
           id?: string
           method_code: string
           order_id?: string | null
@@ -815,7 +926,7 @@ export type Database = {
           admin_note?: string
           amount?: number
           created_at?: string
-          currency?: string
+          currency?: string | null
           id?: string
           method_code?: string
           order_id?: string | null
@@ -839,7 +950,6 @@ export type Database = {
           },
         ]
       }
-
       product_reviews: {
         Row: {
           comment: string
@@ -881,7 +991,6 @@ export type Database = {
           },
         ]
       }
-
       products: {
         Row: {
           badge: string | null
@@ -1024,47 +1133,60 @@ export type Database = {
           },
         ]
       }
-
       profiles: {
         Row: {
           accepted_order_policy: boolean
           accepted_terms: boolean
+          contact_email: string | null
           created_at: string
+          first_name: string
           full_name: string
           id: string
           is_disabled: boolean
+          last_name: string
           phone: string | null
           preferred_currency: string
+          province: string
+          second_name: string
           updated_at: string
           wallet_balance: number
         }
         Insert: {
           accepted_order_policy?: boolean
           accepted_terms?: boolean
+          contact_email?: string | null
           created_at?: string
+          first_name?: string
           full_name?: string
           id: string
           is_disabled?: boolean
+          last_name?: string
           phone?: string | null
           preferred_currency?: string
+          province?: string
+          second_name?: string
           updated_at?: string
           wallet_balance?: number
         }
         Update: {
           accepted_order_policy?: boolean
           accepted_terms?: boolean
+          contact_email?: string | null
           created_at?: string
+          first_name?: string
           full_name?: string
           id?: string
           is_disabled?: boolean
-          phone?: string
+          last_name?: string
+          phone?: string | null
           preferred_currency?: string
+          province?: string
+          second_name?: string
           updated_at?: string
           wallet_balance?: number
         }
         Relationships: []
       }
-
       reviews: {
         Row: {
           author_name: string
@@ -1106,7 +1228,6 @@ export type Database = {
           },
         ]
       }
-
       site_settings: {
         Row: {
           address: string
@@ -1118,6 +1239,9 @@ export type Database = {
           closed_message: string
           created_at: string
           custom_banners_4to1: Json | null
+          custom_font_name: string
+          custom_font_original_name: string
+          custom_font_url: string
           delivery_fee: number
           email: string
           facebook: string
@@ -1142,6 +1266,7 @@ export type Database = {
           store_name: string
           tagline: string
           telegram: string
+          theme_colors: Json
           tiktok: string
           twitter: string
           updated_at: string
@@ -1157,6 +1282,9 @@ export type Database = {
           closed_message?: string
           created_at?: string
           custom_banners_4to1?: Json | null
+          custom_font_name?: string
+          custom_font_original_name?: string
+          custom_font_url?: string
           delivery_fee?: number
           email?: string
           facebook?: string
@@ -1181,6 +1309,7 @@ export type Database = {
           store_name?: string
           tagline?: string
           telegram?: string
+          theme_colors?: Json
           tiktok?: string
           twitter?: string
           updated_at?: string
@@ -1196,6 +1325,9 @@ export type Database = {
           closed_message?: string
           created_at?: string
           custom_banners_4to1?: Json | null
+          custom_font_name?: string
+          custom_font_original_name?: string
+          custom_font_url?: string
           delivery_fee?: number
           email?: string
           facebook?: string
@@ -1220,6 +1352,7 @@ export type Database = {
           store_name?: string
           tagline?: string
           telegram?: string
+          theme_colors?: Json
           tiktok?: string
           twitter?: string
           updated_at?: string
@@ -1227,7 +1360,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       stories: {
         Row: {
           created_at: string
@@ -1273,7 +1405,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       support_messages: {
         Row: {
           body: string
@@ -1309,7 +1440,6 @@ export type Database = {
           },
         ]
       }
-
       support_threads: {
         Row: {
           created_at: string
@@ -1340,40 +1470,108 @@ export type Database = {
         }
         Relationships: []
       }
-
+      user_activity_profiles: {
+        Row: {
+          browser_name: string | null
+          created_at: string
+          device_type: string | null
+          first_visit_at: string | null
+          ip_city: string | null
+          ip_country: string | null
+          ip_region: string | null
+          last_active_at: string | null
+          last_ip: string | null
+          last_path: string | null
+          latitude: number | null
+          location_accuracy: number | null
+          longitude: number | null
+          order_location_at: string | null
+          order_location_latitude: number | null
+          order_location_longitude: number | null
+          os_name: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          browser_name?: string | null
+          created_at?: string
+          device_type?: string | null
+          first_visit_at?: string | null
+          ip_city?: string | null
+          ip_country?: string | null
+          ip_region?: string | null
+          last_active_at?: string | null
+          last_ip?: string | null
+          last_path?: string | null
+          latitude?: number | null
+          location_accuracy?: number | null
+          longitude?: number | null
+          order_location_at?: string | null
+          order_location_latitude?: number | null
+          order_location_longitude?: number | null
+          os_name?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          browser_name?: string | null
+          created_at?: string
+          device_type?: string | null
+          first_visit_at?: string | null
+          ip_city?: string | null
+          ip_country?: string | null
+          ip_region?: string | null
+          last_active_at?: string | null
+          last_ip?: string | null
+          last_path?: string | null
+          latitude?: number | null
+          location_accuracy?: number | null
+          longitude?: number | null
+          order_location_at?: string | null
+          order_location_latitude?: number | null
+          order_location_longitude?: number | null
+          os_name?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_push_subscriptions: {
         Row: {
-          created_at: string
-          endpoint: string
-          id: string
+          created_at: string | null
+          endpoint: string | null
+          id: number
           is_active: boolean
           subscription: Json
           updated_at: string
           user_agent: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
-          endpoint?: string
-          id?: string
+          created_at?: string | null
+          endpoint?: string | null
+          id?: number
           is_active?: boolean
           subscription: Json
           updated_at?: string
           user_agent?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
-          endpoint?: string
-          id?: string
+          created_at?: string | null
+          endpoint?: string | null
+          id?: number
           is_active?: boolean
           subscription?: Json
           updated_at?: string
           user_agent?: string
+          user_id?: string | null
         }
         Relationships: []
       }
-
       user_roles: {
         Row: {
           id: string
@@ -1392,47 +1590,126 @@ export type Database = {
         }
         Relationships: []
       }
-
       vendors: {
         Row: {
           account_enabled: boolean
           city: string
+          cover_image_url: string | null
           created_at: string
           description: string
           id: string
           is_active: boolean
+          is_verified: boolean
           logo_url: string
           name: string
           phone: string
+          profile_logo_url: string | null
           user_id: string | null
         }
         Insert: {
           account_enabled?: boolean
           city?: string
+          cover_image_url?: string | null
           created_at?: string
           description?: string
           id?: string
           is_active?: boolean
+          is_verified?: boolean
           logo_url?: string
           name: string
           phone?: string
+          profile_logo_url?: string | null
           user_id?: string | null
         }
         Update: {
           account_enabled?: boolean
           city?: string
+          cover_image_url?: string | null
           created_at?: string
           description?: string
           id?: string
           is_active?: boolean
+          is_verified?: boolean
           logo_url?: string
           name?: string
           phone?: string
+          profile_logo_url?: string | null
           user_id?: string | null
         }
         Relationships: []
       }
-
+      wallet_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          description: string
+          id: string
+          kind: string
+          order_id: string | null
+          reason: string | null
+          reference_id: string | null
+          reference_type: string | null
+          transaction_type: string | null
+          user_id: string
+          wallet_id: string | null
+        }
+        Insert: {
+          amount: number
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description?: string
+          id?: string
+          kind: string
+          order_id?: string | null
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type?: string | null
+          user_id: string
+          wallet_id?: string | null
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description?: string
+          id?: string
+          kind?: string
+          order_id?: string | null
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_type?: string | null
+          user_id?: string
+          wallet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallets: {
         Row: {
           balance: number
@@ -1460,77 +1737,6 @@ export type Database = {
         }
         Relationships: []
       }
-
-      wallet_transactions: {
-        Row: {
-          amount: number
-          balance_after: number | null
-          balance_before: number | null
-          created_at: string
-          created_by: string | null
-          currency: string | null
-          description: string
-          id: string
-          kind: string
-          order_id: string | null
-          reference_id: string | null
-          reference_type: string | null
-          transaction_type: string | null
-          user_id: string
-          wallet_id: string | null
-        }
-        Insert: {
-          amount: number
-          balance_after?: number | null
-          balance_before?: number | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string | null
-          description?: string
-          id?: string
-          kind: string
-          order_id?: string | null
-          reference_id?: string | null
-          reference_type?: string | null
-          transaction_type?: string | null
-          user_id: string
-          wallet_id?: string | null
-        }
-        Update: {
-          amount?: number
-          balance_after?: number | null
-          balance_before?: number | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string | null
-          description?: string
-          id?: string
-          kind?: string
-          order_id?: string | null
-          reference_id?: string | null
-          reference_type?: string | null
-          transaction_type?: string | null
-          user_id?: string
-          wallet_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "wallet_transactions_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "wallet_transactions_wallet_id_fkey"
-            columns: ["wallet_id"]
-            isOneToOne: false
-            referencedRelation: "wallets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-
       wishlists: {
         Row: {
           created_at: string
@@ -1561,52 +1767,111 @@ export type Database = {
         ]
       }
     }
-
     Views: {
       [_ in never]: never
     }
-
     Functions: {
-      approve_wallet_refund: {
-        Args: {
-          _note?: string
-          _payment_request_id: string
-        }
-        Returns: Database["public"]["Tables"]["payment_requests"]["Row"]
+      admin_get_user_account_details: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
-
-      approve_wallet_topup: {
-        Args: {
-          _note?: string
-          _payment_request_id: string
-        }
-        Returns: Database["public"]["Tables"]["payment_requests"]["Row"]
+      admin_get_vendor_account_details: {
+        Args: { p_vendor_id: string }
+        Returns: Json
       }
-
+      admin_list_user_accounts: { Args: never; Returns: Json }
+      admin_list_vendor_accounts: { Args: never; Returns: Json }
+      admin_set_vendor_verified: {
+        Args: { p_vendor_id: string; p_verified: boolean }
+        Returns: {
+          account_enabled: boolean
+          city: string
+          cover_image_url: string | null
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          is_verified: boolean
+          logo_url: string
+          name: string
+          phone: string
+          profile_logo_url: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vendors"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_update_wallet_balance: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_mode?: string
+          p_reason?: string
+          p_user_id?: string
+        }
+        Returns: {
+          balance: number
+          created_at: string
+          currency: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "wallets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       assign_order_courier_secure: {
-        Args: {
-          _courier_id?: string | null
-          _order_id: string
+        Args: { _courier_id: string; _order_id: string }
+        Returns: {
+          checkout_token: string | null
+          courier_id: string | null
+          created_at: string
+          currency: string
+          delivery_fee: number
+          id: string
+          invoice_number: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string
+          order_number: string
+          payment_method_code: string
+          payment_status: string
+          shipping_city: string
+          shipping_details: string
+          shipping_district: string
+          shipping_landmark: string
+          shipping_name: string
+          shipping_phone: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
         }
-        Returns: Database["public"]["Tables"]["orders"]["Row"]
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-
       broadcast_notification: {
-        Args: {
-          _body: string
-          _link?: string
-          _title: string
-        }
+        Args: { _body: string; _link?: string; _title: string }
         Returns: number
       }
-
-      bytea_to_text: {
-        Args: {
-          data: string
-        }
-        Returns: string
+      bytea_to_text: { Args: { data: string }; Returns: string }
+      can_transition_order_status: {
+        Args: { _from: string; _to: string }
+        Returns: boolean
       }
-
       create_checkout_order: {
         Args: {
           _checkout_token: string
@@ -1615,7 +1880,7 @@ export type Database = {
           _latitude?: number
           _longitude?: number
           _needs_payment_request?: boolean
-          _notes?: string
+          _notes: string
           _payment_method_code: string
           _payment_status: string
           _receipt_path?: string
@@ -1625,59 +1890,118 @@ export type Database = {
           _shipping_city: string
           _shipping_details: string
           _shipping_district: string
-          _shipping_landmark?: string
+          _shipping_landmark: string
           _shipping_name: string
           _shipping_phone: string
           _status: Database["public"]["Enums"]["order_status"]
           _subtotal: number
           _total: number
         }
-        Returns: Database["public"]["Tables"]["orders"]["Row"]
+        Returns: {
+          checkout_token: string | null
+          courier_id: string | null
+          created_at: string
+          currency: string
+          delivery_fee: number
+          id: string
+          invoice_number: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string
+          order_number: string
+          payment_method_code: string
+          payment_status: string
+          shipping_city: string
+          shipping_details: string
+          shipping_district: string
+          shipping_landmark: string
+          shipping_name: string
+          shipping_phone: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-
+      create_secure_order: {
+        Args: {
+          _checkout_token: string
+          _delivery_fee?: number
+          _items?: Json
+          _latitude?: number
+          _longitude?: number
+          _notes?: string
+          _payment_method_code: string
+          _shipping_city: string
+          _shipping_details: string
+          _shipping_district: string
+          _shipping_name: string
+          _shipping_phone: string
+        }
+        Returns: {
+          checkout_token: string | null
+          courier_id: string | null
+          created_at: string
+          currency: string
+          delivery_fee: number
+          id: string
+          invoice_number: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string
+          order_number: string
+          payment_method_code: string
+          payment_status: string
+          shipping_city: string
+          shipping_details: string
+          shipping_district: string
+          shipping_landmark: string
+          shipping_name: string
+          shipping_phone: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_user_has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-        }
+        Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
       }
-
-      ensure_courier_role: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: boolean
-      }
-
-      ensure_customer_role: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: boolean
-      }
-
-      ensure_vendor_role: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: boolean
-      }
-
+      ensure_courier_role: { Args: { p_user_id: string }; Returns: boolean }
+      ensure_customer_role: { Args: { p_user_id: string }; Returns: boolean }
+      ensure_vendor_role: { Args: { p_user_id: string }; Returns: boolean }
       ensure_wallet: {
-        Args: {
-          _currency?: string
-          _user_id: string
+        Args: { p_currency: string; p_user_id: string }
+        Returns: {
+          balance: number
+          created_at: string
+          currency: string
+          id: string
+          updated_at: string
+          user_id: string
         }
-        Returns: Database["public"]["Tables"]["wallets"]["Row"]
-      }
-
-      get_wallet: {
-        Args: {
-          requested_currency?: string
+        SetofOptions: {
+          from: "*"
+          to: "wallets"
+          isOneToOne: true
+          isSetofReturn: false
         }
-        Returns: Database["public"]["Tables"]["wallets"]["Row"]
       }
-
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1685,11 +2009,8 @@ export type Database = {
         }
         Returns: boolean
       }
-
       http: {
-        Args: {
-          request: Database["public"]["CompositeTypes"]["http_request"]
-        }
+        Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
         SetofOptions: {
           from: "http_request"
@@ -1698,12 +2019,9 @@ export type Database = {
           isSetofReturn: false
         }
       }
-
       http_delete:
         | {
-            Args: {
-              uri: string
-            }
+            Args: { uri: string }
             Returns: Database["public"]["CompositeTypes"]["http_response"]
             SetofOptions: {
               from: "*"
@@ -1713,11 +2031,7 @@ export type Database = {
             }
           }
         | {
-            Args: {
-              content: string
-              content_type: string
-              uri: string
-            }
+            Args: { content: string; content_type: string; uri: string }
             Returns: Database["public"]["CompositeTypes"]["http_response"]
             SetofOptions: {
               from: "*"
@@ -1726,12 +2040,9 @@ export type Database = {
               isSetofReturn: false
             }
           }
-
       http_get:
         | {
-            Args: {
-              uri: string
-            }
+            Args: { uri: string }
             Returns: Database["public"]["CompositeTypes"]["http_response"]
             SetofOptions: {
               from: "*"
@@ -1741,10 +2052,7 @@ export type Database = {
             }
           }
         | {
-            Args: {
-              data: Json
-              uri: string
-            }
+            Args: { data: Json; uri: string }
             Returns: Database["public"]["CompositeTypes"]["http_response"]
             SetofOptions: {
               from: "*"
@@ -1753,11 +2061,8 @@ export type Database = {
               isSetofReturn: false
             }
           }
-
       http_head: {
-        Args: {
-          uri: string
-        }
+        Args: { uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
         SetofOptions: {
           from: "*"
@@ -1766,21 +2071,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
-
       http_header: {
-        Args: {
-          field: string
-          value: string
-        }
+        Args: { field: string; value: string }
         Returns: Database["public"]["CompositeTypes"]["http_header"]
         SetofOptions: {
-          from: "http_header"
+          from: "*"
           to: "http_header"
           isOneToOne: true
           isSetofReturn: false
         }
       }
-
       http_list_curlopt: {
         Args: never
         Returns: {
@@ -1788,13 +2088,8 @@ export type Database = {
           value: string
         }[]
       }
-
       http_patch: {
-        Args: {
-          content: string
-          content_type: string
-          uri: string
-        }
+        Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
         SetofOptions: {
           from: "*"
@@ -1803,14 +2098,9 @@ export type Database = {
           isSetofReturn: false
         }
       }
-
       http_post:
         | {
-            Args: {
-              content: string
-              content_type: string
-              uri: string
-            }
+            Args: { content: string; content_type: string; uri: string }
             Returns: Database["public"]["CompositeTypes"]["http_response"]
             SetofOptions: {
               from: "*"
@@ -1820,10 +2110,7 @@ export type Database = {
             }
           }
         | {
-            Args: {
-              data: Json
-              uri: string
-            }
+            Args: { data: Json; uri: string }
             Returns: Database["public"]["CompositeTypes"]["http_response"]
             SetofOptions: {
               from: "*"
@@ -1832,13 +2119,8 @@ export type Database = {
               isSetofReturn: false
             }
           }
-
       http_put: {
-        Args: {
-          content: string
-          content_type: string
-          uri: string
-        }
+        Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
         SetofOptions: {
           from: "*"
@@ -1847,120 +2129,115 @@ export type Database = {
           isSetofReturn: false
         }
       }
-
-      http_reset_curlopt: {
-        Args: never
-        Returns: boolean
-      }
-
+      http_reset_curlopt: { Args: never; Returns: boolean }
       http_set_curlopt: {
-        Args: {
-          curlopt: string
-          value: string
-        }
+        Args: { curlopt: string; value: string }
         Returns: boolean
       }
-
-      is_admin: {
-        Args: never
-        Returns: boolean
-      }
-
-      is_current_user_admin: {
-        Args: never
-        Returns: boolean
-      }
-
-      is_current_user_courier: {
-        Args: never
-        Returns: boolean
-      }
-
-      is_current_user_customer: {
-        Args: never
-        Returns: boolean
-      }
-
-      is_current_user_vendor: {
-        Args: never
-        Returns: boolean
-      }
-
-      pay_order_from_wallet: {
-        Args: {
-          _order_id: string
+      is_admin: { Args: never; Returns: boolean }
+      is_courier: { Args: never; Returns: boolean }
+      is_current_user_admin: { Args: never; Returns: boolean }
+      is_current_user_courier: { Args: never; Returns: boolean }
+      is_current_user_customer: { Args: never; Returns: boolean }
+      is_current_user_vendor: { Args: never; Returns: boolean }
+      is_vendor: { Args: never; Returns: boolean }
+      issue_invoice_for_order: {
+        Args: { _order_id: string }
+        Returns: {
+          id: string
+          invoice_number: string
+          issued_at: string
+          order_id: string
+          snapshot: Json
         }
-        Returns: Database["public"]["Tables"]["orders"]["Row"]
-      }
-
-      reject_wallet_refund: {
-        Args: {
-          _note?: string
-          _payment_request_id: string
+        SetofOptions: {
+          from: "*"
+          to: "invoices"
+          isOneToOne: true
+          isSetofReturn: false
         }
-        Returns: Database["public"]["Tables"]["payment_requests"]["Row"]
       }
-
-      reject_wallet_topup: {
+      pay_order_from_wallet: { Args: { _order_id: string }; Returns: undefined }
+      register_vendor_account: {
         Args: {
-          _note?: string
-          _payment_request_id: string
+          p_accepted_terms?: boolean
+          p_city: string
+          p_contact_email?: string
+          p_description?: string
+          p_first_name?: string
+          p_last_name?: string
+          p_phone: string
+          p_province?: string
+          p_second_name?: string
+          p_store_name: string
         }
-        Returns: Database["public"]["Tables"]["payment_requests"]["Row"]
-      }
-
-      register_push_subscription: {
-        Args: {
-          _subscription: Json
-          _user_agent?: string
+        Returns: {
+          account_enabled: boolean
+          city: string
+          cover_image_url: string | null
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          is_verified: boolean
+          logo_url: string
+          name: string
+          phone: string
+          profile_logo_url: string | null
+          user_id: string | null
         }
-        Returns: Database["public"]["Tables"]["user_push_subscriptions"]["Row"]
-      }
-
-      remove_push_subscription: {
-        Args: {
-          _endpoint: string
+        SetofOptions: {
+          from: "*"
+          to: "vendors"
+          isOneToOne: true
+          isSetofReturn: false
         }
-        Returns: boolean
       }
-
-      request_wallet_refund: {
-        Args: {
-          _amount: number
-          _note?: string
-          _order_id: string
-        }
-        Returns: Database["public"]["Tables"]["payment_requests"]["Row"]
-      }
-
-      request_wallet_topup: {
-        Args: {
-          _amount: number
-          _currency?: string
-          _method_code: string
-          _receipt_path?: string
-          _reference?: string
-          _sender_name?: string
-          _sender_phone?: string
-        }
-        Returns: Database["public"]["Tables"]["payment_requests"]["Row"]
-      }
-
       review_payment_request: {
-        Args: {
-          _approve: boolean
-          _id: string
-          _note?: string
-        }
-        Returns: Database["public"]["Tables"]["payment_requests"]["Row"]
+        Args: { _approve: boolean; _id: string; _note?: string }
+        Returns: undefined
       }
-
       set_product_stock: {
-        Args: {
-          _product_id: string
-          _total_stock: number
+        Args: { _product_id: string; _total_stock: number }
+        Returns: {
+          badge: string | null
+          brand_id: string | null
+          brand_slug: string | null
+          category_attributes: Json | null
+          category_id: string | null
+          category_slug: string | null
+          city: string
+          colors: string[]
+          created_at: string
+          description: string
+          discount_price: number | null
+          featured_sort: number
+          id: string
+          images: string[]
+          is_active: boolean
+          is_featured: boolean
+          is_local: boolean
+          is_yemeni_local: boolean | null
+          low_stock_threshold: number
+          name: string
+          offer_end_date: string | null
+          old_price: number | null
+          origin: string | null
+          original_price: number | null
+          price: number
+          price_sar: number | null
+          rating: number
+          reviews_count: number
+          sales_count: number
+          sizes: string[]
+          slug: string | null
+          sort_order: number | null
+          stock_left: number
+          supplier_info: Json | null
+          total_stock: number
+          unit: string | null
+          vendor_id: string | null
         }
-        Returns: Database["public"]["Tables"]["products"]["Row"]
         SetofOptions: {
           from: "*"
           to: "products"
@@ -1968,46 +2245,166 @@ export type Database = {
           isSetofReturn: false
         }
       }
-
-      text_to_bytea: {
-        Args: {
-          data: string
+      text_to_bytea: { Args: { data: string }; Returns: string }
+      update_courier_order_status_secure: {
+        Args: { _new_status: string; _order_id: string }
+        Returns: {
+          checkout_token: string | null
+          courier_id: string | null
+          created_at: string
+          currency: string
+          delivery_fee: number
+          id: string
+          invoice_number: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string
+          order_number: string
+          payment_method_code: string
+          payment_status: string
+          shipping_city: string
+          shipping_details: string
+          shipping_district: string
+          shipping_landmark: string
+          shipping_name: string
+          shipping_phone: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
         }
-        Returns: string
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-
       update_order_status_secure: {
-        Args: {
-          _new_status: Database["public"]["Enums"]["order_status"]
-          _order_id: string
+        Args: { _new_status: string; _order_id: string }
+        Returns: {
+          checkout_token: string | null
+          courier_id: string | null
+          created_at: string
+          currency: string
+          delivery_fee: number
+          id: string
+          invoice_number: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string
+          order_number: string
+          payment_method_code: string
+          payment_status: string
+          shipping_city: string
+          shipping_details: string
+          shipping_district: string
+          shipping_landmark: string
+          shipping_name: string
+          shipping_phone: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
         }
-        Returns: Database["public"]["Tables"]["orders"]["Row"]
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-
+      update_vendor_branding: {
+        Args: { p_field: string; p_url: string; p_vendor_id: string }
+        Returns: {
+          account_enabled: boolean
+          city: string
+          cover_image_url: string | null
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          is_verified: boolean
+          logo_url: string
+          name: string
+          phone: string
+          profile_logo_url: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vendors"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       urlencode:
+        | { Args: { data: Json }; Returns: string }
         | {
-            Args: {
-              data: Json
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              string: string
-            }
+            Args: { string: string }
             Returns: {
               error: true
-            } & string
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+      validate_checkout_product: {
+        Args: { _product_id: string; _quantity: number }
+        Returns: {
+          badge: string | null
+          brand_id: string | null
+          brand_slug: string | null
+          category_attributes: Json | null
+          category_id: string | null
+          category_slug: string | null
+          city: string
+          colors: string[]
+          created_at: string
+          description: string
+          discount_price: number | null
+          featured_sort: number
+          id: string
+          images: string[]
+          is_active: boolean
+          is_featured: boolean
+          is_local: boolean
+          is_yemeni_local: boolean | null
+          low_stock_threshold: number
+          name: string
+          offer_end_date: string | null
+          old_price: number | null
+          origin: string | null
+          original_price: number | null
+          price: number
+          price_sar: number | null
+          rating: number
+          reviews_count: number
+          sales_count: number
+          sizes: string[]
+          slug: string | null
+          sort_order: number | null
+          stock_left: number
+          supplier_info: Json | null
+          total_stock: number
+          unit: string | null
+          vendor_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
-
     Enums: {
-      app_role:
-        | "customer"
-        | "vendor"
-        | "admin"
-        | "courier"
-
+      app_role: "customer" | "vendor" | "admin" | "courier"
       order_status:
         | "pending"
         | "awaiting_payment"
@@ -2017,220 +2414,149 @@ export type Database = {
         | "delivered"
         | "cancelled"
     }
-
     CompositeTypes: {
       http_header: {
         field: string | null
         value: string | null
       }
-
       http_request: {
         method: unknown
         uri: string | null
-        headers:
-          | Database["public"]["CompositeTypes"]["http_header"][]
-          | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
         content_type: string | null
         content: string | null
       }
-
       http_response: {
         status: number | null
         content_type: string | null
-        headers:
-          | Database["public"]["CompositeTypes"]["http_header"][]
-          | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
         content: string | null
       }
     }
   }
 }
 
-type DatabaseWithoutInternals =
-  Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema =
-  DatabaseWithoutInternals[
-    Extract<keyof Database, "public">
-  ]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (
-    DefaultSchemaTableNameOrOptions extends {
-      schema: keyof DatabaseWithoutInternals
-    }
-      ? keyof (
-          DatabaseWithoutInternals[
-            DefaultSchemaTableNameOrOptions["schema"]
-          ]["Tables"] &
-            DatabaseWithoutInternals[
-              DefaultSchemaTableNameOrOptions["schema"]
-            ]["Views"]
-        )
-      : never
-  ) = never,
-> =
-  DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? (
-        DatabaseWithoutInternals[
-          DefaultSchemaTableNameOrOptions["schema"]
-        ]["Tables"] &
-          DatabaseWithoutInternals[
-            DefaultSchemaTableNameOrOptions["schema"]
-          ]["Views"]
-      )[TableName] extends {
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
       : never
-    : DefaultSchemaTableNameOrOptions extends keyof (
-          DefaultSchema["Tables"] &
-            DefaultSchema["Views"]
-        )
-      ? (
-          DefaultSchema["Tables"] &
-            DefaultSchema["Views"]
-        )[DefaultSchemaTableNameOrOptions] extends {
-          Row: infer R
-        }
-        ? R
-        : never
-      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (
-    DefaultSchemaTableNameOrOptions extends {
-      schema: keyof DatabaseWithoutInternals
-    }
-      ? keyof DatabaseWithoutInternals[
-          DefaultSchemaTableNameOrOptions["schema"]
-        ]["Tables"]
-      : never
-  ) = never,
-> =
-  DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? DatabaseWithoutInternals[
-        DefaultSchemaTableNameOrOptions["schema"]
-      ]["Tables"][TableName] extends {
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
       : never
-    : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-      ? DefaultSchema["Tables"][
-          DefaultSchemaTableNameOrOptions
-        ] extends {
-          Insert: infer I
-        }
-        ? I
-        : never
-      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (
-    DefaultSchemaTableNameOrOptions extends {
-      schema: keyof DatabaseWithoutInternals
-    }
-      ? keyof DatabaseWithoutInternals[
-          DefaultSchemaTableNameOrOptions["schema"]
-        ]["Tables"]
-      : never
-  ) = never,
-> =
-  DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? DatabaseWithoutInternals[
-        DefaultSchemaTableNameOrOptions["schema"]
-      ]["Tables"][TableName] extends {
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
       : never
-    : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-      ? DefaultSchema["Tables"][
-          DefaultSchemaTableNameOrOptions
-        ] extends {
-          Update: infer U
-        }
-        ? U
-        : never
-      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (
-    DefaultSchemaEnumNameOrOptions extends {
-      schema: keyof DatabaseWithoutInternals
-    }
-      ? keyof DatabaseWithoutInternals[
-          DefaultSchemaEnumNameOrOptions["schema"]
-        ]["Enums"]
-      : never
-  ) = never,
-> =
-  DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? DatabaseWithoutInternals[
-        DefaultSchemaEnumNameOrOptions["schema"]
-      ]["Enums"][EnumName]
-    : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-      ? DefaultSchema["Enums"][
-          DefaultSchemaEnumNameOrOptions
-        ]
-      : never
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (
-    PublicCompositeTypeNameOrOptions extends {
-      schema: keyof DatabaseWithoutInternals
-    }
-      ? keyof DatabaseWithoutInternals[
-          PublicCompositeTypeNameOrOptions["schema"]
-        ]["CompositeTypes"]
-      : never
-  ) = never,
-> =
-  PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? DatabaseWithoutInternals[
-        PublicCompositeTypeNameOrOptions["schema"]
-      ]["CompositeTypes"][CompositeTypeName]
-    : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-      ? DefaultSchema["CompositeTypes"][
-          PublicCompositeTypeNameOrOptions
-        ]
-      : never
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "customer",
-        "vendor",
-        "admin",
-        "courier",
-      ],
+      app_role: ["customer", "vendor", "admin", "courier"],
       order_status: [
         "pending",
         "awaiting_payment",
