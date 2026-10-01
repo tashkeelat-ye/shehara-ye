@@ -18,6 +18,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCheckoutRouteImport } from './routes/_authenticated/checkout'
 import { Route as AuthenticatedMerchantRouteImport } from './routes/_authenticated/merchant'
@@ -97,6 +98,11 @@ const OffersRoute = OffersRouteImport.update({
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
@@ -291,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/favorites': typeof FavoritesRoute
   '/offers': typeof OffersRoute
   '/products': typeof ProductsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/merchant': typeof AuthenticatedMerchantRouteWithChildren
@@ -336,6 +343,7 @@ export interface FileRoutesByTo {
   '/favorites': typeof FavoritesRoute
   '/offers': typeof OffersRoute
   '/products': typeof ProductsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/account': typeof AuthenticatedAccountRoute
   '/checkout': typeof AuthenticatedCheckoutRoute
   '/merchant': typeof AuthenticatedMerchantRouteWithChildren
@@ -384,6 +392,7 @@ export interface FileRoutesById {
   '/favorites': typeof FavoritesRoute
   '/offers': typeof OffersRoute
   '/products': typeof ProductsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/checkout': typeof AuthenticatedCheckoutRoute
   '/_authenticated/merchant': typeof AuthenticatedMerchantRouteWithChildren
@@ -432,6 +441,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/offers'
     | '/products'
+    | '/sitemap.xml'
     | '/account'
     | '/checkout'
     | '/merchant'
@@ -477,6 +487,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/offers'
     | '/products'
+    | '/sitemap.xml'
     | '/account'
     | '/checkout'
     | '/merchant'
@@ -524,6 +535,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/offers'
     | '/products'
+    | '/sitemap.xml'
     | '/_authenticated/account'
     | '/_authenticated/checkout'
     | '/_authenticated/merchant'
@@ -572,6 +584,7 @@ export interface RootRouteChildren {
   FavoritesRoute: typeof FavoritesRoute
   OffersRoute: typeof OffersRoute
   ProductsRoute: typeof ProductsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiChatRoute: typeof ApiChatRoute
   CategorySlugRoute: typeof CategorySlugRoute
   InvoicePreviewRoute: typeof InvoicePreviewRoute
@@ -643,6 +656,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/account': {
@@ -998,6 +1018,7 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritesRoute: FavoritesRoute,
   OffersRoute: OffersRoute,
   ProductsRoute: ProductsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiChatRoute: ApiChatRoute,
   CategorySlugRoute: CategorySlugRoute,
   InvoicePreviewRoute: InvoicePreviewRoute,
