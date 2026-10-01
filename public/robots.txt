@@ -14,4 +14,4 @@ Disallow: /support
 Disallow: /api/
 Disallow: /auth/
 
-Sitemap: https://shehara-ye.vercel.app/sitemap.xml
+Sitemap: https://www.shehara.store/sitemap.xml

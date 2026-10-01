@@ -1,3 +1,5 @@
+import { getVendorSeo } from "@/lib/seo.functions";
+import { buildHead, breadcrumb } from "@/lib/seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
