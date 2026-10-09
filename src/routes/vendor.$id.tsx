@@ -254,7 +254,6 @@ function VendorPage() {
                       {vendor?.is_verified ? (
                         <BadgeCheck
                           className="h-4 w-4 shrink-0 fill-[#168BFF] text-white sm:h-5 sm:w-5"
-                          title="تاجر موثّق"
                           aria-label="تاجر موثّق"
                         />
                       ) : null}

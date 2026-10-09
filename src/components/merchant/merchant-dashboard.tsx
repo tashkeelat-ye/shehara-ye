@@ -210,7 +210,7 @@ export function MerchantDashboard({
             .select(
               "id,name,price,old_price,stock_left,total_stock,low_stock_threshold,is_active,images,sales_count,created_at",
             )
-            .eq("vendor_id", vendorId)
+            .eq("vendor_id" as "id", vendorId)
             .order("created_at", {
               ascending: false,
             })
@@ -236,12 +236,12 @@ export function MerchantDashboard({
          * ------------------------------------------------------------
          */
         try {
-          const { data, error } = await (supabase as any)
+          const { data, error } = await supabase
             .from("order_items")
             .select(
               "id,order_id,product_id,product_name,product_image,unit_price,quantity,vendor_status,vendor_updated_at",
             )
-            .eq("vendor_id", vendorId)
+            .eq("vendor_id" as "id", vendorId)
             .order("vendor_updated_at", {
               ascending: false,
             })

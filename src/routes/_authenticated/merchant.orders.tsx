@@ -141,13 +141,12 @@ function MerchantOrdersPage() {
         setVendor(vendorResult.data);
 
         const itemsResult =
-          await (supabase as any)
+          await supabase
             .from("order_items")
             .select(
               "id,order_id,product_id,product_name,product_image,unit_price,quantity,size,color,vendor_id,vendor_name,vendor_phone,vendor_city,vendor_status,vendor_note,vendor_updated_at",
             )
-            .eq(
-              "vendor_id",
+            .eq("vendor_id" as "id",
               vendorResult.data.id,
             )
             .order(
