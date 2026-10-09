@@ -46,9 +46,12 @@ export function BrandLogo({
     );
 
   useEffect(() => {
-    return subscribeBranding(
+    const off = subscribeBranding(
       setBranding,
     );
+    return () => {
+      off();
+    };
   }, []);
 
   const safeSize =

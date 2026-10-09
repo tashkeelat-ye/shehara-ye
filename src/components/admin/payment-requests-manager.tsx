@@ -427,7 +427,7 @@ export function PaymentRequestsManager() {
 
       const {
         error,
-      } = await supabase.rpc(
+      } = await (supabase as any).rpc(
         rpc.name,
         rpc.params as never,
       );

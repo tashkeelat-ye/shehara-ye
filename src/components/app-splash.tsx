@@ -12,7 +12,12 @@ export function AppSplash({ onFinished, duration = 2400 }: AppSplashProps) {
   const [leaving, setLeaving] = useState(false);
   const [branding, setBranding] = useState<BrandingSettings>(getBranding());
 
-  useEffect(() => subscribeBranding(setBranding), []);
+  useEffect(() => {
+    const off = subscribeBranding(setBranding);
+    return () => {
+      off();
+    };
+  }, []);
 
   useEffect(() => {
     const safeDuration = Math.max(duration, 1400);

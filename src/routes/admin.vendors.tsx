@@ -368,8 +368,7 @@ function AdminVendors() {
                       {vendor.is_verified ? (
                         <BadgeCheck
                           className="h-[18px] w-[18px] shrink-0 fill-[#168BFF] text-white"
-                          title="تاجر موثّق"
-                          aria-label="تاجر موثّق"
+                                                    aria-label="تاجر موثّق"
                         />
                       ) : null}
                     </p>

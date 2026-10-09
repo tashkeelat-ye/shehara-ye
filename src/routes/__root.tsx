@@ -1,3 +1,4 @@
+import type { ErrorComponentProps } from "@tanstack/react-router";
 import {
   QueryClient,
   QueryClientProvider,
@@ -546,10 +547,7 @@ function NotFoundComponent() {
 function ErrorComponent({
   error,
   reset,
-}: {
-  error: Error;
-  reset: () => void;
-}) {
+}: ErrorComponentProps) {
   const router =
     useRouter();
 

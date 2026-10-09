@@ -238,8 +238,7 @@ function VendorPage() {
                     {vendor?.is_verified ? (
                       <span
                         className="absolute bottom-0 end-0 grid h-6 w-6 translate-x-1 translate-y-1 place-items-center rounded-full border-2 border-[#202020] bg-[#168BFF] text-white shadow-lg sm:h-7 sm:w-7"
-                        title="تاجر موثّق"
-                        aria-label="تاجر موثّق"
+                                                aria-label="تاجر موثّق"
                       >
                         <BadgeCheck
                           className="h-3.5 w-3.5 sm:h-4 sm:w-4"
@@ -255,7 +254,6 @@ function VendorPage() {
                       {vendor?.is_verified ? (
                         <BadgeCheck
                           className="h-4 w-4 shrink-0 fill-[#168BFF] text-white sm:h-5 sm:w-5"
-                          title="تاجر موثّق"
                           aria-label="تاجر موثّق"
                         />
                       ) : null}

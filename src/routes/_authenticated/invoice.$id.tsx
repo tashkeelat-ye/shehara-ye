@@ -176,7 +176,7 @@ function InvoicePage() {
         );
       }
 
-      return data as OrderRow;
+      return data as unknown as OrderRow;
     },
   });
 

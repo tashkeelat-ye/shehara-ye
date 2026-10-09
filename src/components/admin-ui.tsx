@@ -10,26 +10,39 @@ export const btnGhostCls =
 export function AdminCard({
   title,
   action,
+  actions,
   children,
 }: {
-  title: string;
+  title?: string;
   action?: ReactNode;
+  actions?: ReactNode;
   children: ReactNode;
 }) {
+  const extra = action ?? actions;
   return (
     <section className="rounded-2xl border border-border/70 bg-card p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm text-foreground">{title}</h2>
-        {action}
-      </div>
+      {title || extra ? (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          {title ? <h2 className="text-sm text-foreground">{title}</h2> : <span />}
+          {extra}
+        </div>
+      ) : null}
       {children}
     </section>
   );
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  children: ReactNode;
+}) {
   return (
-    <label className="block">
+    <label className="block" htmlFor={htmlFor}>
       <span className="mb-1 block text-[11px] text-muted-foreground">{label}</span>
       {children}
     </label>
