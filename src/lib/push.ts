@@ -95,7 +95,7 @@ async function removeSubscriptionFromServer(
 ) {
   try {
     const { error } =
-      await supabase.rpc(
+      await (supabase as any).rpc(
         "remove_push_subscription",
         {
           _endpoint: endpoint,
@@ -220,7 +220,7 @@ export async function registerPushNotifications() {
 
     const {
       error,
-    } = await supabase.rpc(
+    } = await (supabase as any).rpc(
       "register_push_subscription",
       {
         _subscription:
@@ -274,7 +274,7 @@ export async function unregisterPushNotifications() {
       subscription.endpoint;
 
     const { error } =
-      await supabase.rpc(
+      await (supabase as any).rpc(
         "remove_push_subscription",
         {
           _endpoint: endpoint,

@@ -114,7 +114,7 @@ export function CourierAssignmentPanel({
       couriers.filter(
         (courier) =>
           courier.is_active &&
-          courier.account_enabled,
+          (courier as { account_enabled?: boolean }).account_enabled !== false,
       ),
     [couriers],
   );

@@ -141,7 +141,7 @@ function MerchantOrdersPage() {
         setVendor(vendorResult.data);
 
         const itemsResult =
-          await supabase
+          await (supabase as any)
             .from("order_items")
             .select(
               "id,order_id,product_id,product_name,product_image,unit_price,quantity,size,color,vendor_id,vendor_name,vendor_phone,vendor_city,vendor_status,vendor_note,vendor_updated_at",
@@ -301,7 +301,7 @@ function MerchantOrdersPage() {
 
     try {
       const { error } =
-        await supabase.rpc(
+        await (supabase as any).rpc(
           "update_vendor_order_item_status",
           {
             p_order_item_id:

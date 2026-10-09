@@ -172,7 +172,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (local.length > 0) {
         try {
           for (const line of local) {
-            await supabase.rpc("cart_add_item_atomic", {
+            await (supabase as any).rpc("cart_add_item_atomic", {
               p_product_id: line.product_id,
               p_quantity: clampQuantity(line.quantity),
               p_size: line.size,
@@ -240,7 +240,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (user && navigator.onLine) {
         try {
-          await supabase.rpc("cart_add_item_atomic", {
+          await (supabase as any).rpc("cart_add_item_atomic", {
             p_product_id: productId,
             p_quantity: safeQuantity,
             p_size: size,
@@ -297,7 +297,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (user && navigator.onLine) {
         try {
-          const { error } = await supabase.rpc("cart_set_quantity", {
+          const { error } = await (supabase as any).rpc("cart_set_quantity", {
             p_line_id: lineId,
             p_quantity: safeQuantity,
           });
@@ -328,7 +328,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (user && navigator.onLine) {
         try {
-          const { error } = await supabase.rpc("cart_remove_item", {
+          const { error } = await (supabase as any).rpc("cart_remove_item", {
             p_line_id: lineId,
           });
 
@@ -355,7 +355,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     if (user && navigator.onLine) {
       try {
-        const { error } = await supabase.rpc("cart_clear");
+        const { error } = await (supabase as any).rpc("cart_clear");
         if (error) throw error;
         await refresh();
       } catch (error) {

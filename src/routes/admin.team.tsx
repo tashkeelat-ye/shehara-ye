@@ -162,7 +162,7 @@ function AdminTeam() {
             .from("vendors")
             .update({
               [field]: next,
-            })
+            } as never)
             .eq("id", row.id);
 
         if (error) {
@@ -174,7 +174,7 @@ function AdminTeam() {
             .from("couriers")
             .update({
               [field]: next,
-            })
+            } as never)
             .eq("id", row.id);
 
         if (error) {

@@ -54,7 +54,7 @@ async function assertAdmin(userId: string) {
     .from("user_roles")
     .select("user_id, role")
     .eq("user_id", userId)
-    .in("role", ["admin", "super_admin"])
+    .in("role", ["admin", "super_admin"] as never)
     .limit(1)
     .maybeSingle();
 

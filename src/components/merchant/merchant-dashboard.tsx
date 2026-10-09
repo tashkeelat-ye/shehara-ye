@@ -236,7 +236,7 @@ export function MerchantDashboard({
          * ------------------------------------------------------------
          */
         try {
-          const { data, error } = await supabase
+          const { data, error } = await (supabase as any)
             .from("order_items")
             .select(
               "id,order_id,product_id,product_name,product_image,unit_price,quantity,vendor_status,vendor_updated_at",
