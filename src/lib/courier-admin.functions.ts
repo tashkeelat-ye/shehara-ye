@@ -21,12 +21,61 @@ type CourierRecord = {
   orders_count: number;
 };
 
-async function getSupabaseAdmin() {
-  const { supabaseAdmin } = await import(
-    "@/integrations/supabase/client.server"
+function hasServiceKey() {
+  return Boolean(
+    process.env.SUPABASE_SECRET_KEYS ||
+      process.env.SUPABASE_SECRET_KEY ||
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
   );
+}
 
-  return supabaseAdmin;
+/**
+ * يعيد عميل الخدمة إن توفر مفتاحه، وإلا يعيد عميل المدير
+ * الحالي (تطبق عليه سياسات RLS الخاصة بالإدارة). هذا يجعل
+ * إدارة عمال التوصيل تعمل على أي استضافة دون مفاتيح سرية.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getSupabaseAdmin(ctx?: { supabase: any }): Promise<any> {
+  if (hasServiceKey()) {
+    try {
+      const { supabaseAdmin } = await import(
+        "@/integrations/supabase/client.server"
+      );
+      return supabaseAdmin;
+    } catch (error) {
+      console.error("[CourierAdmin] service client unavailable:", error);
+    }
+  }
+  if (!ctx) throw new Error("خدمة الإدارة غير متاحة حالياً.");
+  return ctx.supabase;
+}
+
+async function signUpWithoutSession(
+  email: string,
+  password: string,
+  metadata: Record<string, unknown>,
+) {
+  const { createClient } = await import("@supabase/supabase-js");
+  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL!;
+  const key =
+    process.env.SUPABASE_PUBLISHABLE_KEY ??
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
+  const client = createClient(url, key, {
+    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await client.auth.signUp({
+    email,
+    password,
+    options: { data: metadata },
+  });
+  if (error) {
+    if (/registered|exists/i.test(error.message)) {
+      throw new Error("رقم الهاتف مرتبط بحساب موجود مسبقاً.");
+    }
+    throw new Error(error.message);
+  }
+  if (!data.user) throw new Error("تعذر إنشاء حساب عامل التوصيل.");
+  return { user: data.user };
 }
 
 /**
@@ -37,12 +86,13 @@ async function getSupabaseAdmin() {
  * لا نستخدم "super_admin" هنا لأنه غير معتمد
  * في AccountRole الحالي للمشروع.
  */
-async function assertAdmin(userId: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertAdmin(userId: string, ctx?: { supabase: any }) {
   if (!userId) {
     throw new Error("يجب تسجيل الدخول أولاً.");
   }
 
-  const supabaseAdmin = await getSupabaseAdmin();
+  const supabaseAdmin = await getSupabaseAdmin(ctx);
 
   const { data, error } = await supabaseAdmin
     .from("user_roles")
@@ -142,9 +192,9 @@ export const listCourierAccounts = createServerFn({
 })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context);
 
-    const supabaseAdmin = await getSupabaseAdmin();
+    const supabaseAdmin = await getSupabaseAdmin(context);
 
     const { data: couriers, error } = await supabaseAdmin
       .from("couriers")
@@ -217,9 +267,9 @@ export const createCourierAccount = createServerFn({
   .middleware([requireSupabaseAuth])
   .validator(courierBaseSchema)
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context);
 
-    const supabaseAdmin = await getSupabaseAdmin();
+    const supabaseAdmin = await getSupabaseAdmin(context);
 
     const phone = normalizeYemeniPhone(data.phone);
 
@@ -237,7 +287,9 @@ export const createCourierAccount = createServerFn({
     const {
       data: usersData,
       error: usersError,
-    } = await supabaseAdmin.auth.admin.listUsers({
+    } = !hasServiceKey()
+      ? { data: { users: [] as Array<{ id: string; email?: string }> }, error: null }
+      : await supabaseAdmin.auth.admin.listUsers({
       page: 1,
       perPage: 1000,
     });
@@ -264,17 +316,24 @@ export const createCourierAccount = createServerFn({
     const {
       data: created,
       error: createError,
-    } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: data.password,
-      email_confirm: true,
-
-      user_metadata: {
-        full_name: data.name.trim(),
-        phone,
-        account_type: "courier",
-      },
-    });
+    } = !hasServiceKey()
+      ? await signUpWithoutSession(email, data.password, {
+          full_name: data.name.trim(),
+          phone,
+          account_type: "courier",
+        })
+          .then((r) => ({ data: r, error: null }))
+          .catch((e: Error) => ({ data: { user: null }, error: e }))
+      : await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: data.password,
+          email_confirm: true,
+          user_metadata: {
+            full_name: data.name.trim(),
+            phone,
+            account_type: "courier",
+          },
+        });
 
     if (createError || !created.user) {
       throw new Error(
@@ -369,7 +428,7 @@ export const createCourierAccount = createServerFn({
        * خطوات إنشاء السجل.
        */
       try {
-        await supabaseAdmin.auth.admin.deleteUser(
+        if (hasServiceKey()) await supabaseAdmin.auth.admin.deleteUser(
           userId,
         );
       } catch (cleanupError) {
@@ -394,9 +453,9 @@ export const updateCourierAccount = createServerFn({
   .middleware([requireSupabaseAuth])
   .validator(updateCourierSchema)
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context);
 
-    const supabaseAdmin = await getSupabaseAdmin();
+    const supabaseAdmin = await getSupabaseAdmin(context);
 
     const phone = normalizeYemeniPhone(data.phone);
 
@@ -436,7 +495,9 @@ export const updateCourierAccount = createServerFn({
     const {
       data: usersData,
       error: usersError,
-    } = await supabaseAdmin.auth.admin.listUsers({
+    } = !hasServiceKey()
+      ? { data: { users: [] as Array<{ id: string; email?: string }> }, error: null }
+      : await supabaseAdmin.auth.admin.listUsers({
       page: 1,
       perPage: 1000,
     });
@@ -506,7 +567,9 @@ export const updateCourierAccount = createServerFn({
        */
       const {
         error: authError,
-      } = await supabaseAdmin.auth.admin.updateUserById(
+      } = !hasServiceKey()
+        ? { error: new Error("تغيير كلمة المرور يتطلب تفعيل مفتاح الخدمة على الاستضافة؛ يمكن للعامل استخدام «نسيت كلمة المرور».") }
+        : await supabaseAdmin.auth.admin.updateUserById(
         courier.user_id,
         {
           email,
@@ -548,9 +611,9 @@ export const setCourierActive = createServerFn({
     }),
   )
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.userId, context);
 
-    const supabaseAdmin = await getSupabaseAdmin();
+    const supabaseAdmin = await getSupabaseAdmin(context);
 
     const {
       error,
@@ -586,10 +649,10 @@ export const setCourierAccountEnabled =
       }),
     )
     .handler(async ({ data, context }) => {
-      await assertAdmin(context.userId);
+      await assertAdmin(context.userId, context);
 
       const supabaseAdmin =
-        await getSupabaseAdmin();
+        await getSupabaseAdmin(context);
 
       const {
         data: courier,
@@ -671,10 +734,10 @@ export const resetCourierPassword =
       resetPasswordSchema,
     )
     .handler(async ({ data, context }) => {
-      await assertAdmin(context.userId);
+      await assertAdmin(context.userId, context);
 
       const supabaseAdmin =
-        await getSupabaseAdmin();
+        await getSupabaseAdmin(context);
 
       const {
         data: courier,
@@ -699,7 +762,9 @@ export const resetCourierPassword =
 
       const {
         error: passwordError,
-      } = await supabaseAdmin.auth.admin.updateUserById(
+      } = !hasServiceKey()
+        ? { error: new Error("تغيير كلمة المرور يتطلب تفعيل مفتاح الخدمة على الاستضافة؛ يمكن للعامل استخدام «نسيت كلمة المرور».") }
+        : await supabaseAdmin.auth.admin.updateUserById(
         courier.user_id,
         {
           password: data.password,
