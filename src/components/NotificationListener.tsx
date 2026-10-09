@@ -719,7 +719,7 @@ export function NotificationListener({
           )
           .eq(
             "user_id",
-            currentUserId,
+            currentUserId ?? "",
           )
           .eq(
             "is_read",

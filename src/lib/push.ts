@@ -199,7 +199,7 @@ export async function registerPushNotifications() {
             applicationServerKey:
               urlBase64ToUint8Array(
                 VAPID_PUBLIC_KEY,
-              ),
+              ) as BufferSource,
           },
         );
     }

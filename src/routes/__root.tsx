@@ -548,6 +548,7 @@ function ErrorComponent({
   reset,
 }: {
   error: Error;
+  info?: unknown;
   reset: () => void;
 }) {
   const router =
