@@ -236,7 +236,7 @@ export const listCourierAccounts = createServerFn({
       ok: true as const,
 
       couriers: (couriers ?? []).map(
-        (courier): CourierRecord => ({
+        (courier: any): CourierRecord => ({
           id: courier.id,
           user_id: courier.user_id ?? null,
           name: courier.name,
