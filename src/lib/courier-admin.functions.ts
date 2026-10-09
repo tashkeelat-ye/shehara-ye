@@ -299,7 +299,7 @@ export const createCourierAccount = createServerFn({
     }
 
     const existingUser = usersData.users.find(
-      (user) =>
+      (user: any) =>
         user.email?.toLowerCase() ===
         email.toLowerCase(),
     );
@@ -510,7 +510,7 @@ export const updateCourierAccount = createServerFn({
 
     const duplicateUser =
       usersData.users.find(
-        (user) =>
+        (user: any) =>
           user.email?.toLowerCase() ===
             email.toLowerCase() &&
           user.id !== courier.user_id,
