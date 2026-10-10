@@ -728,7 +728,7 @@ function CourierDashboard() {
       dir="rtl"
       className="min-h-screen bg-background"
     >
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur shadow-[0_10px_30px_-26px_rgba(14,77,100,.8)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-l before:from-[#0E4D64] before:via-[#D65A31] before:to-[#0E4D64]">
         <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-4">
           <div className="flex min-w-0 items-center gap-3">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
