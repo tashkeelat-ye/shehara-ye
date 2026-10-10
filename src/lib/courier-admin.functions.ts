@@ -348,20 +348,22 @@ export const createCourierAccount = createServerFn({
       /**
        * Profile
        */
-      const { error: profileError } =
-        await supabaseAdmin
-          .from("profiles")
-          .upsert(
-            {
-              id: userId,
-              full_name: data.name.trim(),
-              phone,
-              is_disabled: false,
-            },
-            {
-              onConflict: "id",
-            },
-          );
+      const profileRow = {
+        id: userId,
+        full_name: data.name.trim(),
+        phone,
+        is_disabled: false,
+      };
+      // Without the service key, the admin may only UPDATE the profile
+      // row that the signup trigger already created (no admin INSERT policy).
+      const { error: profileError } = hasServiceKey()
+        ? await supabaseAdmin
+            .from("profiles")
+            .upsert(profileRow, { onConflict: "id" })
+        : await supabaseAdmin
+            .from("profiles")
+            .update({ full_name: profileRow.full_name, phone, is_disabled: false })
+            .eq("id", userId);
 
       if (profileError) {
         throw new Error(

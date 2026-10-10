@@ -13,6 +13,31 @@ import { fetchProductsByIds, type Product } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 
 const STORAGE_KEY = "shehara_cart_v1";
+
+// Cart writes go straight to the cart_items table (owner RLS policy).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function cartRpc(name: string, args: Record<string, any> = {}): Promise<{ error: unknown }> {
+  const db = supabase as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const { data: auth } = await supabase.auth.getUser();
+  const uid = auth.user?.id;
+  if (!uid) return { error: new Error("not signed in") };
+  if (name === "cart_add_item_atomic") {
+    let q = db.from("cart_items").select("id,quantity").eq("user_id", uid).eq("product_id", args.p_product_id);
+    q = args.p_size == null ? q.is("size", null) : q.eq("size", args.p_size);
+    q = args.p_color == null ? q.is("color", null) : q.eq("color", args.p_color);
+    const { data: rows, error } = await q.limit(1);
+    if (error) return { error };
+    const row = rows?.[0];
+    if (row) {
+      return db.from("cart_items").update({ quantity: Math.min(999, row.quantity + args.p_quantity) }).eq("id", row.id);
+    }
+    return db.from("cart_items").insert({ user_id: uid, product_id: args.p_product_id, quantity: args.p_quantity, size: args.p_size, color: args.p_color });
+  }
+  if (name === "cart_set_quantity") return db.from("cart_items").update({ quantity: args.p_quantity }).eq("id", args.p_line_id).eq("user_id", uid);
+  if (name === "cart_remove_item") return db.from("cart_items").delete().eq("id", args.p_line_id).eq("user_id", uid);
+  if (name === "cart_clear") return db.from("cart_items").delete().eq("user_id", uid);
+  return { error: new Error("unknown cart op") };
+}
 const MAX_QUANTITY = 999;
 
 export type CartLine = {

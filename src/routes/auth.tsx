@@ -677,22 +677,14 @@ function AuthPage() {
           <section className="min-w-0 bg-[#f8fafb] text-foreground">
             <div className="mx-auto w-full max-w-xl p-5 sm:p-8 lg:p-10">
               <div className="mb-7 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 lg:hidden">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#0E4D64]/10 bg-white shadow-sm">
-                    <BrandLogo
-                      size={38}
-                      priority
-                    />
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-black text-[#0A3D50]">
-                      شهارة
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      تسوق بلا حدود
-                    </p>
-                  </div>
+                <div className="flex w-full flex-col items-center gap-1 lg:hidden">
+                  <img
+                    src="/logo.png"
+                    alt="شهارة SHEHARA — تسوق بلا حدود"
+                    width={150}
+                    height={150}
+                    className="h-[150px] w-[150px] rounded-3xl bg-white object-contain p-2 shadow-md ring-1 ring-[#0E4D64]/10"
+                  />
                 </div>
 
                 <div className="mr-auto hidden rounded-full border border-[#0E4D64]/10 bg-white px-3 py-1.5 text-[10px] font-semibold text-[#0A3D50] shadow-sm sm:flex">
