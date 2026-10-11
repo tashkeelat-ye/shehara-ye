@@ -52,6 +52,7 @@ export const ProductImage = memo(function ProductImage({
           alt={alt}
           loading={eager ? "eager" : "lazy"}
           decoding="async"
+          sizes="(max-width: 640px) 50vw, 25vw"
           fetchPriority={eager ? "high" : "auto"}
           onLoad={() => {
             setLoaded(true);
@@ -60,14 +61,7 @@ export const ProductImage = memo(function ProductImage({
             setFailed(true);
             setLoaded(true);
           }}
-          className={`
-            h-full
-            w-full
-            object-cover
-            transition-opacity
-            duration-300
-            ${loaded ? "opacity-100" : "opacity-0"}
-          `}
+          className="h-full w-full object-cover"
         />
       ) : null}
 

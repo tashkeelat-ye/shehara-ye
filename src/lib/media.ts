@@ -184,12 +184,36 @@ async function compressReceiptImage(
 /**
  * رفع صورة عامة.
  */
+async function toWebp(file: File, maxDimension = 1600): Promise<File> {
+  if (typeof document === "undefined" || /gif|svg|webp/.test(file.type)) return file;
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error("bad image")); img.src = url; });
+    const ratio = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * ratio);
+    canvas.height = Math.round(img.naturalHeight * ratio);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/webp", 0.82));
+    if (!blob || blob.type !== "image/webp") return file;
+    return new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", { type: "image/webp" });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export async function uploadMedia(
   bucket: MediaBucket,
-  file: File,
+  rawFile: File,
   folder = "admin",
 ): Promise<string> {
-  validateImage(file);
+  validateImage(rawFile);
+  const file = await toWebp(rawFile);
 
   const extension =
     getExtension(file);
