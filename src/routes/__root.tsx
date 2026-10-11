@@ -1458,6 +1458,7 @@ function AppContent() {
       <ViewportProtectionController />
 
       <OfflineIndicator />
+      <InstallPrompt />
 
       <NotificationListener
         {...(user?.id
