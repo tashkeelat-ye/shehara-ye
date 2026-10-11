@@ -48,7 +48,7 @@ export const ProductImage = memo(function ProductImage({
           ===================================================== */}
       {hasSource && !failed ? (
         <img
-          src={src}
+          src={/^\/products\/[\w-]+\.jpe?g$/.test(src) ? src.replace(/\.jpe?g$/, ".webp") : src}
           alt={alt}
           loading={eager ? "eager" : "lazy"}
           decoding="async"
