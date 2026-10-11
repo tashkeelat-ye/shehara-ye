@@ -1,3 +1,4 @@
+import { InstallPrompt } from "@/components/install-prompt";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import {
   QueryClient,
