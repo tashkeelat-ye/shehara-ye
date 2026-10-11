@@ -1,3 +1,4 @@
+import { InstallPrompt } from "@/components/install-prompt";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import {
   QueryClient,
@@ -1458,6 +1459,7 @@ function AppContent() {
       <ViewportProtectionController />
 
       <OfflineIndicator />
+      <InstallPrompt />
 
       <NotificationListener
         {...(user?.id
