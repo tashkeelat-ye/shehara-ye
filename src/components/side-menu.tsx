@@ -103,6 +103,21 @@ export function SideMenu() {
             ))}
           </nav>
 
+          <button
+            type="button"
+            onClick={() => {
+              const next = !document.documentElement.classList.contains("dark");
+              document.documentElement.classList.toggle("dark", next);
+              document.documentElement.style.colorScheme = next ? "dark" : "light";
+              document.documentElement.dataset.theme = next ? "dark" : "light";
+              try { localStorage.setItem("shehara-theme", next ? "dark" : "light"); } catch {}
+            }}
+            className="mt-3 flex w-full items-center justify-between rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm font-bold text-foreground transition hover:bg-muted"
+          >
+            <span>الوضع الليلي / الفاتح</span>
+            <span aria-hidden="true">🌓</span>
+          </button>
+
           <div className="my-5 h-px bg-border/70" />
 
           <p className="px-3 text-[10px] font-black tracking-wide text-muted-foreground">صفحات المتجر</p>
