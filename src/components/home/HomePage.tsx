@@ -715,7 +715,6 @@ export function HomePage() {
             />
           </SectionWrapper>
 
-          <ServiceHighlights />
 
           <SectionWrapper sectionKey="flash_sale" sections={sectionMap}>
             <SectionSurface>

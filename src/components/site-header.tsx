@@ -93,18 +93,10 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={toggleTheme}
-                aria-label={
-                  darkMode
-                    ? "تفعيل الوضع الفاتح"
-                    : "تفعيل الوضع الداكن"
-                }
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-[#0E4D64] transition-all hover:bg-[#0E4D64]/[.07] hover:text-[#D65A31] active:scale-90 dark:text-[#DDECF0]"
+                aria-label={darkMode ? "تفعيل الوضع الفاتح" : "تفعيل الوضع الداكن"}
+                className="hidden h-10 w-10 shrink-0 place-items-center rounded-2xl text-[#0E4D64] transition-all hover:bg-[#0E4D64]/[.07] hover:text-[#D65A31] active:scale-90 dark:text-[#DDECF0] sm:grid"
               >
-                {darkMode ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
+                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
             </div>
 
