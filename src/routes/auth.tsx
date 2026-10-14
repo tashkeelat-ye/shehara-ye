@@ -35,6 +35,7 @@ import { isValidYemeniPhone } from "@/lib/phone";
 import { supabase } from "@/integrations/supabase/client";
 import { YEMEN_GOVERNORATES } from "@/lib/yemen";
 import { BrandLogo } from "@/components/brand-logo";
+import authBg from "@/assets/auth-bg.jpg";
 
 type Search = {
   redirect?: string;
@@ -606,8 +607,9 @@ function AuthPage() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
       >
+        <img src={authBg} alt="" width={768} height={1344} className="absolute inset-0 h-full w-full object-cover opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#071f29]/70 via-[#071f29]/40 to-[#071f29]/85" />
         <div className="absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#D65A31]/20 blur-3xl" />
-        <div className="absolute -bottom-40 -left-20 h-96 w-96 rounded-full bg-[#0E4D64]/60 blur-3xl" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.10),transparent_38%)]" />
         <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:48px_48px]" />
       </div>

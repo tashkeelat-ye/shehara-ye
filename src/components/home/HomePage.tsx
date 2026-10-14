@@ -83,7 +83,10 @@ function SectionWrapper({
   }
 
   return (
-    <div className={`w-full ${className}`}>
+    <div
+      className={`w-full ${className}`}
+      style={{ order: section ? section.sort_order : 999 }}
+    >
       {children}
     </div>
   );
