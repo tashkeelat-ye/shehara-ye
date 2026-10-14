@@ -50,7 +50,7 @@ function BannerImage({
   eager: boolean;
 }) {
   return (
-    <div className="relative aspect-[12/7] w-full overflow-hidden bg-[#0E4D64]">
+    <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#0E4D64] min-[420px]:aspect-[16/11] sm:aspect-[12/7]">
       <img
         src={banner.image_url}
         alt={banner.title || "عرض من شهارة"}
@@ -134,7 +134,7 @@ export function PromoSlider() {
         aria-label="جاري تحميل العروض"
         role="status"
       >
-        <div className="aspect-[12/7] w-full animate-pulse rounded-[1.55rem] bg-white/10" />
+        <div className="aspect-[4/5] min-[420px]:aspect-[16/11] sm:aspect-[12/7] w-full animate-pulse rounded-[1.55rem] bg-white/10" />
         <HeritageCorners />
       </section>
     );
@@ -231,7 +231,7 @@ export function PromoSlider() {
           </div>
 
           {banners.length > 1 ? (
-            <div className="absolute bottom-12 start-1/2 z-40 flex max-w-[65%] -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/15 bg-[#071B24]/45 px-2.5 py-1.5 backdrop-blur-md sm:bottom-14" role="tablist" aria-label="شرائح العروض">
+            <div className="absolute bottom-14 left-1/2 z-40 flex max-w-[70%] -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/20 bg-[#071B24]/40 px-3 py-2 shadow-lg backdrop-blur-md sm:bottom-16" role="tablist" aria-label="شرائح العروض">
               {banners.map((banner, i) => (
                 <button
                   key={banner.id}
@@ -243,7 +243,7 @@ export function PromoSlider() {
                     setIndex(i);
                     setProgressKey((current) => current + 1);
                   }}
-                  className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31] ${i === active ? "w-7 bg-[#D65A31]" : "w-1.5 bg-white/65 hover:bg-white"}`}
+                  className={`h-2 rounded-full transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31] ${i === active ? "w-8 bg-[#D65A31] shadow-[0_0_10px_rgba(214,90,49,0.8)]" : "w-2 bg-white/55 hover:bg-white"}`}
                 />
               ))}
             </div>
