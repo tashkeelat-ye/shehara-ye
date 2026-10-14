@@ -9,25 +9,17 @@ import {
   type BrandingSettings,
 } from "@/lib/branding";
 
+const LOCAL_LOGO = "/logo.png";
+const ALTERNATE_LOCAL_LOGO = "/shehara-logo.png";
+const LEGACY_STORAGE_PATH =
+  "/storage/v1/object/public/branding/site/";
+
 type BrandLogoProps = {
   size?: number;
   className?: string;
   decorative?: boolean;
   priority?: boolean;
-
-  /**
-   * نوع الشعار المطلوب.
-   *
-   * header  = القائمة العلوية
-   * sidebar = القائمة الجانبية
-   * auth    = الدخول / التسجيل
-   * default = الشعار العام
-   */
-  variant?:
-    | "default"
-    | "header"
-    | "sidebar"
-    | "auth";
+  variant?: "default" | "header" | "sidebar" | "auth";
 };
 
 export function BrandLogo({
@@ -37,52 +29,58 @@ export function BrandLogo({
   priority = false,
   variant = "default",
 }: BrandLogoProps) {
-  const [
-    branding,
-    setBranding,
-  ] =
-    useState<BrandingSettings>(
-      getBranding(),
-    );
+  const [branding, setBranding] = useState<BrandingSettings>(
+    getBranding(),
+  );
 
   useEffect(() => {
-    const off = subscribeBranding(
-      setBranding,
-    );
+    const unsubscribe = subscribeBranding(setBranding);
+
     return () => {
-      off();
+      unsubscribe();
     };
   }, []);
 
-  const safeSize =
-    Math.max(
-      24,
-      Math.round(size),
-    );
+  const safeSize = Math.max(24, Math.round(size));
 
-  let src =
-    branding.header_logo_url;
-
-  if (
+  const configuredSource =
     variant === "sidebar"
-  ) {
-    src =
-      branding.sidebar_logo_url;
-  }
+      ? branding.sidebar_logo_url
+      : variant === "auth"
+        ? branding.auth_logo_url
+        : branding.header_logo_url;
 
-  if (
-    variant === "auth"
-  ) {
-    src =
-      branding.auth_logo_url;
-  }
+  // تجاهل رابط الشعار القديم حتى لو وصل من قاعدة البيانات.
+  const initialSource =
+    !configuredSource ||
+    configuredSource.includes(LEGACY_STORAGE_PATH)
+      ? LOCAL_LOGO
+      : configuredSource;
 
-  if (
-    variant === "default"
-  ) {
-    src =
-      branding.header_logo_url;
-  }
+  const [src, setSrc] = useState(initialSource);
+
+  useEffect(() => {
+    setSrc(initialSource);
+  }, [initialSource]);
+
+  const handleImageError = (
+    event: React.SyntheticEvent<HTMLImageElement>,
+  ) => {
+    const image = event.currentTarget;
+    const failedSource = image.getAttribute("src");
+
+    if (failedSource !== LOCAL_LOGO) {
+      setSrc(LOCAL_LOGO);
+      return;
+    }
+
+    if (failedSource !== ALTERNATE_LOCAL_LOGO) {
+      setSrc(ALTERNATE_LOCAL_LOGO);
+      return;
+    }
+
+    image.style.visibility = "hidden";
+  };
 
   return (
     <span
@@ -104,7 +102,7 @@ export function BrandLogo({
             -inset-1
             rounded-2xl
             border
-            border-[color:var(--brand-gold)]/25
+            border-[#D65A31]/25
           "
         />
       ) : null}
@@ -114,18 +112,11 @@ export function BrandLogo({
         alt="شعار شهارة SHEHARA"
         width={safeSize}
         height={safeSize}
-        loading={
-          priority
-            ? "eager"
-            : "lazy"
-        }
-        fetchPriority={
-          priority
-            ? "high"
-            : "auto"
-        }
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
         decoding="async"
         draggable={false}
+        onError={handleImageError}
         onContextMenu={(event) => {
           event.preventDefault();
         }}
