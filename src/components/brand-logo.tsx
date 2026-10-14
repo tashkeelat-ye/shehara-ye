@@ -1,6 +1,7 @@
 import {
   useEffect,
   useState,
+  type SyntheticEvent,
 } from "react";
 
 import {
@@ -11,6 +12,7 @@ import {
 
 const LOCAL_LOGO = "/logo.png";
 const ALTERNATE_LOCAL_LOGO = "/shehara-logo.png";
+
 const LEGACY_STORAGE_PATH =
   "/storage/v1/object/public/branding/site/";
 
@@ -21,6 +23,21 @@ type BrandLogoProps = {
   priority?: boolean;
   variant?: "default" | "header" | "sidebar" | "auth";
 };
+
+function sanitizeLogoSource(
+  source: string | null | undefined,
+): string {
+  const value = typeof source === "string" ? source.trim() : "";
+
+  if (
+    !value ||
+    value.includes(LEGACY_STORAGE_PATH)
+  ) {
+    return LOCAL_LOGO;
+  }
+
+  return value;
+}
 
 export function BrandLogo({
   size = 48,
@@ -41,8 +58,6 @@ export function BrandLogo({
     };
   }, []);
 
-  const safeSize = Math.max(24, Math.round(size));
-
   const configuredSource =
     variant === "sidebar"
       ? branding.sidebar_logo_url
@@ -50,12 +65,7 @@ export function BrandLogo({
         ? branding.auth_logo_url
         : branding.header_logo_url;
 
-  // تجاهل رابط الشعار القديم حتى لو وصل من قاعدة البيانات.
-  const initialSource =
-    !configuredSource ||
-    configuredSource.includes(LEGACY_STORAGE_PATH)
-      ? LOCAL_LOGO
-      : configuredSource;
+  const initialSource = sanitizeLogoSource(configuredSource);
 
   const [src, setSrc] = useState(initialSource);
 
@@ -64,23 +74,28 @@ export function BrandLogo({
   }, [initialSource]);
 
   const handleImageError = (
-    event: React.SyntheticEvent<HTMLImageElement>,
+    event: SyntheticEvent<HTMLImageElement>,
   ) => {
     const image = event.currentTarget;
     const failedSource = image.getAttribute("src");
 
-    if (failedSource !== LOCAL_LOGO) {
+    if (
+      failedSource !== LOCAL_LOGO &&
+      failedSource !== ALTERNATE_LOCAL_LOGO
+    ) {
       setSrc(LOCAL_LOGO);
       return;
     }
 
-    if (failedSource !== ALTERNATE_LOCAL_LOGO) {
+    if (failedSource === LOCAL_LOGO) {
       setSrc(ALTERNATE_LOCAL_LOGO);
       return;
     }
 
     image.style.visibility = "hidden";
   };
+
+  const safeSize = Math.max(24, Math.round(size));
 
   return (
     <span
