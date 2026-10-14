@@ -1,8 +1,11 @@
-import { Search, Moon, Sun } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Moon, Search, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { SideMenu } from "@/components/side-menu";
+
+import { BrandLogo } from "@/components/brand-logo";
 import { NotificationBell } from "@/components/notification-bell";
 import { ProductSearch } from "@/components/product-search";
+import { SideMenu } from "@/components/side-menu";
 
 const THEME_STORAGE_KEY = "shehara-theme";
 
@@ -25,7 +28,9 @@ export function SiteHeader() {
         setDarkMode(saved === "dark");
         return;
       }
-    } catch {}
+    } catch {
+      // قد لا يكون التخزين المحلي متاحًا في بعض البيئات.
+    }
 
     setDarkMode(
       document.documentElement.classList.contains("dark"),
@@ -43,11 +48,14 @@ export function SiteHeader() {
         return;
       }
 
-      if (
-        event.key === "/" &&
-        document.activeElement?.tagName !== "INPUT" &&
-        document.activeElement?.tagName !== "TEXTAREA"
-      ) {
+      const target = event.target;
+
+      const isTyping =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+
+      if (event.key === "/" && !isTyping) {
         event.preventDefault();
         setSearchOpen(true);
       }
@@ -62,45 +70,100 @@ export function SiteHeader() {
 
   const toggleTheme = () => {
     const next = !darkMode;
+    const theme = next ? "dark" : "light";
 
     document.documentElement.classList.toggle("dark", next);
-    document.documentElement.style.colorScheme = next
-      ? "dark"
-      : "light";
-    document.documentElement.dataset.theme = next
-      ? "dark"
-      : "light";
-
+    document.documentElement.style.colorScheme = theme;
+    document.documentElement.dataset.theme = theme;
     setDarkMode(next);
 
     try {
-      localStorage.setItem(
-        THEME_STORAGE_KEY,
-        next ? "dark" : "light",
-      );
-    } catch {}
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // يستمر تغيير المظهر حتى إذا تعذر حفظ التفضيل.
+    }
   };
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-[100] w-full border-b border-[color:var(--border)]/70 bg-[color:var(--background)]/94 shadow-[0_10px_30px_-26px_rgba(14,77,100,.8)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[color:var(--background)]/82">
+      <header
+        dir="rtl"
+        className="
+          fixed inset-x-0 top-0 z-[100] w-full
+          border-b border-[color:var(--border)]/70
+          bg-[color:var(--background)]/95
+          shadow-[0_10px_30px_-26px_rgba(14,77,100,.8)]
+          backdrop-blur-2xl
+          supports-[backdrop-filter]:bg-[color:var(--background)]/85
+        "
+      >
         <div className="pt-[env(safe-area-inset-top)]">
-          <div className="mx-auto grid h-[62px] w-full max-w-7xl grid-cols-[88px_minmax(0,1fr)_88px] items-center gap-2 px-3 sm:h-[66px] sm:grid-cols-[96px_minmax(0,1fr)_96px] sm:gap-3 sm:px-5 lg:px-8">
-            {/* الجهة اليمنى — مساحة ثابتة لمنع تداخلها مع البحث */}
-            <div className="flex w-full items-center justify-end gap-1">
+          <div
+            className="
+              mx-auto grid w-full max-w-7xl
+              grid-cols-[minmax(0,1fr)_auto]
+              grid-rows-[56px_44px]
+              items-center gap-x-2 gap-y-1
+              px-3 py-2
+              sm:px-5
+              lg:h-[70px] lg:grid-cols-[minmax(0,1fr)_minmax(280px,560px)_minmax(0,1fr)]
+              lg:grid-rows-1 lg:gap-4 lg:px-8 lg:py-0
+            "
+          >
+            {/* يمين الهاتف وسطح المكتب: القائمة والشعار */}
+            <div
+              className="
+                col-start-1 row-start-1
+                flex min-w-0 items-center justify-start gap-2
+                lg:col-start-1 lg:row-start-1 lg:gap-3
+              "
+            >
               <SideMenu />
 
-              <button
-                type="button"
-                onClick={toggleTheme}
-                aria-label={darkMode ? "تفعيل الوضع الفاتح" : "تفعيل الوضع الداكن"}
-                className="hidden h-10 w-10 shrink-0 place-items-center rounded-2xl text-[#0E4D64] transition-all hover:bg-[#0E4D64]/[.07] hover:text-[#D65A31] active:scale-90 dark:text-[#DDECF0] sm:grid"
+              <Link
+                to="/"
+                aria-label="شهارة - الصفحة الرئيسية"
+                className="
+                  flex min-w-0 items-center gap-2
+                  rounded-xl outline-none
+                  focus-visible:ring-2 focus-visible:ring-[#D65A31]/60
+                "
               >
-                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
+                <span
+                  className="
+                    grid h-10 w-10 shrink-0 place-items-center
+                    overflow-hidden rounded-xl
+                    border border-[#0E4D64]/10
+                    bg-white shadow-sm
+                    sm:h-11 sm:w-11
+                  "
+                >
+                  <BrandLogo
+                    variant="header"
+                    size={40}
+                    priority
+                    className="h-full w-full"
+                  />
+                </span>
+
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm font-black leading-5 text-[#0E4D64] dark:text-[#E4F1F4] sm:text-base">
+                    شهارة
+                  </span>
+                  <span
+                    dir="ltr"
+                    className="truncate text-[9px] font-extrabold tracking-[0.13em] text-[#D65A31] sm:text-[10px]"
+                  >
+                    SHEHARA
+                  </span>
+                  <span className="hidden text-[10px] font-medium leading-4 text-[color:var(--muted-foreground)] sm:block">
+                    تسوّق بلا حدود
+                  </span>
+                </span>
+              </Link>
             </div>
 
-            {/* شريط البحث — العمود الأوسط ثابت ومتماثل بين الجهتين */}
+            {/* البحث: الصف الثاني على الهاتف والعمود الأوسط على سطح المكتب */}
             <button
               ref={searchRef}
               type="button"
@@ -108,9 +171,25 @@ export function SiteHeader() {
               aria-label="البحث عن المنتجات"
               aria-haspopup="dialog"
               aria-expanded={searchOpen}
-              className="mx-1 flex h-10 min-w-0 w-[calc(100%-8px)] items-center gap-2.5 overflow-hidden rounded-2xl border border-[color:var(--border)]/80 bg-[color:var(--card)]/90 px-3.5 text-start shadow-[0_8px_24px_-20px_rgba(14,77,100,.7)] transition-all hover:border-[#0E4D64]/20 hover:bg-[color:var(--card)] hover:shadow-[0_10px_28px_-18px_rgba(14,77,100,.24)] active:scale-[.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]/25 sm:mx-2 sm:h-11 sm:w-[calc(100%-16px)] sm:px-4"
+              className="
+                col-span-2 col-start-1 row-start-2
+                flex h-11 min-w-0 w-full items-center gap-2.5
+                overflow-hidden rounded-2xl
+                border border-[color:var(--border)]/80
+                bg-[color:var(--card)] px-3.5 text-start
+                shadow-[0_8px_24px_-20px_rgba(14,77,100,.7)]
+                transition
+                hover:border-[#0E4D64]/30
+                hover:shadow-[0_10px_28px_-18px_rgba(14,77,100,.24)]
+                active:scale-[.99]
+                focus-visible:outline-none
+                focus-visible:ring-2 focus-visible:ring-[#D65A31]/40
+                lg:col-span-1 lg:col-start-2 lg:row-start-1
+                lg:mx-0 lg:h-11
+              "
             >
               <Search
+                aria-hidden="true"
                 className="h-[18px] w-[18px] shrink-0 text-[#0E4D64] dark:text-[#DDECF0]"
                 strokeWidth={2.15}
               />
@@ -120,16 +199,59 @@ export function SiteHeader() {
               </span>
 
               <span
-                className="hidden shrink-0 rounded-lg border border-[color:var(--border)] px-1.5 py-0.5 text-[10px] font-semibold text-[color:var(--muted-foreground)] sm:inline-flex"
                 dir="ltr"
+                className="
+                  hidden shrink-0 rounded-lg
+                  border border-[color:var(--border)]
+                  px-1.5 py-0.5 text-[10px] font-semibold
+                  text-[color:var(--muted-foreground)]
+                  lg:inline-flex
+                "
               >
                 Ctrl K
               </span>
             </button>
 
-            {/* الجهة اليسرى — نفس العرض تمامًا لضمان تمركز البحث */}
-            <div className="flex w-full items-center justify-start">
+            {/* يسار الهاتف وسطح المكتب: الإشعارات */}
+            <div
+              className="
+                col-start-2 row-start-1
+                flex items-center justify-end gap-1
+                lg:col-start-3 lg:row-start-1
+              "
+            >
               <NotificationBell />
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={
+                  darkMode
+                    ? "تفعيل الوضع الفاتح"
+                    : "تفعيل الوضع الداكن"
+                }
+                title={
+                  darkMode
+                    ? "تفعيل الوضع الفاتح"
+                    : "تفعيل الوضع الداكن"
+                }
+                className="
+                  hidden h-10 w-10 shrink-0 place-items-center
+                  rounded-xl text-[#0E4D64]
+                  transition-colors
+                  hover:bg-[#0E4D64]/[.07]
+                  hover:text-[#D65A31]
+                  active:scale-95
+                  dark:text-[#DDECF0]
+                  lg:grid
+                "
+              >
+                {darkMode ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -137,7 +259,11 @@ export function SiteHeader() {
 
       <div
         aria-hidden="true"
-        className="h-[calc(66px+env(safe-area-inset-top))]"
+        className="
+          h-[124px]
+          sm:h-[132px]
+          lg:h-[calc(70px+env(safe-area-inset-top))]
+        "
       />
 
       <ProductSearch
