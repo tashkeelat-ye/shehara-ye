@@ -1,4 +1,3 @@
-
 import { Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -11,7 +10,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 import { useCart } from "@/lib/cart-context";
 import { useFormatPrice } from "@/lib/currency-context";
@@ -23,19 +21,6 @@ const BRAND = {
   orange: "#E2723A",
   cream: "#F6F2EE",
 };
-
-function errorMessage(error: unknown): string {
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
-  }
-
-  return "تعذر تحديث السلة. تحقق من اتصالك ثم حاول مرة أخرى.";
-}
 
 export function CartDrawer() {
   const formatPrice = useFormatPrice();
@@ -106,38 +91,13 @@ export function CartDrawer() {
     }, 220);
   }
 
-  async function handleQuantity(
-    lineId: string,
-    quantity: number,
-    stockLimit?: number,
-  ) {
+  function handleQuantity(lineId: string, quantity: number) {
     if (quantity < 1) {
-      toast.info("استخدم زر الحذف لإزالة المنتج من السلة.");
+      void removeItem(lineId);
       return;
     }
 
-    if (
-      stockLimit !== undefined &&
-      quantity > stockLimit
-    ) {
-      toast.warning("تم الوصول للحد الأقصى المتوفر من هذا المنتج.");
-      return;
-    }
-
-    try {
-      await updateQuantity(lineId, quantity);
-    } catch (error) {
-      toast.error(errorMessage(error));
-    }
-  }
-
-  async function handleRemove(lineId: string) {
-    try {
-      await removeItem(lineId);
-      toast.success("تم حذف المنتج من السلة.");
-    } catch (error) {
-      toast.error(errorMessage(error));
-    }
+    void updateQuantity(lineId, quantity);
   }
 
   return (
@@ -162,6 +122,7 @@ export function CartDrawer() {
           mounted ? "translate-x-0" : "translate-x-full"
         }`}
       >
+        {/* Top accent */}
         <div
           aria-hidden="true"
           className="absolute inset-x-0 top-0 h-1"
@@ -171,6 +132,7 @@ export function CartDrawer() {
           }}
         />
 
+        {/* Header */}
         <header
           className="relative shrink-0 border-b border-white/10 px-4 pb-4 pt-6"
           style={{
@@ -220,6 +182,7 @@ export function CartDrawer() {
           ) : null}
         </header>
 
+        {/* Cart content */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4">
           {items.length === 0 ? (
             <div className="flex min-h-full flex-col items-center justify-center px-6 text-center">
@@ -264,14 +227,8 @@ export function CartDrawer() {
                   item.product.images?.[0] || "/placeholder.svg";
 
                 const unitPrice = Number(item.product.price || 0);
+
                 const lineTotal = unitPrice * item.quantity;
-                const rawStock = Number(item.product.stock_left ?? 0);
-                const stockLimit = Number.isFinite(rawStock)
-                  ? Math.max(0, Math.floor(rawStock))
-                  : 0;
-                const reachedStockLimit = item.quantity >= stockLimit;
-                const cannotIncrease =
-                  stockLimit <= 0 || reachedStockLimit;
 
                 return (
                   <article
@@ -281,7 +238,9 @@ export function CartDrawer() {
                     <div className="flex gap-3">
                       <Link
                         to="/product/$id"
-                        params={{ id: item.product_id }}
+                        params={{
+                          id: item.product_id,
+                        }}
                         onClick={closeDrawer}
                         className="group shrink-0"
                       >
@@ -302,7 +261,9 @@ export function CartDrawer() {
                         <div className="flex items-start gap-2">
                           <Link
                             to="/product/$id"
-                            params={{ id: item.product_id }}
+                            params={{
+                              id: item.product_id,
+                            }}
                             onClick={closeDrawer}
                             className="min-w-0 flex-1"
                           >
@@ -314,8 +275,7 @@ export function CartDrawer() {
                           <button
                             type="button"
                             aria-label={`حذف ${item.product.name}`}
-                            title="حذف المنتج من السلة"
-                            onClick={() => void handleRemove(item.id)}
+                            onClick={() => void removeItem(item.id)}
                             className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-500 active:scale-95"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -352,68 +312,38 @@ export function CartDrawer() {
                             ) : null}
                           </div>
 
-                          <div>
-                            <div className="flex h-9 items-center rounded-xl border border-[#0D3B4D]/10 bg-[#F6F2EE] p-1">
-                              <button
-                                type="button"
-                                aria-label="تقليل الكمية"
-                                title={
-                                  item.quantity <= 1
-                                    ? "الحد الأدنى كمية واحدة؛ استخدم زر الحذف لإزالة المنتج"
-                                    : "تقليل الكمية"
-                                }
-                                disabled={item.quantity <= 1}
-                                onClick={() =>
-                                  void handleQuantity(
-                                    item.id,
-                                    item.quantity - 1,
-                                    stockLimit,
-                                  )
-                                }
-                                className="grid h-7 w-7 place-items-center rounded-lg text-[#0D3B4D] transition hover:bg-white active:scale-90 disabled:cursor-not-allowed disabled:opacity-35"
-                              >
-                                <Minus className="h-3.5 w-3.5" />
-                              </button>
+                          <div className="flex h-9 items-center rounded-xl border border-[#0D3B4D]/10 bg-[#F6F2EE] p-1">
+                            <button
+                              type="button"
+                              aria-label="تقليل الكمية"
+                              onClick={() =>
+                                handleQuantity(
+                                  item.id,
+                                  item.quantity - 1,
+                                )
+                              }
+                              className="grid h-7 w-7 place-items-center rounded-lg text-[#0D3B4D] transition hover:bg-white active:scale-90"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
 
-                              <span
-                                aria-label={`الكمية ${item.quantity}`}
-                                className="min-w-[28px] text-center text-[11px] font-black text-[#0A2A38]"
-                              >
-                                {item.quantity.toLocaleString("ar-EG")}
-                              </span>
+                            <span className="min-w-[28px] text-center text-[11px] font-black text-[#0A2A38]">
+                              {item.quantity.toLocaleString("ar-EG")}
+                            </span>
 
-                              <button
-                                type="button"
-                                aria-label="زيادة الكمية"
-                                title={
-                                  cannotIncrease
-                                    ? "تم الوصول للحد الأقصى المتوفر"
-                                    : "زيادة الكمية"
-                                }
-                                disabled={cannotIncrease}
-                                onClick={() =>
-                                  void handleQuantity(
-                                    item.id,
-                                    item.quantity + 1,
-                                    stockLimit,
-                                  )
-                                }
-                                className="grid h-7 w-7 place-items-center rounded-lg bg-white text-[#E2723A] shadow-sm transition hover:bg-[#E2723A]/10 active:scale-90 disabled:cursor-not-allowed disabled:opacity-35 disabled:shadow-none"
-                              >
-                                <Plus className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-
-                            {reachedStockLimit ? (
-                              <p
-                                role="status"
-                                className="mt-1 max-w-[130px] text-[9px] leading-4 text-amber-700"
-                              >
-                                {stockLimit > 0
-                                  ? "تم الوصول للحد الأقصى المتوفر."
-                                  : "المخزون المتاح صفر؛ تحقق من توفر المنتج."}
-                              </p>
-                            ) : null}
+                            <button
+                              type="button"
+                              aria-label="زيادة الكمية"
+                              onClick={() =>
+                                handleQuantity(
+                                  item.id,
+                                  item.quantity + 1,
+                                )
+                              }
+                              className="grid h-7 w-7 place-items-center rounded-lg bg-white text-[#E2723A] shadow-sm transition hover:bg-[#E2723A]/10 active:scale-90"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -425,6 +355,7 @@ export function CartDrawer() {
           )}
         </div>
 
+        {/* Checkout footer */}
         {items.length > 0 ? (
           <footer className="shrink-0 border-t border-[#0D3B4D]/10 bg-white/95 p-4 pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-20px_45px_-35px_rgba(13,59,77,0.8)] backdrop-blur-xl">
             <div className="mb-3 rounded-2xl border border-[#0D3B4D]/5 bg-[#F6F2EE] px-3.5 py-3">
@@ -455,7 +386,9 @@ export function CartDrawer() {
               }}
             >
               <ShoppingBag className="h-4 w-4" />
+
               <span>متابعة وإتمام الطلب</span>
+
               <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
             </Link>
 
