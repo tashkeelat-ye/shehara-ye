@@ -91,9 +91,12 @@ const PAYMENT_STATUS: Record<string, string> = {
   rejected: "مرفوض",
 };
 
-const inputClass =
-  "h-12 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60";
-const labelClass = "mb-1.5 block text-sm font-semibold text-foreground";
+const fieldClass =
+  "min-h-12 w-full rounded-xl border border-input bg-background px-3.5 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60";
+const labelClass = "mb-1.5 block text-sm font-bold text-foreground";
+const panelClass =
+  "min-w-0 rounded-3xl border border-border/80 bg-card shadow-sm";
+const sectionTitleClass = "text-base font-extrabold tracking-tight text-foreground";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
@@ -102,7 +105,7 @@ export const Route = createFileRoute("/_authenticated/account")({
       {
         name: "description",
         content:
-          "إدارة ملفك الشخصي وطلباتك وعناوين التوصيل وتفضيلاتك في متجر شهارة.",
+          "إدارة الملف الشخصي والطلبات وعناوين التوصيل وتفضيلات حسابك في متجر شهارة.",
       },
     ],
   }),
@@ -190,10 +193,14 @@ function AccountPage() {
 
   const roleLabel = useMemo(() => {
     switch (role) {
-      case "admin": return "مدير";
-      case "vendor": return "تاجر";
-      case "courier": return "عامل توصيل";
-      default: return "عميل";
+      case "admin":
+        return "مدير";
+      case "vendor":
+        return "تاجر";
+      case "courier":
+        return "عامل توصيل";
+      default:
+        return "عميل";
     }
   }, [role]);
 
@@ -206,6 +213,7 @@ function AccountPage() {
       : name.charAt(0);
   }, [profile?.full_name]);
 
+  const firstName = profile?.full_name?.trim().split(/\s+/)[0] || "بك";
   const defaultAddress = addresses.find((address) => address.is_default) ?? null;
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -225,14 +233,16 @@ function AccountPage() {
         .from("profiles")
         .update({ full_name: fullName.trim(), phone: phone.trim() })
         .eq("id", user.id);
-      if (error) throw error;
 
+      if (error) throw error;
       await refreshProfile();
       setEditingProfile(false);
       toast.success("تم تحديث بيانات حسابك.");
     } catch (error) {
       console.error("[Account] Failed to save profile:", error);
-      toast.error(error instanceof Error ? error.message : "تعذر حفظ بيانات الحساب.");
+      toast.error(
+        error instanceof Error ? error.message : "تعذر حفظ بيانات الحساب.",
+      );
     } finally {
       setSaving(false);
     }
@@ -265,15 +275,17 @@ function AccountPage() {
         details: addressForm.details.trim(),
         is_default: addresses.length === 0,
       });
-      if (error) throw error;
 
+      if (error) throw error;
       setAddressForm({ ...EMPTY_ADDRESS });
       setShowAddressForm(false);
       await loadAddresses();
       toast.success("تمت إضافة عنوان التوصيل.");
     } catch (error) {
       console.error("[Account] Failed to add address:", error);
-      toast.error(error instanceof Error ? error.message : "تعذرت إضافة العنوان.");
+      toast.error(
+        error instanceof Error ? error.message : "تعذرت إضافة العنوان.",
+      );
     } finally {
       setSaving(false);
     }
@@ -281,6 +293,7 @@ function AccountPage() {
 
   async function makeDefault(addressId: string) {
     if (!user?.id || saving) return;
+
     setSaving(true);
     try {
       const { error: clearError } = await supabase
@@ -330,7 +343,10 @@ function AccountPage() {
           .eq("id", remaining[0].id)
           .eq("user_id", user.id);
         if (defaultError) {
-          console.error("[Account] Failed to choose replacement default:", defaultError);
+          console.error(
+            "[Account] Failed to choose replacement default:",
+            defaultError,
+          );
         }
       }
 
@@ -355,221 +371,310 @@ function AccountPage() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-background pb-28 text-foreground transition-colors md:pb-10">
+    <div
+      dir="rtl"
+      className="min-h-screen bg-background pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-foreground transition-colors md:pb-10"
+    >
       <SiteHeader />
-      <main className="mx-auto w-full max-w-5xl px-4 pb-8 pt-28 sm:px-6 lg:px-8">
-        <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-              SHEHARA · حسابك
+
+      <main className="mx-auto w-full max-w-6xl px-3 pb-8 pt-28 sm:px-5 sm:pt-28 lg:px-8">
+        <div className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-2 text-xs font-extrabold tracking-wide text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              مساحة حسابك في شهارة
             </p>
             <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
-              أهلاً بك، {profile?.full_name?.trim().split(/\s+/)[0] || "بك"}
+              أهلاً {firstName}
             </h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-              كل ما تحتاجه لإدارة طلباتك وبياناتك وتجربة التسوق في مكان واحد.
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+              تابع طلباتك، وحدّث بياناتك، واحفظ عناوين التوصيل في مكان واحد.
             </p>
           </div>
+
           <Link
             to="/products"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold text-foreground transition hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-extrabold text-primary-foreground shadow-[var(--shadow-brand)] transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto"
           >
             <ShoppingBag className="h-4 w-4" />
             متابعة التسوق
             <ArrowLeft className="h-4 w-4" />
           </Link>
-        </header>
+        </div>
 
-        <section className="mb-5 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-          <div className="h-2 bg-gradient-to-l from-primary via-primary to-accent" />
-          <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:p-6">
-            <div className="flex min-w-0 flex-1 items-center gap-4">
-              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-primary text-xl font-black text-primary-foreground shadow-sm sm:h-[72px] sm:w-[72px]">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="break-words text-lg font-extrabold sm:text-xl">
-                    {profile?.full_name || "ملفك الشخصي"}
-                  </h2>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-accent/40 px-2.5 py-1 text-xs font-bold text-accent-foreground">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    {roleLabel}
+        <section className={`${panelClass} mb-5 overflow-hidden`}>
+          <div className="h-1.5 bg-gradient-to-l from-primary via-primary to-accent" />
+          <div className="p-4 sm:p-6">
+            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-3.5 sm:gap-4">
+                <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary text-xl font-black text-primary-foreground shadow-[var(--shadow-brand)] sm:h-[68px] sm:w-[68px] sm:text-2xl">
+                  {initials}
+                  <span
+                    className="absolute -bottom-1 -left-1 grid h-5 w-5 place-items-center rounded-full border-2 border-card bg-accent text-accent-foreground"
+                    aria-hidden="true"
+                  >
+                    <Check className="h-3 w-3" strokeWidth={3} />
                   </span>
                 </div>
-                <p className="mt-1 break-all text-sm text-muted-foreground">
-                  {profile?.phone || user?.email || "أضف بيانات التواصل الخاصة بك"}
-                </p>
-                {user?.email && profile?.phone ? (
-                  <p className="mt-1 break-all text-xs text-muted-foreground">{user.email}</p>
-                ) : null}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setEditingProfile((current) => !current)}
-              aria-expanded={editingProfile}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold transition hover:border-primary/40 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {editingProfile ? <X className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
-              {editingProfile ? "إلغاء التعديل" : "تعديل البيانات"}
-            </button>
-          </div>
 
-          {editingProfile ? (
-            <form onSubmit={saveProfile} className="border-t border-border bg-muted/30 p-5 sm:p-6">
-              <div className="mb-4">
-                <h3 className="text-base font-bold">بياناتك الشخصية</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  حدّث اسمك ورقم التواصل المستخدم في طلباتك.
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="account-full-name" className={labelClass}>الاسم الكامل</label>
-                  <input
-                    id="account-full-name"
-                    autoComplete="name"
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    required
-                    minLength={3}
-                    maxLength={120}
-                    className={inputClass}
-                    placeholder="أدخل اسمك الكامل"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="account-phone" className={labelClass}>رقم الهاتف</label>
-                  <input
-                    id="account-phone"
-                    autoComplete="tel"
-                    inputMode="tel"
-                    dir="ltr"
-                    value={phone}
-                    onChange={(event) => setPhone(event.target.value)}
-                    maxLength={30}
-                    className={`${inputClass} text-left`}
-                    placeholder="رقم التواصل"
-                  />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="max-w-full break-words text-base font-black sm:text-lg">
+                      {profile?.full_name || "ملفك الشخصي"}
+                    </h2>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      {roleLabel}
+                    </span>
+                  </div>
+                  <p className="mt-1 break-all text-sm text-muted-foreground">
+                    {profile?.phone || user?.email || "أضف بيانات التواصل الخاصة بك"}
+                  </p>
+                  {user?.email && profile?.phone ? (
+                    <p className="mt-1 break-all text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
+                  ) : null}
                 </div>
               </div>
-              <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFullName(profile?.full_name ?? "");
-                    setPhone(profile?.phone ?? "");
-                    setEditingProfile(false);
-                  }}
-                  className="h-11 rounded-xl border border-border px-5 text-sm font-bold transition hover:bg-muted"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
-                </button>
-              </div>
-            </form>
-          ) : null}
+
+              <button
+                type="button"
+                onClick={() => setEditingProfile((current) => !current)}
+                aria-expanded={editingProfile}
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-extrabold transition hover:border-ring/50 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
+              >
+                {editingProfile ? (
+                  <X className="h-4 w-4" />
+                ) : (
+                  <Edit3 className="h-4 w-4" />
+                )}
+                {editingProfile ? "إلغاء التعديل" : "تعديل البيانات"}
+              </button>
+            </div>
+
+            {editingProfile ? (
+              <form
+                onSubmit={saveProfile}
+                className="mt-5 border-t border-border/80 pt-5"
+              >
+                <div className="mb-4">
+                  <h3 className={sectionTitleClass}>بياناتك الشخصية</h3>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    استخدم بيانات تواصل صحيحة لتسهيل متابعة طلباتك.
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="account-full-name" className={labelClass}>
+                      الاسم الكامل
+                    </label>
+                    <input
+                      id="account-full-name"
+                      autoComplete="name"
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
+                      required
+                      minLength={3}
+                      maxLength={120}
+                      className={fieldClass}
+                      placeholder="أدخل اسمك الكامل"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="account-phone" className={labelClass}>
+                      رقم الهاتف
+                    </label>
+                    <input
+                      id="account-phone"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      dir="ltr"
+                      value={phone}
+                      onChange={(event) => setPhone(event.target.value)}
+                      maxLength={30}
+                      className={`${fieldClass} text-left`}
+                      placeholder="رقم التواصل"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFullName(profile?.full_name ?? "");
+                      setPhone(profile?.phone ?? "");
+                      setEditingProfile(false);
+                    }}
+                    className="min-h-11 rounded-xl border border-border px-5 py-2.5 text-sm font-bold transition hover:bg-muted"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="min-h-11 rounded-xl bg-primary px-5 py-2.5 text-sm font-extrabold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
+                  </button>
+                </div>
+              </form>
+            ) : null}
+          </div>
         </section>
 
-        <section aria-label="روابط الحساب" className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <QuickLink to="/orders" icon={<Package className="h-5 w-5" />} title="طلباتي" description="تتبع الطلبات وحالتها" accent="primary" />
-          <QuickLink to="/wallet" icon={<Wallet className="h-5 w-5" />} title="محفظتي" description="الرصيد والحركات المالية" accent="accent" />
-          <QuickLink to="/favorites" icon={<Heart className="h-5 w-5" />} title="المفضلة" description="المنتجات المحفوظة" accent="primary" />
+        <section aria-label="اختصارات الحساب" className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <QuickLink
+            to="/orders"
+            icon={<Package className="h-5 w-5" />}
+            title="طلباتي"
+            description="تتبع الطلبات وحالتها"
+          />
+          <QuickLink
+            to="/wallet"
+            icon={<Wallet className="h-5 w-5" />}
+            title="محفظتي"
+            description="الرصيد والحركات المالية"
+          />
+          <QuickLink
+            to="/favorites"
+            icon={<Heart className="h-5 w-5" />}
+            title="المفضلة"
+            description="منتجاتك المحفوظة"
+          />
           <button
             type="button"
-            onClick={() => document.getElementById("delivery-addresses")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className="group rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() =>
+              document
+                .getElementById("delivery-addresses")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            className="group min-w-0 rounded-2xl border border-border/80 bg-card p-3.5 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-ring/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
           >
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-muted text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/50 text-accent-foreground transition group-hover:bg-accent sm:h-11 sm:w-11">
               <MapPin className="h-5 w-5" />
             </span>
-            <span className="mt-3 flex items-center justify-between gap-2">
-              <span className="text-sm font-extrabold">عناوين التوصيل</span>
-              <ChevronLeft className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+            <span className="mt-3 flex items-center justify-between gap-1">
+              <span className="truncate text-sm font-extrabold">العناوين</span>
+              <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
             </span>
-            <span className="mt-1 block text-xs leading-5 text-muted-foreground">إدارة مواقع استلام طلباتك</span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+              {addresses.length > 0
+                ? `${addresses.length.toLocaleString("ar")} عنوان محفوظ`
+                : "إدارة مواقع الاستلام"}
+            </span>
           </button>
         </section>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-          <section className="min-w-0 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
+        <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <section className={`${panelClass} p-4 sm:p-6`}>
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+              <div className="flex min-w-0 items-center gap-3">
+                <IconTile>
                   <Package className="h-5 w-5" />
-                </span>
-                <div>
-                  <h2 className="text-base font-extrabold">أحدث الطلبات</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">نظرة سريعة على آخر مشترياتك</p>
+                </IconTile>
+                <div className="min-w-0">
+                  <h2 className={sectionTitleClass}>أحدث الطلبات</h2>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    نظرة سريعة على آخر مشترياتك
+                  </p>
                 </div>
               </div>
-              <Link to="/orders" className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-primary hover:underline">
-                عرض الكل <ChevronLeft className="h-4 w-4" />
+              <Link
+                to="/orders"
+                className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-extrabold text-primary transition hover:bg-primary/5"
+              >
+                عرض الكل
+                <ChevronLeft className="h-4 w-4" />
               </Link>
             </div>
 
             {loadingOrders ? (
               <div className="space-y-3" aria-label="جارٍ تحميل الطلبات">
-                {[1, 2].map((item) => <div key={item} className="h-20 animate-pulse rounded-2xl bg-muted" />)}
+                {[1, 2].map((item) => (
+                  <div
+                    key={item}
+                    className="h-24 animate-pulse rounded-2xl bg-muted"
+                  />
+                ))}
               </div>
             ) : orders.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center">
-                <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-muted text-muted-foreground">
-                  <ShoppingBag className="h-5 w-5" />
-                </span>
-                <h3 className="mt-3 text-sm font-bold">لم تطلب شيئاً بعد</h3>
-                <p className="mx-auto mt-1 max-w-xs text-sm leading-6 text-muted-foreground">
-                  ستظهر طلباتك هنا بمجرد إتمام أول عملية شراء.
-                </p>
-                <Link to="/products" className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground hover:opacity-90">
-                  ابدأ التسوق <ArrowLeft className="h-4 w-4" />
-                </Link>
-              </div>
+              <EmptyState
+                icon={<ShoppingBag className="h-6 w-6" />}
+                title="لا توجد طلبات حتى الآن"
+                description="عندما تشتري من شهارة، ستجد تفاصيل طلباتك هنا."
+                action={
+                  <Link
+                    to="/products"
+                    className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground"
+                  >
+                    ابدأ التسوق
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                  </Link>
+                }
+              />
             ) : (
               <ul className="space-y-3">
                 {orders.map((order) => (
-                  <li key={order.id}>
-                    <Link to="/orders" className="flex flex-col gap-3 rounded-2xl border border-border/80 p-4 transition hover:border-primary/40 hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="break-all text-sm font-extrabold">طلب #{order.order_number}</p>
+                  <li
+                    key={order.id}
+                    className="rounded-2xl border border-border/80 bg-background/60 p-3.5 transition hover:border-ring/40 sm:p-4"
+                  >
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                        <Package className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-extrabold">
+                            طلب #{order.order_number}
+                          </p>
+                          <StatusPill
+                            label={ORDER_STATUS[order.status] ?? order.status}
+                            tone={
+                              order.status === "delivered"
+                                ? "success"
+                                : order.status === "cancelled"
+                                  ? "danger"
+                                  : "brand"
+                            }
+                          />
+                        </div>
                         <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Clock3 className="h-3.5 w-3.5" /> {formatDate(order.created_at)}
+                          <Clock3 className="h-3.5 w-3.5" />
+                          {formatDate(order.created_at)}
                         </p>
-                        <p className="mt-2 text-sm font-bold">{formatPrice(Number(order.total) || 0)}</p>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-sm font-black tabular-nums">
+                            {formatPrice(order.total)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            الدفع: {PAYMENT_STATUS[order.payment_status] ?? order.payment_status}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                        <StatusPill
-                          label={ORDER_STATUS[order.status] ?? order.status}
-                          tone={order.status === "cancelled" ? "danger" : order.status === "delivered" ? "success" : "brand"}
-                        />
-                        <span className="text-xs text-muted-foreground">
-                          {PAYMENT_STATUS[order.payment_status] ?? order.payment_status}
-                        </span>
-                      </div>
-                    </Link>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </section>
 
-          <section id="delivery-addresses" className="min-w-0 scroll-mt-28 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
+          <section
+            id="delivery-addresses"
+            className={`${panelClass} scroll-mt-28 p-4 sm:p-6`}
+          >
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-accent/40 text-accent-foreground">
+              <div className="flex min-w-0 items-center gap-3">
+                <IconTile tone="accent">
                   <MapPin className="h-5 w-5" />
-                </span>
-                <div>
-                  <h2 className="text-base font-extrabold">عناوين التوصيل</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {addresses.length === 0 ? "أضف عنوانك لتسهيل إتمام الطلب" : `${addresses.length} عنوان محفوظ`}
+                </IconTile>
+                <div className="min-w-0">
+                  <h2 className={sectionTitleClass}>عناوين التوصيل</h2>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    {defaultAddress
+                      ? `العنوان الافتراضي: ${defaultAddress.city}`
+                      : "احفظ عنوانك لتسهيل الطلبات القادمة"}
                   </p>
                 </div>
               </div>
@@ -577,85 +682,172 @@ function AccountPage() {
                 type="button"
                 onClick={() => setShowAddressForm((current) => !current)}
                 aria-expanded={showAddressForm}
-                aria-label={showAddressForm ? "إغلاق نموذج العنوان" : "إضافة عنوان"}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-extrabold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3.5"
               >
-                {showAddressForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {showAddressForm ? (
+                  <X className="h-4 w-4" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">
+                  {showAddressForm ? "إلغاء" : "إضافة عنوان"}
+                </span>
+                <span className="sm:hidden">
+                  {showAddressForm ? "إلغاء" : "إضافة"}
+                </span>
               </button>
             </div>
 
             {showAddressForm ? (
-              <form onSubmit={addAddress} className="mb-4 space-y-4 rounded-2xl border border-border bg-muted/30 p-4">
-                <h3 className="text-sm font-extrabold">إضافة عنوان جديد</h3>
+              <form
+                onSubmit={addAddress}
+                className="mb-4 space-y-4 rounded-2xl border border-border bg-muted/30 p-3.5 sm:p-4"
+              >
                 <div>
-                  <label htmlFor="address-label" className={labelClass}>اسم العنوان</label>
-                  <select
-                    id="address-label"
-                    value={addressForm.label}
-                    onChange={(event) => setAddressForm((current) => ({ ...current, label: event.target.value }))}
-                    className={inputClass}
-                  >
-                    <option value="المنزل">المنزل</option>
-                    <option value="العمل">العمل</option>
-                    <option value="عنوان آخر">عنوان آخر</option>
-                  </select>
+                  <h3 className="text-sm font-extrabold">عنوان توصيل جديد</h3>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    أدخل التفاصيل التي تساعد المندوب على الوصول إليك.
+                  </p>
                 </div>
-                <div>
-                  <label htmlFor="address-recipient" className={labelClass}>اسم المستلم <span className="text-destructive">*</span></label>
-                  <input
-                    id="address-recipient"
-                    autoComplete="name"
-                    value={addressForm.recipient_name}
-                    onChange={(event) => setAddressForm((current) => ({ ...current, recipient_name: event.target.value }))}
-                    required maxLength={120} className={inputClass} placeholder="اسم الشخص الذي سيستلم الطلب"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="address-phone" className={labelClass}>رقم الهاتف</label>
-                  <input
-                    id="address-phone" autoComplete="tel" inputMode="tel" dir="ltr"
-                    value={addressForm.phone}
-                    onChange={(event) => setAddressForm((current) => ({ ...current, phone: event.target.value }))}
-                    maxLength={30} className={`${inputClass} text-left`} placeholder="رقم التواصل للمستلم"
-                  />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="address-city" className={labelClass}>المدينة <span className="text-destructive">*</span></label>
+                    <label htmlFor="address-label" className={labelClass}>
+                      تسمية العنوان
+                    </label>
+                    <select
+                      id="address-label"
+                      value={addressForm.label}
+                      onChange={(event) =>
+                        setAddressForm((current) => ({
+                          ...current,
+                          label: event.target.value,
+                        }))
+                      }
+                      className={fieldClass}
+                    >
+                      <option value="المنزل">المنزل</option>
+                      <option value="العمل">العمل</option>
+                      <option value="عنوان آخر">عنوان آخر</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="address-recipient" className={labelClass}>
+                      اسم المستلم <span className="text-destructive">*</span>
+                    </label>
                     <input
-                      id="address-city" autoComplete="address-level2" value={addressForm.city}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))}
-                      required maxLength={100} className={inputClass} placeholder="المدينة"
+                      id="address-recipient"
+                      autoComplete="name"
+                      value={addressForm.recipient_name}
+                      onChange={(event) =>
+                        setAddressForm((current) => ({
+                          ...current,
+                          recipient_name: event.target.value,
+                        }))
+                      }
+                      required
+                      maxLength={120}
+                      className={fieldClass}
+                      placeholder="اسم الشخص الذي سيستلم الطلب"
                     />
                   </div>
                   <div>
-                    <label htmlFor="address-district" className={labelClass}>الحي / المنطقة</label>
+                    <label htmlFor="address-phone" className={labelClass}>
+                      رقم الهاتف
+                    </label>
                     <input
-                      id="address-district" autoComplete="address-level3" value={addressForm.district}
-                      onChange={(event) => setAddressForm((current) => ({ ...current, district: event.target.value }))}
-                      maxLength={120} className={inputClass} placeholder="الحي أو المنطقة"
+                      id="address-phone"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      dir="ltr"
+                      value={addressForm.phone}
+                      onChange={(event) =>
+                        setAddressForm((current) => ({
+                          ...current,
+                          phone: event.target.value,
+                        }))
+                      }
+                      maxLength={30}
+                      className={`${fieldClass} text-left`}
+                      placeholder="رقم التواصل"
                     />
                   </div>
-                </div>
-                <div>
-                  <label htmlFor="address-details" className={labelClass}>تفاصيل العنوان <span className="text-destructive">*</span></label>
-                  <textarea
-                    id="address-details" autoComplete="street-address" value={addressForm.details}
-                    onChange={(event) => setAddressForm((current) => ({ ...current, details: event.target.value }))}
-                    required maxLength={500} rows={3}
-                    className={`${inputClass} h-auto min-h-24 resize-y py-3`}
-                    placeholder="اسم الشارع، رقم المبنى، أقرب معلم..."
-                  />
+                  <div>
+                    <label htmlFor="address-city" className={labelClass}>
+                      المدينة <span className="text-destructive">*</span>
+                    </label>
+                    <input
+                      id="address-city"
+                      autoComplete="address-level2"
+                      value={addressForm.city}
+                      onChange={(event) =>
+                        setAddressForm((current) => ({
+                          ...current,
+                          city: event.target.value,
+                        }))
+                      }
+                      required
+                      maxLength={100}
+                      className={fieldClass}
+                      placeholder="المدينة"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="address-district" className={labelClass}>
+                      الحي / المنطقة
+                    </label>
+                    <input
+                      id="address-district"
+                      autoComplete="address-level3"
+                      value={addressForm.district}
+                      onChange={(event) =>
+                        setAddressForm((current) => ({
+                          ...current,
+                          district: event.target.value,
+                        }))
+                      }
+                      maxLength={120}
+                      className={fieldClass}
+                      placeholder="الحي أو المنطقة"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="address-details" className={labelClass}>
+                      تفاصيل العنوان <span className="text-destructive">*</span>
+                    </label>
+                    <textarea
+                      id="address-details"
+                      autoComplete="street-address"
+                      value={addressForm.details}
+                      onChange={(event) =>
+                        setAddressForm((current) => ({
+                          ...current,
+                          details: event.target.value,
+                        }))
+                      }
+                      required
+                      maxLength={500}
+                      rows={3}
+                      className={`${fieldClass} min-h-24 resize-y`}
+                      placeholder="اسم الشارع، رقم المبنى، أقرب معلم..."
+                    />
+                  </div>
                 </div>
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                   <button
                     type="button"
-                    onClick={() => { setAddressForm({ ...EMPTY_ADDRESS }); setShowAddressForm(false); }}
-                    className="h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"
+                    onClick={() => {
+                      setAddressForm({ ...EMPTY_ADDRESS });
+                      setShowAddressForm(false);
+                    }}
+                    className="min-h-11 rounded-xl border border-border px-4 py-2.5 text-sm font-bold transition hover:bg-muted"
                   >
                     إلغاء
                   </button>
-                  <button type="submit" disabled={saving} className="h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="min-h-11 rounded-xl bg-primary px-5 py-2.5 text-sm font-extrabold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                  >
                     {saving ? "جارٍ الحفظ..." : "حفظ العنوان"}
                   </button>
                 </div>
@@ -664,54 +856,93 @@ function AccountPage() {
 
             {loadingAddresses ? (
               <div className="space-y-3" aria-label="جارٍ تحميل العناوين">
-                {[1, 2].map((item) => <div key={item} className="h-24 animate-pulse rounded-2xl bg-muted" />)}
+                {[1, 2].map((item) => (
+                  <div
+                    key={item}
+                    className="h-24 animate-pulse rounded-2xl bg-muted"
+                  />
+                ))}
               </div>
             ) : addresses.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border px-4 py-7 text-center">
-                <MapPin className="mx-auto h-6 w-6 text-muted-foreground" />
-                <p className="mt-3 text-sm font-bold">لا توجد عناوين محفوظة</p>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">أضف عنوان التوصيل لتسهيل طلباتك القادمة.</p>
-                {!showAddressForm ? (
-                  <button type="button" onClick={() => setShowAddressForm(true)} className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground">
-                    <Plus className="h-4 w-4" /> إضافة أول عنوان
-                  </button>
-                ) : null}
-              </div>
+              <EmptyState
+                icon={<MapPin className="h-6 w-6" />}
+                title="لا توجد عناوين محفوظة"
+                description="أضف عنوان التوصيل لتسهيل إتمام مشترياتك القادمة."
+                action={
+                  !showAddressForm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddressForm(true)}
+                      className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground"
+                    >
+                      <Plus className="h-4 w-4" />
+                      إضافة أول عنوان
+                    </button>
+                  ) : null
+                }
+              />
             ) : (
               <ul className="space-y-3">
                 {addresses.map((address) => (
-                  <li key={address.id} className="rounded-2xl border border-border/80 p-4">
-                    <div className="flex items-start gap-3">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-primary">
+                  <li
+                    key={address.id}
+                    className="rounded-2xl border border-border/80 bg-background/60 p-3.5 sm:p-4"
+                  >
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                         <MapPin className="h-5 w-5" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-sm font-extrabold">{address.label || "عنوان التوصيل"}</h3>
+                          <h3 className="text-sm font-extrabold">
+                            {address.label || "عنوان التوصيل"}
+                          </h3>
                           {address.is_default ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
-                              <Check className="h-3 w-3" /> الافتراضي
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-extrabold text-primary">
+                              <Check className="h-3 w-3" />
+                              الافتراضي
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-1 text-sm font-semibold">{address.recipient_name}</p>
-                        {address.phone ? <p dir="ltr" className="mt-1 text-start text-sm text-muted-foreground">{address.phone}</p> : null}
-                        <p className="mt-2 text-sm text-muted-foreground">{[address.city, address.district].filter(Boolean).join("، ")}</p>
-                        <p className="mt-1 break-words text-sm leading-6 text-muted-foreground">{address.details}</p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {address.recipient_name}
+                        </p>
+                        {address.phone ? (
+                          <p
+                            dir="ltr"
+                            className="mt-1 text-start text-sm text-muted-foreground"
+                          >
+                            {address.phone}
+                          </p>
+                        ) : null}
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {[address.city, address.district]
+                            .filter(Boolean)
+                            .join("، ")}
+                        </p>
+                        <p className="mt-1 break-words text-sm leading-6 text-muted-foreground">
+                          {address.details}
+                        </p>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {!address.is_default ? (
                             <button
-                              type="button" disabled={saving} onClick={() => void makeDefault(address.id)}
-                              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                              type="button"
+                              disabled={saving}
+                              onClick={() => void makeDefault(address.id)}
+                              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-bold transition hover:border-ring/50 hover:text-primary disabled:opacity-50"
                             >
-                              <Check className="h-3.5 w-3.5" /> تعيين كافتراضي
+                              <Check className="h-3.5 w-3.5" />
+                              تعيين كافتراضي
                             </button>
                           ) : null}
                           <button
-                            type="button" disabled={saving} onClick={() => void removeAddress(address)}
-                            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-destructive/20 px-3 text-xs font-bold text-destructive hover:bg-destructive/5 disabled:opacity-50"
+                            type="button"
+                            disabled={saving}
+                            onClick={() => void removeAddress(address)}
+                            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-destructive/20 px-3 py-2 text-xs font-bold text-destructive transition hover:bg-destructive/5 disabled:opacity-50"
                           >
-                            <Trash2 className="h-3.5 w-3.5" /> حذف العنوان
+                            <Trash2 className="h-3.5 w-3.5" />
+                            حذف العنوان
                           </button>
                         </div>
                       </div>
@@ -723,38 +954,55 @@ function AccountPage() {
           </section>
         </div>
 
-        <section className="mt-5 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
+        <section className={`${panelClass} mt-5 p-4 sm:p-6`}>
           <div className="mb-4 flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+            <IconTile tone="accent">
               <BellRing className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 className="text-base font-extrabold">الإشعارات والتفضيلات</h2>
-              <p className="mt-1 text-sm text-muted-foreground">اختر أنواع التنبيهات التي ترغب في استقبالها.</p>
+            </IconTile>
+            <div className="min-w-0">
+              <h2 className={sectionTitleClass}>الإشعارات والتفضيلات</h2>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm">
+                تحكّم في التنبيهات التي تصلك بشأن الطلبات والعروض والحساب.
+              </p>
             </div>
           </div>
-          <div className="rounded-2xl border border-border/70 bg-background p-3 sm:p-4">
+          <div className="rounded-2xl border border-border/70 bg-background p-2.5 sm:p-4">
             <NotificationPrefsPanel />
           </div>
         </section>
 
-        <section className="mt-5 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
-          <h2 className="text-base font-extrabold">المساعدة والحساب</h2>
-          <p className="mt-1 text-sm text-muted-foreground">تحتاج إلى مساعدة أو تريد إنهاء جلستك؟</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Link to="/faq" className="flex min-h-16 items-center gap-3 rounded-2xl border border-border p-4 transition hover:border-primary/40 hover:bg-muted/30">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-muted text-primary"><CircleHelp className="h-5 w-5" /></span>
+        <section className={`${panelClass} mt-5 p-4 sm:p-6`}>
+          <div className="mb-4">
+            <h2 className={sectionTitleClass}>المساعدة وأمان الحساب</h2>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm">
+              اختصارات مفيدة لإدارة تجربتك في شهارة.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link
+              to="/faq"
+              className="group flex min-h-[76px] min-w-0 items-center gap-3 rounded-2xl border border-border/80 p-3.5 transition hover:border-ring/50 hover:bg-muted/30 sm:p-4"
+            >
+              <IconTile>
+                <CircleHelp className="h-5 w-5" />
+              </IconTile>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-bold">مركز المساعدة</span>
-                <span className="mt-1 block text-xs text-muted-foreground">الأسئلة الشائعة عن الطلبات والتوصيل</span>
+                <span className="block text-sm font-extrabold">مركز المساعدة</span>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                  إجابات عن الطلبات والتوصيل
+                </span>
               </span>
-              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary" />
             </Link>
-            <div className="flex min-h-16 items-center gap-3 rounded-2xl border border-border p-4">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-muted text-primary"><ShieldCheck className="h-5 w-5" /></span>
+            <div className="flex min-h-[76px] min-w-0 items-center gap-3 rounded-2xl border border-border/80 p-3.5 sm:p-4">
+              <IconTile tone="accent">
+                <ShieldCheck className="h-5 w-5" />
+              </IconTile>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-bold">حافظ على أمان حسابك</span>
-                <span className="mt-1 block text-xs leading-5 text-muted-foreground">لا تشارك كلمة المرور أو رموز التحقق مع أي شخص.</span>
+                <span className="block text-sm font-extrabold">أمان حسابك</span>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                  لا تشارك كلمة المرور أو رموز التحقق.
+                </span>
               </span>
             </div>
           </div>
@@ -766,13 +1014,37 @@ function AccountPage() {
             onClick={() => void handleSignOut()}
             className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm font-extrabold text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <LogOut className="h-4 w-4" /> تسجيل الخروج
+            <LogOut className="h-4 w-4" />
+            تسجيل الخروج
           </button>
-          <p className="mt-4 text-center text-xs text-muted-foreground">شهارة · تسوّق بلا حدود</p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            شهارة · تسوّق بلا حدود
+          </p>
         </section>
       </main>
+
       <BottomNav />
     </div>
+  );
+}
+
+function IconTile({
+  children,
+  tone = "primary",
+}: {
+  children: ReactNode;
+  tone?: "primary" | "accent";
+}) {
+  return (
+    <span
+      className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+        tone === "accent"
+          ? "bg-accent/55 text-accent-foreground"
+          : "bg-primary/10 text-primary"
+      }`}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -781,31 +1053,53 @@ function QuickLink({
   icon,
   title,
   description,
-  accent,
 }: {
   to: "/orders" | "/wallet" | "/favorites";
   icon: ReactNode;
   title: string;
   description: string;
-  accent: "primary" | "accent";
 }) {
-  const iconClass =
-    accent === "accent"
-      ? "bg-accent/40 text-accent-foreground group-hover:bg-accent"
-      : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground";
-
   return (
     <Link
       to={to}
-      className="group rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group min-w-0 rounded-2xl border border-border/80 bg-card p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-ring/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
     >
-      <span className={`grid h-11 w-11 place-items-center rounded-xl transition-colors ${iconClass}`}>{icon}</span>
-      <span className="mt-3 flex items-center justify-between gap-2">
-        <span className="text-sm font-extrabold">{title}</span>
+      <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground sm:h-11 sm:w-11">
+        {icon}
+      </span>
+      <span className="mt-3 flex items-center justify-between gap-1">
+        <span className="truncate text-sm font-extrabold">{title}</span>
         <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary" />
       </span>
-      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{description}</span>
+      <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+        {description}
+      </span>
     </Link>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-dashed border-border px-4 py-7 text-center sm:py-9">
+      <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-muted text-primary">
+        {icon}
+      </span>
+      <p className="mt-3 text-sm font-extrabold">{title}</p>
+      <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
+        {description}
+      </p>
+      {action}
+    </div>
   );
 }
 
@@ -823,7 +1117,13 @@ function StatusPill({
         ? "bg-destructive/10 text-destructive"
         : "bg-primary/10 text-primary";
 
-  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${classes}`}>{label}</span>;
+  return (
+    <span
+      className={`inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-xs font-bold ${classes}`}
+    >
+      {label}
+    </span>
+  );
 }
 
 export default AccountPage;
