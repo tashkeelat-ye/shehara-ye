@@ -1,44 +1,39 @@
-
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  createFileRoute,
-  Link,
-} from "@tanstack/react-router";
+  ArrowLeft,
+  BellRing,
+  Check,
+  ChevronLeft,
+  CircleHelp,
+  Clock3,
+  Edit3,
+  Heart,
+  LogOut,
+  MapPin,
+  Package,
+  Plus,
+  ShieldCheck,
+  ShoppingBag,
+  Trash2,
+  Wallet,
+  X,
+} from "lucide-react";
 import {
   useCallback,
   useEffect,
   useMemo,
   useState,
   type FormEvent,
+  type ReactNode,
 } from "react";
-import {
-  ArrowLeft,
-  Bell,
-  Check,
-  ChevronLeft,
-  CircleHelp,
-  Edit3,
-  FileText,
-  Headset,
-  Heart,
-  Home,
-  LogOut,
-  MapPin,
-  Package,
-  Plus,
-  Settings2,
-  ShieldCheck,
-  Trash2,
-  UserRound,
-  Wallet,
-  X,
-} from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
-import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
-import { useAuth } from "@/lib/auth-context";
 import { NotificationPrefsPanel } from "@/components/notification-prefs";
+import { SiteHeader } from "@/components/site-header";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { useFormatPrice } from "@/lib/currency-context";
 import { formatDate } from "@/lib/store";
 
 type Address = {
@@ -61,7 +56,25 @@ type RecentOrder = {
   created_at: string;
 };
 
-const STATUS_LABELS: Record<string, string> = {
+type AddressForm = {
+  label: string;
+  recipient_name: string;
+  phone: string;
+  city: string;
+  district: string;
+  details: string;
+};
+
+const EMPTY_ADDRESS: AddressForm = {
+  label: "المنزل",
+  recipient_name: "",
+  phone: "",
+  city: "",
+  district: "",
+  details: "",
+};
+
+const ORDER_STATUS: Record<string, string> = {
   pending: "بانتظار التأكيد",
   awaiting_payment: "بانتظار الدفع",
   confirmed: "تم التأكيد",
@@ -71,47 +84,25 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "ملغي",
 };
 
-const PAYMENT_LABELS: Record<string, string> = {
+const PAYMENT_STATUS: Record<string, string> = {
   unpaid: "غير مدفوع",
   pending: "قيد المراجعة",
   paid: "مدفوع",
   rejected: "مرفوض",
 };
 
-const emptyAddress = {
-  label: "المنزل",
-  recipient_name: "",
-  phone: "",
-  city: "",
-  district: "",
-  details: "",
-};
-
-const cardClass =
-  "rounded-3xl border border-slate-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-[#0D3B4D]";
-
-const mutedTextClass =
-  "text-sm text-slate-600 dark:text-slate-300/75";
-
 const inputClass =
-  "min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0E4D64] focus:ring-2 focus:ring-[#0E4D64]/10 dark:border-white/10 dark:bg-[#071B24] dark:text-slate-50 dark:placeholder:text-slate-400 dark:focus:border-[#D65A31] dark:focus:ring-[#D65A31]/15";
+  "h-12 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60";
+const labelClass = "mb-1.5 block text-sm font-semibold text-foreground";
 
-const primaryButtonClass =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#0E4D64] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#0B4053] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]/40 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#D65A31] dark:hover:bg-[#C34C27] dark:focus-visible:ring-[#D65A31]/40";
-
-const secondaryButtonClass =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10";
-
-export const Route = createFileRoute(
-  "/_authenticated/account",
-)({
+export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
     meta: [
       { title: "حسابي | شهارة" },
       {
         name: "description",
         content:
-          "إدارة الملف الشخصي والطلبات وعناوين التوصيل والإشعارات في متجر شهارة.",
+          "إدارة ملفك الشخصي وطلباتك وعناوين التوصيل وتفضيلاتك في متجر شهارة.",
       },
     ],
   }),
@@ -119,24 +110,19 @@ export const Route = createFileRoute(
 });
 
 function AccountPage() {
-  const {
-    user,
-    profile,
-    role,
-    refreshProfile,
-    signOut,
-  } = useAuth();
+  const { user, profile, role, refreshProfile, signOut } = useAuth();
+  const formatPrice = useFormatPrice();
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [editingProfile, setEditingProfile] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [orders, setOrders] = useState<RecentOrder[]>([]);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [form, setForm] = useState({ ...emptyAddress });
-  const [busy, setBusy] = useState(false);
-  const [editingProfile, setEditingProfile] = useState(false);
+  const [addressForm, setAddressForm] = useState<AddressForm>({ ...EMPTY_ADDRESS });
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setFullName(profile?.full_name ?? "");
@@ -151,26 +137,20 @@ function AccountPage() {
     }
 
     setLoadingAddresses(true);
-
     try {
       const { data, error } = await supabase
         .from("addresses")
-        .select(
-          "id,label,recipient_name,phone,city,district,details,is_default",
-        )
+        .select("id,label,recipient_name,phone,city,district,details,is_default")
         .eq("user_id", user.id)
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: false })
         .returns<Address[]>();
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       setAddresses(data ?? []);
     } catch (error) {
       console.error("[Account] Failed to load addresses:", error);
-      toast.error("تعذر تحميل عناوين التوصيل");
+      toast.error("تعذر تحميل عناوين التوصيل. حاول تحديث الصفحة.");
     } finally {
       setLoadingAddresses(false);
     }
@@ -184,26 +164,20 @@ function AccountPage() {
     }
 
     setLoadingOrders(true);
-
     try {
       const { data, error } = await supabase
         .from("orders")
-        .select(
-          "id,order_number,status,payment_status,total,created_at",
-        )
+        .select("id,order_number,status,payment_status,total,created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(3)
         .returns<RecentOrder[]>();
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       setOrders(data ?? []);
     } catch (error) {
       console.error("[Account] Failed to load orders:", error);
-      toast.error("تعذر تحميل الطلبات");
+      toast.error("تعذر تحميل ملخص الطلبات.");
     } finally {
       setLoadingOrders(false);
     }
@@ -216,471 +190,271 @@ function AccountPage() {
 
   const roleLabel = useMemo(() => {
     switch (role) {
-      case "admin":
-        return "مدير";
-      case "vendor":
-        return "تاجر";
-      case "courier":
-        return "مندوب توصيل";
-      default:
-        return "عميل";
+      case "admin": return "مدير";
+      case "vendor": return "تاجر";
+      case "courier": return "عامل توصيل";
+      default: return "عميل";
     }
   }, [role]);
 
   const initials = useMemo(() => {
-    const value = profile?.full_name?.trim() || "ش";
-    const parts = value.split(/\s+/).filter(Boolean);
-
-    if (parts.length >= 2) {
-      return `${parts[0]?.charAt(0) ?? ""}${parts[1]?.charAt(0) ?? ""}`;
-    }
-
-    return value.charAt(0);
+    const name = profile?.full_name?.trim();
+    if (!name) return "ش";
+    const parts = name.split(/\s+/).filter(Boolean);
+    return parts.length > 1
+      ? `${parts[0]?.charAt(0) ?? ""}${parts[1]?.charAt(0) ?? ""}`
+      : name.charAt(0);
   }, [profile?.full_name]);
 
-  const defaultAddress =
-    addresses.find((address) => address.is_default) ??
-    addresses[0] ??
-    null;
-
-  const latestOrder = orders[0] ?? null;
-
-  function scrollToSection(id: string) {
-    document.getElementById(id)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }
+  const defaultAddress = addresses.find((address) => address.is_default) ?? null;
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (!user?.id) {
-      toast.error("يجب تسجيل الدخول أولاً");
+      toast.error("يرجى تسجيل الدخول أولاً.");
       return;
     }
-
     if (fullName.trim().length < 3) {
-      toast.error("أدخل اسماً صحيحاً");
+      toast.error("يرجى إدخال الاسم الكامل بشكل صحيح.");
       return;
     }
 
-    setBusy(true);
-
+    setSaving(true);
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({
-          full_name: fullName.trim(),
-          phone: phone.trim(),
-        })
+        .update({ full_name: fullName.trim(), phone: phone.trim() })
         .eq("id", user.id);
-
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       await refreshProfile();
-
-      toast.success("تم تحديث بيانات الحساب بنجاح");
       setEditingProfile(false);
+      toast.success("تم تحديث بيانات حسابك.");
     } catch (error) {
       console.error("[Account] Failed to save profile:", error);
-
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذر حفظ البيانات",
-      );
+      toast.error(error instanceof Error ? error.message : "تعذر حفظ بيانات الحساب.");
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
   }
 
   async function addAddress(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (!user?.id) {
-      toast.error("يجب تسجيل الدخول أولاً");
+      toast.error("يرجى تسجيل الدخول أولاً.");
       return;
     }
-
     if (
-      !form.recipient_name.trim() ||
-      !form.city.trim() ||
-      !form.details.trim()
+      !addressForm.recipient_name.trim() ||
+      !addressForm.city.trim() ||
+      !addressForm.details.trim()
     ) {
-      toast.error("أكمل اسم المستلم والمدينة وتفاصيل العنوان");
+      toast.error("أكمل اسم المستلم والمدينة وتفاصيل العنوان.");
       return;
     }
 
-    setBusy(true);
-
+    setSaving(true);
     try {
-      const { error } = await supabase
-        .from("addresses")
-        .insert({
-          user_id: user.id,
-          label: form.label.trim() || "العنوان",
-          recipient_name: form.recipient_name.trim(),
-          phone: form.phone.trim(),
-          city: form.city.trim(),
-          district: form.district.trim(),
-          details: form.details.trim(),
-          is_default: addresses.length === 0,
-        });
+      const { error } = await supabase.from("addresses").insert({
+        user_id: user.id,
+        label: addressForm.label.trim() || "العنوان",
+        recipient_name: addressForm.recipient_name.trim(),
+        phone: addressForm.phone.trim(),
+        city: addressForm.city.trim(),
+        district: addressForm.district.trim(),
+        details: addressForm.details.trim(),
+        is_default: addresses.length === 0,
+      });
+      if (error) throw error;
 
-      if (error) {
-        throw error;
-      }
-
-      toast.success("تمت إضافة العنوان بنجاح");
-      setForm({ ...emptyAddress });
+      setAddressForm({ ...EMPTY_ADDRESS });
       setShowAddressForm(false);
       await loadAddresses();
+      toast.success("تمت إضافة عنوان التوصيل.");
     } catch (error) {
       console.error("[Account] Failed to add address:", error);
-
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذر إضافة العنوان",
-      );
+      toast.error(error instanceof Error ? error.message : "تعذرت إضافة العنوان.");
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
   }
 
-  async function removeAddress(id: string) {
-    if (!user?.id || busy) {
+  async function makeDefault(addressId: string) {
+    if (!user?.id || saving) return;
+    setSaving(true);
+    try {
+      const { error: clearError } = await supabase
+        .from("addresses")
+        .update({ is_default: false })
+        .eq("user_id", user.id);
+      if (clearError) throw clearError;
+
+      const { error: setError } = await supabase
+        .from("addresses")
+        .update({ is_default: true })
+        .eq("id", addressId)
+        .eq("user_id", user.id);
+      if (setError) throw setError;
+
+      await loadAddresses();
+      toast.success("تم تعيين العنوان الافتراضي.");
+    } catch (error) {
+      console.error("[Account] Failed to set default address:", error);
+      await loadAddresses();
+      toast.error("تعذر تحديث العنوان الافتراضي.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeAddress(address: Address) {
+    if (!user?.id || saving) return;
+    if (!window.confirm(`هل تريد حذف عنوان «${address.label || address.city}»؟`)) {
       return;
     }
 
-    const confirmed = window.confirm(
-      "هل تريد حذف عنوان التوصيل هذا؟ لا يمكن التراجع عن هذا الإجراء.",
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setBusy(true);
-
+    setSaving(true);
     try {
       const { error } = await supabase
         .from("addresses")
         .delete()
-        .eq("id", id)
+        .eq("id", address.id)
         .eq("user_id", user.id);
+      if (error) throw error;
 
-      if (error) {
-        throw error;
+      const remaining = addresses.filter((item) => item.id !== address.id);
+      if (address.is_default && remaining.length > 0) {
+        const { error: defaultError } = await supabase
+          .from("addresses")
+          .update({ is_default: true })
+          .eq("id", remaining[0].id)
+          .eq("user_id", user.id);
+        if (defaultError) {
+          console.error("[Account] Failed to choose replacement default:", defaultError);
+        }
       }
 
-      toast.success("تم حذف العنوان");
       await loadAddresses();
+      toast.success("تم حذف عنوان التوصيل.");
     } catch (error) {
       console.error("[Account] Failed to delete address:", error);
-
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذر حذف العنوان",
-      );
+      toast.error("تعذر حذف العنوان. حاول مرة أخرى.");
     } finally {
-      setBusy(false);
-    }
-  }
-
-  async function makeDefault(id: string) {
-    if (!user?.id || busy) {
-      return;
-    }
-
-    setBusy(true);
-
-    try {
-      const first = await supabase
-        .from("addresses")
-        .update({ is_default: false })
-        .eq("user_id", user.id);
-
-      if (first.error) {
-        throw first.error;
-      }
-
-      const second = await supabase
-        .from("addresses")
-        .update({ is_default: true })
-        .eq("id", id)
-        .eq("user_id", user.id);
-
-      if (second.error) {
-        throw second.error;
-      }
-
-      toast.success("تم تعيين العنوان الافتراضي");
-      await loadAddresses();
-    } catch (error) {
-      console.error("[Account] Failed to set default address:", error);
-
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "تعذر تحديث العنوان",
-      );
-
-      await loadAddresses();
-    } finally {
-      setBusy(false);
+      setSaving(false);
     }
   }
 
   async function handleSignOut() {
-    const confirmed = window.confirm(
-      "هل تريد تسجيل الخروج من حسابك؟",
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
+    if (!window.confirm("هل تريد تسجيل الخروج من حسابك؟")) return;
     try {
       await signOut();
     } catch (error) {
-      console.error("[Account] Failed to sign out:", error);
-      toast.error("تعذر تسجيل الخروج حالياً");
-    }
-  }
-
-  function getOrderStatusClass(status: string) {
-    switch (status) {
-      case "delivered":
-        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300";
-      case "cancelled":
-        return "bg-red-100 text-red-800 dark:bg-red-400/15 dark:text-red-300";
-      case "shipped":
-      case "processing":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-400/15 dark:text-blue-300";
-      default:
-        return "bg-orange-100 text-orange-800 dark:bg-orange-400/15 dark:text-orange-300";
+      console.error("[Account] Sign out failed:", error);
+      toast.error("تعذر تسجيل الخروج حالياً. حاول مرة أخرى.");
     }
   }
 
   return (
-    <div
-      dir="rtl"
-      className="min-h-screen bg-[#FAF9F6] pb-28 text-slate-900 transition-colors dark:bg-[#071B24] dark:text-slate-50 md:pb-8"
-    >
+    <div dir="rtl" className="min-h-screen bg-background pb-28 text-foreground transition-colors md:pb-10">
       <SiteHeader />
-
-      <main className="mx-auto w-full max-w-4xl space-y-5 px-4 py-5 sm:px-6 sm:py-7">
-        {/* Page heading */}
-        <header className="flex items-center justify-between gap-4">
+      <main className="mx-auto w-full max-w-5xl px-4 pb-8 pt-28 sm:px-6 lg:px-8">
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold tracking-[0.12em] text-[#0E4D64] dark:text-[#D65A31]">
-              SHEHARA ACCOUNT
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+              SHEHARA · حسابك
             </p>
-
-            <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
-              حسابي
+            <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+              أهلاً بك، {profile?.full_name?.trim().split(/\s+/)[0] || "بك"}
             </h1>
-
-            <p className={`mt-2 ${mutedTextClass}`}>
-              بياناتك وطلباتك وعناوين التوصيل في مكان واحد.
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+              كل ما تحتاجه لإدارة طلباتك وبياناتك وتجربة التسوق في مكان واحد.
             </p>
           </div>
-
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0E4D64] text-xl font-black text-white ring-4 ring-[#0E4D64]/10 dark:bg-[#D65A31] dark:ring-[#D65A31]/15 sm:h-16 sm:w-16 sm:text-2xl">
-            {initials}
-          </div>
+          <Link
+            to="/products"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold text-foreground transition hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            متابعة التسوق
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
         </header>
 
-        {/* Profile hero */}
-        <section className={`${cardClass} overflow-hidden`}>
-          <div className="h-1.5 bg-gradient-to-l from-[#0E4D64] via-[#34798B] to-[#D65A31]" />
-
-          <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-6">
+        <section className="mb-5 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+          <div className="h-2 bg-gradient-to-l from-primary via-primary to-accent" />
+          <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:p-6">
             <div className="flex min-w-0 flex-1 items-center gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#0E4D64]/10 text-2xl font-black text-[#0E4D64] ring-2 ring-[#D65A31]/35 ring-offset-2 ring-offset-white dark:bg-[#D65A31]/10 dark:text-[#F3A184] dark:ring-offset-[#0D3B4D]">
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-primary text-xl font-black text-primary-foreground shadow-sm sm:h-[72px] sm:w-[72px]">
                 {initials}
               </div>
-
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="break-words text-lg font-black sm:text-xl">
-                    {profile?.full_name || "مرحباً بك"}
+                  <h2 className="break-words text-lg font-extrabold sm:text-xl">
+                    {profile?.full_name || "ملفك الشخصي"}
                   </h2>
-
-                  <span className="inline-flex items-center rounded-full bg-[#D65A31]/10 px-3 py-1 text-xs font-bold text-[#B84725] dark:text-[#F3A184]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-accent/40 px-2.5 py-1 text-xs font-bold text-accent-foreground">
+                    <ShieldCheck className="h-3.5 w-3.5" />
                     {roleLabel}
                   </span>
                 </div>
-
-                <p className="mt-1 break-all text-sm text-slate-600 dark:text-slate-300/75" dir="ltr">
-                  {profile?.phone || user?.email || "—"}
+                <p className="mt-1 break-all text-sm text-muted-foreground">
+                  {profile?.phone || user?.email || "أضف بيانات التواصل الخاصة بك"}
                 </p>
-
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  أهلاً بك في شهارة للتسوق.
-                </p>
+                {user?.email && profile?.phone ? (
+                  <p className="mt-1 break-all text-xs text-muted-foreground">{user.email}</p>
+                ) : null}
               </div>
             </div>
-
             <button
               type="button"
-              onClick={() => {
-                setEditingProfile((value) => !value);
-                setShowAddressForm(false);
-              }}
+              onClick={() => setEditingProfile((current) => !current)}
               aria-expanded={editingProfile}
-              className={secondaryButtonClass}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold transition hover:border-primary/40 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {editingProfile ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Edit3 className="h-4 w-4" />
-              )}
-
-              {editingProfile ? "إغلاق التعديل" : "تعديل البيانات"}
+              {editingProfile ? <X className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
+              {editingProfile ? "إلغاء التعديل" : "تعديل البيانات"}
             </button>
           </div>
-        </section>
 
-        {/* Quick access */}
-        <section aria-labelledby="quick-access-title">
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <div>
-              <h2 id="quick-access-title" className="text-lg font-black">
-                الوصول السريع
-              </h2>
-              <p className={`mt-1 ${mutedTextClass}`}>
-                أهم خدمات حسابك في مكان واحد.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <Link
-              to="/orders"
-              className={`${cardClass} group p-4 transition hover:-translate-y-0.5 hover:border-[#0E4D64]/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]/40 dark:hover:border-[#D65A31]/40 sm:p-5`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0E4D64]/10 text-[#0E4D64] dark:bg-white/5 dark:text-[#8DC7D5]">
-                  <Package className="h-5 w-5" />
-                </span>
-                <ChevronLeft className="h-4 w-4 text-slate-400 transition group-hover:-translate-x-1 group-hover:text-[#0E4D64] dark:group-hover:text-[#D65A31]" />
-              </div>
-
-              <h3 className="mt-4 text-base font-black">طلباتي</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300/75">
-                متابعة الطلبات والفواتير
-              </p>
-            </Link>
-
-            <Link
-              to="/wallet"
-              className={`${cardClass} group p-4 transition hover:-translate-y-0.5 hover:border-[#D65A31]/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31]/30 sm:p-5`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#D65A31]/10 text-[#C34C27] dark:text-[#F3A184]">
-                  <Wallet className="h-5 w-5" />
-                </span>
-                <ChevronLeft className="h-4 w-4 text-slate-400 transition group-hover:-translate-x-1 group-hover:text-[#D65A31]" />
-              </div>
-
-              <h3 className="mt-4 text-base font-black">محفظتي</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300/75">
-                الرصيد والعمليات المالية
-              </p>
-            </Link>
-
-            <Link
-              to="/favorites"
-              className={`${cardClass} group p-4 transition hover:-translate-y-0.5 hover:border-[#D65A31]/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31]/30 sm:p-5`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-400/10 dark:text-rose-300">
-                  <Heart className="h-5 w-5" />
-                </span>
-                <ChevronLeft className="h-4 w-4 text-slate-400 transition group-hover:-translate-x-1 group-hover:text-[#D65A31]" />
-              </div>
-
-              <h3 className="mt-4 text-base font-black">المفضلة</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300/75">
-                المنتجات المحفوظة
-              </p>
-            </Link>
-
-            <button
-              type="button"
-              onClick={() => scrollToSection("delivery-addresses")}
-              className={`${cardClass} group p-4 text-start transition hover:-translate-y-0.5 hover:border-[#0E4D64]/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]/40 sm:p-5`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">
-                  <MapPin className="h-5 w-5" />
-                </span>
-                <ChevronLeft className="h-4 w-4 text-slate-400 transition group-hover:-translate-x-1 group-hover:text-[#0E4D64] dark:group-hover:text-[#D65A31]" />
-              </div>
-
-              <h3 className="mt-4 text-base font-black">عناوين التوصيل</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300/75">
-                إدارة عناوين الاستلام
-              </p>
-            </button>
-          </div>
-        </section>
-
-        {/* Profile editor */}
-        {editingProfile ? (
-          <section className={`${cardClass} p-4 sm:p-6`}>
-            <div className="mb-5 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0E4D64]/10 text-[#0E4D64] dark:bg-[#D65A31]/10 dark:text-[#F3A184]">
-                <UserRound className="h-5 w-5" />
-              </span>
-
-              <div>
-                <h2 className="text-lg font-black">البيانات الشخصية</h2>
-                <p className={`mt-1 ${mutedTextClass}`}>
-                  حدّث الاسم ورقم الهاتف المرتبطين بحسابك.
+          {editingProfile ? (
+            <form onSubmit={saveProfile} className="border-t border-border bg-muted/30 p-5 sm:p-6">
+              <div className="mb-4">
+                <h3 className="text-base font-bold">بياناتك الشخصية</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  حدّث اسمك ورقم التواصل المستخدم في طلباتك.
                 </p>
               </div>
-            </div>
-
-            <form onSubmit={saveProfile} className="space-y-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold">
-                  الاسم الكامل
-                </span>
-                <input
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  maxLength={100}
-                  autoComplete="name"
-                  required
-                  minLength={3}
-                  className={inputClass}
-                  placeholder="أدخل اسمك الكامل"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold">
-                  رقم الهاتف
-                </span>
-                <input
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                  dir="ltr"
-                  maxLength={20}
-                  autoComplete="tel"
-                  className={inputClass}
-                  placeholder="رقم الهاتف"
-                />
-              </label>
-
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="account-full-name" className={labelClass}>الاسم الكامل</label>
+                  <input
+                    id="account-full-name"
+                    autoComplete="name"
+                    value={fullName}
+                    onChange={(event) => setFullName(event.target.value)}
+                    required
+                    minLength={3}
+                    maxLength={120}
+                    className={inputClass}
+                    placeholder="أدخل اسمك الكامل"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="account-phone" className={labelClass}>رقم الهاتف</label>
+                  <input
+                    id="account-phone"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    dir="ltr"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    maxLength={30}
+                    className={`${inputClass} text-left`}
+                    placeholder="رقم التواصل"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => {
@@ -688,586 +462,368 @@ function AccountPage() {
                     setPhone(profile?.phone ?? "");
                     setEditingProfile(false);
                   }}
-                  className={secondaryButtonClass}
+                  className="h-11 rounded-xl border border-border px-5 text-sm font-bold transition hover:bg-muted"
                 >
                   إلغاء
                 </button>
-
                 <button
                   type="submit"
-                  disabled={busy}
-                  className={primaryButtonClass}
+                  disabled={saving}
+                  className="h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <Check className="h-4 w-4" />
-                  {busy ? "جارٍ الحفظ..." : "حفظ التعديلات"}
-                </button>
-              </div>
-            </form>
-          </section>
-        ) : null}
-
-        {/* Recent order */}
-        <section className={`${cardClass} p-4 sm:p-6`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0E4D64]/10 text-[#0E4D64] dark:bg-white/5 dark:text-[#8DC7D5]">
-                <Package className="h-5 w-5" />
-              </span>
-
-              <div>
-                <h2 className="text-lg font-black">آخر طلب</h2>
-                <p className={`mt-1 ${mutedTextClass}`}>
-                  نظرة سريعة على أحدث طلباتك.
-                </p>
-              </div>
-            </div>
-
-            <Link
-              to="/orders"
-              className="inline-flex min-h-10 items-center gap-1 rounded-xl px-3 text-sm font-bold text-[#0E4D64] hover:bg-[#0E4D64]/5 dark:text-[#F3A184] dark:hover:bg-white/5"
-            >
-              كل الطلبات
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </div>
-
-          {loadingOrders ? (
-            <div
-              className="mt-5 space-y-3"
-              aria-label="جارٍ تحميل الطلبات"
-              aria-busy="true"
-            >
-              <div className="h-5 w-2/5 animate-pulse rounded-lg bg-slate-200 dark:bg-white/10" />
-              <div className="h-16 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5" />
-            </div>
-          ) : latestOrder ? (
-            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#071B24]/50">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    رقم الطلب
-                  </p>
-
-                  <p
-                    dir="ltr"
-                    className="mt-1 break-all text-start font-mono text-base font-bold"
-                  >
-                    {latestOrder.order_number || latestOrder.id}
-                  </p>
-
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300/75">
-                    {formatDate(latestOrder.created_at)}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold ${getOrderStatusClass(latestOrder.status)}`}
-                  >
-                    {STATUS_LABELS[latestOrder.status] ??
-                      latestOrder.status}
-                  </span>
-
-                  <span className="inline-flex rounded-full bg-slate-200/70 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                    {PAYMENT_LABELS[latestOrder.payment_status] ??
-                      latestOrder.payment_status}
-                  </span>
-                </div>
-              </div>
-
-              <Link
-                to="/orders"
-                className={`${primaryButtonClass} mt-4 w-full sm:w-auto`}
-              >
-                متابعة الطلب
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-6 text-center dark:border-white/15">
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0E4D64]/10 text-[#0E4D64] dark:bg-white/5 dark:text-[#8DC7D5]">
-                <Package className="h-6 w-6" />
-              </span>
-
-              <h3 className="mt-3 text-base font-bold">
-                لا توجد طلبات حتى الآن
-              </h3>
-
-              <p className={`mt-2 ${mutedTextClass}`}>
-                عندما تطلب منتجاتك، ستظهر تفاصيل أحدث طلب هنا.
-              </p>
-
-              <Link
-                to="/products"
-                className={`${primaryButtonClass} mt-4`}
-              >
-                تصفح المنتجات
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </div>
-          )}
-        </section>
-
-        {/* Delivery addresses */}
-        <section
-          id="delivery-addresses"
-          className={`${cardClass} scroll-mt-24 p-4 sm:p-6`}
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">
-                <MapPin className="h-5 w-5" />
-              </span>
-
-              <div>
-                <h2 className="text-lg font-black">عناوين التوصيل</h2>
-                <p className={`mt-1 ${mutedTextClass}`}>
-                  احفظ عناوينك لتسهيل الطلبات القادمة.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowAddressForm((value) => !value);
-                setEditingProfile(false);
-
-                if (!showAddressForm) {
-                  window.setTimeout(
-                    () => scrollToSection("address-form"),
-                    50,
-                  );
-                }
-              }}
-              aria-expanded={showAddressForm}
-              className={primaryButtonClass}
-            >
-              {showAddressForm ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
-              {showAddressForm ? "إغلاق النموذج" : "إضافة عنوان توصيل"}
-            </button>
-          </div>
-
-          {showAddressForm ? (
-            <form
-              id="address-form"
-              onSubmit={addAddress}
-              className="mt-5 scroll-mt-24 rounded-2xl border border-slate-200/80 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#071B24]/50 sm:p-5"
-            >
-              <div className="mb-4">
-                <h3 className="text-base font-bold">
-                  عنوان توصيل جديد
-                </h3>
-                <p className={`mt-1 ${mutedTextClass}`}>
-                  الحقول التي تحمل علامة * مطلوبة.
-                </p>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-2 block text-sm font-semibold">
-                    اسم العنوان
-                  </span>
-                  <input
-                    value={form.label}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        label: event.target.value,
-                      }))
-                    }
-                    maxLength={80}
-                    className={inputClass}
-                    placeholder="المنزل، العمل..."
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-sm font-semibold">
-                    اسم المستلم *
-                  </span>
-                  <input
-                    value={form.recipient_name}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        recipient_name: event.target.value,
-                      }))
-                    }
-                    maxLength={100}
-                    autoComplete="name"
-                    required
-                    className={inputClass}
-                    placeholder="اسم الشخص الذي سيستلم الطلب"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-sm font-semibold">
-                    رقم هاتف المستلم
-                  </span>
-                  <input
-                    value={form.phone}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        phone: event.target.value,
-                      }))
-                    }
-                    dir="ltr"
-                    maxLength={20}
-                    autoComplete="tel"
-                    className={inputClass}
-                    placeholder="رقم الهاتف"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-sm font-semibold">
-                    المدينة *
-                  </span>
-                  <input
-                    value={form.city}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        city: event.target.value,
-                      }))
-                    }
-                    maxLength={100}
-                    required
-                    autoComplete="address-level2"
-                    className={inputClass}
-                    placeholder="المدينة"
-                  />
-                </label>
-
-                <label className="block sm:col-span-2">
-                  <span className="mb-2 block text-sm font-semibold">
-                    الحي أو المنطقة
-                  </span>
-                  <input
-                    value={form.district}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        district: event.target.value,
-                      }))
-                    }
-                    maxLength={150}
-                    autoComplete="address-level3"
-                    className={inputClass}
-                    placeholder="اسم الحي أو المنطقة"
-                  />
-                </label>
-
-                <label className="block sm:col-span-2">
-                  <span className="mb-2 block text-sm font-semibold">
-                    تفاصيل العنوان *
-                  </span>
-                  <textarea
-                    value={form.details}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        details: event.target.value,
-                      }))
-                    }
-                    maxLength={1000}
-                    required
-                    rows={3}
-                    autoComplete="street-address"
-                    className={`${inputClass} resize-y`}
-                    placeholder="اسم الشارع، أقرب معلم، رقم المنزل..."
-                  />
-                </label>
-              </div>
-
-              <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => {
-                    setForm({ ...emptyAddress });
-                    setShowAddressForm(false);
-                  }}
-                  className={secondaryButtonClass}
-                >
-                  إلغاء
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className={primaryButtonClass}
-                >
-                  <Check className="h-4 w-4" />
-                  {busy ? "جارٍ حفظ العنوان..." : "حفظ العنوان"}
+                  {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
                 </button>
               </div>
             </form>
           ) : null}
-
-          {loadingAddresses ? (
-            <div
-              className="mt-5 space-y-3"
-              aria-label="جارٍ تحميل عناوين التوصيل"
-              aria-busy="true"
-            >
-              {[1, 2].map((item) => (
-                <div
-                  key={item}
-                  className="h-28 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5"
-                />
-              ))}
-            </div>
-          ) : addresses.length > 0 ? (
-            <div className="mt-5 space-y-3">
-              {addresses.map((address) => (
-                <article
-                  key={address.id}
-                  className="rounded-2xl border border-slate-200/80 bg-white p-4 dark:border-white/10 dark:bg-[#071B24]/45 sm:p-5"
-                >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0E4D64]/10 text-[#0E4D64] dark:bg-white/5 dark:text-[#8DC7D5]">
-                          <Home className="h-4 w-4" />
-                        </span>
-
-                        <h3 className="text-base font-bold">
-                          {address.label || "عنوان التوصيل"}
-                        </h3>
-
-                        {address.is_default ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
-                            <Check className="h-3.5 w-3.5" />
-                            افتراضي
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                            اسم المستلم
-                          </dt>
-                          <dd className="mt-1 break-words text-sm font-semibold">
-                            {address.recipient_name || "—"}
-                          </dd>
-                        </div>
-
-                        <div>
-                          <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                            رقم الهاتف
-                          </dt>
-                          <dd className="mt-1 break-all text-sm font-semibold" dir="ltr">
-                            {address.phone || "—"}
-                          </dd>
-                        </div>
-
-                        <div>
-                          <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                            المدينة
-                          </dt>
-                          <dd className="mt-1 break-words text-sm font-semibold">
-                            {address.city || "—"}
-                          </dd>
-                        </div>
-
-                        <div>
-                          <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                            الحي أو المنطقة
-                          </dt>
-                          <dd className="mt-1 break-words text-sm font-semibold">
-                            {address.district || "—"}
-                          </dd>
-                        </div>
-
-                        <div className="sm:col-span-2">
-                          <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                            تفاصيل العنوان
-                          </dt>
-                          <dd className="mt-1 whitespace-pre-wrap break-words text-sm leading-6">
-                            {address.details || "—"}
-                          </dd>
-                        </div>
-                      </dl>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 sm:max-w-44 sm:justify-end">
-                      {!address.is_default ? (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void makeDefault(address.id)}
-                          className={secondaryButtonClass}
-                        >
-                          <Check className="h-4 w-4" />
-                          تعيين كافتراضي
-                        </button>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void removeAddress(address.id)}
-                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300 dark:hover:bg-red-400/15"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        حذف
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-5 rounded-2xl border border-dashed border-slate-300 p-6 text-center dark:border-white/15">
-              <MapPin className="mx-auto h-8 w-8 text-slate-400 dark:text-slate-500" />
-
-              <h3 className="mt-3 text-base font-bold">
-                لم تضف عنوان توصيل بعد
-              </h3>
-
-              <p className={`mt-2 ${mutedTextClass}`}>
-                أضف عنوانك لتسهيل إتمام طلباتك القادمة.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => setShowAddressForm(true)}
-                className={`${primaryButtonClass} mt-4`}
-              >
-                <Plus className="h-4 w-4" />
-                إضافة أول عنوان
-              </button>
-            </div>
-          )}
         </section>
 
-        {/* Settings and notification preferences */}
-        <section
-          id="account-settings"
-          className={`${cardClass} scroll-mt-24 overflow-hidden`}
-        >
-          <div className="flex items-center gap-3 border-b border-slate-200/80 p-4 dark:border-white/10 sm:p-6">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#D65A31]/10 text-[#C34C27] dark:text-[#F3A184]">
-              <Settings2 className="h-5 w-5" />
+        <section aria-label="روابط الحساب" className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <QuickLink to="/orders" icon={<Package className="h-5 w-5" />} title="طلباتي" description="تتبع الطلبات وحالتها" accent="primary" />
+          <QuickLink to="/wallet" icon={<Wallet className="h-5 w-5" />} title="محفظتي" description="الرصيد والحركات المالية" accent="accent" />
+          <QuickLink to="/favorites" icon={<Heart className="h-5 w-5" />} title="المفضلة" description="المنتجات المحفوظة" accent="primary" />
+          <button
+            type="button"
+            onClick={() => document.getElementById("delivery-addresses")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="group rounded-2xl border border-border bg-card p-4 text-start shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-muted text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+              <MapPin className="h-5 w-5" />
             </span>
+            <span className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-sm font-extrabold">عناوين التوصيل</span>
+              <ChevronLeft className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+            </span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">إدارة مواقع استلام طلباتك</span>
+          </button>
+        </section>
 
-            <div>
-              <h2 className="text-lg font-black">
-                الإعدادات والتفضيلات
-              </h2>
-              <p className={`mt-1 ${mutedTextClass}`}>
-                تحكم في إشعارات حسابك وتفضيلاتك.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-5 p-4 sm:p-6">
-            <div>
-              <div className="mb-3 flex items-center gap-2">
-                <Bell className="h-5 w-5 text-[#0E4D64] dark:text-[#F3A184]" />
-                <h3 className="text-base font-bold">
-                  تفضيلات الإشعارات
-                </h3>
-              </div>
-
-              <NotificationPrefsPanel />
-            </div>
-
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#071B24]/50">
-              <div className="flex items-start gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">
-                  <ShieldCheck className="h-5 w-5" />
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+          <section className="min-w-0 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <Package className="h-5 w-5" />
                 </span>
-
                 <div>
-                  <h3 className="text-base font-bold">أمان الحساب</h3>
-                  <p className={`mt-1 ${mutedTextClass}`}>
-                    حافظ على سرية بيانات الدخول ولا تشارك كلمة المرور مع الآخرين.
+                  <h2 className="text-base font-extrabold">أحدث الطلبات</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">نظرة سريعة على آخر مشترياتك</p>
+                </div>
+              </div>
+              <Link to="/orders" className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-primary hover:underline">
+                عرض الكل <ChevronLeft className="h-4 w-4" />
+              </Link>
+            </div>
+
+            {loadingOrders ? (
+              <div className="space-y-3" aria-label="جارٍ تحميل الطلبات">
+                {[1, 2].map((item) => <div key={item} className="h-20 animate-pulse rounded-2xl bg-muted" />)}
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center">
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-muted text-muted-foreground">
+                  <ShoppingBag className="h-5 w-5" />
+                </span>
+                <h3 className="mt-3 text-sm font-bold">لم تطلب شيئاً بعد</h3>
+                <p className="mx-auto mt-1 max-w-xs text-sm leading-6 text-muted-foreground">
+                  ستظهر طلباتك هنا بمجرد إتمام أول عملية شراء.
+                </p>
+                <Link to="/products" className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground hover:opacity-90">
+                  ابدأ التسوق <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {orders.map((order) => (
+                  <li key={order.id}>
+                    <Link to="/orders" className="flex flex-col gap-3 rounded-2xl border border-border/80 p-4 transition hover:border-primary/40 hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="break-all text-sm font-extrabold">طلب #{order.order_number}</p>
+                        <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Clock3 className="h-3.5 w-3.5" /> {formatDate(order.created_at)}
+                        </p>
+                        <p className="mt-2 text-sm font-bold">{formatPrice(Number(order.total) || 0)}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        <StatusPill
+                          label={ORDER_STATUS[order.status] ?? order.status}
+                          tone={order.status === "cancelled" ? "danger" : order.status === "delivered" ? "success" : "brand"}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {PAYMENT_STATUS[order.payment_status] ?? order.payment_status}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section id="delivery-addresses" className="min-w-0 scroll-mt-28 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-accent/40 text-accent-foreground">
+                  <MapPin className="h-5 w-5" />
+                </span>
+                <div>
+                  <h2 className="text-base font-extrabold">عناوين التوصيل</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {addresses.length === 0 ? "أضف عنوانك لتسهيل إتمام الطلب" : `${addresses.length} عنوان محفوظ`}
                   </p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowAddressForm((current) => !current)}
+                aria-expanded={showAddressForm}
+                aria-label={showAddressForm ? "إغلاق نموذج العنوان" : "إضافة عنوان"}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {showAddressForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              </button>
             </div>
-          </div>
-        </section>
 
-        {/* Help and policies */}
-        <section className={`${cardClass} p-4 sm:p-6`}>
-          <div className="mb-4">
-            <h2 className="text-lg font-black">المساعدة والدعم</h2>
-            <p className={`mt-1 ${mutedTextClass}`}>
-              روابط مفيدة للوصول إلى معلومات المتجر.
-            </p>
-          </div>
+            {showAddressForm ? (
+              <form onSubmit={addAddress} className="mb-4 space-y-4 rounded-2xl border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-extrabold">إضافة عنوان جديد</h3>
+                <div>
+                  <label htmlFor="address-label" className={labelClass}>اسم العنوان</label>
+                  <select
+                    id="address-label"
+                    value={addressForm.label}
+                    onChange={(event) => setAddressForm((current) => ({ ...current, label: event.target.value }))}
+                    className={inputClass}
+                  >
+                    <option value="المنزل">المنزل</option>
+                    <option value="العمل">العمل</option>
+                    <option value="عنوان آخر">عنوان آخر</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="address-recipient" className={labelClass}>اسم المستلم <span className="text-destructive">*</span></label>
+                  <input
+                    id="address-recipient"
+                    autoComplete="name"
+                    value={addressForm.recipient_name}
+                    onChange={(event) => setAddressForm((current) => ({ ...current, recipient_name: event.target.value }))}
+                    required maxLength={120} className={inputClass} placeholder="اسم الشخص الذي سيستلم الطلب"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="address-phone" className={labelClass}>رقم الهاتف</label>
+                  <input
+                    id="address-phone" autoComplete="tel" inputMode="tel" dir="ltr"
+                    value={addressForm.phone}
+                    onChange={(event) => setAddressForm((current) => ({ ...current, phone: event.target.value }))}
+                    maxLength={30} className={`${inputClass} text-left`} placeholder="رقم التواصل للمستلم"
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="address-city" className={labelClass}>المدينة <span className="text-destructive">*</span></label>
+                    <input
+                      id="address-city" autoComplete="address-level2" value={addressForm.city}
+                      onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))}
+                      required maxLength={100} className={inputClass} placeholder="المدينة"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="address-district" className={labelClass}>الحي / المنطقة</label>
+                    <input
+                      id="address-district" autoComplete="address-level3" value={addressForm.district}
+                      onChange={(event) => setAddressForm((current) => ({ ...current, district: event.target.value }))}
+                      maxLength={120} className={inputClass} placeholder="الحي أو المنطقة"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="address-details" className={labelClass}>تفاصيل العنوان <span className="text-destructive">*</span></label>
+                  <textarea
+                    id="address-details" autoComplete="street-address" value={addressForm.details}
+                    onChange={(event) => setAddressForm((current) => ({ ...current, details: event.target.value }))}
+                    required maxLength={500} rows={3}
+                    className={`${inputClass} h-auto min-h-24 resize-y py-3`}
+                    placeholder="اسم الشارع، رقم المبنى، أقرب معلم..."
+                  />
+                </div>
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => { setAddressForm({ ...EMPTY_ADDRESS }); setShowAddressForm(false); }}
+                    className="h-11 rounded-xl border border-border px-4 text-sm font-bold hover:bg-muted"
+                  >
+                    إلغاء
+                  </button>
+                  <button type="submit" disabled={saving} className="h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60">
+                    {saving ? "جارٍ الحفظ..." : "حفظ العنوان"}
+                  </button>
+                </div>
+              </form>
+            ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <a
-              href="/support"
-              className="flex min-h-16 items-center gap-3 rounded-2xl border border-slate-200/80 p-3 transition hover:border-[#0E4D64]/30 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5"
-            >
-              <Headset className="h-5 w-5 shrink-0 text-[#0E4D64] dark:text-[#F3A184]" />
-              <span className="text-sm font-semibold">الدعم الفني</span>
-            </a>
+            {loadingAddresses ? (
+              <div className="space-y-3" aria-label="جارٍ تحميل العناوين">
+                {[1, 2].map((item) => <div key={item} className="h-24 animate-pulse rounded-2xl bg-muted" />)}
+              </div>
+            ) : addresses.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border px-4 py-7 text-center">
+                <MapPin className="mx-auto h-6 w-6 text-muted-foreground" />
+                <p className="mt-3 text-sm font-bold">لا توجد عناوين محفوظة</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">أضف عنوان التوصيل لتسهيل طلباتك القادمة.</p>
+                {!showAddressForm ? (
+                  <button type="button" onClick={() => setShowAddressForm(true)} className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground">
+                    <Plus className="h-4 w-4" /> إضافة أول عنوان
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {addresses.map((address) => (
+                  <li key={address.id} className="rounded-2xl border border-border/80 p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-primary">
+                        <MapPin className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm font-extrabold">{address.label || "عنوان التوصيل"}</h3>
+                          {address.is_default ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
+                              <Check className="h-3 w-3" /> الافتراضي
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-1 text-sm font-semibold">{address.recipient_name}</p>
+                        {address.phone ? <p dir="ltr" className="mt-1 text-start text-sm text-muted-foreground">{address.phone}</p> : null}
+                        <p className="mt-2 text-sm text-muted-foreground">{[address.city, address.district].filter(Boolean).join("، ")}</p>
+                        <p className="mt-1 break-words text-sm leading-6 text-muted-foreground">{address.details}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {!address.is_default ? (
+                            <button
+                              type="button" disabled={saving} onClick={() => void makeDefault(address.id)}
+                              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-bold hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                            >
+                              <Check className="h-3.5 w-3.5" /> تعيين كافتراضي
+                            </button>
+                          ) : null}
+                          <button
+                            type="button" disabled={saving} onClick={() => void removeAddress(address)}
+                            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-destructive/20 px-3 text-xs font-bold text-destructive hover:bg-destructive/5 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> حذف العنوان
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
 
-            <a
-              href="/policies"
-              className="flex min-h-16 items-center gap-3 rounded-2xl border border-slate-200/80 p-3 transition hover:border-[#0E4D64]/30 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5"
-            >
-              <FileText className="h-5 w-5 shrink-0 text-[#0E4D64] dark:text-[#F3A184]" />
-              <span className="text-sm font-semibold">الشروط والسياسات</span>
-            </a>
-
-            <a
-              href="/faq"
-              className="flex min-h-16 items-center gap-3 rounded-2xl border border-slate-200/80 p-3 transition hover:border-[#0E4D64]/30 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5"
-            >
-              <CircleHelp className="h-5 w-5 shrink-0 text-[#0E4D64] dark:text-[#F3A184]" />
-              <span className="text-sm font-semibold">الأسئلة الشائعة</span>
-            </a>
-          </div>
-        </section>
-
-        {/* Sign out */}
-        <section className="rounded-3xl border border-red-200 bg-red-50/80 p-4 dark:border-red-400/15 dark:bg-red-400/[0.06] sm:p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="mt-5 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
+          <div className="mb-4 flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
+              <BellRing className="h-5 w-5" />
+            </span>
             <div>
-              <h2 className="text-base font-black text-red-800 dark:text-red-300">
-                تسجيل الخروج
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-red-700/80 dark:text-red-200/70">
-                أنهِ جلستك الحالية على هذا الجهاز.
-              </p>
+              <h2 className="text-base font-extrabold">الإشعارات والتفضيلات</h2>
+              <p className="mt-1 text-sm text-muted-foreground">اختر أنواع التنبيهات التي ترغب في استقبالها.</p>
             </div>
-
-            <button
-              type="button"
-              onClick={() => void handleSignOut()}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300 dark:hover:bg-red-400/15"
-            >
-              <LogOut className="h-4 w-4" />
-              تسجيل الخروج
-            </button>
+          </div>
+          <div className="rounded-2xl border border-border/70 bg-background p-3 sm:p-4">
+            <NotificationPrefsPanel />
           </div>
         </section>
 
-        <footer className="pb-2 pt-1 text-center">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            شهارة للتجارة والتسويق الإلكتروني
-          </p>
-        </footer>
-      </main>
+        <section className="mt-5 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
+          <h2 className="text-base font-extrabold">المساعدة والحساب</h2>
+          <p className="mt-1 text-sm text-muted-foreground">تحتاج إلى مساعدة أو تريد إنهاء جلستك؟</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Link to="/faq" className="flex min-h-16 items-center gap-3 rounded-2xl border border-border p-4 transition hover:border-primary/40 hover:bg-muted/30">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-muted text-primary"><CircleHelp className="h-5 w-5" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold">مركز المساعدة</span>
+                <span className="mt-1 block text-xs text-muted-foreground">الأسئلة الشائعة عن الطلبات والتوصيل</span>
+              </span>
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+            </Link>
+            <div className="flex min-h-16 items-center gap-3 rounded-2xl border border-border p-4">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-muted text-primary"><ShieldCheck className="h-5 w-5" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold">حافظ على أمان حسابك</span>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">لا تشارك كلمة المرور أو رموز التحقق مع أي شخص.</span>
+              </span>
+            </div>
+          </div>
+        </section>
 
+        <section className="mt-5">
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm font-extrabold text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <LogOut className="h-4 w-4" /> تسجيل الخروج
+          </button>
+          <p className="mt-4 text-center text-xs text-muted-foreground">شهارة · تسوّق بلا حدود</p>
+        </section>
+      </main>
       <BottomNav />
     </div>
   );
+}
+
+function QuickLink({
+  to,
+  icon,
+  title,
+  description,
+  accent,
+}: {
+  to: "/orders" | "/wallet" | "/favorites";
+  icon: ReactNode;
+  title: string;
+  description: string;
+  accent: "primary" | "accent";
+}) {
+  const iconClass =
+    accent === "accent"
+      ? "bg-accent/40 text-accent-foreground group-hover:bg-accent"
+      : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground";
+
+  return (
+    <Link
+      to={to}
+      className="group rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <span className={`grid h-11 w-11 place-items-center rounded-xl transition-colors ${iconClass}`}>{icon}</span>
+      <span className="mt-3 flex items-center justify-between gap-2">
+        <span className="text-sm font-extrabold">{title}</span>
+        <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary" />
+      </span>
+      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{description}</span>
+    </Link>
+  );
+}
+
+function StatusPill({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "brand" | "success" | "danger";
+}) {
+  const classes =
+    tone === "success"
+      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+      : tone === "danger"
+        ? "bg-destructive/10 text-destructive"
+        : "bg-primary/10 text-primary";
+
+  return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${classes}`}>{label}</span>;
 }
 
 export default AccountPage;
