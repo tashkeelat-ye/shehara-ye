@@ -92,7 +92,7 @@ const PAYMENT_STATUS: Record<string, string> = {
 };
 
 const fieldClass =
-  "min-h-12 w-full rounded-xl border border-input bg-background px-3.5 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60";
+  "min-h-12 w-full min-w-0 rounded-xl border border-input bg-background px-3 py-3 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60 sm:px-3.5 sm:text-sm";
 const labelClass = "mb-1.5 block text-sm font-bold text-foreground";
 const panelClass =
   "min-w-0 rounded-3xl border border-border/80 bg-card shadow-sm";
@@ -373,18 +373,18 @@ function AccountPage() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-background pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-foreground transition-colors md:pb-10"
+      className="min-h-screen min-w-0 overflow-x-clip bg-background pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-foreground transition-colors md:pb-10"
     >
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-6xl px-3 pb-8 pt-28 sm:px-5 sm:pt-28 lg:px-8">
+      <main className="mx-auto w-full min-w-0 max-w-6xl px-3 pb-8 pt-4 sm:px-5 sm:pt-5 lg:px-8 lg:pt-6">
         <div className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 text-xs font-extrabold tracking-wide text-primary">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
               مساحة حسابك في شهارة
             </p>
-            <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+            <h1 className="mt-2 break-words text-2xl font-black tracking-tight sm:text-3xl">
               أهلاً {firstName}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
@@ -419,7 +419,7 @@ function AccountPage() {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="max-w-full break-words text-base font-black sm:text-lg">
+                    <h2 className="max-w-full break-words [overflow-wrap:anywhere] text-base font-black sm:text-lg">
                       {profile?.full_name || "ملفك الشخصي"}
                     </h2>
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-primary">
@@ -427,11 +427,11 @@ function AccountPage() {
                       {roleLabel}
                     </span>
                   </div>
-                  <p className="mt-1 break-all text-sm text-muted-foreground">
+                  <p className="mt-1 break-all [overflow-wrap:anywhere] text-sm text-muted-foreground">
                     {profile?.phone || user?.email || "أضف بيانات التواصل الخاصة بك"}
                   </p>
                   {user?.email && profile?.phone ? (
-                    <p className="mt-1 break-all text-xs text-muted-foreground">
+                    <p className="mt-1 break-all [overflow-wrap:anywhere] text-xs text-muted-foreground">
                       {user.email}
                     </p>
                   ) : null}
@@ -523,7 +523,7 @@ function AccountPage() {
           </div>
         </section>
 
-        <section aria-label="اختصارات الحساب" className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section aria-label="اختصارات الحساب" className="mb-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))] gap-3 lg:grid-cols-4">
           <QuickLink
             to="/orders"
             icon={<Package className="h-5 w-5" />}
@@ -568,8 +568,8 @@ function AccountPage() {
 
         <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <section className={`${panelClass} p-4 sm:p-6`}>
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 <IconTile>
                   <Package className="h-5 w-5" />
                 </IconTile>
@@ -582,7 +582,7 @@ function AccountPage() {
               </div>
               <Link
                 to="/orders"
-                className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-extrabold text-primary transition hover:bg-primary/5"
+                className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-extrabold text-primary transition hover:bg-primary/5"
               >
                 عرض الكل
                 <ChevronLeft className="h-4 w-4" />
@@ -606,7 +606,7 @@ function AccountPage() {
                 action={
                   <Link
                     to="/products"
-                    className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground"
+                    className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-extrabold text-primary-foreground"
                   >
                     ابدأ التسوق
                     <ArrowLeft className="h-3.5 w-3.5" />
@@ -626,7 +626,7 @@ function AccountPage() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-extrabold">
+                          <p className="break-all text-sm font-extrabold">
                             طلب #{order.order_number}
                           </p>
                           <StatusPill
@@ -640,7 +640,7 @@ function AccountPage() {
                             }
                           />
                         </div>
-                        <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <p className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                           <Clock3 className="h-3.5 w-3.5" />
                           {formatDate(order.created_at)}
                         </p>
@@ -648,7 +648,7 @@ function AccountPage() {
                           <span className="text-sm font-black tabular-nums">
                             {formatPrice(order.total)}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="min-w-0 break-words text-xs text-muted-foreground">
                             الدفع: {PAYMENT_STATUS[order.payment_status] ?? order.payment_status}
                           </span>
                         </div>
@@ -664,14 +664,14 @@ function AccountPage() {
             id="delivery-addresses"
             className={`${panelClass} scroll-mt-28 p-4 sm:p-6`}
           >
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 <IconTile tone="accent">
                   <MapPin className="h-5 w-5" />
                 </IconTile>
                 <div className="min-w-0">
                   <h2 className={sectionTitleClass}>عناوين التوصيل</h2>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">
                     {defaultAddress
                       ? `العنوان الافتراضي: ${defaultAddress.city}`
                       : "احفظ عنوانك لتسهيل الطلبات القادمة"}
@@ -682,7 +682,7 @@ function AccountPage() {
                 type="button"
                 onClick={() => setShowAddressForm((current) => !current)}
                 aria-expanded={showAddressForm}
-                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-extrabold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3.5"
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2.5 text-xs font-extrabold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3.5"
               >
                 {showAddressForm ? (
                   <X className="h-4 w-4" />
@@ -873,7 +873,7 @@ function AccountPage() {
                     <button
                       type="button"
                       onClick={() => setShowAddressForm(true)}
-                      className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-extrabold text-primary-foreground"
+                      className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-extrabold text-primary-foreground"
                     >
                       <Plus className="h-4 w-4" />
                       إضافة أول عنوان
@@ -894,7 +894,7 @@ function AccountPage() {
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-sm font-extrabold">
+                          <h3 className="break-words text-sm font-extrabold">
                             {address.label || "عنوان التوصيل"}
                           </h3>
                           {address.is_default ? (
@@ -904,18 +904,18 @@ function AccountPage() {
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-1 text-sm font-semibold">
+                        <p className="mt-1 break-words text-sm font-semibold">
                           {address.recipient_name}
                         </p>
                         {address.phone ? (
                           <p
                             dir="ltr"
-                            className="mt-1 text-start text-sm text-muted-foreground"
+                            className="mt-1 break-all text-start text-sm text-muted-foreground"
                           >
                             {address.phone}
                           </p>
                         ) : null}
-                        <p className="mt-2 text-sm text-muted-foreground">
+                        <p className="mt-2 break-words text-sm text-muted-foreground">
                           {[address.city, address.district]
                             .filter(Boolean)
                             .join("، ")}
@@ -929,7 +929,7 @@ function AccountPage() {
                               type="button"
                               disabled={saving}
                               onClick={() => void makeDefault(address.id)}
-                              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-bold transition hover:border-ring/50 hover:text-primary disabled:opacity-50"
+                              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs font-bold transition hover:border-ring/50 hover:text-primary disabled:opacity-50"
                             >
                               <Check className="h-3.5 w-3.5" />
                               تعيين كافتراضي
@@ -939,7 +939,7 @@ function AccountPage() {
                             type="button"
                             disabled={saving}
                             onClick={() => void removeAddress(address)}
-                            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-destructive/20 px-3 py-2 text-xs font-bold text-destructive transition hover:bg-destructive/5 disabled:opacity-50"
+                            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-destructive/20 px-3 py-2.5 text-xs font-bold text-destructive transition hover:bg-destructive/5 disabled:opacity-50"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             حذف العنوان
@@ -1062,7 +1062,7 @@ function QuickLink({
   return (
     <Link
       to={to}
-      className="group min-w-0 rounded-2xl border border-border/80 bg-card p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-ring/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
+      className="group min-w-0 rounded-2xl border border-border/80 bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-ring/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-4"
     >
       <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground sm:h-11 sm:w-11">
         {icon}
@@ -1119,7 +1119,7 @@ function StatusPill({
 
   return (
     <span
-      className={`inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-xs font-bold ${classes}`}
+      className={`inline-flex max-w-full whitespace-normal break-words rounded-full px-2.5 py-1 text-xs font-bold ${classes}`}
     >
       {label}
     </span>
