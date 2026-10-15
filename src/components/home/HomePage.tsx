@@ -1,18 +1,11 @@
-import {
-  useMemo,
-  type ReactNode,
-} from "react";
-
+import { useMemo, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-
 import {
   ArrowLeft,
   Grid2X2,
   PackageSearch,
   Sparkles,
-  Store,
-  Truck,
 } from "lucide-react";
 
 import { PromoSlider } from "@/components/promo-slider";
@@ -24,31 +17,14 @@ import { LocalProducts } from "@/components/local-products";
 import { TopVendors } from "@/components/home/top-vendors";
 import { BannerCarousel4to1 } from "@/components/home/BannerCarousel4to1";
 import { DynamicHomeSection } from "@/components/home/DynamicHomeSection";
-import {
-  ProductCard,
-  ProductCardSkeleton,
-} from "@/components/product-card";
-import { SectionHeading } from "@/components/section-heading";
+import { ProductCard, ProductCardSkeleton } from "@/components/product-card";
 import { BottomNav } from "@/components/bottom-nav";
 import { SiteHeader } from "@/components/site-header";
-
-import {
-  fetchCategories,
-  fetchProducts,
-  type Category,
-} from "@/lib/db";
-
-import {
-  fetchHomeSections,
-  type HomeSection,
-} from "@/lib/store";
+import { fetchCategories, fetchProducts, type Category } from "@/lib/db";
+import { fetchHomeSections, type HomeSection } from "@/lib/store";
 
 type SectionMap = Record<string, HomeSection>;
-
-type PopularCategory = Category & {
-  productCount: number;
-  salesCount: number;
-};
+type ProductList = Awaited<ReturnType<typeof fetchProducts>>;
 
 const BUILT_IN_SECTION_KEYS = new Set([
   "stories",
@@ -63,50 +39,8 @@ const BUILT_IN_SECTION_KEYS = new Set([
   "brands",
   "top_vendors",
   "local_products",
+  "features",
 ]);
-
-function SectionWrapper({
-  sectionKey,
-  sections,
-  children,
-  className = "",
-}: {
-  sectionKey: string;
-  sections: SectionMap;
-  children: ReactNode;
-  className?: string;
-}) {
-  const section = sections[sectionKey];
-
-  if (section && !section.is_active) {
-    return null;
-  }
-
-  return (
-    <div
-      className={`w-full ${className}`}
-      style={{ order: section ? section.sort_order : 999 }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function CustomSection({
-  section,
-}: {
-  section: HomeSection;
-}) {
-  if (!section.is_active) {
-    return null;
-  }
-
-  return (
-    <div className="w-full">
-      <DynamicHomeSection section={section} />
-    </div>
-  );
-}
 
 function SectionSurface({
   children,
@@ -118,52 +52,46 @@ function SectionSurface({
   return (
     <section
       className={`
-        relative
-        overflow-hidden
-        rounded-[1.75rem]
-        border
-        border-[#0E4D64]/[0.08]
-        bg-white
-        shadow-[0_20px_60px_-44px_rgba(14,77,100,0.48)]
-        dark:border-white/[0.07]
-        dark:bg-[#0A2A38]
+        relative min-w-0 overflow-hidden rounded-3xl
+        border border-[#0E4D64]/[0.08] bg-white
+        shadow-[0_14px_42px_-32px_rgba(14,77,100,0.48)]
+        dark:border-white/[0.07] dark:bg-[#0A2A38]
         ${className}
       `}
     >
       <div
         aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          -end-16
-          -top-16
-          h-40
-          w-40
-          rounded-full
-          bg-[#D65A31]/[0.045]
-          blur-3xl
-          dark:bg-[#D65A31]/[0.025]
-        "
+        className="pointer-events-none absolute -end-16 -top-16 h-36 w-36 rounded-full bg-[#D65A31]/[0.045] blur-3xl"
       />
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          -start-20
-          bottom-0
-          h-32
-          w-32
-          rounded-full
-          bg-[#0E4D64]/[0.035]
-          blur-3xl
-          dark:bg-[#0E4D64]/[0.08]
-        "
-      />
-
       <div className="relative z-10">{children}</div>
     </section>
+  );
+}
+
+function SectionTitle({
+  eyebrow,
+  title,
+  to = "/products",
+}: {
+  eyebrow: string;
+  title: string;
+  to?: string;
+}) {
+  return (
+    <div className="flex items-end justify-between gap-3 px-4 sm:px-5">
+      <div className="min-w-0">
+        <p className="mb-1 text-[10px] font-bold text-[#D65A31]">{eyebrow}</p>
+        <h2 className="text-base font-black tracking-tight text-[#0E4D64] dark:text-white sm:text-lg">
+          {title}
+        </h2>
+      </div>
+      <Link
+        to={to}
+        className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-xl px-2 text-[10px] font-extrabold text-[#0E4D64] transition-colors hover:bg-[#0E4D64]/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31] dark:text-[#E98261]"
+      >
+        عرض الكل <ArrowLeft className="h-4 w-4" />
+      </Link>
+    </div>
   );
 }
 
@@ -174,80 +102,42 @@ function CategoryShowcase({
   categories: Category[];
   loading: boolean;
 }) {
-  const visible = categories
-    .filter((category) => Boolean(category.name))
-    .slice(0, 10);
+  const visible = categories.filter((category) => Boolean(category.name)).slice(0, 8);
 
   return (
     <SectionSurface className="p-4 sm:p-5">
-      <div className="mb-4 flex items-end justify-between gap-4">
+      <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <div
-            className="
-              mb-2 inline-flex items-center gap-2 rounded-full
-              bg-[#0E4D64]/[0.07] px-3 py-1.5 text-[10px]
-              font-bold text-[#0E4D64]
-              dark:bg-white/[0.06] dark:text-[#E2723A]
-            "
-          >
-            <Grid2X2 className="h-3.5 w-3.5" />
-            استكشف المتجر
-          </div>
-
-          <h2 className="text-lg font-black tracking-tight text-[#0E4D64] dark:text-white sm:text-xl">
-            تسوق حسب القسم
+          <p className="mb-1 text-[10px] font-bold text-[#D65A31]">اكتشف ما يناسبك</p>
+          <h2 className="text-base font-black text-[#0E4D64] dark:text-white sm:text-lg">
+            تسوّق حسب القسم
           </h2>
-
-          <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
-            اختصر الطريق إلى ما تبحث عنه
-          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">وصول أسرع إلى المنتجات التي تبحث عنها</p>
         </div>
-
         <Link
           to="/products"
-          className="
-            inline-flex shrink-0 items-center gap-1 rounded-xl
-            px-3 py-2 text-[11px] font-extrabold text-[#0E4D64]
-            transition-colors hover:bg-[#0E4D64]/[0.06]
-            dark:text-[#E2723A]
-          "
+          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-xl px-2 text-[10px] font-extrabold text-[#0E4D64] hover:bg-[#0E4D64]/[0.06] dark:text-[#E98261]"
         >
-          كل المنتجات
-          <ArrowLeft className="h-4 w-4" />
+          كل المنتجات <ArrowLeft className="h-4 w-4" />
         </Link>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-10">
-          {Array.from({ length: 10 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-28 animate-pulse rounded-2xl bg-muted"
-            />
+        <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-8">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="aspect-[0.78] animate-pulse rounded-2xl bg-muted" />
           ))}
         </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5 sm:gap-3 lg:grid-cols-10">
+      ) : visible.length ? (
+        <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:grid-cols-8">
           {visible.map((category) => (
             <Link
               key={category.id}
               to="/category/$slug"
               params={{ slug: category.slug }}
-              className="
-                group min-w-0 rounded-2xl border border-[#0E4D64]/[0.07]
-                bg-[#F8FAFA] p-2 text-center transition-all duration-200
-                hover:-translate-y-1 hover:border-[#D65A31]/25
-                hover:shadow-[0_16px_32px_-24px_rgba(14,77,100,0.65)]
-                active:scale-[0.98]
-                dark:border-white/[0.06] dark:bg-white/[0.035]
-              "
+              className="group min-w-0 rounded-2xl border border-[#0E4D64]/[0.07] bg-[#F8FAFA] p-1.5 text-center transition-colors hover:border-[#D65A31]/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31] dark:border-white/[0.06] dark:bg-white/[0.035] sm:p-2"
             >
-              <div
-                className="
-                  relative aspect-square overflow-hidden rounded-xl
-                  bg-[#EAF1F3] dark:bg-[#123B4A]
-                "
-              >
+              <div className="aspect-square overflow-hidden rounded-xl bg-[#EAF1F3] dark:bg-[#123B4A]">
                 {category.image_url ? (
                   <img
                     src={category.image_url}
@@ -255,24 +145,24 @@ function CategoryShowcase({
                     loading="lazy"
                     decoding="async"
                     draggable={false}
-                    className="
-                      h-full w-full object-cover transition-transform
-                      duration-500 group-hover:scale-105
-                    "
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="grid h-full w-full place-items-center text-[#0E4D64] dark:text-[#E2723A]">
-                    <PackageSearch className="h-7 w-7" strokeWidth={1.5} />
+                  <div className="grid h-full w-full place-items-center text-[#0E4D64] dark:text-[#E98261]">
+                    <PackageSearch className="h-6 w-6" strokeWidth={1.6} />
                   </div>
                 )}
               </div>
-
-              <span className="mt-2 block truncate text-[10px] font-extrabold text-foreground">
+              <span className="mt-2 block truncate text-[10px] font-extrabold text-foreground sm:text-[11px]">
                 {category.name}
               </span>
             </Link>
           ))}
         </div>
+      ) : (
+        <p className="rounded-2xl bg-muted/50 px-3 py-6 text-center text-xs text-muted-foreground">
+          ستظهر الأقسام هنا عند توفرها.
+        </p>
       )}
     </SectionSurface>
   );
@@ -283,35 +173,24 @@ function PopularCategories({
   products,
 }: {
   categories: Category[];
-  products: Awaited<ReturnType<typeof fetchProducts>>;
+  products: ProductList;
 }) {
-  const ranked = useMemo<PopularCategory[]>(() => {
-    const map = new Map<
-      string,
-      { productCount: number; salesCount: number }
-    >();
-
+  const ranked = useMemo(() => {
+    const stats = new Map<string, { count: number; sales: number }>();
     for (const product of products) {
-      const current = map.get(product.category_id) ?? {
-        productCount: 0,
-        salesCount: 0,
-      };
-
-      current.productCount += 1;
-      current.salesCount += Number(product.sales_count) || 0;
-      map.set(product.category_id, current);
+      const key = product.category_id;
+      const current = stats.get(key) ?? { count: 0, sales: 0 };
+      current.count += 1;
+      current.sales += Number(product.sales_count) || 0;
+      stats.set(key, current);
     }
 
     return categories
-      .map((category) => {
-        const stats = map.get(category.id);
-
-        return {
-          ...category,
-          productCount: stats?.productCount ?? 0,
-          salesCount: stats?.salesCount ?? 0,
-        };
-      })
+      .map((category) => ({
+        ...category,
+        productCount: stats.get(category.id)?.count ?? 0,
+        salesCount: stats.get(category.id)?.sales ?? 0,
+      }))
       .filter((category) => category.productCount > 0)
       .sort(
         (a, b) =>
@@ -319,78 +198,45 @@ function PopularCategories({
           b.productCount - a.productCount ||
           a.sort_order - b.sort_order,
       )
-      .slice(0, 8);
+      .slice(0, 4);
   }, [categories, products]);
 
-  if (!ranked.length) {
-    return null;
-  }
+  if (!ranked.length) return null;
 
   return (
     <SectionSurface className="p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <div className="mb-1.5 flex items-center gap-2 text-[10px] font-bold text-[#D65A31]">
-            <Sparkles className="h-3.5 w-3.5" />
-            الأكثر نشاطًا
-          </div>
-
-          <h2 className="text-lg font-black text-[#0E4D64] dark:text-white">
-            أقسام رائجة
-          </h2>
+          <p className="mb-1 text-[10px] font-bold text-[#D65A31]">حسب المنتجات المتاحة</p>
+          <h2 className="text-base font-black text-[#0E4D64] dark:text-white sm:text-lg">أقسام تستحق الاستكشاف</h2>
         </div>
-
-        <Link
-          to="/products"
-          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0E4D64] dark:text-[#E2723A]"
-        >
-          استكشف
-          <ArrowLeft className="h-4 w-4" />
+        <Link to="/products" className="inline-flex min-h-9 items-center gap-1 rounded-xl px-2 text-[10px] font-extrabold text-[#0E4D64] dark:text-[#E98261]">
+          استكشف <ArrowLeft className="h-4 w-4" />
         </Link>
       </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-        {ranked.map((category, index) => (
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+        {ranked.map((category) => (
           <Link
             key={category.id}
             to="/category/$slug"
             params={{ slug: category.slug }}
-            className="
-              group relative overflow-hidden rounded-2xl border
-              border-[#0E4D64]/[0.07] bg-[#F8FAFA] p-3
-              transition-all duration-200 hover:-translate-y-1
-              hover:border-[#D65A31]/25
-              dark:border-white/[0.06] dark:bg-white/[0.035]
-            "
+            className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#0E4D64]/[0.07] bg-[#F8FAFA] p-2.5 transition-colors hover:border-[#D65A31]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31] dark:border-white/[0.06] dark:bg-white/[0.035] sm:p-3"
           >
-            <span className="absolute end-2 top-2 text-[9px] font-black text-[#D65A31]/70">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-
-            <div className="mb-3 aspect-[1.25] overflow-hidden rounded-xl bg-[#EAF1F3] dark:bg-[#123B4A]">
+            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[#EAF1F3] dark:bg-[#123B4A]">
               {category.image_url ? (
-                <img
-                  src={category.image_url}
-                  alt={category.name}
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+                <img src={category.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
-                <div className="grid h-full w-full place-items-center text-[#0E4D64] dark:text-[#E2723A]">
-                  <Grid2X2 className="h-7 w-7" />
+                <div className="grid h-full w-full place-items-center text-[#0E4D64] dark:text-[#E98261]">
+                  <Grid2X2 className="h-5 w-5" />
                 </div>
               )}
             </div>
-
-            <p className="truncate text-[11px] font-black text-foreground">
-              {category.name}
-            </p>
-
-            <p className="mt-1 text-[9px] text-muted-foreground">
-              {category.productCount.toLocaleString("ar-EG")} منتجات
-            </p>
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-black text-foreground">{category.name}</p>
+              <p className="mt-1 text-[9px] text-muted-foreground">
+                {category.productCount.toLocaleString("ar-EG")} منتجات
+              </p>
+            </div>
           </Link>
         ))}
       </div>
@@ -406,53 +252,45 @@ function ProductRail({
 }: {
   title: string;
   eyebrow: string;
-  products: Awaited<ReturnType<typeof fetchProducts>>;
+  products: ProductList;
   loading: boolean;
 }) {
   return (
     <SectionSurface className="py-4 sm:py-5">
-      <div className="mb-4 flex items-end justify-between gap-4 px-4 sm:px-5">
-        <div>
-          <p className="mb-1 text-[10px] font-bold text-[#D65A31]">
-            {eyebrow}
-          </p>
-          <SectionHeading title={title} to="/products" />
-        </div>
-
-        <Link
-          to="/products"
-          className="
-            hidden items-center gap-1 rounded-xl px-2 py-2 text-[10px]
-            font-bold text-[#0E4D64] hover:bg-[#0E4D64]/[0.05]
-            dark:text-[#E2723A] sm:inline-flex
-          "
-        >
-          عرض المزيد
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
+      <div className="mb-4">
+        <SectionTitle eyebrow={eyebrow} title={title} />
       </div>
 
       {loading ? (
-        <div className="flex gap-3 overflow-x-auto px-4 pb-1 sm:px-5">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div
-              key={index}
-              className="w-[174px] shrink-0 sm:w-[190px]"
-            >
+        <div className="flex gap-3 overflow-hidden px-4 pb-1 sm:px-5">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="w-[44%] shrink-0 min-[480px]:w-[31%] sm:w-[220px]">
               <ProductCardSkeleton />
             </div>
           ))}
         </div>
       ) : products.length ? (
-        <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-5 lg:grid-cols-4">
-          {products.slice(0, 8).map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <>
+          <div
+            aria-label={title}
+            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 pb-3 [scrollbar-width:thin] sm:hidden"
+          >
+            {products.slice(0, 8).map((product) => (
+              <div key={product.id} className="w-[44%] min-w-[148px] max-w-[210px] shrink-0 snap-start">
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+          <div className="hidden grid-cols-2 gap-3 px-4 sm:grid sm:grid-cols-3 sm:px-5 lg:grid-cols-4">
+            {products.slice(0, 8).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </>
       ) : (
-        <div className="mx-4 rounded-2xl border border-dashed border-border px-4 py-8 text-center text-xs text-muted-foreground">
-          لا توجد منتجات متاحة حاليًا.
-        </div>
+        <p className="mx-4 rounded-2xl border border-dashed border-border px-4 py-7 text-center text-xs text-muted-foreground">
+          لا توجد منتجات متاحة في هذا القسم حاليًا.
+        </p>
       )}
     </SectionSurface>
   );
@@ -460,158 +298,51 @@ function ProductRail({
 
 function ServiceHighlights() {
   const items = [
-    {
-      title: "تشكيلة متنوعة",
-      description: "منتجات من أقسام متعددة",
-      icon: PackageSearch,
-      orange: false,
-    },
-    {
-      title: "توصيل للمحافظات",
-      description: "خيارات توصيل حسب الطلب",
-      icon: Truck,
-      orange: false,
-    },
-    {
-      title: "تجار ومنتجات محلية",
-      description: "اكتشف المتاجر والمنتجات اليمنية",
-      icon: Store,
-      orange: false,
-    },
-    {
-      title: "عروض متجددة",
-      description: "تابع أحدث العروض والمنتجات",
-      icon: Sparkles,
-      orange: true,
-    },
-  ] as const;
+    { title: "خيارات متنوعة", description: "أقسام ومنتجات متعددة", icon: PackageSearch },
+    { title: "تجربة تسوق أسهل", description: "تصفح واضح من هاتفك", icon: Sparkles },
+    { title: "تجار ومنتجات محلية", description: "اكتشف المنتجات اليمنية", icon: Grid2X2 },
+  ];
 
   return (
-    <section
-      aria-label="مميزات شهارة"
-      className="
-        relative overflow-hidden rounded-[1.9rem]
-        border border-[#0E4D64]/[0.08] bg-white/90 p-2
-        shadow-[0_22px_55px_-42px_rgba(14,77,100,0.65)]
-        backdrop-blur-sm dark:border-white/[0.07]
-        dark:bg-[#0A2A38]/95 sm:p-3
-      "
-    >
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none absolute -end-20 -top-20 h-44 w-44
-          rounded-full bg-[#0E4D64]/[0.05] blur-3xl
-          dark:bg-[#D65A31]/[0.035]
-        "
-      />
-
-      <div className="relative grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2.5">
-        {items.map((item, index) => {
-          const Icon = item.icon;
-
-          return (
-            <div
-              key={item.title}
-              className="
-                group relative overflow-hidden rounded-[1.35rem]
-                border border-[#0E4D64]/[0.06] bg-[#F8FAFA]
-                px-3 py-3.5 transition-all duration-300
-                hover:-translate-y-0.5 hover:border-[#D65A31]/20
-                hover:shadow-[0_16px_32px_-26px_rgba(14,77,100,0.65)]
-                dark:border-white/[0.055] dark:bg-white/[0.035]
-                sm:px-4 sm:py-4
-              "
-            >
-              <span
-                aria-hidden="true"
-                className={`
-                  absolute end-0 top-0 h-14 w-14 rounded-full blur-2xl
-                  ${
-                    item.orange
-                      ? "bg-[#D65A31]/[0.12]"
-                      : "bg-[#0E4D64]/[0.10]"
-                  }
-                `}
-              />
-
-              <div className="relative flex items-start justify-between gap-2">
-                <span
-                  className={`
-                    grid h-10 w-10 shrink-0 place-items-center rounded-2xl
-                    ${
-                      item.orange
-                        ? "bg-[#D65A31]/10 text-[#D65A31]"
-                        : "bg-[#0E4D64]/10 text-[#0E4D64] dark:text-[#7EC1D5]"
-                    }
-                  `}
-                >
-                  <Icon className="h-5 w-5" strokeWidth={1.8} />
-                </span>
-
-                <span className="text-[9px] font-black text-muted-foreground/45">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-              </div>
-
-              <p className="relative mt-3 text-[11px] font-black tracking-tight text-foreground sm:text-xs">
-                {item.title}
-              </p>
-
-              <p className="relative mt-1 line-clamp-2 text-[9px] leading-4 text-muted-foreground sm:text-[10px]">
-                {item.description}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-    </section>
+    <div className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="مميزات شهارة">
+      {items.map(({ title, description, icon: Icon }) => (
+        <div key={title} className="min-w-0 rounded-2xl border border-[#0E4D64]/[0.07] bg-white/85 px-2 py-3 text-center dark:border-white/[0.07] dark:bg-[#0A2A38]/80 sm:flex sm:items-center sm:gap-3 sm:px-4 sm:text-start">
+          <span className="mx-auto grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#0E4D64]/[0.08] text-[#0E4D64] dark:bg-white/[0.06] dark:text-[#E98261] sm:mx-0">
+            <Icon className="h-4.5 w-4.5" />
+          </span>
+          <div className="min-w-0">
+            <p className="mt-2 truncate text-[10px] font-black text-foreground sm:mt-0 sm:text-xs">{title}</p>
+            <p className="mt-1 line-clamp-2 text-[9px] leading-4 text-muted-foreground">{description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
 export function HomePage() {
-  const {
-    data: bestProducts = [],
-    isLoading: bestProductsLoading,
-  } = useQuery({
+  const { data: bestProducts = [], isLoading: bestProductsLoading } = useQuery({
     queryKey: ["products", "best", 24],
-    queryFn: () =>
-      fetchProducts({
-        sort: "best",
-        limit: 24,
-      }),
+    queryFn: () => fetchProducts({ sort: "best", limit: 24 }),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });
 
-  const {
-    data: newestProducts = [],
-    isLoading: newestProductsLoading,
-  } = useQuery({
+  const { data: newestProducts = [], isLoading: newestProductsLoading } = useQuery({
     queryKey: ["products", "newest", 8],
-    queryFn: () =>
-      fetchProducts({
-        sort: "newest",
-        limit: 8,
-      }),
+    queryFn: () => fetchProducts({ sort: "newest", limit: 8 }),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   });
 
-  const {
-    data: categories = [],
-    isLoading: categoriesLoading,
-  } = useQuery({
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 60,
   });
 
-  const {
-    data: homeSections = [],
-    isLoading: homeSectionsLoading,
-  } = useQuery({
+  const { data: homeSections = [] } = useQuery({
     queryKey: ["home-sections"],
     queryFn: () => fetchHomeSections(false),
     staleTime: 0,
@@ -620,11 +351,7 @@ export function HomePage() {
 
   const sectionMap = useMemo<SectionMap>(() => {
     const map: SectionMap = {};
-
-    for (const section of homeSections) {
-      map[section.section_key] = section;
-    }
-
+    for (const section of homeSections) map[section.section_key] = section;
     return map;
   }, [homeSections]);
 
@@ -641,151 +368,61 @@ export function HomePage() {
     [homeSections],
   );
 
-  const bestSellers = bestProducts.slice(0, 8);
+  const orderedSections = useMemo(() => {
+    const bestSellers = bestProducts.slice(0, 8);
+    const definitions: Array<{ key: string; fallbackOrder: number; content: ReactNode }> = [
+      { key: "hero", fallbackOrder: 10, content: <PromoSlider /> },
+      { key: "stories", fallbackOrder: 20, content: <StoriesCategories /> },
+      { key: "categories", fallbackOrder: 30, content: <CategoryShowcase categories={categories} loading={categoriesLoading} /> },
+      { key: "popular_categories", fallbackOrder: 40, content: <PopularCategories categories={categories} products={bestProducts} /> },
+      { key: "features", fallbackOrder: 45, content: <ServiceHighlights /> },
+      { key: "flash_sale", fallbackOrder: 50, content: <SectionSurface><FlashSaleSection /></SectionSurface> },
+      { key: "offers", fallbackOrder: 60, content: <SectionSurface><OffersSection /></SectionSurface> },
+      { key: "banners", fallbackOrder: 70, content: <SectionSurface className="border-[#D65A31]/15 bg-[#0E4D64] p-1"><div className="overflow-hidden rounded-[1.4rem]"><BannerCarousel4to1 /></div></SectionSurface> },
+      { key: "best_sellers", fallbackOrder: 80, content: <ProductRail title="الأكثر مبيعًا" eyebrow="اختيارات العملاء" products={bestSellers} loading={bestProductsLoading} /> },
+      { key: "new_arrivals", fallbackOrder: 90, content: <ProductRail title="وصل حديثًا" eyebrow="أحدث الإضافات" products={newestProducts} loading={newestProductsLoading} /> },
+      { key: "brands", fallbackOrder: 100, content: <SectionSurface><BrandsSection /></SectionSurface> },
+      { key: "top_vendors", fallbackOrder: 110, content: <SectionSurface><TopVendors /></SectionSurface> },
+      { key: "local_products", fallbackOrder: 120, content: <SectionSurface><LocalProducts /></SectionSurface> },
+    ];
+
+    return definitions
+      .filter(({ key }) => sectionMap[key]?.is_active !== false)
+      .map((definition) => ({
+        ...definition,
+        order: sectionMap[definition.key]?.sort_order ?? definition.fallbackOrder,
+      }))
+      .concat(
+        customSections.map((section) => ({
+          key: section.section_key,
+          fallbackOrder: section.sort_order,
+          order: section.sort_order,
+          content: <DynamicHomeSection section={section} />,
+        })),
+      )
+      .sort((a, b) => a.order - b.order || a.fallbackOrder - b.fallbackOrder);
+  }, [
+    bestProducts,
+    bestProductsLoading,
+    categories,
+    categoriesLoading,
+    customSections,
+    newestProducts,
+    newestProductsLoading,
+    sectionMap,
+  ]);
 
   return (
-    <div
-      dir="rtl"
-      className="
-        min-h-screen overflow-x-hidden bg-[#F6F2EE]
-        text-foreground dark:bg-[#071B24]
-      "
-    >
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none fixed inset-0 z-0 overflow-hidden
-        "
-      >
-        <div
-          className="
-            absolute -end-40 top-32 h-96 w-96 rounded-full
-            bg-[#0E4D64]/[0.045] blur-3xl
-            dark:bg-[#D65A31]/[0.02]
-          "
-        />
-
-        <div
-          className="
-            absolute -start-40 top-[55rem] h-96 w-96 rounded-full
-            bg-[#D65A31]/[0.045] blur-3xl
-            dark:bg-[#0E4D64]/[0.10]
-          "
-        />
-      </div>
-
+    <div dir="rtl" className="min-h-screen overflow-x-clip bg-[#F6F2EE] text-foreground dark:bg-[#071B24]">
       <div className="relative z-10">
         <SiteHeader />
-
-        <main
-          className="
-            mx-auto flex w-full max-w-7xl flex-col gap-4 px-3
-            pb-28 pt-2 sm:gap-5 sm:px-4 sm:pt-2 lg:px-5
-          "
-        >
-          {/*
-            الترتيب الأساسي المقصود:
-            1) البنر الرئيسي المتحرك
-            2) القصص
-            3) الأقسام
-            4) الأقسام الرائجة
-            5) مميزات شهارة
-            6) باقي المحتوى
-          */}
-
-          <SectionWrapper sectionKey="hero" sections={sectionMap}>
-            <PromoSlider />
-          </SectionWrapper>
-
-          <SectionWrapper sectionKey="stories" sections={sectionMap}>
-            <StoriesCategories />
-          </SectionWrapper>
-
-          <SectionWrapper sectionKey="categories" sections={sectionMap}>
-            <CategoryShowcase
-              categories={categories}
-              loading={categoriesLoading}
-            />
-          </SectionWrapper>
-
-          <SectionWrapper
-            sectionKey="popular_categories"
-            sections={sectionMap}
-          >
-            <PopularCategories
-              categories={categories}
-              products={bestProducts}
-            />
-          </SectionWrapper>
-
-
-          <SectionWrapper sectionKey="flash_sale" sections={sectionMap}>
-            <SectionSurface>
-              <FlashSaleSection />
-            </SectionSurface>
-          </SectionWrapper>
-
-          <SectionWrapper sectionKey="offers" sections={sectionMap}>
-            <SectionSurface>
-              <OffersSection />
-            </SectionSurface>
-          </SectionWrapper>
-
-          <SectionWrapper sectionKey="banners" sections={sectionMap}>
-            <SectionSurface
-              className="
-                overflow-hidden border-[#D65A31]/15
-                bg-[#0E4D64] p-1
-              "
-            >
-              <div className="overflow-hidden rounded-[1.45rem]">
-                <BannerCarousel4to1 />
-              </div>
-            </SectionSurface>
-          </SectionWrapper>
-
-          <SectionWrapper sectionKey="best_sellers" sections={sectionMap}>
-            <ProductRail
-              title="الأكثر مبيعًا"
-              eyebrow="اختيارات العملاء"
-              products={bestSellers}
-              loading={bestProductsLoading}
-            />
-          </SectionWrapper>
-
-          <SectionWrapper sectionKey="new_arrivals" sections={sectionMap}>
-            <ProductRail
-              title="وصل حديثًا"
-              eyebrow="أحدث الإضافات"
-              products={newestProducts}
-              loading={newestProductsLoading}
-            />
-          </SectionWrapper>
-
-          <SectionWrapper sectionKey="brands" sections={sectionMap}>
-            <SectionSurface>
-              <BrandsSection />
-            </SectionSurface>
-          </SectionWrapper>
-
-          <SectionWrapper sectionKey="top_vendors" sections={sectionMap}>
-            <SectionSurface>
-              <TopVendors />
-            </SectionSurface>
-          </SectionWrapper>
-
-          <SectionWrapper sectionKey="local_products" sections={sectionMap}>
-            <SectionSurface>
-              <LocalProducts />
-            </SectionSurface>
-          </SectionWrapper>
-
-          {!homeSectionsLoading &&
-            customSections.map((section) => (
-              <CustomSection key={section.id} section={section} />
-            ))}
+        <main className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-3 pb-28 pt-2 sm:gap-5 sm:px-4 sm:pt-3 lg:px-5">
+          {orderedSections.map((section) => (
+            <div key={section.key} className="w-full min-w-0">
+              {section.content}
+            </div>
+          ))}
         </main>
-
         <BottomNav />
       </div>
     </div>
