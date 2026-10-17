@@ -28,6 +28,7 @@ function AuthPage() {
   const [accountType, setAccountType] = useState<AccountType>("customer");
   const [step, setStep] = useState(1);
   const [vendorAuthCreated, setVendorAuthCreated] = useState(false);
+  const [activeVendorUid, setActiveVendorUid] = useState("");
   const [vendorSetupInProgress, setVendorSetupInProgress] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [secondName, setSecondName] = useState("");
@@ -74,7 +75,7 @@ function AuthPage() {
 
   const cleanPhone = (value: string) => value.replace(/[^\d]/g, "").replace(/^00967/, "").replace(/^967/, "").replace(/^0/, "").slice(0, 9);
   function reset() {
-    setStep(1); setVendorAuthCreated(false); setVendorSetupInProgress(false); setFirstName(""); setSecondName(""); setLastName(""); setPhone(""); setEmail(""); setProvince("");
+    setStep(1); setVendorAuthCreated(false); setActiveVendorUid(""); setVendorSetupInProgress(false); setFirstName(""); setSecondName(""); setLastName(""); setPhone(""); setEmail(""); setProvince("");
     setPassword(""); setConfirmPassword(""); setAcceptedTerms(false); setStoreName(""); setOwnerName(""); setManagerName("");
     setManagerPhone(""); setStorePhone(""); setDistrict(""); setAddressDetails(""); setStoreDescription(""); setCurrency("YER");
     setPayoutMethod("kuraimi"); setPayoutAccount(""); setLogoUrl(""); setLocation(null); setShowPassword(false); setShowConfirmPassword(false);
@@ -129,8 +130,10 @@ function AuthPage() {
             setVendorSetupInProgress(false);
             return;
           }
+          const currentUser = (await supabase.auth.getUser()).data.user;
+          if (currentUser?.id) setActiveVendorUid(currentUser.id);
           setVendorAuthCreated(true);
-          toast.success("تم إنشاء حساب الدخول. أكمل بيانات المتجر لحفظها.");
+          toast.success("تم إنشاء حساب الدخول. يمكنك رفع الشعار أو المتابعة بالشعار الافتراضي.");
           setStep(2);
         } catch (error) {
           console.error("[Auth] vendor auth creation failed:", error);
@@ -170,6 +173,7 @@ function AuthPage() {
       if (mode === "signup" && accountType === "vendor") {
         const currentUser = (await supabase.auth.getUser()).data.user;
         if (!currentUser) { toast.error("لم تُفتح جلسة المستخدم بعد. سجّل الدخول ثم أعد إكمال تسجيل التاجر."); return; }
+        setActiveVendorUid(currentUser.id);
         const { error } = await (supabase as any).rpc("register_vendor_account", {
           p_store_name: storeName.trim(), p_city: province, p_phone: cleanPhone(storePhone),
           p_description: storeDescription.trim(), p_first_name: firstName.trim(), p_second_name: secondName.trim(),
@@ -232,7 +236,8 @@ function AuthPage() {
               <div className="grid gap-3 sm:grid-cols-2"><Field label="العملة الافتراضية" id="currency"><select id="currency" value={currency} onChange={(e) => setCurrency(e.target.value as "YER" | "SAR")} className={inputCls}><option value="YER">ريال يمني (YER)</option><option value="SAR">ريال سعودي (SAR)</option></select></Field><Field label="وسيلة استلام المستحقات" id="payoutMethod"><select id="payoutMethod" value={payoutMethod} onChange={(e) => setPayoutMethod(e.target.value as "kuraimi" | "jeeb" | "onecash")} className={inputCls}><option value="kuraimi">الكريمي</option><option value="jeeb">جيب</option><option value="onecash">ون كاش</option></select></Field></div>
               <Field label="رقم الحساب / المحفظة *" id="payoutAccount"><input id="payoutAccount" required value={payoutAccount} onChange={(e) => setPayoutAccount(e.target.value)} dir="ltr" maxLength={120} className={inputCls} /></Field>
             </div> : null}
-            {vendorSignup && step === 3 ? <div className="space-y-5 rounded-2xl border border-[#0E4D64]/10 bg-[#0E4D64]/[.035] p-4"><h2 className="flex items-center gap-2 font-black text-[#0E4D64]"><MapPin className="h-5 w-5" />الشعار والموقع</h2><VendorLogoCropper userId={user?.id ?? ""} onUploaded={setLogoUrl} value={logoUrl} disabled={busy} /><div><p className="mb-2 text-sm font-bold">حدد موقع المتجر *</p><LocationPicker value={location} onChange={setLocation} onConfirmed={(d) => { setLocation({ lat: d.lat, lng: d.lng }); if (d.address && !addressDetails.trim()) setAddressDetails(d.address); toast.success("تم اعتماد موقع المتجر."); }} height={300} /></div>{location ? <p dir="ltr" className="rounded-lg bg-white p-3 text-xs text-slate-600">{location.lat.toFixed(6)}, {location.lng.toFixed(6)}</p> : null}<p className="text-xs leading-6 text-slate-500">اسحب الدبوس أو اضغط على الخريطة. تُحفظ الإحداثيات ضمن بيانات المتجر.</p></div> : null}
+            {vendorSignup && step === 3 ? <div className="space-y-5 rounded-2xl border border-[#0E4D64]/10 bg-[#0E4D64]/[.035] p-4"><h2 className="flex items-center gap-2 font-black text-[#0E4D64]"><MapPin className="h-5 w-5" />الشعار والموقع</h2><VendorLogoCropper userId={user?.id || activeVendorUid} onUploaded={setLogoUrl} value={logoUrl} disabled={busy} />
+            <p className="text-xs leading-6 text-slate-500">رفع الشعار اختياري؛ إذا لم ترفع شعارًا فسيُستخدم شعار شهارة الافتراضي.</p><div><p className="mb-2 text-sm font-bold">حدد موقع المتجر *</p><LocationPicker value={location} onChange={setLocation} onConfirmed={(d) => { setLocation({ lat: d.lat, lng: d.lng }); if (d.address && !addressDetails.trim()) setAddressDetails(d.address); toast.success("تم اعتماد موقع المتجر."); }} height={300} /></div>{location ? <p dir="ltr" className="rounded-lg bg-white p-3 text-xs text-slate-600">{location.lat.toFixed(6)}, {location.lng.toFixed(6)}</p> : null}<p className="text-xs leading-6 text-slate-500">اسحب الدبوس أو اضغط على الخريطة. تُحفظ الإحداثيات ضمن بيانات المتجر.</p></div> : null}
             {mode === "signup" ? <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-black/[.06] bg-white p-3.5 shadow-sm"><input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#0E4D64]" /><span className="text-xs leading-5">أوافق على <Link to="/page/$slug" params={{ slug: "terms" }} className="font-bold text-[#0E4D64] underline">الشروط والأحكام</Link> وسياسة استخدام شهارة.</span></label> : null}
             <div className="flex gap-2">{vendorSignup && step > 1 ? <button type="button" onClick={() => setStep((v) => v - 1)} disabled={busy} className="h-12 flex-1 rounded-2xl border border-[#0E4D64]/20 bg-white text-sm font-black text-[#0E4D64]">السابق</button> : null}<button type="submit" disabled={busy || loading} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0E4D64] text-sm font-black text-white shadow-sm hover:bg-[#0A3D50] disabled:opacity-60">{busy ? "جارٍ الحفظ..." : isLogin ? accountType === "courier" ? "دخول عامل التوصيل" : "تسجيل الدخول" : vendorSignup && step < 3 ? "التالي" : accountType === "vendor" ? "إنشاء حساب التاجر" : "إنشاء حساب العميل"}<ArrowLeft className="h-4 w-4" /></button></div>
           </form>
