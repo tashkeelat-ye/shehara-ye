@@ -1593,47 +1593,80 @@ export type Database = {
       vendors: {
         Row: {
           account_enabled: boolean
+          address_details: string | null
           city: string
           cover_image_url: string | null
           created_at: string
+          default_currency: string | null
           description: string
+          district: string | null
           id: string
           is_active: boolean
           is_verified: boolean
+          latitude: number | null
           logo_url: string
+          longitude: number | null
+          manager_name: string | null
+          manager_phone: string | null
           name: string
+          owner_name: string | null
+          payout_account_number: string | null
+          payout_method: string | null
           phone: string
           profile_logo_url: string | null
+          store_phone: string | null
           user_id: string | null
         }
         Insert: {
           account_enabled?: boolean
+          address_details?: string | null
           city?: string
           cover_image_url?: string | null
           created_at?: string
+          default_currency?: string | null
           description?: string
+          district?: string | null
           id?: string
           is_active?: boolean
           is_verified?: boolean
+          latitude?: number | null
           logo_url?: string
+          longitude?: number | null
+          manager_name?: string | null
+          manager_phone?: string | null
           name: string
+          owner_name?: string | null
+          payout_account_number?: string | null
+          payout_method?: string | null
           phone?: string
           profile_logo_url?: string | null
+          store_phone?: string | null
           user_id?: string | null
         }
         Update: {
           account_enabled?: boolean
+          address_details?: string | null
           city?: string
           cover_image_url?: string | null
           created_at?: string
+          default_currency?: string | null
           description?: string
+          district?: string | null
           id?: string
           is_active?: boolean
           is_verified?: boolean
+          latitude?: number | null
           logo_url?: string
+          longitude?: number | null
+          manager_name?: string | null
+          manager_phone?: string | null
           name?: string
+          owner_name?: string | null
+          payout_account_number?: string | null
+          payout_method?: string | null
           phone?: string
           profile_logo_url?: string | null
+          store_phone?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -1785,17 +1818,28 @@ export type Database = {
         Args: { p_vendor_id: string; p_verified: boolean }
         Returns: {
           account_enabled: boolean
+          address_details: string | null
           city: string
           cover_image_url: string | null
           created_at: string
+          default_currency: string | null
           description: string
+          district: string | null
           id: string
           is_active: boolean
           is_verified: boolean
+          latitude: number | null
           logo_url: string
+          longitude: number | null
+          manager_name: string | null
+          manager_phone: string | null
           name: string
+          owner_name: string | null
+          payout_account_number: string | null
+          payout_method: string | null
           phone: string
           profile_logo_url: string | null
+          store_phone: string | null
           user_id: string | null
         }
         SetofOptions: {
@@ -2160,30 +2204,53 @@ export type Database = {
       pay_order_from_wallet: { Args: { _order_id: string }; Returns: undefined }
       register_vendor_account: {
         Args: {
-          p_accepted_terms?: boolean
+          p_accepted_terms: boolean
+          p_address_details: string
           p_city: string
-          p_contact_email?: string
-          p_description?: string
-          p_first_name?: string
-          p_last_name?: string
+          p_contact_email: string
+          p_default_currency: string
+          p_description: string
+          p_district: string
+          p_first_name: string
+          p_last_name: string
+          p_latitude: number
+          p_logo_url: string
+          p_longitude: number
+          p_manager_name: string
+          p_manager_phone: string
+          p_owner_name: string
+          p_payout_account_number: string
+          p_payout_method: string
           p_phone: string
-          p_province?: string
-          p_second_name?: string
+          p_province: string
+          p_second_name: string
           p_store_name: string
+          p_store_phone: string
         }
         Returns: {
           account_enabled: boolean
+          address_details: string | null
           city: string
           cover_image_url: string | null
           created_at: string
+          default_currency: string | null
           description: string
+          district: string | null
           id: string
           is_active: boolean
           is_verified: boolean
+          latitude: number | null
           logo_url: string
+          longitude: number | null
+          manager_name: string | null
+          manager_phone: string | null
           name: string
+          owner_name: string | null
+          payout_account_number: string | null
+          payout_method: string | null
           phone: string
           profile_logo_url: string | null
+          store_phone: string | null
           user_id: string | null
         }
         SetofOptions: {
@@ -2320,17 +2387,28 @@ export type Database = {
         Args: { p_field: string; p_url: string; p_vendor_id: string }
         Returns: {
           account_enabled: boolean
+          address_details: string | null
           city: string
           cover_image_url: string | null
           created_at: string
+          default_currency: string | null
           description: string
+          district: string | null
           id: string
           is_active: boolean
           is_verified: boolean
+          latitude: number | null
           logo_url: string
+          longitude: number | null
+          manager_name: string | null
+          manager_phone: string | null
           name: string
+          owner_name: string | null
+          payout_account_number: string | null
+          payout_method: string | null
           phone: string
           profile_logo_url: string | null
+          store_phone: string | null
           user_id: string | null
         }
         SetofOptions: {
