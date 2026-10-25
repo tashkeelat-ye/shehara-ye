@@ -1,0 +1,268 @@
+/*
+ * SHEHARA — PDF design-reference alignment layer
+ * Add this file after the existing shehara-brand.css import in src/styles.css.
+ * Presentation only: no selectors alter application data, routes, or React behavior.
+ */
+
+.shehara-app {
+  --brand-primary: #013D52;
+  --brand-primary-deep: #012B3B;
+  --brand-accent: #F74D06;
+  --brand-accent-text: #B83700;
+  --brand-surface: #FFFFFF;
+  --brand-background: #F3F6F8;
+  --brand-border: #E3EDF1;
+  --brand-tag: #FFE9DF;
+  --brand-text: #0A1F29;
+  --brand-text-secondary: #4A6876;
+  --brand-radius-card: 24px;
+  --brand-radius-control: 18px;
+  --brand-shadow-soft: 0 10px 24px rgb(1 43 59 / 14%);
+  color-scheme: light;
+}
+
+.dark.shehara-app {
+  --brand-primary: #013D52;
+  --brand-primary-deep: #012B3B;
+  --brand-accent: #F74D06;
+  --brand-accent-text: #FFB08E;
+  --brand-surface: #013D52;
+  --brand-background: #012B3B;
+  --brand-border: #0E5A75;
+  --brand-tag: #173F50;
+  --brand-text: #FFFFFF;
+  --brand-text-secondary: #A9C2CC;
+  --brand-shadow-soft: 0 10px 24px rgb(0 0 0 / 18%);
+  color-scheme: dark;
+}
+
+/* Semantic tokens consumed by shadcn/Tailwind and existing components. */
+.shehara-app,
+:root {
+  --brand-burgundy: #013D52;
+  --brand-burgundy-deep: #012B3B;
+  --brand-burgundy-soft: #0E5A75;
+  --brand-burgundy-light: #26718A;
+  --brand-gold: #F74D06;
+  --brand-gold-deep: #B83700;
+  --brand-gold-soft: #FF7944;
+  --brand-gold-pale: #FFE9DF;
+}
+
+:root:not(.dark) {
+  --background: #F3F6F8;
+  --foreground: #0A1F29;
+  --card: #FFFFFF;
+  --card-foreground: #0A1F29;
+  --popover: #FFFFFF;
+  --popover-foreground: #0A1F29;
+  --primary: #013D52;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E3EDF1;
+  --secondary-foreground: #013D52;
+  --muted: #E3EDF1;
+  --muted-foreground: #4A6876;
+  --accent: #FFE9DF;
+  --accent-foreground: #B83700;
+  --border: #E3EDF1;
+  --input: #D2E0E6;
+  --ring: #F74D06;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0A1F29;
+  --sidebar-primary: #013D52;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #E3EDF1;
+  --sidebar-accent-foreground: #013D52;
+  --sidebar-border: #E3EDF1;
+  --sidebar-ring: #F74D06;
+  --accent-solid: #F74D06;
+  --accent-solid-foreground: #FFFFFF;
+  --brand-soft: #E3EDF1;
+  --radius: 1.25rem;
+}
+
+.dark {
+  --background: #012B3B;
+  --foreground: #FFFFFF;
+  --card: #013D52;
+  --card-foreground: #FFFFFF;
+  --popover: #013D52;
+  --popover-foreground: #FFFFFF;
+  --primary: #F74D06;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0E4B61;
+  --secondary-foreground: #FFFFFF;
+  --muted: #0B4054;
+  --muted-foreground: #A9C2CC;
+  --accent: #173F50;
+  --accent-foreground: #FFB08E;
+  --border: #0E5A75;
+  --input: #20586B;
+  --ring: #F74D06;
+  --sidebar: #013D52;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #F74D06;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #0E4B61;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #0E5A75;
+  --sidebar-ring: #F74D06;
+  --accent-solid: #F74D06;
+  --accent-solid-foreground: #FFFFFF;
+  --brand-soft: #0E4B61;
+  --radius: 1.25rem;
+}
+
+/* Consistent page background while preserving per-page layout. */
+.shehara-app {
+  color: var(--foreground);
+  background-color: var(--background);
+  font-family: "CustomFont", "Cairo", Tahoma, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.shehara-app button,
+.shehara-app a,
+.shehara-app [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.shehara-app button:focus-visible,
+.shehara-app a:focus-visible,
+.shehara-app input:focus-visible,
+.shehara-app textarea:focus-visible,
+.shehara-app select:focus-visible {
+  outline: 3px solid #F74D06 !important;
+  outline-offset: 3px;
+}
+
+/* Shared cards: do not change their display, dimensions, or event behavior. */
+.shehara-app article.rounded-2xl,
+.shehara-app article.rounded-3xl,
+.shehara-app article[class*="rounded-[1.5rem]"],
+.shehara-app section.rounded-2xl,
+.shehara-app section.rounded-3xl {
+  border-color: var(--border);
+  box-shadow: var(--brand-shadow-soft);
+}
+
+/* Existing product cards: brand palette only; stock and cart behavior remain intact. */
+.shehara-app article[class*="rounded-[1.5rem]"] {
+  background-color: var(--card);
+  border-color: var(--border);
+  border-radius: 24px 24px 4px 24px;
+  box-shadow: var(--brand-shadow-soft);
+}
+
+.shehara-app article[class*="rounded-[1.5rem]"] h3 {
+  color: var(--card-foreground);
+}
+
+.shehara-app article[class*="rounded-[1.5rem]"] button[aria-label*="إضافة"] {
+  min-height: 44px;
+  background-color: #013D52;
+  color: #FFFFFF;
+  border-radius: 16px 16px 4px 16px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dark.shehara-app article[class*="rounded-[1.5rem]"] button[aria-label*="إضافة"] {
+  background-color: #F74D06;
+  color: #FFFFFF;
+}
+
+/* Product and category badges: warm peach surface and accessible dark orange text. */
+.shehara-app [class*="bg-[#D65A31]"] {
+  background-color: #F74D06 !important;
+}
+
+.shehara-app [class*="text-[#D65A31]"] {
+  color: #B83700 !important;
+}
+
+.dark.shehara-app [class*="text-[#D65A31]"] {
+  color: #FFB08E !important;
+}
+
+.shehara-app [class*="border-[#D65A31]"] {
+  border-color: rgb(247 77 6 / 30%) !important;
+}
+
+.shehara-app [class*="bg-[#0E4D64]"] {
+  background-color: #013D52 !important;
+}
+
+.shehara-app [class*="text-[#0E4D64]"] {
+  color: #013D52 !important;
+}
+
+.dark.shehara-app [class*="text-[#0E4D64]"] {
+  color: #FFFFFF !important;
+}
+
+.shehara-app [class*="border-[#0E4D64]"] {
+  border-color: #E3EDF1 !important;
+}
+
+.dark.shehara-app [class*="border-white/"] {
+  border-color: #0E5A75 !important;
+}
+
+/* Inputs and search surfaces. */
+.shehara-app input,
+.shehara-app textarea,
+.shehara-app select {
+  border-color: var(--border);
+}
+
+.shehara-app input::placeholder,
+.shehara-app textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
+/* Bottom navigation keeps its existing route links and click handlers. */
+.shehara-app nav[aria-label="التنقل الرئيسي"] {
+  padding-left: max(8px, env(safe-area-inset-left));
+  padding-right: max(8px, env(safe-area-inset-right));
+}
+
+.shehara-app nav[aria-label="التنقل الرئيسي"] > div > div[aria-hidden="true"] {
+  border-color: var(--border);
+  background-color: color-mix(in srgb, var(--background) 96%, transparent);
+}
+
+/* Explicit touch size for icon-only controls where the existing markup permits it. */
+.shehara-app button[aria-label]:not([class*="h-"]),
+.shehara-app button[title]:not([class*="h-"]) {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Respect safe areas and reduced-motion preferences. */
+.shehara-app {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 768px) {
+  .shehara-app { padding-bottom: 0; }
+}
+
+@media (max-width: 374px) {
+  .shehara-app nav[aria-label="التنقل الرئيسي"] button { min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shehara-app *,
+  .shehara-app *::before,
+  .shehara-app *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
