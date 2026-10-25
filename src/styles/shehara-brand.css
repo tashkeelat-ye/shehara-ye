@@ -1,90 +1,106 @@
+
 /*
- * =========================================================
  * SHEHARA | شهارة
- * Official Brand System
- * =========================================================
+ * Official visual identity
+ * UI refresh — preserve existing application behavior.
  */
 
 @import "./shehara-ui.css";
 
 /* =========================================================
-   الهوية الأساسية
+   Light theme — official SHEHARA palette
    ========================================================= */
 
 :root {
-  --brand-burgundy: #0e4d64 !important;
-  --brand-burgundy-deep: #0a3d50 !important;
-  --brand-burgundy-soft: #17647e !important;
-  --brand-burgundy-light: #25809b !important;
+  color-scheme: light;
 
-  --brand-gold: #d65a31 !important;
-  --brand-gold-deep: #b74624 !important;
-  --brand-gold-soft: #e98261 !important;
-  --brand-gold-pale: #f8ded5 !important;
+  /* Brand palette */
+  --brand-primary: #013d52;
+  --brand-primary-deep: #012b3b;
+  --brand-accent: #f74d06;
+  --brand-accent-deep: #b83700;
 
-  --brand-cream: #faf9f6 !important;
-  --brand-paper: #f4f7f8 !important;
-  --brand-paper-deep: #e4ecef !important;
+  /* Backward-compatible names used by existing components */
+  --brand-burgundy: #013d52 !important;
+  --brand-burgundy-deep: #012b3b !important;
+  --brand-burgundy-soft: #0e5a75 !important;
+  --brand-burgundy-light: #26718a !important;
 
-  --background: #faf9f6 !important;
-  --foreground: #081d27 !important;
+  --brand-gold: #f74d06 !important;
+  --brand-gold-deep: #b83700 !important;
+  --brand-gold-soft: #ff7944 !important;
+  --brand-gold-pale: #ffe9df !important;
+
+  --brand-cream: #ffffff !important;
+  --brand-paper: #f3f6f8 !important;
+  --brand-paper-deep: #e3edf1 !important;
+
+  /* Semantic tokens */
+  --background: #f3f6f8 !important;
+  --foreground: #0a1f29 !important;
 
   --card: #ffffff !important;
-  --card-foreground: #081d27 !important;
+  --card-foreground: #0a1f29 !important;
 
   --popover: #ffffff !important;
-  --popover-foreground: #081d27 !important;
+  --popover-foreground: #0a1f29 !important;
 
-  --primary: #0e4d64 !important;
+  --primary: #013d52 !important;
   --primary-foreground: #ffffff !important;
 
-  --secondary: #e8f1f4 !important;
-  --secondary-foreground: #0e4d64 !important;
+  --secondary: #e3edf1 !important;
+  --secondary-foreground: #013d52 !important;
 
-  --muted: #eef3f5 !important;
-  --muted-foreground: #5c7079 !important;
+  --muted: #eaf0f3 !important;
+  --muted-foreground: #4a6876 !important;
 
-  --accent: #f8ded5 !important;
-  --accent-foreground: #0e4d64 !important;
+  --accent: #ffe9df !important;
+  --accent-foreground: #b83700 !important;
 
   --destructive: #b42318 !important;
   --destructive-foreground: #ffffff !important;
 
-  --border: #d7e3e7 !important;
-  --input: #d7e3e7 !important;
-  --ring: #d65a31 !important;
+  --border: #e3edf1 !important;
+  --input: #d4e1e7 !important;
+  --ring: #f74d06 !important;
 
-  --chart-1: #0e4d64 !important;
-  --chart-2: #d65a31 !important;
-  --chart-3: #17647e !important;
-  --chart-4: #e98261 !important;
-  --chart-5: #0a3d50 !important;
+  /* Charts */
+  --chart-1: #013d52 !important;
+  --chart-2: #f74d06 !important;
+  --chart-3: #0e5a75 !important;
+  --chart-4: #ff7944 !important;
+  --chart-5: #4a6876 !important;
 
+  /* Sidebar */
   --sidebar: #ffffff !important;
-  --sidebar-foreground: #081d27 !important;
-  --sidebar-primary: #0e4d64 !important;
+  --sidebar-foreground: #0a1f29 !important;
+  --sidebar-primary: #013d52 !important;
   --sidebar-primary-foreground: #ffffff !important;
-  --sidebar-accent: #eef3f5 !important;
-  --sidebar-accent-foreground: #0e4d64 !important;
-  --sidebar-border: #d7e3e7 !important;
-  --sidebar-ring: #d65a31 !important;
+  --sidebar-accent: #e3edf1 !important;
+  --sidebar-accent-foreground: #013d52 !important;
+  --sidebar-border: #e3edf1 !important;
+  --sidebar-ring: #f74d06 !important;
 
-  --accent-solid: #d65a31 !important;
+  /* Existing solid-accent aliases */
+  --accent-solid: #f74d06 !important;
   --accent-solid-foreground: #ffffff !important;
+  --brand-soft: #e3edf1 !important;
 
-  --brand-soft: #e8f1f4 !important;
+  /* Typography */
+  --font-sans: "CustomFont", "Cairo", Tahoma, sans-serif !important;
+  --font-display: "CustomFont", "Cairo", Tahoma, sans-serif !important;
 
-  --font-sans:
-    "Cairo",
-    "CustomFont",
-    "Tahoma",
-    sans-serif !important;
+  /* Shape, spacing and elevation */
+  --shehara-radius-sm: 12px;
+  --shehara-radius-md: 16px;
+  --shehara-radius-lg: 20px;
+  --shehara-radius-xl: 24px;
 
-  --font-display:
-    "Cairo",
-    "CustomFont",
-    "Tahoma",
-    sans-serif !important;
+  --shehara-shadow-soft:
+    0 10px 24px rgb(1 43 59 / 14%);
+
+  --shehara-focus:
+    0 0 0 3px rgb(247 77 6 / 25%);
 
   --brand-watermark-opacity: 0.035;
   --brand-architecture-opacity: 0.025;
@@ -93,68 +109,81 @@
 }
 
 /* =========================================================
-   الوضع الداكن
+   Dark theme
+   Keep the existing .dark theme switch.
    ========================================================= */
 
 .dark {
-  --background: #071b24 !important;
-  --foreground: #f5fafc !important;
+  color-scheme: dark;
 
-  --card: #0b2936 !important;
-  --card-foreground: #f5fafc !important;
+  --background: #012b3b !important;
+  --foreground: #ffffff !important;
 
-  --popover: #0b2936 !important;
-  --popover-foreground: #f5fafc !important;
+  --card: #013d52 !important;
+  --card-foreground: #ffffff !important;
 
-  --primary: #17647e !important;
+  --popover: #013d52 !important;
+  --popover-foreground: #ffffff !important;
+
+  --primary: #0e5a75 !important;
   --primary-foreground: #ffffff !important;
 
-  --secondary: #103847 !important;
-  --secondary-foreground: #f5fafc !important;
+  --secondary: #0e4b61 !important;
+  --secondary-foreground: #ffffff !important;
 
-  --muted: #103847 !important;
-  --muted-foreground: #b8c9cf !important;
+  --muted: #0b4054 !important;
+  --muted-foreground: #a9c2cc !important;
 
-  --accent: #3a2119 !important;
-  --accent-foreground: #f5fafc !important;
+  --accent: #3d302b !important;
+  --accent-foreground: #ffb08e !important;
 
   --destructive: #ef6b63 !important;
   --destructive-foreground: #ffffff !important;
 
-  --border: rgb(255 255 255 / 12%) !important;
-  --input: rgb(255 255 255 / 15%) !important;
-  --ring: #d65a31 !important;
+  --border: #0e5a75 !important;
+  --input: #20586b !important;
+  --ring: #f74d06 !important;
 
-  --chart-1: #17647e !important;
-  --chart-2: #d65a31 !important;
-  --chart-3: #25809b !important;
-  --chart-4: #e98261 !important;
-  --chart-5: #f5fafc !important;
+  --chart-1: #0e5a75 !important;
+  --chart-2: #f74d06 !important;
+  --chart-3: #63a9c0 !important;
+  --chart-4: #ff9b73 !important;
+  --chart-5: #a9c2cc !important;
 
-  --sidebar: #0b2936 !important;
-  --sidebar-foreground: #f5fafc !important;
-  --sidebar-primary: #17647e !important;
+  --sidebar: #013d52 !important;
+  --sidebar-foreground: #ffffff !important;
+  --sidebar-primary: #0e5a75 !important;
   --sidebar-primary-foreground: #ffffff !important;
-  --sidebar-accent: #154252 !important;
-  --sidebar-accent-foreground: #f5fafc !important;
-  --sidebar-border: rgb(255 255 255 / 12%) !important;
-  --sidebar-ring: #d65a31 !important;
+  --sidebar-accent: #0e4b61 !important;
+  --sidebar-accent-foreground: #ffffff !important;
+  --sidebar-border: #0e5a75 !important;
+  --sidebar-ring: #f74d06 !important;
 
-  --accent-solid: #d65a31 !important;
+  --accent-solid: #f74d06 !important;
   --accent-solid-foreground: #ffffff !important;
+  --brand-soft: #0e4b61 !important;
 
-  --brand-soft: #103847 !important;
+  --brand-primary: #0e5a75;
+  --brand-primary-deep: #012b3b;
+  --brand-accent: #f74d06;
+  --brand-accent-deep: #ff9b73;
+
+  --shehara-shadow-soft:
+    0 10px 24px rgb(0 0 0 / 18%);
+
+  --shehara-focus:
+    0 0 0 3px rgb(247 77 6 / 32%);
 }
 
 /* =========================================================
-   توافق أسماء الهوية القديمة
+   Application scope and compatibility aliases
    ========================================================= */
 
 .shehara-app {
-  --brand-primary: #0e4d64;
-  --brand-primary-deep: #0a3d50;
-  --brand-accent: #d65a31;
-  --brand-accent-deep: #b74624;
+  --brand-primary: #013d52;
+  --brand-primary-deep: #012b3b;
+  --brand-accent: #f74d06;
+  --brand-accent-deep: #b83700;
 
   color-scheme: light;
 }
@@ -163,16 +192,13 @@
   color-scheme: dark;
 }
 
-/* =========================================================
-   النصوص
-   ========================================================= */
-
+/* Use the existing locally hosted font; do not add a second font file. */
 .shehara-app,
 .shehara-app * {
   font-family:
-    "Cairo",
     "CustomFont",
-    "Tahoma",
+    "Cairo",
+    Tahoma,
     sans-serif;
 }
 
@@ -186,65 +212,90 @@
 }
 
 /* =========================================================
-   Accessibility
+   Accessibility and interaction
    ========================================================= */
 
 :focus-visible {
-  outline-color: #d65a31 !important;
+  outline: 3px solid #f74d06 !important;
+  outline-offset: 3px;
+}
+
+.shehara-app button:focus-visible,
+.shehara-app a:focus-visible,
+.shehara-app input:focus-visible,
+.shehara-app textarea:focus-visible,
+.shehara-app select:focus-visible {
+  outline: 3px solid #f74d06 !important;
+  outline-offset: 3px;
 }
 
 ::selection {
-  background: rgb(214 90 49 / 20%);
-  color: #0a3d50;
+  background: rgb(247 77 6 / 20%);
+  color: #0a1f29;
 }
 
 .dark ::selection {
-  background: rgb(214 90 49 / 30%);
+  background: rgb(247 77 6 / 35%);
   color: #ffffff;
 }
 
-/* =========================================================
-   روابط
-   ========================================================= */
-
+/* Preserve existing link behavior. */
 .shehara-app a:not([class*="underline"]) {
   text-decoration: none;
 }
 
 /* =========================================================
-   توافق بصري مع بعض المكونات القديمة
+   Legacy utility-class compatibility
    ========================================================= */
 
 .shehara-app [class*="bg-[#4A1525]"] {
-  background-color: #0e4d64 !important;
+  background-color: #013d52 !important;
 }
 
 .shehara-app [class*="bg-[#35101C]"] {
-  background-color: #0a3d50 !important;
+  background-color: #012b3b !important;
 }
 
 .shehara-app [class*="bg-[#6A263A]"] {
-  background-color: #17647e !important;
+  background-color: #0e5a75 !important;
 }
 
 .shehara-app [class*="text-[#4A1525]"] {
-  color: #0e4d64 !important;
+  color: #013d52 !important;
 }
 
 .shehara-app [class*="text-[#35101C]"] {
-  color: #0a3d50 !important;
+  color: #012b3b !important;
 }
 
 .shehara-app [class*="text-[#E0B85C]"] {
-  color: #d65a31 !important;
+  color: #b83700 !important;
 }
 
 .shehara-app [class*="border-[#E0B85C]"] {
-  border-color: rgb(214 90 49 / 20%) !important;
+  border-color: rgb(247 77 6 / 24%) !important;
 }
 
 .shehara-app [class*="border-[#4A1525]"] {
-  border-color: rgb(14 77 100 / 18%) !important;
+  border-color: rgb(1 61 82 / 18%) !important;
+}
+
+/* =========================================================
+   Page background
+   ========================================================= */
+
+html {
+  background: var(--background);
+}
+
+body {
+  background-color: #f3f6f8;
+  color: #0a1f29;
+}
+
+.dark body {
+  background-color: #012b3b;
+  color: #ffffff;
 }
 
 /* =========================================================
@@ -252,29 +303,15 @@
    ========================================================= */
 
 body::-webkit-scrollbar-thumb {
-  background: rgb(14 77 100 / 45%);
+  background: rgb(1 61 82 / 45%);
 }
 
 body::-webkit-scrollbar-thumb:hover {
-  background: rgb(214 90 49 / 70%);
+  background: rgb(247 77 6 / 75%);
 }
 
 /* =========================================================
-   خلفية التطبيق
-   ========================================================= */
-
-body {
-  background-color: #faf9f6;
-  color: #081d27;
-}
-
-.dark body {
-  background-color: #071b24;
-  color: #f5fafc;
-}
-
-/* =========================================================
-   منع الحركة الزائدة
+   Reduced motion
    ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
