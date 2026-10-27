@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Grid2X2, Home, ShoppingCart, Tag, User } from "lucide-react";
+import { Grid2X2, Home, ShoppingBag, Sparkles, User } from "lucide-react";
 
 import { useCart } from "@/lib/cart-context";
 import { OffersDialog } from "@/components/offers-dialog";
@@ -8,6 +8,7 @@ import { OffersDialog } from "@/components/offers-dialog";
 type NavItemProps = {
   active: boolean;
   label: string;
+  badge?: number | string | null;
   children: ReactNode;
   onClick?: () => void;
   ariaLabel?: string;
@@ -16,6 +17,7 @@ type NavItemProps = {
 function NavItem({
   active,
   label,
+  badge,
   children,
   onClick,
   ariaLabel,
@@ -23,29 +25,34 @@ function NavItem({
   const content = (
     <>
       <span
-        className={`relative grid h-9 w-12 place-items-center rounded-2xl transition-all duration-200 ${
+        className={`relative grid h-8 w-11 place-items-center rounded-xl transition-all duration-300 ${
           active
-            ? "bg-[#0E4D64]/[0.10] text-[#0E4D64] dark:bg-white/[0.08] dark:text-[#D65A31]"
-            : "text-muted-foreground group-hover:bg-[#0E4D64]/[0.055] group-hover:text-[#0E4D64] dark:group-hover:bg-white/[0.06] dark:group-hover:text-white"
+            ? "bg-[#0E4D64]/10 text-[#0E4D64] dark:bg-[#D65A31]/20 dark:text-[#D65A31]"
+            : "text-muted-foreground group-hover:text-[#0E4D64] dark:group-hover:text-white"
         }`}
       >
         {children}
-        {active ? (
-          <span
-            aria-hidden="true"
-            className="absolute -bottom-0.5 h-1 w-5 rounded-full bg-[#D65A31]"
-          />
+        {badge ? (
+          <span className="absolute -end-1 -top-1 flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[color:var(--background)] bg-[#D65A31] px-1 text-[9px] font-black leading-none text-white shadow-sm animate-in zoom-in-75 duration-200">
+            {badge}
+          </span>
         ) : null}
       </span>
       <span
-        className={`max-w-full truncate leading-4 transition-colors ${
+        className={`max-w-full truncate text-[11px] leading-tight transition-colors duration-200 ${
           active
             ? "font-black text-[#0E4D64] dark:text-[#D65A31]"
-            : "font-bold text-muted-foreground"
+            : "font-semibold text-muted-foreground/80"
         }`}
       >
         {label}
       </span>
+      {active && (
+        <span
+          aria-hidden="true"
+          className="absolute bottom-1 h-1 w-4 rounded-full bg-[#D65A31] transition-all duration-300"
+        />
+      )}
     </>
   );
 
@@ -56,7 +63,7 @@ function NavItem({
         aria-label={ariaLabel ?? label}
         aria-pressed={active}
         onClick={onClick}
-        className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] outline-none transition-transform duration-200 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#0E4D64]"
+        className="group relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center outline-none transition-transform duration-150 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#0E4D64] rounded-lg"
       >
         {content}
       </button>
@@ -64,7 +71,7 @@ function NavItem({
   }
 
   return (
-    <div className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px]">
+    <div className="group relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center">
       {content}
     </div>
   );
@@ -88,89 +95,69 @@ export function BottomNav() {
         aria-label="التنقل الرئيسي"
         className="fixed inset-x-0 bottom-0 z-[90] w-full md:hidden"
       >
-        <div className="relative mx-auto w-full max-w-lg px-2 pb-[max(5px,env(safe-area-inset-bottom))]">
-          {/* الخلفية مع فتحة دائرية انسيابية للزر الأوسط */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-[76px] rounded-t-[1.8rem] border-t border-[#0E4D64]/[0.08] bg-[color:var(--background)]/96 shadow-[0_-18px_50px_-32px_rgba(14,77,100,0.65)] backdrop-blur-2xl supports-[backdrop-filter]:bg-[color:var(--background)]/84 dark:border-white/[0.07]"
-          >
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D65A31]/55 to-transparent" />
-            <div
-              className="absolute left-1/2 top-[-31px] h-[78px] w-[78px] -translate-x-1/2 rounded-full bg-[color:var(--background)]"
-            />
-          </div>
-
-          <div className="relative z-10 grid h-[82px] grid-cols-[1fr_1fr_82px_1fr_1fr] items-end">
-            {/* الرئيسية — أقصى اليمين */}
+        <div className="mx-auto w-full max-w-lg px-2 pb-[max(6px,env(safe-area-inset-bottom))]">
+          {/* شريط الملاحة العصري بتأثير زجاجي وتصميم Native PWA */}
+          <div className="relative flex h-[68px] items-center justify-between rounded-2xl border border-[#0E4D64]/10 bg-[color:var(--background)]/90 px-1 shadow-[0_-10px_35px_-15px_rgba(14,77,100,0.25)] backdrop-blur-xl supports-[backdrop-filter]:bg-[color:var(--background)]/85 dark:border-white/10 dark:shadow-[0_-10px_35px_-15px_rgba(0,0,0,0.6)]">
+            
+            {/* 1. الرئيسية */}
             <NavItem active={isHome} label="الرئيسية">
               <Link
                 to="/"
                 aria-current={isHome ? "page" : undefined}
                 aria-label="الرئيسية"
-                className="absolute inset-0 z-20 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]"
+                className="absolute inset-0 z-20 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]"
               />
-              <Home className="h-5 w-5" strokeWidth={isHome ? 2.6 : 2} />
+              <Home className="h-5 w-5" strokeWidth={isHome ? 2.5 : 1.9} />
             </NavItem>
 
-            {/* السلة */}
-            <NavItem
-              active={isCart}
-              label="السلة"
-              ariaLabel={`سلة المشتريات${count > 0 ? `، ${count} منتجات` : ""}`}
-              onClick={() => setDrawerOpen(true)}
-            >
-              <ShoppingCart className="h-5 w-5" strokeWidth={isCart ? 2.6 : 2} />
-              {count > 0 ? (
-                <span className="absolute -end-0.5 -top-1 flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[color:var(--background)] bg-[#D65A31] px-1 text-[8px] font-black leading-none text-white">
-                  {count > 99 ? "99+" : count.toLocaleString("ar-EG")}
-                </span>
-              ) : null}
-            </NavItem>
-
-            {/* الأقسام: زر دائري عائم */}
-            <div className="relative flex h-full items-end justify-center">
+            {/* 2. الأقسام */}
+            <NavItem active={isCategories} label="الأقسام">
               <Link
                 to="/products"
                 aria-current={isCategories ? "page" : undefined}
                 aria-label="الأقسام"
-                className={`absolute bottom-[30px] z-30 grid h-[66px] w-[66px] place-items-center rounded-full border-[5px] border-[color:var(--background)] outline-none transition-all duration-200 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#D65A31] focus-visible:ring-offset-2 ${
-                  isCategories
-                    ? "bg-[#0E4D64] text-white shadow-[0_14px_34px_-10px_rgba(14,77,100,0.85)] dark:bg-[#D65A31]"
-                    : "bg-[#0E4D64] text-white shadow-[0_14px_34px_-10px_rgba(14,77,100,0.72)] hover:-translate-y-0.5 dark:bg-[#D65A31]"
-                }`}
-              >
-                <span className="absolute inset-[5px] rounded-full border border-white/20" />
-                <Grid2X2 className="relative h-7 w-7" strokeWidth={2.15} />
-                <span className="absolute -bottom-[25px] whitespace-nowrap text-[10px] font-black text-[#0E4D64] dark:text-[#D65A31]">
-                  الأقسام
-                </span>
-              </Link>
-            </div>
+                className="absolute inset-0 z-20 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]"
+              />
+              <Grid2X2 className="h-5 w-5" strokeWidth={isCategories ? 2.5 : 1.9} />
+            </NavItem>
 
-            {/* العروض */}
+            {/* 3. العروض الحصرية (أيقونة مميزة) */}
             <NavItem
               active={offersOpen}
               label="العروض"
-              ariaLabel="العروض"
+              ariaLabel="العروض الخاصة والتخفيضات"
               onClick={() => setOffersOpen(true)}
             >
-              <Tag className="h-5 w-5" strokeWidth={offersOpen ? 2.6 : 2} />
+              <Sparkles className="h-5 w-5 text-[#D65A31]" strokeWidth={offersOpen ? 2.5 : 2} />
             </NavItem>
 
-            {/* حسابي — أقصى اليسار */}
+            {/* 4. السلة مع شارة العدد الفورية */}
+            <NavItem
+              active={isCart}
+              label="السلة"
+              badge={count > 0 ? (count > 99 ? "99+" : count.toLocaleString("ar-EG")) : null}
+              ariaLabel={`سلة المشتريات${count > 0 ? `، ${count} منتجات` : ""}`}
+              onClick={() => setDrawerOpen(true)}
+            >
+              <ShoppingBag className="h-5 w-5" strokeWidth={isCart ? 2.5 : 1.9} />
+            </NavItem>
+
+            {/* 5. حسابي */}
             <NavItem active={isAccount} label="حسابي">
               <Link
                 to="/account"
                 aria-current={isAccount ? "page" : undefined}
                 aria-label="حسابي"
-                className="absolute inset-0 z-20 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]"
+                className="absolute inset-0 z-20 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#0E4D64]"
               />
-              <User className="h-5 w-5" strokeWidth={isAccount ? 2.6 : 2} />
+              <User className="h-5 w-5" strokeWidth={isAccount ? 2.5 : 1.9} />
             </NavItem>
+
           </div>
         </div>
       </nav>
 
+      {/* نافذة العروض الترويجية المنبثقة */}
       <OffersDialog open={offersOpen} onClose={() => setOffersOpen(false)} />
     </>
   );
