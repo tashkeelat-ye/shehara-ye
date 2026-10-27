@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   ShoppingCart,
-  Sparkles,
+  Tag,
   Trash2,
   X,
 } from "lucide-react";
@@ -19,13 +19,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { useFormatPrice } from "@/lib/currency-context";
 import { ProductImage } from "./product-image";
-
-const BRAND = {
-  teal: "#0E4D64",
-  tealDark: "#093747",
-  orange: "#D65A31",
-  canvas: "#F5F8F9",
-};
 
 type PendingAction = "quantity" | "remove";
 
@@ -44,6 +37,7 @@ export function CartDrawer() {
   } = useCart();
 
   const [mounted, setMounted] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
   const [pending, setPending] = useState<Record<string, PendingAction | undefined>>({});
   const [errorMessage, setErrorMessage] = useState("");
   const closeTimer = useRef<number | null>(null);
@@ -93,39 +87,45 @@ export function CartDrawer() {
     }, 220);
   }, [setDrawerOpen]);
 
-  const runItemAction = useCallback(async (
-    lineId: string,
-    action: PendingAction,
-    task: () => Promise<void>,
-  ) => {
-    if (pending[lineId]) return;
-    setErrorMessage("");
-    setPending((previous) => ({ ...previous, [lineId]: action }));
-    try {
-      await task();
-    } catch (error) {
-      console.error("[CartDrawer] cart action failed:", error);
-      setErrorMessage(
-        navigator.onLine
-          ? "تعذّر حفظ التغيير. تحقق من اتصالك ثم حاول مرة أخرى."
-          : "أنت غير متصل بالإنترنت؛ تعذّر حفظ هذا التغيير. حاول مجددًا عند عودة الاتصال.",
-      );
-    } finally {
-      setPending((previous) => {
-        const next = { ...previous };
-        delete next[lineId];
-        return next;
-      });
-    }
-  }, [pending]);
+  const runItemAction = useCallback(
+    async (
+      lineId: string,
+      action: PendingAction,
+      task: () => Promise<void>,
+    ) => {
+      if (pending[lineId]) return;
+      setErrorMessage("");
+      setPending((previous) => ({ ...previous, [lineId]: action }));
+      try {
+        await task();
+      } catch (error) {
+        console.error("[CartDrawer] cart action failed:", error);
+        setErrorMessage(
+          navigator.onLine
+            ? "تعذّر حفظ التغيير. تحقق من اتصالك ثم حاول مرة أخرى."
+            : "أنت غير متصل بالإنترنت؛ تعذّر حفظ هذا التغيير.",
+        );
+      } finally {
+        setPending((previous) => {
+          const next = { ...previous };
+          delete next[lineId];
+          return next;
+        });
+      }
+    },
+    [pending],
+  );
 
-  const handleQuantity = useCallback((lineId: string, quantity: number) => {
-    if (quantity < 1) {
-      void runItemAction(lineId, "remove", () => removeItem(lineId));
-      return;
-    }
-    void runItemAction(lineId, "quantity", () => updateQuantity(lineId, quantity));
-  }, [removeItem, runItemAction, updateQuantity]);
+  const handleQuantity = useCallback(
+    (lineId: string, quantity: number) => {
+      if (quantity < 1) {
+        void runItemAction(lineId, "remove", () => removeItem(lineId));
+        return;
+      }
+      void runItemAction(lineId, "quantity", () => updateQuantity(lineId, quantity));
+    },
+    [removeItem, runItemAction, updateQuantity],
+  );
 
   const handleClearCart = async () => {
     if (items.length === 0 || pending.__clear) return;
@@ -149,8 +149,9 @@ export function CartDrawer() {
 
   if (!drawerOpen) return null;
 
-  const unavailableItems = items.filter((item) =>
-    item.product.is_active === false || Number(item.product.stock_left ?? 0) < 1,
+  const unavailableItems = items.filter(
+    (item) =>
+      item.product.is_active === false || Number(item.product.stock_left ?? 0) < 1,
   );
   const canCheckout = items.length > 0 && unavailableItems.length === 0 && !loading;
 
@@ -168,100 +169,124 @@ export function CartDrawer() {
         aria-label="إغلاق السلة"
         tabIndex={-1}
         onClick={closeDrawer}
-        className={`absolute inset-0 cursor-default bg-[#041922]/65 backdrop-blur-sm transition-opacity duration-300 ${mounted ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 cursor-default bg-[#071B24]/65 backdrop-blur-[4px] transition-opacity duration-300 ${
+          mounted ? "opacity-100" : "opacity-0"
+        }`}
       />
 
       <aside
-        className={`absolute inset-y-0 end-0 flex h-[100dvh] w-full max-w-[520px] flex-col overflow-hidden bg-white shadow-[-24px_0_80px_-35px_rgba(9,55,71,0.65)] transition-transform duration-300 ease-out ${mounted ? "translate-x-0" : "translate-x-full"}`}
+        className={`absolute inset-y-0 end-0 flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-white shadow-[-24px_0_80px_-35px_rgba(7,27,36,0.6)] transition-transform duration-300 ease-out dark:bg-[#071E28] ${
+          mounted ? "translate-x-0" : "translate-x-full"
+        }`}
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <div aria-hidden="true" className="h-1 shrink-0" style={{ background: `linear-gradient(90deg, ${BRAND.orange}, ${BRAND.teal}, ${BRAND.orange})` }} />
+        {/* الخط الجمالي العلوي */}
+        <div
+          aria-hidden="true"
+          className="h-1.5 shrink-0 bg-gradient-to-l from-[#0E4D64] via-[#D65A31] to-[#0E4D64]"
+        />
 
-        <header className="shrink-0 border-b border-slate-100 px-4 pb-4 pt-4 sm:px-5 sm:pt-5">
+        {/* رأس سلة التسوق */}
+        <header className="shrink-0 border-b border-slate-100 px-5 pb-4 pt-4 dark:border-white/[0.08]">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-white shadow-sm" style={{ background: `linear-gradient(145deg, ${BRAND.teal}, ${BRAND.tealDark})` }}>
-                <ShoppingCart className="h-5 w-5" strokeWidth={2.2} aria-hidden="true" />
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#0E4D64] text-white shadow-sm">
+                <ShoppingCart className="h-5 w-5" strokeWidth={2.2} />
               </div>
               <div className="min-w-0">
-                <h2 className="text-lg font-black leading-6 text-slate-900">سلة التسوق</h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  {count.toLocaleString("ar-EG")} {count === 1 ? "قطعة" : "قطع"} في سلتك
-                </p>
+                <span className="block text-[11px] font-black uppercase tracking-wider text-[#D65A31]">
+                  SHEHARA STORE
+                </span>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                    سلة التسوّق
+                  </h2>
+                  <span className="rounded-full bg-[#EBF2F5] px-2 py-0.5 text-[11px] font-black text-[#0E4D64] dark:bg-white/10 dark:text-[#8DC1CC]">
+                    {count.toLocaleString("ar-EG")}
+                  </span>
+                </div>
               </div>
             </div>
+
             <div className="flex shrink-0 items-center gap-2">
               {items.length > 1 ? (
                 <button
                   type="button"
                   onClick={() => void handleClearCart()}
                   disabled={Boolean(pending.__clear)}
-                  className="inline-flex min-h-11 items-center gap-1.5 rounded-xl px-2.5 text-xs font-bold text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 sm:px-3"
+                  className="inline-flex h-10 items-center gap-1 rounded-xl px-2.5 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:hover:bg-rose-950/30"
                 >
-                  {pending.__clear ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  {pending.__clear ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
                   <span>إفراغ</span>
                 </button>
               ) : null}
+
               <button
                 ref={closeButtonRef}
                 type="button"
                 aria-label="إغلاق السلة"
                 onClick={closeDrawer}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31]/40"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 hover:text-[#D65A31] dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300"
               >
-                <X className="h-5 w-5" aria-hidden="true" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
-
-          {items.length > 0 ? (
-            <div id="cart-drawer-description" className="mt-4 flex items-start gap-2.5 rounded-2xl border border-[#0E4D64]/10 bg-[#0E4D64]/[0.045] px-3.5 py-3">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0E4D64]" aria-hidden="true" />
-              <p className="text-xs leading-5 text-slate-600">راجع المنتجات والكميات قبل إكمال الطلب. لن يتم تأكيد الشراء إلا بعد مراجعة تفاصيل الدفع والتوصيل.</p>
-            </div>
-          ) : null}
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#F5F8F9] px-3 py-4 sm:px-5 sm:py-5">
+        {/* محتوى السلة القابل للتمرير */}
+        <div className="min-h-0 flex-1 overflow-y-auto bg-[#F7F9FA] px-4 py-4 dark:bg-[#061820]">
           {errorMessage ? (
-            <div role="alert" className="mb-3 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm leading-5 text-red-700">
-              <X className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div
+              role="alert"
+              className="mb-3 flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+            >
+              <X className="mt-0.5 h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1">{errorMessage}</span>
-              <button type="button" onClick={() => setErrorMessage("")} aria-label="إخفاء رسالة الخطأ" className="grid h-7 w-7 shrink-0 place-items-center rounded-lg hover:bg-red-100"><X className="h-4 w-4" /></button>
+              <button
+                type="button"
+                onClick={() => setErrorMessage("")}
+                aria-label="إخفاء رسالة الخطأ"
+                className="grid h-6 w-6 place-items-center rounded-lg hover:bg-rose-100"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
           ) : null}
 
           {loading && items.length === 0 ? (
             <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center">
-              <LoaderCircle className="h-8 w-8 animate-spin text-[#0E4D64]" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-600">نجهّز سلتك...</p>
+              <LoaderCircle className="h-8 w-8 animate-spin text-[#0E4D64]" />
+              <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
+                جارٍ تحديث محتويات سلتك...
+              </p>
             </div>
           ) : items.length === 0 ? (
-            <div className="flex min-h-full flex-col items-center justify-center px-5 py-8 text-center">
-              <div className="relative grid h-24 w-24 place-items-center rounded-[30px] bg-white shadow-[0_20px_50px_-30px_rgba(14,77,100,0.55)] ring-1 ring-[#0E4D64]/10">
-                <div className="absolute inset-2 rounded-[24px] border border-[#D65A31]/20" />
-                <ShoppingBag className="h-10 w-10 text-[#0E4D64]" aria-hidden="true" />
+            <div className="flex min-h-full flex-col items-center justify-center px-4 py-12 text-center">
+              <div className="grid h-20 w-20 place-items-center rounded-3xl bg-[#EBF2F5] text-[#0E4D64] shadow-inner dark:bg-white/10 dark:text-[#8DC1CC]">
+                <ShoppingBag className="h-9 w-9" />
               </div>
-              <h3 className="mt-6 text-xl font-black text-slate-900">سلتك تنتظر اختياراتك</h3>
-              <p className="mt-2 max-w-[280px] text-sm leading-6 text-slate-500">لم تضف أي منتج حتى الآن. اكتشف المنتجات وأضف ما يناسبك، وستجده هنا.</p>
+              <h3 className="mt-5 text-lg font-black text-slate-900 dark:text-white">
+                سلتك تنتظر اختياراتك
+              </h3>
+              <p className="mt-1.5 max-w-[260px] text-xs leading-6 text-slate-500 dark:text-slate-400">
+                لم تضف أي منتجات بعد. استكشف أقسامنا المتنوعة واختر ما يعجبك.
+              </p>
               <Link
                 to="/products"
                 onClick={() => setDrawerOpen(false)}
-                className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-extrabold text-white shadow-[0_14px_30px_-18px_rgba(14,77,100,0.8)] transition hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31]/50"
-                style={{ background: `linear-gradient(135deg, ${BRAND.teal}, ${BRAND.tealDark})` }}
+                className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#0E4D64] px-6 text-sm font-black text-white shadow-md transition hover:bg-[#093747] active:scale-[0.98]"
               >
-                <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-                اكتشف المنتجات
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                <ShoppingBag className="h-4 w-4" />
+                تصفح المنتجات الآن
               </Link>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="mb-1 flex items-center justify-between gap-3 px-1">
-                <p className="text-xs font-bold text-slate-500">منتجاتك المختارة</p>
-                <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200">{items.length.toLocaleString("ar-EG")} {items.length === 1 ? "منتج" : "منتجات"}</span>
-              </div>
-
               {items.map((item) => {
                 const image = item.product.images?.[0] || "/placeholder.svg";
                 const unitPrice = Number(item.product.price || 0);
@@ -272,140 +297,206 @@ export function CartDrawer() {
                 const isBusy = Boolean(pending[item.id]);
 
                 return (
-                  <article key={item.id} className="rounded-[22px] border border-slate-200/80 bg-white p-3 shadow-[0_10px_30px_-28px_rgba(14,77,100,0.55)] sm:p-3.5">
-                    <div className="flex min-w-0 gap-3 sm:gap-3.5">
+                  <article
+                    key={item.id}
+                    className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm dark:border-white/[0.08] dark:bg-[#0A2A38]"
+                  >
+                    <div className="flex min-w-0 gap-3">
                       <Link
                         to="/product/$id"
                         params={{ id: item.product_id }}
                         onClick={closeDrawer}
-                        aria-label={`عرض ${item.product.name}`}
-                        className="group relative h-[104px] w-[92px] shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-900/5 sm:h-28 sm:w-28"
+                        className="relative h-24 w-20 shrink-0 overflow-hidden rounded-xl bg-[#EBF2F5] dark:bg-[#123B4A]"
                       >
-                        <ProductImage src={image} alt={item.product.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                        <span className="absolute bottom-1.5 start-1.5 inline-flex min-h-6 items-center rounded-full bg-[#093747]/90 px-2 text-[10px] font-extrabold text-white backdrop-blur">
-                          ×{item.quantity.toLocaleString("ar-EG")}
+                        <ProductImage
+                          src={image}
+                          alt={item.product.name}
+                          className="h-full w-full object-cover"
+                        />
+                        <span className="absolute bottom-1 end-1 rounded-md bg-[#071E28]/85 px-1.5 py-0.5 text-[9px] font-black text-white backdrop-blur">
+                          ×{item.quantity}
                         </span>
                       </Link>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex min-w-0 items-start gap-1.5">
-                          <Link to="/product/$id" params={{ id: item.product_id }} onClick={closeDrawer} className="min-w-0 flex-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31]/40">
-                            <h3 className="line-clamp-2 break-words text-sm font-extrabold leading-5 text-slate-900 sm:text-[15px]">{item.product.name}</h3>
+                        <div className="flex items-start justify-between gap-1.5">
+                          <Link
+                            to="/product/$id"
+                            params={{ id: item.product_id }}
+                            onClick={closeDrawer}
+                            className="min-w-0 flex-1"
+                          >
+                            <h3 className="line-clamp-2 text-xs font-black leading-5 text-slate-900 transition hover:text-[#0E4D64] dark:text-white dark:hover:text-[#8DC1CC]">
+                              {item.product.name}
+                            </h3>
                           </Link>
                           <button
                             type="button"
-                            aria-label={`حذف ${item.product.name} من السلة`}
-                            title="حذف المنتج"
+                            aria-label={`حذف ${item.product.name}`}
                             disabled={isBusy || Boolean(pending.__clear)}
-                            onClick={() => void runItemAction(item.id, "remove", () => removeItem(item.id))}
-                            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-wait disabled:opacity-50"
+                            onClick={() =>
+                              void runItemAction(item.id, "remove", () =>
+                                removeItem(item.id),
+                              )
+                            }
+                            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:hover:bg-rose-950/30"
                           >
-                            {pending[item.id] === "remove" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" aria-hidden="true" />}
+                            {pending[item.id] === "remove" ? (
+                              <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
                           </button>
                         </div>
 
                         {item.size || item.color ? (
-                          <div className="mt-1.5 flex flex-wrap gap-1.5">
-                            {item.size ? <span className="max-w-full break-words rounded-lg bg-[#0E4D64]/[0.07] px-2 py-1 text-[10px] font-bold text-[#0E4D64]">المقاس: {item.size}</span> : null}
-                            {item.color ? <span className="max-w-full break-words rounded-lg bg-[#D65A31]/[0.09] px-2 py-1 text-[10px] font-bold text-[#A84220]">اللون: {item.color}</span> : null}
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {item.size ? (
+                              <span className="rounded-md bg-[#0E4D64]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#0E4D64] dark:bg-white/10 dark:text-[#8DC1CC]">
+                                {item.size}
+                              </span>
+                            ) : null}
+                            {item.color ? (
+                              <span className="rounded-md bg-[#D65A31]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#D65A31]">
+                                {item.color}
+                              </span>
+                            ) : null}
                           </div>
                         ) : null}
 
                         {outOfStock ? (
-                          <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">
-                            <PackageCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                            {item.product.is_active === false ? "المنتج غير متاح حاليًا" : "نفدت الكمية المتاحة"}
+                          <p className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600 dark:bg-rose-950/30">
+                            <PackageCheck className="h-3 w-3" />
+                            نفدت الكمية
                           </p>
-                        ) : stockLeft <= Math.max(3, Number(item.product.low_stock_threshold ?? 0)) ? (
-                          <p className="mt-2 text-[11px] font-semibold text-amber-700">متبقٍ {stockLeft.toLocaleString("ar-EG")} فقط</p>
                         ) : null}
 
-                        <div className="mt-3 flex min-w-0 flex-wrap items-end justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="break-words text-base font-black leading-6 text-[#D65A31]">{formatPrice(lineTotal)}</p>
-                            <p className="mt-0.5 break-words text-[11px] text-slate-500">{formatPrice(unitPrice)} <span aria-hidden="true">×</span> {item.quantity.toLocaleString("ar-EG")}</p>
+                        <div className="mt-3 flex items-end justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-black text-[#D65A31]">
+                              {formatPrice(lineTotal)}
+                            </p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                              {formatPrice(unitPrice)} للقطعة
+                            </p>
                           </div>
 
-                          <div className={`inline-flex h-11 shrink-0 items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 ${isBusy ? "opacity-70" : ""}`} aria-label={`كمية ${item.product.name}`}>
+                          {/* كبسولة زيادة ونقصان الكمية */}
+                          <div
+                            className={`flex h-8 items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-0.5 dark:border-white/10 dark:bg-white/[0.05] ${
+                              isBusy ? "opacity-60" : ""
+                            }`}
+                          >
                             <button
                               type="button"
-                              aria-label={`تقليل كمية ${item.product.name}`}
+                              aria-label="تقليل الكمية"
                               disabled={isBusy || Boolean(pending.__clear)}
                               onClick={() => handleQuantity(item.id, item.quantity - 1)}
-                              className="grid h-9 w-9 place-items-center rounded-lg text-[#0E4D64] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31]/40 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="grid h-7 w-7 place-items-center rounded-lg text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/10"
                             >
-                              {pending[item.id] === "quantity" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Minus className="h-4 w-4" aria-hidden="true" />}
+                              <Minus className="h-3.5 w-3.5" />
                             </button>
-                            <span className="min-w-7 text-center text-sm font-extrabold tabular-nums text-slate-900" aria-live="polite">{item.quantity.toLocaleString("ar-EG")}</span>
+                            <span className="min-w-6 text-center text-xs font-black tabular-nums text-slate-900 dark:text-white">
+                              {item.quantity}
+                            </span>
                             <button
                               type="button"
-                              aria-label={`زيادة كمية ${item.product.name}`}
-                              title={atStockLimit ? "وصلت إلى الحد المتاح في المخزون" : "زيادة الكمية"}
-                              disabled={isBusy || Boolean(pending.__clear) || outOfStock || atStockLimit}
+                              aria-label="زيادة الكمية"
+                              disabled={
+                                isBusy ||
+                                Boolean(pending.__clear) ||
+                                outOfStock ||
+                                atStockLimit
+                              }
                               onClick={() => handleQuantity(item.id, item.quantity + 1)}
-                              className="grid h-9 w-9 place-items-center rounded-lg bg-white text-[#D65A31] shadow-sm transition hover:bg-[#D65A31]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31]/40 disabled:cursor-not-allowed disabled:opacity-35"
+                              className="grid h-7 w-7 place-items-center rounded-lg bg-white text-[#D65A31] shadow-xs transition hover:bg-[#D65A31] hover:text-white disabled:opacity-40 dark:bg-white/10 dark:text-white"
                             >
-                              <Plus className="h-4 w-4" aria-hidden="true" />
+                              <Plus className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         </div>
                       </div>
                     </div>
-                    {atStockLimit && !outOfStock ? <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800">وصلت للكمية المتاحة حاليًا من هذا المنتج.</p> : null}
                   </article>
                 );
               })}
+
+              {/* حقل كود الخصم (اختياري) */}
+              <div className="mt-3 flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white p-2 dark:border-white/[0.08] dark:bg-[#0A2A38]">
+                <Tag className="ms-2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="كود الخصم (اختياري)"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  className="min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none dark:text-white"
+                />
+                <button
+                  type="button"
+                  className="rounded-xl bg-[#0E4D64]/10 px-3 py-1.5 text-xs font-black text-[#0E4D64] transition hover:bg-[#0E4D64] hover:text-white dark:bg-white/10 dark:text-[#8DC1CC]"
+                >
+                  تطبيق
+                </button>
+              </div>
             </div>
           )}
         </div>
 
+        {/* الشريط السفلي وزر الانتقال للدفع */}
         {items.length > 0 ? (
-          <footer className="shrink-0 border-t border-slate-200 bg-white px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3.5 shadow-[0_-18px_40px_-35px_rgba(14,77,100,0.45)] sm:px-5 sm:pt-4">
-            <div className="mb-3 rounded-2xl border border-[#0E4D64]/10 bg-[#F5F8F9] px-3.5 py-3.5 sm:px-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <span className="block text-sm font-extrabold text-slate-800">إجمالي المنتجات</span>
-                  <span className="mt-1 block text-[11px] text-slate-500">{count.toLocaleString("ar-EG")} قطعة في السلة</span>
-                </div>
-                <span className="shrink-0 break-words text-lg font-black text-[#D65A31] sm:text-xl">{formatPrice(total)}</span>
+          <footer className="shrink-0 border-t border-slate-100 bg-white p-4 pb-[max(16px,env(safe-area-inset-bottom))] shadow-lg dark:border-white/[0.08] dark:bg-[#071E28]">
+            <div className="mb-3 space-y-1.5 rounded-2xl bg-slate-50 p-3.5 dark:bg-white/[0.03]">
+              <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                <span>إجمالي المنتجات ({count}):</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {formatPrice(total)}
+                </span>
               </div>
-              <div className="mt-3 flex items-center gap-2 border-t border-slate-200 pt-3 text-[11px] leading-5 text-slate-500">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#0E4D64]" aria-hidden="true" />
-                <span>تُراجع تفاصيل التوصيل والدفع قبل تأكيد الطلب.</span>
+              <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+                <span>تكلفة الشحن والتوصيل:</span>
+                <span className="font-bold text-[#0E4D64] dark:text-[#8DC1CC]">
+                  يُحدَّد عند التأكيد
+                </span>
+              </div>
+              <div className="border-t border-slate-200/80 pt-2 dark:border-white/10">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-black text-slate-900 dark:text-white">
+                    المبلغ الإجمالي:
+                  </span>
+                  <span className="text-lg font-black text-[#D65A31]">
+                    {formatPrice(total)}
+                  </span>
+                </div>
               </div>
             </div>
-
-            {unavailableItems.length > 0 ? (
-              <p role="status" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold leading-5 text-red-700">
-                لا يمكن متابعة الدفع حتى تزيل المنتجات غير المتاحة أو تنتظر عودتها للمخزون.
-              </p>
-            ) : null}
 
             <Link
               to="/checkout"
               onClick={(event) => {
                 if (!canCheckout) {
                   event.preventDefault();
-                  setErrorMessage("يرجى الانتظار حتى تكتمل مزامنة السلة والتأكد من توفر المنتجات.");
+                  setErrorMessage(
+                    "يرجى مراجعة المنتجات غير المتاحة أو الانتظار حتى تكتمل مزامنة السلة.",
+                  );
                   return;
                 }
                 setDrawerOpen(false);
               }}
-              aria-disabled={!canCheckout}
-              className={`group flex min-h-13 w-full items-center justify-center gap-2.5 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[0_16px_32px_-18px_rgba(14,77,100,0.7)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D65A31]/50 focus-visible:ring-offset-2 ${canCheckout ? "hover:brightness-105 active:scale-[0.99]" : "cursor-not-allowed opacity-50"}`}
-              style={{ background: `linear-gradient(135deg, ${BRAND.teal}, ${BRAND.tealDark})` }}
+              className={`flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#0E4D64] px-4 text-sm font-black text-white shadow-lg transition active:scale-[0.98] ${
+                canCheckout
+                  ? "hover:bg-[#093747]"
+                  : "cursor-not-allowed opacity-50"
+              }`}
             >
-              <LockKeyhole className="h-4 w-4" aria-hidden="true" />
-              <span>{loading ? "جارٍ تحديث السلة..." : "المتابعة إلى الدفع الآمن"}</span>
-              <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" aria-hidden="true" />
+              <LockKeyhole className="h-4 w-4" />
+              <span>إتمام الطلب الآن</span>
+              <ArrowLeft className="h-4 w-4" />
             </Link>
-            <p className="mt-2.5 flex items-center justify-center gap-1.5 text-center text-[10px] font-medium text-slate-500">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#0E4D64]" aria-hidden="true" />
-              راجع طلبك قبل التأكيد النهائي
-            </p>
           </footer>
         ) : null}
       </aside>
     </div>
   );
 }
+
+export default CartDrawer;
